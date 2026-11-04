@@ -73,6 +73,8 @@ pub async fn prepare(
             Ok(parsed) => {
                 let original: Value = serde_json::from_str(&raw)?;
                 cfg.protocol.replay(&mut body, &original)?;
+                continue_turn |=
+                    cfg.protocol.is_messages() && original["stop_reason"] == "pause_turn";
                 if !parsed.intents.as_array().unwrap().is_empty() {
                     let tools=sqlx::query("SELECT call_id,paired_receipt FROM model_tool_intents WHERE logical=? ORDER BY ordinal")
                         .bind(&logical).fetch_all(&mut *conn).await?;
@@ -179,6 +181,9 @@ pub async fn prepare(
             .protocol
             .request(layout, cfg, material.structured.as_ref())?;
     }
+    if cfg.protocol.is_messages() {
+        crate::model::messages::cache_last(&mut body)?;
+    }
     let raw = body.to_string();
     let logical = format!("{exec}:logical:{index}");
     let estimated = i64::try_from(raw.len())?;
@@ -190,9 +195,14 @@ pub async fn prepare(
             input: estimated,
             output: cfg.max_output,
             safe_rate_limit_once: false,
-            native_tools: body["tools"]
-                .as_array()
-                .is_some_and(|tools| tools.iter().any(|tool| tool["type"] == "web_search")),
+            native_tools: body["tools"].as_array().is_some_and(|tools| {
+                tools.iter().any(|tool| {
+                    matches!(
+                        tool["type"].as_str(),
+                        Some("web_search" | "web_search_20250305")
+                    )
+                })
+            }),
             request: raw,
         }),
     )
