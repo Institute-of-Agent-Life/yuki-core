@@ -196,7 +196,16 @@ fn mentions(line: &str, candidates: &[Candidate]) -> Vec<Value> {
     segments
 }
 
+#[derive(Debug)]
+pub(super) struct UnavailableVersion;
+impl std::fmt::Display for UnavailableVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("attachment version unavailable in original Work")
+    }
+}
+impl std::error::Error for UnavailableVersion {}
 pub struct Part {
+    pub version: Option<String>,
     pub action: String,
     pub params: Value,
 }
@@ -266,9 +275,10 @@ pub async fn plan(
         }
     }
     let mut parts = Vec::new();
+    let mut first_image = None;
     if let Some(asset) = &msg.artifact_id {
-        let row=sqlx::query("SELECT b.kind,b.filename,b.peer_reference FROM social_media_bindings b JOIN media_versions v ON v.id=b.id AND v.execution=b.execution WHERE b.id=? AND b.execution=? AND v.digest IS NOT NULL")
-            .bind(asset).bind(exec).fetch_one(&mut *conn).await?;
+        let row=sqlx::query("SELECT b.kind,b.filename,b.peer_reference FROM social_media_bindings b JOIN media_version_readers r ON r.version=b.id AND r.producer=b.execution WHERE b.id=? AND r.reader=?")
+            .bind(asset).bind(exec).fetch_optional(&mut *conn).await?.ok_or(UnavailableVersion)?;
         let kind: String = row.try_get("kind")?;
         if Some(&kind) != msg.attachment_kind.as_ref() {
             return Err("attachment kind differs from authorized binding".into());
@@ -278,14 +288,16 @@ pub async fn plan(
             if bodies.is_empty() {
                 bodies.push(Vec::new());
             }
+            first_image = Some(asset.clone());
             bodies[0].push(json!({"type":"image","data":{"file":reference}}));
         } else {
-            parts.push(Part{action:if group{"upload_group_file"}else{"upload_private_file"}.into(),
+            parts.push(Part{version:Some(asset.clone()), action:if group{"upload_group_file"}else{"upload_private_file"}.into(),
                 params:json!({dest:target,"file":reference,"name":msg.name.as_ref().unwrap_or(&row.try_get("filename")?)})});
         }
     }
     for body in bodies {
         parts.push(Part {
+            version: first_image.take(),
             action: send.into(),
             params: json!({dest:target,"message":body}),
         });

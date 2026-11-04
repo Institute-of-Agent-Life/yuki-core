@@ -627,6 +627,9 @@ def run(ctx):
                 (resumed["event"], resumed["watermark"]),
                 (source["event"], 1),
             )
+    from tests.harness.personal_files import observe
+
+    delivered_files = observe(ctx, docs, routes, wire)
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     return {
         "binary_sha256": sha(
@@ -635,6 +638,7 @@ def run(ctx):
             / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
         ),
         "validated_routes": sorted(routes),
+        "delivered_artifact": delivered_files,
         "host_idl_sha256": sha(ctx.root / "sdk/rust/src/host-preview.json"),
         "personal_schema_sha256": sha(
             ctx.root / "protocol/plugin/personal/methods.json"
