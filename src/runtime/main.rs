@@ -1,5 +1,6 @@
 mod domain;
 pub(crate) use domain::{human_text as event_text, window};
+pub(crate) mod segment;
 mod step;
 pub(crate) use step::hold as hold_original;
 mod transport;
@@ -231,7 +232,7 @@ pub enum Change {
     Defer(i64, i64),
     Wait(String, i64),
     Schedule(i64, i64),
-    Prepare(String, String),
+    Prepare(String, String, segment::Config),
     Hold(String, String),
 }
 pub async fn apply(conn: &mut SqliteConnection, cfg: &Config, action: &Change) -> Result<Value> {
@@ -258,7 +259,7 @@ pub async fn apply(conn: &mut SqliteConnection, cfg: &Config, action: &Change) -
                 .bind(event).bind(until).execute(conn).await?;
             Ok(Value::Null)
         }
-        Change::Prepare(exec, soul) => step::prepare(conn, cfg, exec, soul).await,
+        Change::Prepare(exec, soul, policy) => step::prepare(conn, cfg, exec, soul, policy).await,
         Change::Hold(exec, reason) => step::hold(conn, exec, reason).await,
     }
 }

@@ -284,6 +284,7 @@ pub struct Store {
     pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
     pub main: Option<Arc<crate::runtime::main::Config>>,
+    pub work_segments: crate::runtime::main::segment::Config,
     commands: mpsc::Sender<Command>,
     readers: SqlitePool,
     signals: Arc<Signals>,
@@ -367,6 +368,7 @@ impl Store {
         Self {
             media: None,
             main: None,
+            work_segments: Default::default(),
             host: None,
             commands,
             readers,
