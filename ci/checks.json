@@ -17,6 +17,12 @@
       "timeout_seconds": 90,
       "capabilities": ["v4-transcript-replay", "legacy-wire4", "client9-admin-openapi", "A-load-evidence"]
     },
+    "CORE-003": {
+      "case": "tests/cases/CORE-003.py",
+      "artifact": "inventory.json",
+      "timeout_seconds": 90,
+      "capabilities": ["read-only-v4-inventory", "wal-snapshot", "owner-file-closure"]
+    },
     "CORE-005": {
       "case": "tests/cases/CORE-005.py",
       "artifact": "owner-probes.json",

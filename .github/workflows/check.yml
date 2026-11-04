@@ -38,6 +38,8 @@ jobs:
           PYTHONDONTWRITEBYTECODE: '1'
       - name: Compare both v4 captures and hash the offline consumer bundle
         run: python ci/check.py CORE-002 --out artifacts/CORE-002/ci
+      - name: Inventory a quiesced synthetic multi-owner snapshot
+        run: python ci/check.py CORE-003 --out artifacts/CORE-003/ci
       - name: Verify Rust owner, cleanup barriers and actual binary
         run: python ci/check.py CORE-005 --out artifacts/CORE-005/ci
       - name: Retain evidence on success or failure
