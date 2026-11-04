@@ -47,3 +47,7 @@ golden 和獨立 stdio peer。原包於 GitHub 預發布，重新下載的 ZIP �
 
 CORE-017 的等待登記與喚醒可從已驗 CORE-016 開始。CORE-032 待真正 Telegram 與 web-fetch 插件在同版宿主上交付回條；EXT-047 尚未提供具名且已核准的 QQ 原生動作。CORE-015 實作 `27f0413`，[PR #22](https://github.com/Institute-of-Agent-Life/yuki-core/pull/22)。CORE-021 實作 `9b6031a`，[PR #23](https://github.com/Institute-of-Agent-Life/yuki-core/pull/23)。CORE-020 已推 [PR #21](https://github.com/Institute-of-Agent-Life/yuki-core/pull/21)，來源 `a009770`。歷史搜尋的 DJ 校準尚缺目標語料。
 缺目標 SnowLuma 映像 digest 和去識別雙端封包；部署預設採指定 ingress。
+
+**CORE-032 開發候選，尚未發布。** 來源 `199dff095be0bc87c9713beaa0419400cb424a7c` 已推 [PR #24](https://github.com/Institute-of-Agent-Life/yuki-core/pull/24)。握手 revision 1，業務 revision 2，業務 schema SHA-256 `4822f19fb937eba524e475b35c0753a713587f48feee87ae6bd7b53ccab06cba`。雙 SDK、宿主執行檔及方法清單均在包內。兩端各通過 65 項及隔離 PATH 啟動，逐成員雜湊已複驗。
+- HJW Windows x86_64：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/handoff-199dff095be0/windows-validation/handoff/yuki-host-preview-199dff095be0-windows-x86_64.zip`，SHA-256 `d3ef0f3ce8a7dedd175b6aa3392a22c744504cf6bea70eadc22d5408642e634c`。
+- Mac arm64：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/handoff-199dff095be0/macos-arm64/yuki-host-preview-199dff095be0-darwin-arm64.zip`，SHA-256 `07592cb449433512dcaf55306bfddbc8a6b3f93d025f15d7f51da59e844a5e9d`。
