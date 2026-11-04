@@ -100,14 +100,17 @@ async fn members(inner: &Inner, peers: &Topology, group: &str) -> Result<Vec<Str
             if v["status"] != "ok" || v["retcode"] != 0 {
                 return Err("membership unavailable".into());
             }
-            let member = &v["data"];
-            if member.is_object()
-                && id(&member["user_id"]).as_ref() == Some(bot)
-                && (member.get("group_id").is_none()
-                    || id(&member["group_id"]).as_deref() == Some(group))
-            {
-                found.push(bot.clone());
+            let member = v["data"].as_object().ok_or("invalid membership result")?;
+            if member.is_empty() {
+                continue;
             }
+            if id(&v["data"]["user_id"]).as_ref() != Some(bot)
+                || (member.contains_key("group_id")
+                    && id(&v["data"]["group_id"]).as_deref() != Some(group))
+            {
+                return Err("membership response belongs to a different target".into());
+            }
+            found.push(bot.clone());
         }
         Ok::<(), Box<dyn std::error::Error + Send + Sync>>(())
     })
@@ -207,6 +210,9 @@ pub(super) async fn handle(inner: Arc<Inner>, bot: String, session: u64, packet:
     ) else {
         return;
     };
+    let Some(group_id) = group.parse::<i64>().ok().filter(|id| *id > 0) else {
+        return;
+    };
     if inner.bots.contains_key(&sender) || packet["sender"]["is_bot"] == true {
         return;
     }
@@ -231,7 +237,7 @@ pub(super) async fn handle(inner: Arc<Inner>, bot: String, session: u64, packet:
         .get(&bot)
         .filter(|p| p.session == session)
     {
-        let payload = json!({"action":"send_group_msg","params":{"group_id":group.parse::<i64>().unwrap_or_default(),"message":format!("group recovery: {result}")},
+        let payload = json!({"action":"send_group_msg","params":{"group_id":group_id,"message":format!("group recovery: {result}")},
             "echo":format!("control-{session}-{}",inner.next.fetch_add(1,Ordering::Relaxed))});
         let _ = peer.tx.try_send(payload.to_string());
     }
