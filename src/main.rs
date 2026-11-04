@@ -3,6 +3,7 @@ mod gateway;
 mod identity;
 mod ingress;
 mod operator;
+mod runtime;
 mod store;
 
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};

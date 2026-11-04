@@ -1,12 +1,10 @@
 """Crash exactly before SQLite commit and after commit before the platform receives an ACK."""
 
 import json
-import os
 import sqlite3
-import subprocess
-import time
 from contextlib import closing
 from tests.harness.service import Service, previous_schema
+from tests.harness.crash import kill_writer
 
 
 def run(ctx):
@@ -71,50 +69,16 @@ def run(ctx):
         )
 
     barriers = []
-    test_exe = (ctx.output / "rust-test-executable.txt").read_text().strip()
     for phase, expected in [("before", 0), ("after", 1)]:
         frame = {**base, "source": phase, "native_id": "native-" + phase}
         prior = counts()
-        marker = ctx.working / (phase + ".ready")
-        env = {
-            **os.environ,
-            "YUKI_INGRESS_TEST_DATA": str(owner.data),
-            "YUKI_INGRESS_TEST_FRAME": json.dumps(frame),
-            "YUKI_INGRESS_TEST_PHASE": phase,
-            "YUKI_INGRESS_TEST_MARKER": str(marker),
-        }
-        with (ctx.output / (phase + "-child.log")).open("w") as log:
-            child = subprocess.Popen(
-                [
-                    test_exe,
-                    "--exact",
-                    "--ignored",
-                    "--nocapture",
-                    "store::tests::ingress_crash_child",
-                ],
-                env=env,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-            )
-            try:
-                deadline = time.monotonic() + 20
-                while (
-                    time.monotonic() < deadline
-                    and not marker.exists()
-                    and child.poll() is None
-                ):
-                    time.sleep(0.01)
-                ctx.check(
-                    phase + " reached actual SQLite commit barrier",
-                    marker.exists() and child.poll() is None,
-                )
-                child.kill()
-                code = child.wait(timeout=8)
-                ctx.check("abnormal process termination", code != 0)
-            finally:
-                if child.poll() is None:
-                    child.kill()
-                    child.wait(timeout=8)
+        kill_writer(
+            ctx,
+            owner.data,
+            "ingress_crash_child",
+            phase,
+            {"YUKI_INGRESS_TEST_FRAME": json.dumps(frame)},
+        )
         after = counts()
         ctx.equal(
             phase + " persisted atomic event and admission",
