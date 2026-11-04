@@ -116,7 +116,8 @@ async fn segments(inner: &Inner, raw: &Value) -> Result<Vec<Segment>> {
                     reference,
                 }
             }
-            _ => continue,
+            Some(kind) => Segment::Opaque { kind: kind.into() },
+            None => continue,
         };
         segments.push(segment);
     }

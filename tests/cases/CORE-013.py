@@ -1,3 +1,5 @@
+from pathlib import Path
+
 """Drive an actual Rust Main over two authenticated OneBot sessions; stop after the second write."""
 
 import importlib.util
@@ -144,7 +146,15 @@ def run(ctx):
         peer.send({"echo": action["echo"], "status": "ok", "retcode": 0, "data": data})
 
     with Recorder() as http:
+        incoming = service.data / "media-inputs" / "managed-staging"
+        incoming.mkdir(parents=True, exist_ok=True)
+        (incoming / "file-fixture").write_bytes(b"original file bytes")
         with (service.data / "yuki.toml").open("a") as cfg:
+            cfg.write(
+                "\n[media]\ngateway_transfer_directory="
+                + json.dumps(str(service.data / "media-transfer"))
+                + "\n"
+            )
             cfg.write(
                 f'\n[main]\nendpoint="{http.url}"\nmodel="fixture"\nname="Yuki"\nmerge_ms=0\nroot_slots=4\nmax_input_units=100000\nmax_output=128\n[qq]\nnamespace="lab"\ndesignated_ingress="{bot}"\n[qq.groups]\n"700"="open"\n[[qq.bots]]\nself_id="{bot}"\nstage="{stage}"\ntoken_env="YUKI_SOCIAL_FIXTURE"\n'
             )
@@ -408,6 +418,11 @@ def run(ctx):
                 upload = peer.receive()
                 ctx.equal(
                     "file uses actual QQ upload", upload["action"], "upload_group_file"
+                )
+                ctx.equal(
+                    "receiver sees the immutable staged bytes",
+                    Path(upload["params"]["file"]).read_bytes(),
+                    b"original file bytes",
                 )
                 ack(peer, upload, {})
                 caption = peer.receive()

@@ -135,7 +135,7 @@ pub async fn consider(
     if structured {
         return fallback();
     }
-    let history = objects::history(conn, exec, cfg.protocol).await?;
+    let history = objects::history(conn, exec, cfg).await?;
     let Some(last) = history.last() else {
         return fallback();
     };
@@ -247,7 +247,7 @@ pub async fn restore_work(
         return Ok(());
     }
     let cfg: Config = serde_json::from_str(row.try_get("profile")?)?;
-    let rounds = objects::history(conn, original, cfg.protocol).await?;
+    let rounds = objects::history(conn, original, &cfg).await?;
     let Some(round) = rounds.into_iter().find(|r| r.logical == logical && r.calls) else {
         return Ok(());
     };

@@ -1,0 +1,205 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "current": [
+    {
+      "type": "text",
+      "data": {
+        "file": "source-0"
+      }
+    },
+    {
+      "type": "at",
+      "data": {
+        "file": "source-1"
+      }
+    },
+    {
+      "type": "forward",
+      "data": {
+        "file": "source-2"
+      }
+    },
+    {
+      "type": "image",
+      "data": {
+        "file": "source-3"
+      }
+    },
+    {
+      "type": "face",
+      "data": {
+        "file": "source-4"
+      }
+    },
+    {
+      "type": "record",
+      "data": {
+        "file": "source-5"
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "file": "source-6"
+      }
+    },
+    {
+      "type": "file",
+      "data": {
+        "file": "source-7"
+      }
+    }
+  ],
+  "reply": [
+    {
+      "type": "text",
+      "data": {
+        "file": "reply-0"
+      }
+    },
+    {
+      "type": "video",
+      "data": {
+        "file": "reply-1"
+      }
+    },
+    {
+      "type": "record",
+      "data": {
+        "file": "reply-2"
+      }
+    }
+  ],
+  "direct_positions": [
+    [
+      1,
+      3,
+      "image",
+      {
+        "file": "source-3"
+      }
+    ],
+    [
+      2,
+      5,
+      "record",
+      {
+        "file": "source-5"
+      }
+    ],
+    [
+      4,
+      7,
+      "file",
+      {
+        "file": "source-7"
+      }
+    ]
+  ],
+  "observed_reply_positions": [
+    [
+      5,
+      1,
+      "video",
+      {
+        "file": "reply-1"
+      }
+    ],
+    [
+      6,
+      2,
+      "record",
+      {
+        "file": "reply-2"
+      }
+    ]
+  ],
+  "tools": {
+    "workspace_inspect": {
+      "description": "选择工作区、共享缓存或 device_id 指定本人电脑的 path，或已发布 artifact_id（二选一），把真实图片或视频帧交给你原生查看。path 可带 expected_version 核对刚找到的文件；图片是待检查资料，工具不生成视觉摘要。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "相对 /workspace 的文件路径、/workspace/完整路径或共享缓存 /inputs/media-cache/完整路径，支持中文。"
+          },
+          "artifact_id": {
+            "type": "string"
+          },
+          "expected_version": {
+            "type": "string",
+            "description": "可选的文件内容 SHA256，用于核对选定原件。"
+          },
+          "device_id": {
+            "type": "string",
+            "description": "可选；本人电脑的真实设备 ID。省略时使用 Yuki 自己的持久环境。"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "inspect_conversation_attachment": {
+      "description": "需要附件细节时，按内部事件 ID 与附件序号选取真实图片、视频帧或文件，图片交给你原生查看。可先查聊天历史比较候选；仅文件名和旧摘要不代表已经读取原件。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "attachment_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "event_id",
+          "attachment_index",
+          "question"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "save_conversation_attachment_to_workspace": {
+      "description": "按内部事件 ID 与附件序号直接保存原件为持久工作文件；device_id 指定本人电脑，省略时保存到 Yuki 的全局共享环境。可自主收藏图片；收藏或整理表情库时，先用终端阅读 /workspace/stickers/AGENT.md，按目录中的说明保存原件、补标签和更新索引。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "attachment_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "destination": {
+            "type": "string"
+          },
+          "device_id": {
+            "type": "string",
+            "description": "可选；本人电脑的真实设备 ID。省略时使用 Yuki 自己的持久环境。"
+          }
+        },
+        "required": [
+          "event_id",
+          "attachment_index",
+          "destination"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

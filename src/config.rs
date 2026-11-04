@@ -15,6 +15,8 @@ pub struct Config {
     pub main: Option<crate::runtime::main::Config>,
     #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
+    #[serde(default)]
+    pub media: crate::media::Config,
 }
 
 impl Config {

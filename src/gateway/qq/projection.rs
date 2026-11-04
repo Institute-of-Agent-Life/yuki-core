@@ -31,7 +31,15 @@ pub(super) fn render(parts: &mut [Segment], bots: &HashSet<&str>) -> String {
                 .chars(),
             ),
             Segment::Media { kind, reference } => {
-                let name = reference
+                let display = if reference.starts_with("base64://")
+                    || reference.starts_with("data:")
+                    || reference.contains("://")
+                {
+                    ""
+                } else {
+                    reference
+                };
+                let name = display
                     .rsplit(['\\', '/'])
                     .next()
                     .unwrap_or("")
@@ -55,6 +63,11 @@ pub(super) fn render(parts: &mut [Segment], bots: &HashSet<&str>) -> String {
                     raw.extend(format!(" [{label}附件{attachments}{suffix}] ").chars());
                 }
                 attachments += 1;
+            }
+            Segment::Opaque { kind } => {
+                if !matches!(kind.as_str(), "yuki_context" | "agent_target") {
+                    attachments += 1;
+                }
             }
             Segment::Reply { .. } => {}
         }

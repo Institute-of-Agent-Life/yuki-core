@@ -267,7 +267,7 @@ pub async fn plan(
     }
     let mut parts = Vec::new();
     if let Some(asset) = &msg.artifact_id {
-        let row=sqlx::query("SELECT kind,filename,peer_reference FROM social_media_bindings WHERE id=? AND execution=?")
+        let row=sqlx::query("SELECT b.kind,b.filename,b.peer_reference FROM social_media_bindings b JOIN media_versions v ON v.id=b.id AND v.execution=b.execution WHERE b.id=? AND b.execution=? AND v.digest IS NOT NULL")
             .bind(asset).bind(exec).fetch_one(&mut *conn).await?;
         let kind: String = row.try_get("kind")?;
         if Some(&kind) != msg.attachment_kind.as_ref() {
