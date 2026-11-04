@@ -1,6 +1,6 @@
 use super::{
     chat::{self, Task, Turn},
-    responses,
+    messages, responses,
 };
 use crate::{Result, runtime::main::Config};
 use serde::{Deserialize, Serialize};
@@ -14,14 +14,20 @@ pub enum Protocol {
     OpenaiResponses,
     DeepseekResponsesLegacy,
     DeepseekResponses,
+    AnthropicMessages,
 }
 impl Protocol {
     pub fn is_chat(&self) -> bool {
         *self == Self::Chat
     }
+    pub fn is_messages(self) -> bool {
+        self == Self::AnthropicMessages
+    }
     pub fn request(self, layout: Value, cfg: &Config, task: Option<&Task>) -> Result<Value> {
         if self.is_chat() {
             Ok(layout)
+        } else if self.is_messages() {
+            messages::request(layout, cfg, task)
         } else {
             responses::request(layout, cfg, task)
         }
@@ -34,6 +40,9 @@ impl Protocol {
         paid: &Value,
     ) -> Result<Turn> {
         let response: Value = serde_json::from_str(raw)?;
+        if self.is_messages() {
+            return messages::decode(&response, task, cfg, paid);
+        }
         self.check_declarations(&response, paid)?;
         if self.is_chat() {
             chat::decode(raw, task)
@@ -100,6 +109,9 @@ impl Protocol {
                 Some("stop" | "tool_calls")
             )
         } else {
+            if self.is_messages() {
+                return messages::complete(body);
+            }
             responses::complete(body)
         }
     }
@@ -107,6 +119,9 @@ impl Protocol {
         if self.is_chat() {
             chat::usage(raw)
         } else {
+            if self.is_messages() {
+                return messages::usage(raw);
+            }
             responses::usage(raw)
         }
     }
@@ -116,6 +131,9 @@ impl Protocol {
             .ok_or_else(|| "missing paid conversation items".into())
     }
     pub fn replay(self, body: &mut Value, original: &Value) -> Result<()> {
+        if self.is_messages() {
+            return messages::replay(body, original);
+        }
         if self.is_chat() {
             self.items(body)?
                 .push(original["choices"][0]["message"].clone());
@@ -131,6 +149,9 @@ impl Protocol {
         Ok(())
     }
     pub fn output(self, body: &mut Value, call_id: &str, receipt: &str) -> Result<()> {
+        if self.is_messages() {
+            return messages::output(body, call_id, receipt);
+        }
         let item = if self.is_chat() {
             json!({"role":"tool","tool_call_id":call_id,"content":receipt})
         } else {
@@ -140,6 +161,9 @@ impl Protocol {
         Ok(())
     }
     pub fn user(self, body: &mut Value, text: &str) -> Result<()> {
+        if self.is_messages() {
+            return messages::user(body, text);
+        }
         self.items(body)?
             .push(json!({"role":"user","content":text}));
         Ok(())

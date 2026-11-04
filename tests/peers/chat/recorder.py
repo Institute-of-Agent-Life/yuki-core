@@ -7,10 +7,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 class Recorder:
-    def __init__(self, path="/v1/chat/completions"):
+    def __init__(self, path="/v1/chat/completions", binding_status=200):
         self.path = path
         self.wires = queue.Queue()
         self.deliveries = []
+        self.header_shapes = []
         recorder = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -19,6 +20,11 @@ class Recorder:
 
             def do_POST(self):
                 raw = self.rfile.read(int(self.headers["Content-Length"]))
+                recorder.header_shapes.append({
+                    "version": self.headers.get("anthropic-version"),
+                    "api_key": "x-api-key" in self.headers,
+                    "bearer": "Authorization" in self.headers,
+                })
                 if self.path == "/binding":
                     call = json.loads(raw)
                     recorder.deliveries.append(call)
@@ -38,7 +44,7 @@ class Recorder:
                     if isinstance(body, bytes)
                     else json.dumps(body, ensure_ascii=False).encode()
                 )
-                self.send_response(200)
+                self.send_response(binding_status if self.path == "/binding" else 200)
                 self.send_header(
                     "Content-Type",
                     "text/event-stream"
