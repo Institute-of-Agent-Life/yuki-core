@@ -40,6 +40,8 @@ jobs:
         run: python ci/check.py CORE-002 --out artifacts/CORE-002/ci
       - name: Inventory a quiesced synthetic multi-owner snapshot
         run: python ci/check.py CORE-003 --out artifacts/CORE-003/ci
+      - name: Evaluate QQ key evidence for the target deployment
+        run: python ci/check.py CORE-004 --out artifacts/CORE-004/ci
       - name: Verify Rust owner, cleanup barriers and actual binary
         run: python ci/check.py CORE-005 --out artifacts/CORE-005/ci
       - name: Verify original-person merges and current device authorization
