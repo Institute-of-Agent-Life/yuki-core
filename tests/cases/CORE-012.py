@@ -151,6 +151,18 @@ def run(ctx):
                 and body["messages"][-2]["content"]
                 == '\n\n<runtime_context>\n{"state":"no_active_work","state_scope":"current_activation"}\n</runtime_context>\n\n',
             )
+            program = (ctx.root / "src/context/main-program.txt").read_text(
+                encoding="utf-8"
+            )
+            ctx.equal(
+                "physical Chat request preserves original identity, SOUL and program order",
+                body["messages"][0],
+                {
+                    "role": "system",
+                    "content": "【角色身份】\n当前角色的名称是 Yuki。\n\n【SOUL】\nhello Yuki; literal {{other}}\n\n"
+                    + program,
+                },
+            )
             layout.append(raw)
             q.put((response(content='{"tool":"send","message":"do not send"}'), 0))
             until(lambda: rows("SELECT id FROM executions WHERE state='completed'"))
