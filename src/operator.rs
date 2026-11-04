@@ -13,6 +13,10 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Qq {
+        #[command(subcommand)]
+        command: crate::gateway::qq::Action,
+    },
     Ingress {
         #[command(subcommand)]
         command: crate::ingress::admit::Action,
@@ -40,6 +44,9 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Qq {
+        command: crate::gateway::qq::Action,
+    },
     Ingress {
         command: crate::ingress::admit::Action,
     },
@@ -77,6 +84,7 @@ async fn handle(
     stream: impl AsyncRead + AsyncWrite + Unpin,
     store: Store,
     stop: Arc<Notify>,
+    qq: crate::gateway::qq::Hub,
 ) -> Result<()> {
     let mut stream = BufReader::new(stream);
     let mut line = String::new();
@@ -90,6 +98,7 @@ async fn handle(
         Request::Account { command } => crate::identity::assignment::invoke(&store, command).await,
         Request::Entry { command } => crate::identity::entry::invoke(&store, command).await,
         Request::Ingress { command } => crate::ingress::admit::invoke(&store, command).await,
+        Request::Qq { command } => qq.operator(command).await,
         Request::GetLabel => store.label().await,
         Request::SetLabel { value } => store.write(Mutation::SetLabel(value)).await,
         Request::DatabaseInfo => store.database_info().await,
@@ -131,6 +140,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Account { command } => Request::Account { command },
         Action::Entry { command } => Request::Entry { command },
         Action::Ingress { command } => Request::Ingress { command },
+        Action::Qq { command } => Request::Qq { command },
         Action::GetLabel => Request::GetLabel,
         Action::SetLabel { value } => Request::SetLabel { value },
         Action::DatabaseInfo => Request::DatabaseInfo,
@@ -159,7 +169,12 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
 }
 
 #[cfg(unix)]
-pub async fn listen(data: &Path, store: Store, stop: Arc<Notify>) -> Result<JoinHandle<()>> {
+pub async fn listen(
+    data: &Path,
+    store: Store,
+    stop: Arc<Notify>,
+    qq: crate::gateway::qq::Hub,
+) -> Result<JoinHandle<()>> {
     use std::os::unix::fs::{FileTypeExt, PermissionsExt};
     let path = data.join("operator.sock");
     if let Ok(metadata) = std::fs::symlink_metadata(&path) {
@@ -182,7 +197,7 @@ pub async fn listen(data: &Path, store: Store, stop: Arc<Notify>) -> Result<Join
         loop {
             tokio::select! {
                 accepted = listener.accept() => match accepted {
-                    Ok((stream, _)) => { peers.spawn(handle(stream, store.clone(), stop.clone())); },
+                    Ok((stream, _)) => { peers.spawn(handle(stream, store.clone(), stop.clone(),qq.clone())); },
                     Err(_) => break,
                 },
                 _ = peers.join_next(), if !peers.is_empty() => {},
@@ -195,7 +210,12 @@ pub async fn listen(data: &Path, store: Store, stop: Arc<Notify>) -> Result<Join
 mod windows_acl;
 
 #[cfg(windows)]
-pub async fn listen(data: &Path, store: Store, stop: Arc<Notify>) -> Result<JoinHandle<()>> {
+pub async fn listen(
+    data: &Path,
+    store: Store,
+    stop: Arc<Notify>,
+    qq: crate::gateway::qq::Hub,
+) -> Result<JoinHandle<()>> {
     let endpoint = endpoint(data);
     let mut server = windows_acl::pipe(&endpoint, true)?;
     Ok(tokio::spawn(async move {
@@ -206,7 +226,7 @@ pub async fn listen(data: &Path, store: Store, stop: Arc<Notify>) -> Result<Join
                     if connected.is_err() { break; }
                     let next = match windows_acl::pipe(&endpoint, false) { Ok(next) => next, Err(_) => break };
                     let stream = std::mem::replace(&mut server, next);
-                    peers.spawn(handle(stream, store.clone(), stop.clone()));
+                    peers.spawn(handle(stream, store.clone(), stop.clone(),qq.clone()));
                 },
                 _ = peers.join_next(), if !peers.is_empty() => {},
             }

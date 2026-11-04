@@ -62,6 +62,13 @@
       "timeout_seconds": 150,
       "rust": true,
       "capabilities": ["recorded-ingress", "durable-admission", "unique-execution"]
+    },
+    "CORE-009": {
+      "case": "tests/cases/CORE-009.py",
+      "artifact": "qq-frames.json",
+      "timeout_seconds": 120,
+      "rust": true,
+      "capabilities": ["reverse-onebot-ws", "receiver-bound-routing", "private-typing"]
     }
   }
 }

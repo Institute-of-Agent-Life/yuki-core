@@ -34,6 +34,13 @@ pub enum Kind {
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
+pub struct Span {
+    pub segment: usize,
+    pub start: usize,
+    pub end: usize,
+}
+
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Segment {
     Text {
@@ -45,14 +52,29 @@ pub enum Segment {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         native: Option<String>,
         label: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        span: Option<Span>,
     },
     Media {
         kind: String,
         reference: String,
     },
+    Face {
+        id: String,
+        label: Option<String>,
+    },
     Reply {
         native_id: String,
     },
+}
+
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Sender {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub card: Option<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
@@ -68,6 +90,12 @@ pub struct Frame {
     pub observed: i64,
     pub kind: Kind,
     pub segments: Vec<Segment>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<Sender>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reply_bot: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
 }
 
 impl Frame {
@@ -96,11 +124,12 @@ impl Frame {
     fn ordinary(&self) -> bool {
         self.kind == Kind::Message
             && self.segments.iter().any(|s| match s {
-                Segment::Text { text } => !text.trim().is_empty(),
+                Segment::Text { text } => !self.text.as_deref().unwrap_or(text).trim().is_empty(),
                 Segment::Mention {
                     account, native, ..
                 } => account.is_some() || native.is_some(),
                 Segment::Media { reference, .. } => !reference.is_empty(),
+                Segment::Face { id, .. } => !id.is_empty(),
                 Segment::Reply { native_id } => !native_id.is_empty(),
             })
     }
@@ -138,6 +167,7 @@ async fn facts(conn: &mut SqliteConnection, f: &Frame) -> Result<Facts> {
             account,
             native,
             label,
+            span,
         } = segment
         {
             let resolved = if let Some(id) = account {
@@ -153,7 +183,7 @@ async fn facts(conn: &mut SqliteConnection, f: &Frame) -> Result<Facts> {
                 Value::Null
             };
             mentions.push(
-                json!({"position":index,"native":native,"label":label,"account":account,
+                json!({"position":span.as_ref().map_or(index,|s|s.segment),"text_start":span.as_ref().map(|s|s.start),"text_end":span.as_ref().map(|s|s.end),"native":native,"label":label,"account":account,
                 "assignment":resolved["assignment"],"original":resolved["original"]}),
             );
         }
@@ -167,6 +197,15 @@ async fn facts(conn: &mut SqliteConnection, f: &Frame) -> Result<Facts> {
 }
 
 pub async fn record(store: &Store, frame: Frame, accept: bool) -> Result<Value> {
+    record_scoped(store, frame, accept, None).await
+}
+
+pub(crate) async fn record_scoped(
+    store: &Store,
+    frame: Frame,
+    accept: bool,
+    shared_image: Option<String>,
+) -> Result<Value> {
     let prepared = {
         let mut conn = store.readers().acquire().await?;
         facts(&mut conn, &frame).await?
@@ -176,6 +215,7 @@ pub async fn record(store: &Store, frame: Frame, accept: bool) -> Result<Value> 
             frame,
             accept,
             prepared,
+            shared_image,
         })))
         .await
 }
@@ -202,6 +242,7 @@ pub struct Admission {
     frame: Frame,
     accept: bool,
     prepared: Facts,
+    shared_image: Option<String>,
 }
 
 async fn entry_for(
@@ -249,7 +290,16 @@ async fn entry_for(
 pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<Value> {
     let f = &request.frame;
     let verified = facts(conn, f).await?;
-    let scope = f.source_scope(verified.stage.as_deref())?;
+    let scope = if let Some(image) = &request.shared_image {
+        serde_json::to_string(&(
+            "verified_group",
+            image,
+            f.space.as_ref().ok_or("shared key outside group")?,
+            &f.topic,
+        ))?
+    } else {
+        f.source_scope(verified.stage.as_deref())?
+    };
     let existing = sqlx::query(
         "SELECT e.id,e.envelope,e.actor_stage,e.raw_actor,
         EXISTS(SELECT 1 FROM entries WHERE id=e.entry_id AND closed_at IS NULL) AS open_entry
@@ -262,11 +312,20 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
     let (id, eligible) = if let Some(row) = existing {
         let mut original: Frame = serde_json::from_str(row.try_get("envelope")?)?;
         original.observed = f.observed; // Arrival timestamps may differ on redelivery.
-        if original != *f {
+        let shared_peer = request.shared_image.is_some() && original.bot_stage != f.bot_stage;
+        if (shared_peer
+            && (original.account != f.account
+                || original.kind != f.kind
+                || original.occurred != f.occurred))
+            || (!shared_peer && original != *f)
+        {
             return Err("source key reused with different envelope".into());
         }
         let same_actor = row.try_get::<Option<String>, _>("actor_stage")? == verified.stage
             && row.try_get::<Option<String>, _>("raw_actor")? == verified.actor;
+        if shared_peer && !same_actor {
+            return Err("conflicting actor for shared QQ key".into());
+        }
         (
             row.try_get("id")?,
             same_actor && row.try_get::<bool, _>("open_entry")?,
@@ -284,16 +343,29 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
             .bind(&scope).bind(&f.source).bind(&entry).bind(&f.account).bind(&facts.actor).bind(&facts.stage)
             .bind(&f.bot_stage).bind(f.occurred).bind(f.observed).bind(serde_json::to_string(f)?)
             .bind(facts.mentions.to_string()).fetch_one(&mut *conn).await?;
-        if let Some(native) = &f.native_id {
-            sqlx::query("INSERT INTO event_locators(event_id,receiver,native_id) VALUES(?,?,?)")
-                .bind(id)
-                .bind(&f.bot_stage)
-                .bind(native)
-                .execute(&mut *conn)
-                .await?;
-        }
         (id, entry.is_some())
     };
+    if let Some(native) = &f.native_id {
+        sqlx::query(
+            "INSERT INTO event_locators(event_id,receiver,native_id) VALUES(?,?,?)
+            ON CONFLICT(event_id,receiver) DO NOTHING",
+        )
+        .bind(id)
+        .bind(&f.bot_stage)
+        .bind(native)
+        .execute(&mut *conn)
+        .await?;
+        let saved: String = sqlx::query_scalar(
+            "SELECT native_id FROM event_locators WHERE event_id=? AND receiver=?",
+        )
+        .bind(id)
+        .bind(&f.bot_stage)
+        .fetch_one(&mut *conn)
+        .await?;
+        if saved != *native {
+            return Err("conflicting locator for the same receiver".into());
+        }
+    }
     if request.accept && eligible && verified.current && f.ordinary() {
         sqlx::query(
             "INSERT INTO accepted_sources(event_id) VALUES(?) ON CONFLICT(event_id) DO NOTHING",
