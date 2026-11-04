@@ -1,0 +1,23 @@
+{
+  "oracle": {
+    "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+    "adapter": "src/yuki/llm/deepseek_responses.py",
+    "standard_adapter": "src/yuki/llm/openai_responses.py",
+    "deepseek_legacy_tool_choice": "field_omitted",
+    "deepseek_legacy_none_with_native": "reject_before_dispatch",
+    "openai_storage": false,
+    "openai_local_replay": true
+  },
+  "documented": {
+    "deepseek_responses": {
+      "source": "https://api-docs.deepseek.com/guides/responses_api/",
+      "choice": {"type":"function","name":"get"},
+      "previous_response_id": "unsupported",
+      "live_verified": false
+    },
+    "openai_responses": {
+      "sources": ["https://developers.openai.com/api/docs/guides/function-calling","https://developers.openai.com/api/docs/guides/reasoning"],
+      "live_verified": false
+    }
+  }
+}

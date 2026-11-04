@@ -1,0 +1,81 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "adapter_bodies": {
+    "OpenAIResponsesProvider": {
+      "path": "/v1/responses",
+      "body": {
+        "model": "thinking-model",
+        "input": [
+          {
+            "role": "user",
+            "content": "task"
+          }
+        ],
+        "stream": false,
+        "instructions": "fixed",
+        "max_output_tokens": 8192,
+        "tools": [
+          {
+            "type": "function",
+            "name": "inspect",
+            "description": "Read evidence",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "web_search"
+          }
+        ],
+        "reasoning": {
+          "effort": "low"
+        },
+        "tool_choice": {
+          "type": "function",
+          "name": "inspect"
+        },
+        "store": false,
+        "include": [
+          "reasoning.encrypted_content",
+          "web_search_call.action.sources"
+        ]
+      },
+      "raw_sha256": "782fe9604333384de8c77f74a504c89e42ab7f5e7237b86dac8b81470a3e48de"
+    },
+    "DeepSeekResponsesProvider": {
+      "path": "/v1/responses",
+      "body": {
+        "model": "thinking-model",
+        "input": [
+          {
+            "role": "user",
+            "content": "task"
+          }
+        ],
+        "stream": false,
+        "instructions": "fixed",
+        "max_output_tokens": 8192,
+        "tools": [
+          {
+            "type": "function",
+            "name": "inspect",
+            "description": "Read evidence",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "type": "web_search"
+          }
+        ],
+        "reasoning": {
+          "effort": "low"
+        }
+      },
+      "raw_sha256": "c7dfa3b7442da685dc03b1979811d98c52a9e768149b75b2d614e409e2607840"
+    },
+    "legacy_rejection": "LLMInvalidRequestError"
+  }
+}

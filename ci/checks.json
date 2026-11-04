@@ -97,6 +97,13 @@
       "rust": true,
       "capabilities": ["original-qq-part-delivery","durable-image-intent","original-recall"]
     },
+    "CORE-019": {
+      "case": "tests/cases/CORE-019.py",
+      "artifact": "responses-wire.json",
+      "timeout_seconds": 240,
+      "rust": true,
+      "capabilities": ["responses-stateless-replay","original-item-order","explicit-responses-dialect"]
+    },
     "CORE-012": {
       "case": "tests/cases/CORE-012.py",
       "artifact": "main-wire.json",

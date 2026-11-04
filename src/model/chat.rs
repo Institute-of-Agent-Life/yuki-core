@@ -77,6 +77,26 @@ pub struct Turn {
     pub intents: Value,
     pub result: Value,
 }
+pub fn intent(id: &str, name: &str, arguments: Value) -> Result<Value> {
+    if !TOOLS.contains(&name)
+        || !jsonschema::validator_for(&binding(name)["function"]["parameters"])?
+            .is_valid(&arguments)
+    {
+        return Err("tool outside pinned contract".into());
+    }
+    let (action, target) = if matches!(name, "get" | "put") {
+        (name, arguments["target"].as_str().unwrap())
+    } else {
+        ("external", name)
+    };
+    Ok(json!({"call_id":id,"action":action,"target":target,"payload":arguments}))
+}
+pub fn validate_result(task: &Task, value: Value) -> Result<Value> {
+    if !value.is_object() || !jsonschema::validator_for(&task.schema)?.is_valid(&value) {
+        return Err("invalid structured result".into());
+    }
+    Ok(value)
+}
 pub fn decode(raw: &str, task: Option<&Task>) -> Result<Turn> {
     let body: Value = serde_json::from_str(raw)?;
     let choices = body["choices"]
@@ -138,18 +158,7 @@ pub fn decode(raw: &str, task: Option<&Task>) -> Result<Turn> {
             emitted = Some(arguments);
             continue;
         }
-        if !TOOLS.contains(&name)
-            || !jsonschema::validator_for(&binding(name)["function"]["parameters"])?
-                .is_valid(&arguments)
-        {
-            return Err("tool outside pinned contract".into());
-        }
-        let (action, target) = if matches!(name, "get" | "put") {
-            (name, arguments["target"].as_str().unwrap())
-        } else {
-            ("external", name)
-        };
-        intents.push(json!({"call_id":id,"action":action,"target":target,"payload":arguments}));
+        intents.push(intent(id, name, arguments)?);
     }
     let result = if let Some(task) = task {
         let value = if task.mode == Mode::FunctionTool {
@@ -157,10 +166,7 @@ pub fn decode(raw: &str, task: Option<&Task>) -> Result<Turn> {
         } else {
             serde_json::from_str(content)?
         };
-        if !value.is_object() || !jsonschema::validator_for(&task.schema)?.is_valid(&value) {
-            return Err("invalid structured result".into());
-        }
-        value
+        validate_result(task, value)?
     } else {
         message.clone()
     };

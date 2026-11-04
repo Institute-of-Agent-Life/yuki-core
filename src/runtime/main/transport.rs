@@ -3,7 +3,7 @@ use crate::{
     Result,
     model::{
         attempt::{self, Action},
-        chat::{self, Task},
+        chat::Task,
     },
     runtime::effects::{self, Outcome},
     store::Store,
@@ -191,7 +191,7 @@ pub async fn run(
         };
         if let Ok((status, bytes, complete)) = physical {
             let response = String::from_utf8_lossy(&bytes).to_string();
-            let usage = chat::usage(&response).to_string();
+            let usage = cfg.protocol.usage(&response).to_string();
             if !complete {
                 attempt::invoke(
                     store,
@@ -220,19 +220,25 @@ pub async fn run(
                 .await?;
             } else {
                 let parsed = serde_json::from_str::<Value>(&response).unwrap_or(Value::Null);
-                let finish = parsed["choices"][0]["finish_reason"].as_str();
-                let decoded = chat::decode(&response, task.as_ref());
-                let complete_choice =
-                    status == 200 && matches!(finish, Some("stop" | "tool_calls"));
+                let decoded = cfg.protocol.decode(&response, task.as_ref(), cfg);
+                let complete_choice = status == 200 && cfg.protocol.complete(&parsed);
                 if !complete_choice || decoded.is_err() && task.is_none() {
                     attempt::invoke(
                         store,
                         Action::Hold {
                             attempt: attempt_id,
-                            body: response,
+                            body: response.clone(),
                             usage,
-                            diagnostic: "invalid_or_incomplete_choice".into(),
-                            partial_bytes: None,
+                            diagnostic:
+                                if !cfg.protocol.is_chat() && response.starts_with("event:") {
+                                    "incomplete_responses_stream"
+                                } else {
+                                    "invalid_or_incomplete_choice"
+                                }
+                                .into(),
+                            partial_bytes: (!cfg.protocol.is_chat()
+                                && response.starts_with("event:"))
+                            .then_some(bytes),
                             unknown: false,
                             status: status.into(),
                         },
