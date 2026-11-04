@@ -63,6 +63,8 @@ jobs:
         run: python ci/check.py CORE-011 --out artifacts/CORE-011/ci
       - name: Restart between source erasure and external holder acknowledgment
         run: python ci/check.py CORE-052 --out artifacts/CORE-052/ci
+      - name: Recover native QQ groups with a membership probe and original authority
+        run: python ci/check.py CORE-056 --out artifacts/CORE-056/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

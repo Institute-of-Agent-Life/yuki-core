@@ -83,6 +83,13 @@
       "timeout_seconds": 300,
       "capabilities": ["handshake-preview", "python-sdk", "rust-sdk", "stdio-conformance-peer"]
     },
+    "CORE-056": {
+      "case": "tests/cases/CORE-056.py",
+      "artifact": "native-group-recovery.json",
+      "timeout_seconds": 140,
+      "rust": true,
+      "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
+    },
     "CORE-011": {
       "case": "tests/cases/CORE-011.py",
       "artifact": "attempts-and-budget.json",

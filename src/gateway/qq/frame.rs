@@ -137,17 +137,28 @@ pub(super) async fn receive(inner: &Inner, bot: &str, packet: &Value) -> Result<
     } else {
         None
     };
-    if group_id
-        .as_ref()
-        .is_some_and(|group| !inner.groups.contains_key(group))
-    {
-        return Ok(());
+    let recovered = if let Some(g) = &group_id {
+        let mut reader = inner.store.readers().acquire().await?;
+        crate::ingress::group_recovery::route(&mut reader, &inner.namespace, g).await?
+    } else {
+        None
+    };
+    if let Some(g) = &group_id {
+        if let Some((stage, _, enabled)) = &recovered {
+            if !enabled || *stage != inner.bots[bot].spec.stage {
+                return Ok(());
+            }
+        } else if !inner.groups.contains_key(g)
+            || matches!(inner.groups.get(g), Some(GroupPolicy::Paused))
+        {
+            return Ok(());
+        }
     }
     let topic = id(&packet["topic_id"]);
     let shared = inner.shared.as_ref().filter(|s| {
         group_id.as_ref() == Some(&s.space) && s.topic == topic && s.receivers.contains(bot)
     });
-    if group && shared.is_none() && bot != inner.designated {
+    if group && recovered.is_none() && shared.is_none() && bot != inner.designated {
         return Ok(());
     }
     let native = id(&packet["message_id"]).ok_or("no stable native message reference")?;
@@ -185,9 +196,10 @@ pub(super) async fn receive(inner: &Inner, bot: &str, packet: &Value) -> Result<
         .collect();
     // Ambiguous multi-target input has no implicit send route.
     let accept = match group_id.as_ref().and_then(|id| inner.groups.get(id)) {
+        None if group => !targets.is_empty(),
         None | Some(GroupPolicy::Open) => true,
         Some(GroupPolicy::Observe) => false,
-        Some(GroupPolicy::Mention) => !targets.is_empty(),
+        Some(GroupPolicy::Paused | GroupPolicy::Mention) => !targets.is_empty(),
     };
     let route = if !group || targets.is_empty() {
         Some(bot.into())
