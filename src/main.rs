@@ -1,4 +1,5 @@
 mod config;
+mod gateway;
 mod identity;
 mod ingress;
 mod operator;
@@ -94,8 +95,16 @@ async fn execute(args: Args) -> Result<()> {
                 tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let store = store::Store::open(&owner.data).await?;
+            let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
             let stop = Arc::new(Notify::new());
-            let control = match operator::listen(&owner.data, store.clone(), stop.clone()).await {
+            let control = match operator::listen(
+                &owner.data,
+                store.clone(),
+                stop.clone(),
+                qq.clone(),
+            )
+            .await
+            {
                 Ok(control) => control,
                 Err(error) => {
                     close_writer(&store).await;
@@ -111,13 +120,15 @@ async fn execute(args: Args) -> Result<()> {
                 .route("/livez", get(|| async { Json(json!({"live":true})) }))
                 .route("/readyz", get(ready))
                 .route("/healthz", get(health))
-                .with_state(store.clone());
+                .with_state(store.clone())
+                .merge(qq.router());
             let signal = stop.clone();
             let service = axum::serve(listener, router).with_graceful_shutdown(async move {
                 #[cfg(unix)]
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {}, _ = terminate.recv() => {} }
                 #[cfg(windows)]
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
+                qq.shutdown();
             }).await;
             control.abort();
             let _ = control.await;

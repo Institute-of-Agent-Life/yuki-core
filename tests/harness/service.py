@@ -23,10 +23,12 @@ class Service:
         return json.loads(result.stdout) if accepted else result.stderr.strip()
 
     @contextmanager
-    def running(self):
-        server = subprocess.Popen([*self.argv, "run"], stdout=subprocess.PIPE, text=True)
+    def running(self, *, environment=None):
+        server = subprocess.Popen([*self.argv, "run"], stdout=subprocess.PIPE, text=True, env=environment)
         try:
-            self.ctx.equal("owner listening", json.loads(server.stdout.readline())["status"], "ready")
+            boot = json.loads(server.stdout.readline())
+            self.ctx.equal("owner listening", boot["status"], "ready")
+            self.address = boot["listen"]
             yield self
             self.command("operator", "shutdown")
             self.ctx.equal("owner shutdown", server.wait(timeout=10), 0)

@@ -56,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    ObserveQqAccount(String, String),
     Ingress(Box<crate::ingress::admit::Admission>),
     Claim(i64),
     Entry(crate::identity::entry::Action),
@@ -121,6 +122,27 @@ impl Driver for SqliteDriver {
             }
             Mutation::Claim(event) => {
                 return crate::ingress::admit::claim(self.connection(), *event).await;
+            }
+            Mutation::ObserveQqAccount(namespace, native) => {
+                let conn = self.connection();
+                let id = crate::identity::new_id(conn).await?;
+                sqlx::query(
+                    "INSERT INTO accounts(id,platform,namespace,native) VALUES(?,'qq',?,?)
+                    ON CONFLICT(platform,namespace,native) DO NOTHING",
+                )
+                .bind(id)
+                .bind(namespace)
+                .bind(native)
+                .execute(&mut *conn)
+                .await?;
+                let original: String = sqlx::query_scalar(
+                    "SELECT id FROM accounts WHERE platform='qq' AND namespace=? AND native=?",
+                )
+                .bind(namespace)
+                .bind(native)
+                .fetch_one(conn)
+                .await?;
+                return Ok(json!(original));
             }
             Mutation::SetLabel(value) => value.as_str(),
             #[cfg(test)]

@@ -9,6 +9,8 @@ use std::path::{Path, PathBuf};
 pub struct Config {
     pub format_version: u32,
     pub listen: std::net::SocketAddr,
+    #[serde(default)]
+    pub qq: Option<crate::gateway::qq::Config>,
 }
 
 impl Config {
