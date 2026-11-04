@@ -38,6 +38,14 @@ and unknown charges remain on their physical attempts. A remote profile requires
 an explicit HTTPS endpoint and `allow_remote = true`. An optional `key_env` names
 the environment variable containing its credential.
 
+Set `protocol` to `openai_responses`, `deepseek_responses_legacy`, or
+`deepseek_responses` with the corresponding Responses endpoint to replay ordered
+items locally. The legacy DeepSeek adapter omits `tool_choice`. The documented
+DeepSeek dialect can express a named function. The OpenAI dialect requests encrypted
+reasoning with storage disabled. The offline comparison records the native HTTP
+bodies in `responses-dialect.json`. The baseline and official references are in
+`fixtures/providers/responses/`.
+
 The operator uses a mode-0600 Unix socket or a Windows named pipe whose protected
 DACL permits the current OS user and SYSTEM. For example:
 

@@ -21,6 +21,14 @@ use tokio::sync::watch;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    #[serde(default, skip_serializing_if = "crate::model::wire::Protocol::is_chat")]
+    pub protocol: crate::model::wire::Protocol,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_choice: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_effort: Option<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub native_web_search: bool,
     pub endpoint: String,
     pub model: String,
     pub name: String,
@@ -41,6 +49,28 @@ impl Config {
         )
     }
     pub fn validate(&self) -> Result<()> {
+        if self.protocol.is_chat()
+            && (self.native_web_search
+                || self.tool_choice.is_some()
+                || self.reasoning_effort.is_some())
+        {
+            return Err("Responses preferences require a Responses profile".into());
+        }
+        if self.tool_choice.as_deref().is_some_and(|v| {
+            !matches!(
+                v,
+                "auto" | "none" | "required" | "get" | "put" | "send" | "complete"
+            )
+        }) {
+            return Err("unknown Responses tool selection".into());
+        }
+        if self
+            .reasoning_effort
+            .as_ref()
+            .is_some_and(|v| v.trim().is_empty())
+        {
+            return Err("empty reasoning effort".into());
+        }
         let url = reqwest::Url::parse(&self.endpoint)?;
         let local = url
             .host_str()

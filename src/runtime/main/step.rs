@@ -2,10 +2,7 @@ use super::{Config, domain::human_text};
 use crate::{
     Result,
     context::assemble,
-    model::{
-        attempt,
-        chat::{self, Input},
-    },
+    model::{attempt, chat::Input},
     runtime::execution,
 };
 use serde_json::{Value, json};
@@ -67,17 +64,14 @@ pub async fn prepare(
         }
         let raw: String = row.try_get("response")?;
         let task = material.structured.as_ref();
-        let result = chat::decode(&raw, task);
+        let result = cfg.protocol.decode(&raw, task, cfg);
         index = row.try_get::<i64, _>("ordinal")? + 1;
         body = serde_json::from_str::<Value>(row.try_get("request_json")?)?;
-        let messages = body["messages"]
-            .as_array_mut()
-            .ok_or("paid messages missing")?;
         let mut continue_turn = !fresh.is_empty();
         match result {
             Ok(parsed) => {
                 let original: Value = serde_json::from_str(&raw)?;
-                messages.push(original["choices"][0]["message"].clone());
+                cfg.protocol.replay(&mut body, &original)?;
                 if !parsed.intents.as_array().unwrap().is_empty() {
                     let tools=sqlx::query("SELECT call_id,paired_receipt FROM model_tool_intents WHERE logical=? ORDER BY ordinal")
                         .bind(&logical).fetch_all(&mut *conn).await?;
@@ -90,7 +84,11 @@ pub async fn prepare(
                         return Ok(json!({"pair":logical,"actor":actor}));
                     }
                     for t in tools {
-                        messages.push(json!({"role":"tool","tool_call_id":t.try_get::<String,_>("call_id")?,"content":t.try_get::<String,_>("paired_receipt")?}));
+                        cfg.protocol.output(
+                            &mut body,
+                            t.try_get("call_id")?,
+                            t.try_get("paired_receipt")?,
+                        )?;
                     }
                     continue_turn = true;
                 }
@@ -112,11 +110,12 @@ pub async fn prepare(
                     hold(conn, exec, "validation_failed").await?;
                     return Ok(Value::Null);
                 }
-                messages.push(json!({"role":"user","content":format!("Correct the structured result: {err}")}));
+                cfg.protocol
+                    .user(&mut body, &format!("Correct the structured result: {err}"))?;
             }
         }
         if !fresh.is_empty() {
-            messages.push(json!({"role":"user","content":material.text}));
+            cfg.protocol.user(&mut body, &material.text)?;
         }
     } else {
         let mut history = Vec::new();
@@ -142,7 +141,11 @@ pub async fn prepare(
                 .context
                 .insert(0, json!({"source_kind":kind,"source_ref":origin}));
         }
-        body = assemble::body(cfg, soul, &material, history);
+        body = cfg.protocol.request(
+            assemble::body(cfg, soul, &material, history),
+            cfg,
+            material.structured.as_ref(),
+        )?;
     }
     let raw = body.to_string();
     let logical = format!("{exec}:logical:{index}");
@@ -155,7 +158,9 @@ pub async fn prepare(
             input: estimated,
             output: cfg.max_output,
             safe_rate_limit_once: false,
-            native_tools: false,
+            native_tools: body["tools"]
+                .as_array()
+                .is_some_and(|tools| tools.iter().any(|tool| tool["type"] == "web_search")),
             request: raw,
         }),
     )

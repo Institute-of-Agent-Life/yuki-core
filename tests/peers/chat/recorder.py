@@ -7,7 +7,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 class Recorder:
-    def __init__(self):
+    def __init__(self, path="/v1/chat/completions"):
+        self.path = path
         self.wires = queue.Queue()
         self.deliveries = []
         recorder = self
@@ -32,9 +33,18 @@ class Recorder:
                     answer = queue.Queue()
                     recorder.wires.put((self.path, raw, answer))
                     body, missing = answer.get(timeout=25)
-                raw = json.dumps(body, ensure_ascii=False).encode()
+                raw = (
+                    body
+                    if isinstance(body, bytes)
+                    else json.dumps(body, ensure_ascii=False).encode()
+                )
                 self.send_response(200)
-                self.send_header("Content-Type", "application/json")
+                self.send_header(
+                    "Content-Type",
+                    "text/event-stream"
+                    if isinstance(body, bytes)
+                    else "application/json",
+                )
                 self.send_header("Content-Length", str(len(raw) + missing))
                 self.end_headers()
                 try:
@@ -56,11 +66,9 @@ class Recorder:
 
     @property
     def url(self):
-        return (
-            "http://127.0.0.1:" + str(self.server.server_port) + "/v1/chat/completions"
-        )
+        return "http://127.0.0.1:" + str(self.server.server_port) + self.path
 
     def receive(self):
         path, raw, q = self.wires.get(timeout=12)
-        assert path == "/v1/chat/completions"
+        assert path == self.path
         return raw.decode(), q
