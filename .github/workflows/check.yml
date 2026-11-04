@@ -73,6 +73,8 @@ jobs:
         run: python ci/check.py CORE-019 --out artifacts/CORE-019/ci
       - name: Match authorized literal history against the v4 Unicode and OpenCC oracle
         run: python ci/check.py CORE-014 --out artifacts/CORE-014/ci
+      - name: Replay original signed Messages blocks, choices and paid pauses
+        run: python ci/check.py CORE-020 --out artifacts/CORE-020/ci
       - name: Replay frozen native tools, effect barriers and immutable result pages
         run: python ci/check.py CORE-015 --out artifacts/CORE-015/ci
       - name: Exercise installed plugin subprocesses and source-bound receipts

@@ -23,9 +23,16 @@ async fn physical(
         .post(&cfg.endpoint)
         .header("Content-Type", "application/json")
         .body(raw.to_owned());
+    if cfg.protocol.is_messages() {
+        request = request.header("anthropic-version", "2023-06-01");
+    }
     if let Some(key) = &cfg.key_env {
-        request =
-            request.bearer_auth(std::env::var(key).map_err(|_| "provider credential unavailable")?);
+        let secret = std::env::var(key).map_err(|_| "provider credential unavailable")?;
+        request = if cfg.protocol.is_messages() {
+            request.header("x-api-key", secret)
+        } else {
+            request.bearer_auth(secret)
+        };
     }
     let mut response = request.send().await?;
     let status = response.status().as_u16();
@@ -360,7 +367,11 @@ pub async fn run(
                             usage,
                             diagnostic:
                                 if !cfg.protocol.is_chat() && response.starts_with("event:") {
-                                    "incomplete_responses_stream"
+                                    if cfg.protocol.is_messages() {
+                                        "incomplete_messages_stream"
+                                    } else {
+                                        "incomplete_responses_stream"
+                                    }
                                 } else {
                                     "invalid_or_incomplete_choice"
                                 }
