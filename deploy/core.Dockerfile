@@ -3,6 +3,8 @@ WORKDIR /src
 COPY Cargo.toml Cargo.lock rust-toolchain.toml build.rs ./
 COPY src/ src/
 COPY migrations/ migrations/
+COPY character/SOUL.md character/SOUL.md
+COPY config/qq_face_map.json config/qq_face_map.json
 RUN cargo fetch --locked
 RUN cargo build --release --locked --offline
 

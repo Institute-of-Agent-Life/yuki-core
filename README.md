@@ -14,8 +14,30 @@ target/debug/yuki-core --data ./data init
 target/debug/yuki-core --data ./data run
 ```
 
-`init` creates a config and an editable, initially empty `SOUL.md`. Existing files
-are preserved. `run`, `migrate` and `doctor` read the existing configuration.
+`init` creates a config and copies the baseline persona into the data directory as
+an editable `SOUL.md`. Existing files are preserved. An empty SOUL supplies
+only the character's name. `run`, `migrate` and `doctor` read the existing configuration.
+A configured `[main]` section runs Chat Completions on accepted inputs. For a local
+HTTP peer, add these settings to the data directory's `yuki.toml`.
+
+```toml
+[main]
+endpoint = "http://127.0.0.1:8081/v1/chat/completions"
+model = "local-chat"
+name = "Yuki"
+merge_ms = 450
+root_slots = 6
+max_input_units = 100000
+max_output = 128
+```
+
+`root_slots` bounds logical model requests. The shared unit ceiling covers
+estimated input plus the maximum output for each reserved request. Main uses the
+UTF-8 request length as a conservative input estimate. Recorded provider usage
+and unknown charges remain on their physical attempts. A remote profile requires
+an explicit HTTPS endpoint and `allow_remote = true`. An optional `key_env` names
+the environment variable containing its credential.
+
 The operator uses a mode-0600 Unix socket or a Windows named pipe whose protected
 DACL permits the current OS user and SYSTEM. For example:
 

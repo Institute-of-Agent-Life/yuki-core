@@ -229,7 +229,7 @@ pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
         Action::Pending => {
             let events: Vec<i64> = sqlx::query_scalar(
                 "SELECT s.event_id FROM accepted_sources s LEFT JOIN executions x
-                ON x.source=s.event_id WHERE x.id IS NULL AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id) ORDER BY s.event_id",
+                ON x.source=s.event_id WHERE x.id IS NULL AND NOT EXISTS(SELECT 1 FROM main_inputs WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id) ORDER BY s.event_id",
             )
             .fetch_all(store.readers())
             .await?;
@@ -385,7 +385,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
     Ok(json!({"event":id,"accepted":accepted}))
 }
 
-pub async fn claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {
+pub async fn validate_claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {
     let row = sqlx::query(
         "SELECT e.envelope,e.raw_actor,e.actor_stage,e.mentions,e.entry_id FROM accepted_sources s
         JOIN events e ON e.id=s.event_id JOIN entries dest ON dest.id=e.entry_id AND dest.closed_at IS NULL WHERE s.event_id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)",
@@ -402,6 +402,27 @@ pub async fn claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {
     {
         return Err("original source is no longer authorized".into());
     }
+    Ok(
+        json!({"source":event,"original_actor":original,"entry":row.try_get::<String,_>("entry_id")?,
+        "envelope":frame,"mentions":serde_json::from_str::<Value>(row.try_get("mentions")?)?}),
+    )
+}
+
+pub async fn claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {
+    let mut proof = validate_claim(conn, event).await?;
+    let original = proof["original_actor"]
+        .as_str()
+        .ok_or("missing original actor")?;
+    if let Some(exec) =
+        sqlx::query_scalar::<_, String>("SELECT execution FROM main_inputs WHERE event=?")
+            .bind(event)
+            .fetch_optional(&mut *conn)
+            .await?
+    {
+        crate::runtime::effects::authorize(conn, &exec, original, false).await?;
+        proof["execution"] = json!(exec);
+        return Ok(proof);
+    }
     let id = new_id(conn).await?;
     sqlx::query(
         "INSERT INTO executions(id,source,original_actor,state) VALUES(?,?,?,'pending')
@@ -409,15 +430,13 @@ pub async fn claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {
     )
     .bind(id)
     .bind(event)
-    .bind(&original)
+    .bind(original)
     .execute(&mut *conn)
     .await?;
     let execution: String = sqlx::query_scalar("SELECT id FROM executions WHERE source=?")
         .bind(event)
         .fetch_one(conn)
         .await?;
-    Ok(
-        json!({"execution":execution,"source":event,"original_actor":original,"entry":row.try_get::<String,_>("entry_id")?,
-        "envelope":frame,"mentions":serde_json::from_str::<Value>(row.try_get("mentions")?)?}),
-    )
+    proof["execution"] = json!(execution);
+    Ok(proof)
 }

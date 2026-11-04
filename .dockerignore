@@ -7,6 +7,10 @@
 !src/**
 !migrations/
 !migrations/**
+!character/
+!character/SOUL.md
+!config/
+!config/qq_face_map.json
 !LICENSE
 !NOTICE
 **/._*

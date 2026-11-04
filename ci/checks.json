@@ -90,6 +90,13 @@
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
     },
+    "CORE-012": {
+      "case": "tests/cases/CORE-012.py",
+      "artifact": "main-wire.json",
+      "timeout_seconds": 360,
+      "rust": true,
+      "capabilities": ["chat-completions-main","internal-source-runner","structured-modes","turn-steering"]
+    },
     "CORE-011": {
       "case": "tests/cases/CORE-011.py",
       "artifact": "attempts-and-budget.json",

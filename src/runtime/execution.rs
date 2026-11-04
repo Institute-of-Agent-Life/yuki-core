@@ -3,10 +3,11 @@ use serde_json::{Value, json};
 use sqlx::{Row, SqliteConnection};
 
 pub async fn eligible(conn: &mut SqliteConnection, execution: &str) -> Result<String> {
-    let actor: String = sqlx::query_scalar("SELECT original_actor FROM executions WHERE id=?")
-        .bind(execution)
-        .fetch_one(&mut *conn)
-        .await?;
+    let actor: String =
+        sqlx::query_scalar("SELECT coalesce(original_actor,origin) FROM executions WHERE id=?")
+            .bind(execution)
+            .fetch_one(&mut *conn)
+            .await?;
     authorize(conn, execution, &actor, true).await
 }
 
