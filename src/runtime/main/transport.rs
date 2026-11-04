@@ -59,6 +59,25 @@ async fn pair(
         .bind(logical).fetch_all(store.readers()).await?;
     for t in tools {
         if t.try_get::<String, _>("action")? == "external" {
+            if t.try_get::<String, _>("target")? == "history_query" {
+                crate::history::query::run(
+                    store,
+                    exec,
+                    actor,
+                    t.try_get("payload")?,
+                    Some(t.try_get("operation_id")?),
+                )
+                .await?;
+                attempt::invoke(
+                    store,
+                    Action::Pair {
+                        logical: logical.into(),
+                        ordinal: t.try_get("ordinal")?,
+                    },
+                )
+                .await?;
+                continue;
+            }
             if cfg.binding_endpoint.is_none() && t.try_get::<String, _>("target")? == "send" {
                 let result =
                     crate::social::deliver(store, hub, exec, t.try_get("operation_id")?, actor)
@@ -220,7 +239,10 @@ pub async fn run(
                 .await?;
             } else {
                 let parsed = serde_json::from_str::<Value>(&response).unwrap_or(Value::Null);
-                let decoded = cfg.protocol.decode(&response, task.as_ref(), cfg);
+                let original: Value = serde_json::from_str(raw)?;
+                let decoded = cfg
+                    .protocol
+                    .decode(&response, task.as_ref(), cfg, &original);
                 let complete_choice = status == 200 && cfg.protocol.complete(&parsed);
                 if !complete_choice || decoded.is_err() && task.is_none() {
                     attempt::invoke(

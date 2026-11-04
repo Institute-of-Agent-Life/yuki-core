@@ -1,0 +1,273 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "unicode": "15.0.0",
+  "opencc": "1.4.2:t2s",
+  "cases": [
+    {
+      "text": "臺灣門口",
+      "base": "臺灣門口",
+      "simplified": "台湾门口",
+      "terms": [
+        "g1xe58fa3",
+        "g1xe58fb0",
+        "g1xe6b9be",
+        "g1xe781a3",
+        "g1xe887ba",
+        "g1xe99680",
+        "g1xe997a8",
+        "g2xe58fb0e6b9be",
+        "g2xe6b9bee997a8",
+        "g2xe781a3e99680",
+        "g2xe887bae781a3",
+        "g2xe99680e58fa3",
+        "g2xe997a8e58fa3",
+        "g3xe58fb0e6b9bee997a8",
+        "g3xe6b9bee997a8e58fa3",
+        "g3xe781a3e99680e58fa3",
+        "g3xe887bae781a3e99680"
+      ]
+    },
+    {
+      "text": "臺裡的資料庫",
+      "base": "臺裡的資料庫",
+      "simplified": "台里的资料库",
+      "terms": [
+        "g1xe58fb0",
+        "g1xe5ba93",
+        "g1xe5baab",
+        "g1xe69699",
+        "g1xe79a84",
+        "g1xe887ba",
+        "g1xe8a3a1",
+        "g1xe8b387",
+        "g1xe8b584",
+        "g1xe9878c",
+        "g2xe58fb0e9878c",
+        "g2xe69699e5ba93",
+        "g2xe69699e5baab",
+        "g2xe79a84e8b387",
+        "g2xe79a84e8b584",
+        "g2xe887bae8a3a1",
+        "g2xe8a3a1e79a84",
+        "g2xe8b387e69699",
+        "g2xe8b584e69699",
+        "g2xe9878ce79a84",
+        "g3xe58fb0e9878ce79a84",
+        "g3xe79a84e8b387e69699",
+        "g3xe79a84e8b584e69699",
+        "g3xe887bae8a3a1e79a84",
+        "g3xe8a3a1e79a84e8b387",
+        "g3xe8b387e69699e5baab",
+        "g3xe8b584e69699e5ba93",
+        "g3xe9878ce79a84e8b584"
+      ]
+    },
+    {
+      "text": "後臺頭髮",
+      "base": "後臺頭髮",
+      "simplified": "后台头发",
+      "terms": [
+        "g1xe58f91",
+        "g1xe58fb0",
+        "g1xe5908e",
+        "g1xe5a4b4",
+        "g1xe5be8c",
+        "g1xe887ba",
+        "g1xe9a0ad",
+        "g1xe9abae",
+        "g2xe58fb0e5a4b4",
+        "g2xe5908ee58fb0",
+        "g2xe5a4b4e58f91",
+        "g2xe5be8ce887ba",
+        "g2xe887bae9a0ad",
+        "g2xe9a0ade9abae",
+        "g3xe58fb0e5a4b4e58f91",
+        "g3xe5908ee58fb0e5a4b4",
+        "g3xe5be8ce887bae9a0ad",
+        "g3xe887bae9a0ade9abae"
+      ]
+    },
+    {
+      "text": "乾隆皇帝",
+      "base": "乾隆皇帝",
+      "simplified": "乾隆皇帝",
+      "terms": [
+        "g1xe4b9be",
+        "g1xe5b89d",
+        "g1xe79a87",
+        "g1xe99a86",
+        "g2xe4b9bee99a86",
+        "g2xe79a87e5b89d",
+        "g2xe99a86e79a87",
+        "g3xe4b9bee99a86e79a87",
+        "g3xe99a86e79a87e5b89d"
+      ]
+    },
+    {
+      "text": "滑鼠＋ＡＰＩ Straße",
+      "base": "滑鼠+api strasse",
+      "simplified": "滑鼠+api strasse",
+      "terms": [
+        "g1x20",
+        "g1x2b",
+        "g1x61",
+        "g1x65",
+        "g1x69",
+        "g1x70",
+        "g1x72",
+        "g1x73",
+        "g1x74",
+        "g1xe6bb91",
+        "g1xe9bca0",
+        "g2x2073",
+        "g2x2b61",
+        "g2x6170",
+        "g2x6173",
+        "g2x6920",
+        "g2x7069",
+        "g2x7261",
+        "g2x7365",
+        "g2x7373",
+        "g2x7374",
+        "g2x7472",
+        "g2xe6bb91e9bca0",
+        "g2xe9bca02b",
+        "g3x207374",
+        "g3x2b6170",
+        "g3x617069",
+        "g3x617373",
+        "g3x692073",
+        "g3x706920",
+        "g3x726173",
+        "g3x737365",
+        "g3x737472",
+        "g3x747261",
+        "g3xe6bb91e9bca02b",
+        "g3xe9bca02b61"
+      ]
+    },
+    {
+      "text": "甲  乙",
+      "base": "甲 乙",
+      "simplified": "甲 乙",
+      "terms": [
+        "g1x20",
+        "g1xe4b999",
+        "g1xe794b2",
+        "g2x20e4b999",
+        "g2xe794b220",
+        "g3xe794b220e4b999"
+      ]
+    },
+    {
+      "text": "ΣςΣ",
+      "base": "σσσ",
+      "simplified": "σσσ",
+      "terms": [
+        "g1xcf83",
+        "g2xcf83cf83",
+        "g3xcf83cf83cf83"
+      ]
+    },
+    {
+      "text": "Ａﬃ①",
+      "base": "affi1",
+      "simplified": "affi1",
+      "terms": [
+        "g1x31",
+        "g1x61",
+        "g1x66",
+        "g1x69",
+        "g2x6166",
+        "g2x6666",
+        "g2x6669",
+        "g2x6931",
+        "g3x616666",
+        "g3x666669",
+        "g3x666931"
+      ]
+    },
+    {
+      "text": "錄音",
+      "base": "錄音",
+      "simplified": "录音",
+      "terms": [
+        "g1xe5bd95",
+        "g1xe98c84",
+        "g1xe99fb3",
+        "g2xe5bd95e99fb3",
+        "g2xe98c84e99fb3"
+      ]
+    },
+    {
+      "text": "🧊ß",
+      "base": "🧊ss",
+      "simplified": "🧊ss",
+      "terms": [
+        "g1x73",
+        "g1xf09fa78a",
+        "g2x7373",
+        "g2xf09fa78a73",
+        "g3xf09fa78a7373"
+      ]
+    },
+    {
+      "text": "﨑",
+      "base": "﨑",
+      "simplified": "﨑",
+      "terms": [
+        "g1xefa891"
+      ]
+    },
+    {
+      "text": "龜臺灣著作",
+      "base": "龜臺灣著作",
+      "simplified": "龟台湾著作",
+      "terms": [
+        "g1xe4bd9c",
+        "g1xe58fb0",
+        "g1xe6b9be",
+        "g1xe781a3",
+        "g1xe887ba",
+        "g1xe89197",
+        "g1xe9be9c",
+        "g1xe9be9f",
+        "g2xe58fb0e6b9be",
+        "g2xe6b9bee89197",
+        "g2xe781a3e89197",
+        "g2xe887bae781a3",
+        "g2xe89197e4bd9c",
+        "g2xe9be9ce887ba",
+        "g2xe9be9fe58fb0",
+        "g3xe58fb0e6b9bee89197",
+        "g3xe6b9bee89197e4bd9c",
+        "g3xe781a3e89197e4bd9c",
+        "g3xe887bae781a3e89197",
+        "g3xe9be9ce887bae781a3",
+        "g3xe9be9fe58fb0e6b9be"
+      ]
+    },
+    {
+      "text": "相互學習",
+      "base": "相互學習",
+      "simplified": "相互学习",
+      "terms": [
+        "g1xe4b9a0",
+        "g1xe4ba92",
+        "g1xe5ada6",
+        "g1xe5adb8",
+        "g1xe79bb8",
+        "g1xe7bf92",
+        "g2xe4ba92e5ada6",
+        "g2xe4ba92e5adb8",
+        "g2xe5ada6e4b9a0",
+        "g2xe5adb8e7bf92",
+        "g2xe79bb8e4ba92",
+        "g3xe4ba92e5ada6e4b9a0",
+        "g3xe4ba92e5adb8e7bf92",
+        "g3xe79bb8e4ba92e5ada6",
+        "g3xe79bb8e4ba92e5adb8"
+      ]
+    }
+  ]
+}

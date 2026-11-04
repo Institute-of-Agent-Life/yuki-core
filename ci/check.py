@@ -63,7 +63,7 @@ def main():
             environment = clean_environment()
             if os.name == "nt" and environment.get("YUKI_MINGW_BIN"):
                 bin_dir = Path(environment["YUKI_MINGW_BIN"])
-                environment.update(CC=str(bin_dir / "gcc.exe"), AR=str(bin_dir / "ar.exe"),
+                environment.update(CC=str(bin_dir / "gcc.exe"), CXX=str(bin_dir / "g++.exe"), AR=str(bin_dir / "ar.exe"),
                                    CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=str(bin_dir / "gcc.exe"),
                                    CARGO_ENCODED_RUSTFLAGS="\x1f".join(["-C", "link-self-contained=no", "-C", "dlltool=" + str(bin_dir / "dlltool.exe")]))
             rustc = subprocess.check_output(["rustc", "--version"], env=environment, text=True).strip()

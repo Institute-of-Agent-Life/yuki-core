@@ -64,9 +64,9 @@ pub async fn prepare(
         }
         let raw: String = row.try_get("response")?;
         let task = material.structured.as_ref();
-        let result = cfg.protocol.decode(&raw, task, cfg);
         index = row.try_get::<i64, _>("ordinal")? + 1;
         body = serde_json::from_str::<Value>(row.try_get("request_json")?)?;
+        let result = cfg.protocol.decode(&raw, task, cfg, &body);
         let mut continue_turn = !fresh.is_empty();
         match result {
             Ok(parsed) => {

@@ -90,6 +90,13 @@
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
     },
+    "CORE-014": {
+      "case": "tests/cases/CORE-014.py",
+      "artifact": "literal-search-gold.json",
+      "timeout_seconds": 240,
+      "rust": true,
+      "capabilities": ["source-authorized-history","literal-ngrams","durable-search-anchors"]
+    },
     "CORE-013": {
       "case": "tests/cases/CORE-013.py",
       "artifact": "social-parts.json",

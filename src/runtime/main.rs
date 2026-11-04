@@ -59,7 +59,14 @@ impl Config {
         if self.tool_choice.as_deref().is_some_and(|v| {
             !matches!(
                 v,
-                "auto" | "none" | "required" | "get" | "put" | "send" | "complete"
+                "auto"
+                    | "none"
+                    | "required"
+                    | "get"
+                    | "put"
+                    | "send"
+                    | "complete"
+                    | "history_query"
             )
         }) {
             return Err("unknown Responses tool selection".into());

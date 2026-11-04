@@ -1,6 +1,7 @@
 mod config;
 mod context;
 mod gateway;
+mod history;
 mod identity;
 mod ingress;
 mod model;
@@ -129,6 +130,7 @@ async fn execute(args: Args) -> Result<()> {
                 .with_state(store.clone())
                 .merge(qq.router());
             let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
+            let history = history::start(store.clone());
             let signal = stop.clone();
             let service = axum::serve(listener, router).with_graceful_shutdown(async move {
                 #[cfg(unix)]
@@ -137,6 +139,8 @@ async fn execute(args: Args) -> Result<()> {
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
                 qq.shutdown();
             }).await;
+            history.abort();
+            let _ = history.await;
             if let Some(runner) = runner {
                 runner.abort();
                 let _ = runner.await;
