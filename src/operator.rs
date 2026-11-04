@@ -13,6 +13,14 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Entry {
+        #[command(subcommand)]
+        command: crate::identity::entry::Action,
+    },
+    Account {
+        #[command(subcommand)]
+        command: crate::identity::assignment::Action,
+    },
     Person {
         #[command(subcommand)]
         command: crate::identity::person::Action,
@@ -28,6 +36,12 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Entry {
+        command: crate::identity::entry::Action,
+    },
+    Account {
+        command: crate::identity::assignment::Action,
+    },
     Person {
         command: crate::identity::person::Action,
     },
@@ -66,6 +80,8 @@ async fn handle(
     let shutdown = matches!(request, Request::Shutdown);
     let result = match request {
         Request::Person { command } => crate::identity::person::invoke(&store, command).await,
+        Request::Account { command } => crate::identity::assignment::invoke(&store, command).await,
+        Request::Entry { command } => crate::identity::entry::invoke(&store, command).await,
         Request::GetLabel => store.label().await,
         Request::SetLabel { value } => store.write(Mutation::SetLabel(value)).await,
         Request::DatabaseInfo => store.database_info().await,
@@ -104,6 +120,8 @@ async fn send(stream: impl AsyncRead + AsyncWrite + Unpin, request: Request) -> 
 pub async fn invoke(data: &Path, action: Action) -> Result<()> {
     let request = match action {
         Action::Person { command } => Request::Person { command },
+        Action::Account { command } => Request::Account { command },
+        Action::Entry { command } => Request::Entry { command },
         Action::GetLabel => Request::GetLabel,
         Action::SetLabel { value } => Request::SetLabel { value },
         Action::DatabaseInfo => Request::DatabaseInfo,

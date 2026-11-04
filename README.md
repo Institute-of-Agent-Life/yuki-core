@@ -56,3 +56,11 @@ their current enablement and administrative grants. For example,
 ID, current root and family. Device origins remain bound to the original ID.
 Schema 2 adds `persons` and `device_origins` to a schema 1 database through the
 numbered migration. Reader version 2 understands both tables.
+
+Schema 3 records account assignments in their original platform and tenant/app
+namespace. The `operator account` commands open, pause, transfer and resolve
+stages. Their integer timestamps are UTC milliseconds. A proven occurrence
+time selects a half-open ownership interval. Ambiguous undated input returns
+only the account. `operator entry` creates private and group entries, and
+checks current private read/send eligibility. Transferring either endpoint
+closes its old private entry while retaining its original key and history.
