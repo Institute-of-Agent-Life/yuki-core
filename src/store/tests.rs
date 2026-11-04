@@ -292,16 +292,20 @@ async fn social_crash_child() {
     panic!("receipt returned before simulated reply loss");
 }
 
-#[tokio::test]
-async fn history_drops_projection_prepared_before_source_erasure() {
-    let (_temp, mut driver, readers) = fixture().await;
-    let conn = driver.connection();
+async fn seed_history_event(conn: &mut SqliteConnection) {
     sqlx::raw_sql("INSERT INTO persons(id) VALUES('00000000-0000-4000-8000-000000000088');
       INSERT INTO accounts VALUES('a','qq','history','1'),('b','qq','history','2');
       INSERT INTO assignments(id,account_id,original_person,kind,status,first_observed) VALUES('human','a','00000000-0000-4000-8000-000000000088','person','active',1),('self','b',NULL,'self','active',1);
       INSERT INTO entries(id,scope,actor_stage,bot_stage) VALUES('private','private','human','self');
       INSERT INTO events(id,source_scope,source_key,entry_id,account_id,raw_actor,actor_stage,bot_stage,observed_at,envelope,mentions) VALUES(1,'scope','key','private','a','00000000-0000-4000-8000-000000000088','human','self',1,'{\"kind\":\"message\",\"text\":\"canary\"}','[]');")
-      .execute(&mut *conn).await.unwrap();
+      .execute(conn).await.unwrap();
+}
+
+#[tokio::test]
+async fn history_drops_projection_prepared_before_source_erasure() {
+    let (_temp, mut driver, readers) = fixture().await;
+    let conn = driver.connection();
+    seed_history_event(conn).await;
     let id: i64 = sqlx::query_scalar("SELECT id FROM history_items WHERE source_event=1")
         .fetch_one(&mut *conn)
         .await
@@ -331,4 +335,71 @@ async fn history_drops_projection_prepared_before_source_erasure() {
         .await
         .unwrap();
     assert_eq!(rows, 0);
+}
+
+#[tokio::test]
+async fn tool_output_rechecks_revocation_after_decode_and_short_state_expires() {
+    let (_temp, mut driver, readers) = fixture().await;
+    let conn = driver.connection();
+    seed_history_event(conn).await;
+    let actor = "00000000-0000-4000-8000-000000000088";
+    sqlx::raw_sql("INSERT INTO accepted_sources VALUES(1);
+      INSERT INTO executions(id,source,original_actor,state,work_id) VALUES('run',1,'00000000-0000-4000-8000-000000000088','running','work-15');
+      INSERT INTO operations(namespace,operation_id,action,target,payload,state,result) VALUES
+      ('run','producer','external','complete','{}','confirmed','{}'),
+      ('run','reader','external','read_tool_artifact','{\"handle\":\"id\",\"version\":\"v\"}','intent',NULL);
+      INSERT INTO tool_artifacts VALUES('id','v','run','producer','{\"result\":\"private-material\"}');")
+      .execute(&mut *conn).await.unwrap();
+    let args = json!({"handle":"id","version":"v","path":"/result"});
+    let original = crate::tools::results::load(conn, "run", actor, &args)
+        .await
+        .unwrap();
+    let decoded = crate::tools::results::page(&original, &args, 8000).unwrap();
+    assert_eq!(decoded["value"], "private-material");
+    crate::tools::transient::update(conn, "run", &json!({"slot":1,"text":"short"}), 100)
+        .await
+        .unwrap();
+    assert_eq!(
+        crate::tools::transient::live(conn, "run", 86499)
+            .await
+            .unwrap()[0]["expires_at"],
+        86500
+    );
+    assert!(
+        crate::tools::transient::live(conn, "run", 86500)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+    let work: String = sqlx::query_scalar("SELECT work_id FROM executions WHERE id='run'")
+        .fetch_one(&mut *conn)
+        .await
+        .unwrap();
+    assert_eq!(work, "work-15");
+    crate::privacy::apply(
+        conn,
+        &crate::privacy::Action::Erase {
+            key: "after-read".into(),
+            person: actor.into(),
+            sources: "[1]".into(),
+        },
+    )
+    .await
+    .unwrap();
+    assert!(
+        crate::tools::finish_prepared(conn, "run", actor, "reader", Ok(decoded))
+            .await
+            .is_err()
+    );
+    let (state,raw):(String,Option<String>)=sqlx::query_as("SELECT state,body FROM operations JOIN tool_artifacts ON operation=operation_id AND execution=namespace WHERE operation_id='producer'").fetch_one(&mut *conn).await.unwrap();
+    assert_eq!(state, "confirmed");
+    assert!(raw.is_none());
+    assert_eq!(
+        sqlx::query_scalar::<_, String>("SELECT text FROM short_state")
+            .fetch_one(&mut *conn)
+            .await
+            .unwrap(),
+        ""
+    );
+    readers.close().await;
 }

@@ -33,6 +33,14 @@ pub struct Config {
     pub thinking_budget: Option<i64>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub native_web_search: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub code_projection: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result_page_budget: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result_storage_bytes: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
     pub endpoint: String,
     pub model: String,
     pub name: String,
@@ -64,6 +72,16 @@ impl Config {
         {
             return Err("Messages manual budget must fit below max tokens and cannot specify adaptive effort".into());
         }
+        if self
+            .result_page_budget
+            .is_some_and(|b| !(512..=32000).contains(&b))
+            || self.result_storage_bytes.is_some_and(|n| n < 0)
+        {
+            return Err("invalid tool result storage or page budget".into());
+        }
+        if let Some(zone) = &self.timezone {
+            zone.parse::<chrono_tz::Tz>()?;
+        }
         if self.protocol.is_chat()
             && (self.native_web_search
                 || self.tool_choice.is_some()
@@ -72,19 +90,10 @@ impl Config {
             return Err("Responses preferences require a Responses profile".into());
         }
         if self.tool_choice.as_deref().is_some_and(|v| {
-            !matches!(
-                v,
-                "auto"
-                    | "none"
-                    | "required"
-                    | "get"
-                    | "put"
-                    | "send"
-                    | "complete"
-                    | "history_query"
-            )
+            !matches!(v, "auto" | "none" | "required")
+                && crate::tools::registry::builtin(v).is_none()
         }) {
-            return Err("unknown Responses tool selection".into());
+            return Err("unknown provider tool selection".into());
         }
         if self
             .reasoning_effort

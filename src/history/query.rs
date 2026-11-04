@@ -99,7 +99,7 @@ async fn scope(conn: &mut SqliteConnection, exec: &str, actor: &str) -> Result<S
     })
 }
 
-pub(super) async fn directory(
+pub(crate) async fn directory(
     conn: &mut SqliteConnection,
     exec: &str,
     actor: &str,

@@ -10,6 +10,7 @@ use crate::{
 };
 use serde_json::{Value, json};
 use sqlx::Row;
+
 use std::{path::Path, sync::Arc};
 use tokio::sync::watch;
 
@@ -52,6 +53,126 @@ async fn physical(
     Ok((status, bytes, complete && utf8))
 }
 
+#[derive(Clone)]
+struct Intent {
+    ordinal: i64,
+    operation_id: String,
+    action: String,
+    target: String,
+    payload: String,
+}
+impl Intent {
+    fn name(&self) -> &str {
+        if self.action == "external" {
+            &self.target
+        } else {
+            &self.action
+        }
+    }
+}
+#[derive(Clone)]
+struct Dispatch {
+    store: Store,
+    cfg: Config,
+    client: reqwest::Client,
+    exec: String,
+    actor: String,
+    hub: crate::gateway::qq::Hub,
+}
+impl Dispatch {
+    async fn one(self, t: Intent) -> Result<()> {
+        let Self {
+            store,
+            cfg,
+            client,
+            exec,
+            actor,
+            hub,
+        } = self;
+        let id = t.operation_id;
+        if t.action != "external" {
+            effects::invoke(
+                &store,
+                effects::Action::Local {
+                    execution: exec,
+                    actor,
+                    id,
+                },
+            )
+            .await?;
+            return Ok(());
+        }
+        match t.target.as_str() {
+            "history_query" => {
+                if let Err(error) =
+                    crate::history::query::run(&store, &exec, &actor, &t.payload, Some(&id)).await
+                {
+                    crate::tools::reject(&store, &exec, &actor, &id, error.to_string()).await?;
+                }
+            }
+            "lookup_tools" | "time_get_current" | "history_directory" | "update_short_state"
+            | "read_tool_artifact" => {
+                crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
+            }
+            "send" if cfg.binding_endpoint.is_none() => {
+                let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
+                if !matches!(
+                    result["state"].as_str(),
+                    Some("confirmed" | "failed" | "unknown")
+                ) {
+                    return Err("original social receipt pending".into());
+                }
+            }
+            _ => {
+                let endpoint = cfg
+                    .binding_endpoint
+                    .as_ref()
+                    .ok_or("external binding unavailable")?;
+                let grant = effects::invoke(
+                    &store,
+                    effects::Action::Dispatch {
+                        execution: exec.clone(),
+                        id: id.clone(),
+                        actor,
+                    },
+                )
+                .await?;
+                if grant["dispatch_now"] == true {
+                    let call = json!({"execution":exec,"operation":id,"tool":t.target,"arguments":serde_json::from_str::<Value>(&t.payload)?});
+                    let response = client
+                        .post(endpoint)
+                        .header("Content-Type", "application/json")
+                        .body(call.to_string())
+                        .send()
+                        .await;
+                    let data = match response {
+                        Ok(r) if r.status().is_success() => r
+                            .text()
+                            .await
+                            .ok()
+                            .and_then(|raw| serde_json::from_str::<Value>(&raw).ok()),
+                        _ => None,
+                    };
+                    effects::invoke(
+                        &store,
+                        effects::Action::Settle {
+                            execution: exec,
+                            id,
+                            outcome: if data.is_some() {
+                                Outcome::Confirmed
+                            } else {
+                                Outcome::Unknown
+                            },
+                            result: data.unwrap_or(Value::Null).to_string(),
+                        },
+                    )
+                    .await?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
 async fn pair(
     store: &Store,
     cfg: &Config,
@@ -61,104 +182,48 @@ async fn pair(
     actor: &str,
     hub: &crate::gateway::qq::Hub,
 ) -> Result<()> {
-    let tools=sqlx::query("SELECT i.ordinal,i.operation_id,o.action,o.target,o.payload FROM model_tool_intents i JOIN operations o
-        ON o.namespace=i.execution AND o.operation_id=i.operation_id WHERE i.logical=? AND i.paired_receipt IS NULL ORDER BY i.ordinal")
-        .bind(logical).fetch_all(store.readers()).await?;
-    for t in tools {
-        if t.try_get::<String, _>("action")? == "external" {
-            if t.try_get::<String, _>("target")? == "history_query" {
-                crate::history::query::run(
-                    store,
-                    exec,
-                    actor,
-                    t.try_get("payload")?,
-                    Some(t.try_get("operation_id")?),
-                )
-                .await?;
-                attempt::invoke(
-                    store,
-                    Action::Pair {
-                        logical: logical.into(),
-                        ordinal: t.try_get("ordinal")?,
-                    },
-                )
-                .await?;
-                continue;
-            }
-            if cfg.binding_endpoint.is_none() && t.try_get::<String, _>("target")? == "send" {
-                let result =
-                    crate::social::deliver(store, hub, exec, t.try_get("operation_id")?, actor)
-                        .await?;
-                if !matches!(
-                    result["state"].as_str(),
-                    Some("confirmed" | "failed" | "unknown")
-                ) {
-                    return Err("original social receipt pending".into());
-                }
-                attempt::invoke(
-                    store,
-                    Action::Pair {
-                        logical: logical.into(),
-                        ordinal: t.try_get("ordinal")?,
-                    },
-                )
-                .await?;
-                continue;
-            }
-            let endpoint = cfg
-                .binding_endpoint
-                .as_ref()
-                .ok_or("external binding unavailable")?;
-            let id: String = t.try_get("operation_id")?;
-            let permit = effects::invoke(
+    let intents=sqlx::query("SELECT i.ordinal,i.operation_id,o.action,o.target,o.payload FROM model_tool_intents i JOIN operations o ON o.namespace=i.execution AND o.operation_id=i.operation_id WHERE i.logical=? AND i.paired_receipt IS NULL ORDER BY i.ordinal")
+        .bind(logical).try_map(|r:sqlx::sqlite::SqliteRow|Ok(Intent{ordinal:r.try_get("ordinal")?,operation_id:r.try_get("operation_id")?,action:r.try_get("action")?,target:r.try_get("target")?,payload:r.try_get("payload")?})).fetch_all(store.readers()).await?;
+    let frozen:Option<String>=sqlx::query_scalar("SELECT m.body FROM tool_manifests m JOIN execution_tool_views v USING(revision) WHERE v.execution=?").bind(exec).fetch_optional(store.readers()).await?;
+    // Prior activations without a frozen execution revision retain their serial order.
+    let frozen = frozen
+        .as_deref()
+        .map(serde_json::from_str::<crate::tools::registry::Manifest>)
+        .transpose()?;
+    let safe = |t: &Intent| {
+        frozen
+            .as_ref()
+            .and_then(|m| m.0.get(t.name()))
+            .is_some_and(|entry| entry.parallel_read)
+    };
+    let dispatch = Dispatch {
+        store: store.clone(),
+        cfg: cfg.clone(),
+        client: client.clone(),
+        exec: exec.into(),
+        actor: actor.into(),
+        hub: hub.clone(),
+    };
+    let mut start = 0;
+    while start < intents.len() {
+        let end = if safe(&intents[start]) {
+            start + intents[start..].iter().take_while(|t| safe(t)).count()
+        } else {
+            start + 1
+        };
+        crate::tools::batch::execute(&intents[start..end], |intent| dispatch.clone().one(intent))
+            .await?;
+        for t in &intents[start..end] {
+            attempt::invoke(
                 store,
-                effects::Action::Dispatch {
-                    execution: exec.into(),
-                    id: id.clone(),
-                    actor: actor.into(),
+                Action::Pair {
+                    logical: logical.into(),
+                    ordinal: t.ordinal,
                 },
             )
             .await?;
-            if permit["dispatch_now"] == true {
-                let call = json!({"execution":exec,"operation":id,"tool":t.try_get::<String,_>("target")?,"arguments":serde_json::from_str::<Value>(t.try_get("payload")?)?});
-                let result = client
-                    .post(endpoint)
-                    .header("Content-Type", "application/json")
-                    .body(call.to_string())
-                    .send()
-                    .await;
-                let data = match result {
-                    Ok(r) if r.status().is_success() => r
-                        .text()
-                        .await
-                        .ok()
-                        .and_then(|raw| serde_json::from_str::<Value>(&raw).ok()),
-                    _ => None,
-                };
-                effects::invoke(
-                    store,
-                    effects::Action::Settle {
-                        execution: exec.into(),
-                        id,
-                        outcome: if data.is_some() {
-                            Outcome::Confirmed
-                        } else {
-                            Outcome::Unknown
-                        },
-                        result: data.unwrap_or(Value::Null).to_string(),
-                    },
-                )
-                .await?;
-            }
         }
-        attempt::invoke(
-            store,
-            Action::Pair {
-                logical: logical.into(),
-                ordinal: t.try_get("ordinal")?,
-            },
-        )
-        .await?;
+        start = end;
     }
     Ok(())
 }

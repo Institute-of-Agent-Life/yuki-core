@@ -5,7 +5,13 @@ use crate::{
 use serde_json::{Value, json};
 
 /// Assemble once, before reservation. Runtime data has its own message and never impersonates the trigger.
-pub fn body(profile: &Config, soul: &str, input: &Input, history: Vec<Value>) -> Value {
+pub fn body(
+    profile: &Config,
+    soul: &str,
+    input: &Input,
+    history: Vec<Value>,
+    declarations: Vec<Value>,
+) -> Value {
     let name = &profile.name;
     // Direct-mode program and SOUL follow the pinned v4 prompting contract.
     let mut prefix = format!(
@@ -27,6 +33,6 @@ pub fn body(profile: &Config, soul: &str, input: &Input, history: Vec<Value>) ->
     }
     messages.push(json!({"role":"user","content":input.text}));
     let mut body = json!({"model":profile.model,"messages":messages,"max_tokens":profile.max_output,"stream":false});
-    chat::configure(&mut body, input.structured.as_ref());
+    chat::configure(&mut body, input.structured.as_ref(), declarations);
     body
 }

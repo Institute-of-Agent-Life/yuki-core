@@ -56,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Tool(Box<crate::tools::Change>),
     History(Box<crate::history::Change>),
     Social(Box<crate::social::Change>),
     Main(
@@ -124,6 +125,7 @@ impl Driver for SqliteDriver {
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
             }
+            Mutation::Tool(change) => return crate::tools::apply(self.connection(), change).await,
             Mutation::History(change) => {
                 return crate::history::apply(self.connection(), change).await;
             }

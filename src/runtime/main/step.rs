@@ -143,11 +143,16 @@ pub async fn prepare(
                 .context
                 .insert(0, json!({"source_kind":kind,"source_ref":origin}));
         }
-        body = cfg.protocol.request(
-            assemble::body(cfg, soul, &material, history),
-            cfg,
-            material.structured.as_ref(),
-        )?;
+        let (manifest, code) = crate::tools::registry::pinned(conn, exec, cfg).await?;
+        let slots =
+            crate::tools::transient::live(conn, exec, crate::tools::transient::now()?).await?;
+        if !slots.is_empty() {
+            material.context.push(json!({"short_state":slots}));
+        }
+        let layout = assemble::body(cfg, soul, &material, history, manifest.declarations(code));
+        body = cfg
+            .protocol
+            .request(layout, cfg, material.structured.as_ref())?;
     }
     if cfg.protocol.is_messages() {
         crate::model::messages::cache_last(&mut body)?;
