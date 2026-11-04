@@ -11,6 +11,19 @@ pub async fn is_erased(conn: &mut SqliteConnection, source: i64) -> Result<bool>
     )
 }
 
+pub async fn execution_erased(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    source: Option<i64>,
+) -> Result<bool> {
+    if let Some(source) = source
+        && is_erased(conn, source).await?
+    {
+        return Ok(true);
+    }
+    Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=?)")
+      .bind(exec).fetch_one(conn).await?)
+}
 async fn check(conn: &mut SqliteConnection, owner: &str, source: i64) -> Result<()> {
     let allowed: bool = sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM source_owners o JOIN events e ON e.id=?
@@ -96,7 +109,7 @@ pub async fn late_attempt(
     usage: &str,
 ) -> Result<Option<Value>> {
     let row=sqlx::query("SELECT t.state,t.status_code,t.usage_json,
-        EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.source) AS revoked FROM model_attempts t
+        EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.source OR source IN(SELECT event FROM main_dependencies WHERE execution=e.id)) AS revoked FROM model_attempts t
         JOIN model_requests r ON r.id=t.logical JOIN activations a ON a.id=r.activation
         JOIN executions e ON e.id=a.execution WHERE t.id=?").bind(attempt).fetch_one(&mut *conn).await?;
     if !row.try_get::<bool, _>("revoked")? {
@@ -131,7 +144,7 @@ pub async fn late_attempt(
             merged.insert(k.clone(), v.clone());
         }
     }
-    sqlx::query("UPDATE model_attempts SET state=?,status_code=?,usage_json=?,response=NULL,intents_json=NULL,retry_proof=0,
+    sqlx::query("UPDATE model_attempts SET state=?,status_code=?,usage_json=?,response=NULL,partial_bytes=NULL,intents_json=NULL,retry_proof=0,
         diagnostic='source_erased',received_at=coalesce(received_at,CURRENT_TIMESTAMP) WHERE id=?")
         .bind(state).bind(status).bind(fresh.to_string()).bind(attempt).execute(conn).await?;
     Ok(Some(json!({"attempt":attempt,"state":state,"erased":true})))
@@ -142,23 +155,26 @@ pub async fn scrub(conn: &mut SqliteConnection, event: i64) -> Result<()> {
         .bind(event)
         .execute(&mut *conn)
         .await?;
+    sqlx::query("UPDATE main_turns SET result=NULL,material=NULL,diagnostic='source_erased' WHERE execution IN(SELECT execution FROM main_dependencies WHERE event=?)")
+        .bind(event).execute(&mut *conn).await?;
+    sqlx::query("DELETE FROM internal_values WHERE execution IN(SELECT execution FROM main_dependencies WHERE event=?)").bind(event).execute(&mut *conn).await?;
     let rows=sqlx::query("SELECT t.id,t.usage_json FROM model_attempts t JOIN model_requests r ON r.id=t.logical
-        JOIN activations a ON a.id=r.activation JOIN executions e ON e.id=a.execution WHERE e.source=?")
+        JOIN activations a ON a.id=r.activation JOIN executions e ON e.id=a.execution WHERE e.source=?1 OR e.id IN(SELECT execution FROM main_dependencies WHERE event=?1)")
         .bind(event).fetch_all(&mut *conn).await?;
     for row in rows {
         let raw: Option<String> = row.try_get("usage_json")?;
-        sqlx::query("UPDATE model_attempts SET response=NULL,intents_json=NULL,retry_proof=0,usage_json=?, diagnostic='source_erased' WHERE id=?")
+        sqlx::query("UPDATE model_attempts SET response=NULL,partial_bytes=NULL,intents_json=NULL,retry_proof=0,usage_json=?, diagnostic='source_erased' WHERE id=?")
             .bind(raw.as_deref().map(accounting_only)).bind(row.try_get::<String,_>("id")?).execute(&mut *conn).await?;
     }
     sqlx::query(
         "UPDATE model_requests SET request_json='{}' WHERE activation IN
-        (SELECT a.id FROM activations a JOIN executions e ON e.id=a.execution WHERE e.source=?)",
+        (SELECT a.id FROM activations a JOIN executions e ON e.id=a.execution WHERE e.source=?1 OR e.id IN(SELECT execution FROM main_dependencies WHERE event=?1))",
     )
     .bind(event)
     .execute(&mut *conn)
     .await?;
     sqlx::query("UPDATE model_tool_intents SET paired_receipt='{\"erased\":true}' WHERE paired_receipt IS NOT NULL
-        AND execution IN (SELECT id FROM executions WHERE source=?)").bind(event).execute(&mut *conn).await?;
+        AND execution IN (SELECT id FROM executions WHERE source=?1 OR id IN(SELECT execution FROM main_dependencies WHERE event=?1))").bind(event).execute(&mut *conn).await?;
     // Snapshots taken by another execution carry their value's source as well as their own.
     // For a migrated read with ambiguous provenance, fence its actor's snapshot conservatively.
     sqlx::query("UPDATE operations SET result='{}' WHERE action='get' AND result IS NOT NULL AND
@@ -170,8 +186,8 @@ pub async fn scrub(conn: &mut SqliteConnection, event: i64) -> Result<()> {
           AND o.action='get' AND o.result='{}')")
         .execute(&mut *conn).await?;
     sqlx::query("UPDATE operations SET payload='{}',target='erased',result=CASE WHEN result IS NULL THEN NULL ELSE '{\"erased\":true}' END
-        WHERE namespace IN (SELECT id FROM executions WHERE source=?)").bind(event).execute(&mut *conn).await?;
-    sqlx::query("DELETE FROM local_effect_values WHERE source=?")
+        WHERE namespace IN (SELECT id FROM executions WHERE source=?1 OR id IN(SELECT execution FROM main_dependencies WHERE event=?1))").bind(event).execute(&mut *conn).await?;
+    sqlx::query("DELETE FROM local_effect_values WHERE source=?1 OR source_execution IN(SELECT execution FROM main_dependencies WHERE event=?1)")
         .bind(event)
         .execute(conn)
         .await?;

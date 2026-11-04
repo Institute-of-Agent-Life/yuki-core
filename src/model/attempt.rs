@@ -13,16 +13,16 @@ use std::collections::HashSet;
 #[derive(clap::Args, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Reservation {
-    activation: String,
-    logical: String,
-    input: i64,
-    output: i64,
+    pub(crate) activation: String,
+    pub(crate) logical: String,
+    pub(crate) input: i64,
+    pub(crate) output: i64,
     #[arg(long)]
-    safe_rate_limit_once: bool,
+    pub(crate) safe_rate_limit_once: bool,
     #[arg(long)]
-    native_tools: bool,
+    pub(crate) native_tools: bool,
     #[arg(long)]
-    request: String,
+    pub(crate) request: String,
 }
 
 #[derive(Subcommand, Serialize, Deserialize)]
@@ -56,6 +56,17 @@ pub enum Action {
     },
     Unknown {
         attempt: String,
+    },
+    Hold {
+        attempt: String,
+        body: String,
+        usage: String,
+        #[arg(skip)]
+        partial_bytes: Option<Vec<u8>>,
+        diagnostic: String,
+        #[arg(action=clap::ArgAction::Set)]
+        unknown: bool,
+        status: i64,
     },
     Rejected {
         attempt: String,
@@ -307,7 +318,7 @@ async fn response(
         return Ok(receipt);
     }
     let body_valid = valid_json(raw).is_ok();
-    let row=sqlx::query("SELECT t.logical,t.state,t.response,t.usage_json,t.intents_json,a.execution,e.original_actor,e.cancelled
+    let row=sqlx::query("SELECT t.logical,t.state,t.response,t.usage_json,t.intents_json,a.execution,coalesce(e.original_actor,e.origin) AS original_actor,e.cancelled
         FROM model_attempts t JOIN model_requests r ON r.id=t.logical JOIN activations a ON a.id=r.activation
         JOIN executions e ON e.id=a.execution WHERE t.id=?").bind(attempt).fetch_one(&mut *conn).await?;
     let state: String = row.try_get("state")?;
@@ -368,7 +379,7 @@ async fn response(
 }
 
 async fn inspect(conn: &mut SqliteConnection, logical: &str) -> Result<Value> {
-    let row=sqlx::query("SELECT r.activation,r.root,r.original_work_id,a.execution,a.profile_contract,e.source,e.original_actor,e.work_id,
+    let row=sqlx::query("SELECT r.activation,r.root,r.original_work_id,a.execution,a.profile_contract,e.source,coalesce(e.original_actor,e.origin) AS original_actor,e.work_id,
         t.id AS attempt,t.state,t.response FROM model_requests r JOIN activations a ON a.id=r.activation JOIN executions e ON e.id=a.execution
         LEFT JOIN model_attempts t ON t.logical=r.id WHERE r.id=? ORDER BY t.ordinal DESC LIMIT 1")
         .bind(logical).fetch_one(&mut *conn).await?;
@@ -390,7 +401,7 @@ async fn inspect(conn: &mut SqliteConnection, logical: &str) -> Result<Value> {
     let raw: Option<String> = row.try_get("response")?;
     Ok(
         json!({"logical":logical,"activation":row.try_get::<String,_>("activation")?,"root":row.try_get::<String,_>("root")?,
-      "execution":row.try_get::<String,_>("execution")?,"source":row.try_get::<i64,_>("source")?,"actor":row.try_get::<String,_>("original_actor")?,
+      "execution":row.try_get::<String,_>("execution")?,"source":row.try_get::<Option<i64>,_>("source")?,"actor":row.try_get::<String,_>("original_actor")?,
       "original_work":row.try_get::<Option<String>,_>("original_work_id")?,"work":row.try_get::<Option<String>,_>("work_id")?,
       "profile_contract":row.try_get::<String,_>("profile_contract")?,"attempt":row.try_get::<Option<String>,_>("attempt")?,
       "state":row.try_get::<Option<String>,_>("state")?.unwrap_or_else(||"reserved".into()),
@@ -399,7 +410,7 @@ async fn inspect(conn: &mut SqliteConnection, logical: &str) -> Result<Value> {
 }
 
 async fn pair(conn: &mut SqliteConnection, logical: &str, ordinal: i64) -> Result<Value> {
-    let row=sqlx::query("SELECT i.execution,i.operation_id,i.call_id,i.paired_receipt,e.original_actor,o.action
+    let row=sqlx::query("SELECT i.execution,i.operation_id,i.call_id,i.paired_receipt,coalesce(e.original_actor,e.origin) AS original_actor,o.action
         FROM model_tool_intents i JOIN executions e ON e.id=i.execution JOIN operations o ON o.namespace=i.execution AND o.operation_id=i.operation_id
         WHERE i.logical=? AND i.ordinal=?").bind(logical).bind(ordinal).fetch_one(&mut *conn).await?;
     let exec: String = row.try_get("execution")?;
@@ -506,7 +517,7 @@ pub async fn apply(conn: &mut SqliteConnection, action: &Action) -> Result<Value
         Action::AttachWork { execution, work } => execution::attach(conn, execution, work).await,
         Action::Cancel { execution } => {
             sqlx::query_scalar::<_, String>(
-                "UPDATE executions SET cancelled=1 WHERE id=? RETURNING id",
+                "UPDATE executions SET cancelled=1,state=CASE WHEN state IN ('running','pending') THEN 'held' ELSE state END WHERE id=? RETURNING id",
             )
             .bind(execution)
             .fetch_one(conn)
@@ -519,6 +530,28 @@ pub async fn apply(conn: &mut SqliteConnection, action: &Action) -> Result<Value
             sqlx::query_scalar::<_,String>("UPDATE model_attempts SET state='unknown',ever_unknown=1 WHERE id=? AND state IN ('dispatched','unknown') RETURNING id")
                 .bind(attempt).fetch_one(conn).await?;
             Ok(json!({"attempt":attempt,"state":"unknown"}))
+        }
+        Action::Hold {
+            attempt,
+            body,
+            usage,
+            partial_bytes,
+            diagnostic,
+            unknown,
+            status,
+        } => {
+            if let Some(r) =
+                crate::privacy::source::late_attempt(conn, attempt, *status, usage).await?
+            {
+                return Ok(r);
+            }
+            let state = if *unknown { "unknown" } else { "response_held" };
+            let saved=sqlx::query("UPDATE model_attempts SET state=?,ever_unknown=ever_unknown OR ?,status_code=?,response=?,usage_json=?,diagnostic=?,partial_bytes=?,received_at=CURRENT_TIMESTAMP
+              WHERE id=? AND state IN ('dispatched','unknown')").bind(state).bind(unknown).bind(status).bind(body).bind(usage).bind(diagnostic).bind(partial_bytes).bind(attempt).execute(conn).await?;
+            if saved.rows_affected() != 1 {
+                return Err("attempt already terminal".into());
+            }
+            Ok(json!({"attempt":attempt,"state":state}))
         }
         Action::Rejected {
             attempt,

@@ -10,6 +10,8 @@ pub struct Config {
     pub format_version: u32,
     pub listen: std::net::SocketAddr,
     #[serde(default)]
+    pub main: Option<crate::runtime::main::Config>,
+    #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
 }
 
@@ -18,6 +20,9 @@ impl Config {
         let config: Self = toml::from_str(&fs::read_to_string(data.join("yuki.toml"))?)?;
         if config.format_version != 1 {
             return Err("unsupported configuration format".into());
+        }
+        if let Some(main) = &config.main {
+            main.validate()?;
         }
         Ok(config)
     }
@@ -44,7 +49,10 @@ pub fn init(data: &Path) -> Result<Owner> {
         &data.join("yuki.toml"),
         b"format_version = 1\nlisten = \"127.0.0.1:0\"\n",
     )?;
-    create_file(&data.join("SOUL.md"), b"")?;
+    create_file(
+        &data.join("SOUL.md"),
+        include_bytes!("../character/SOUL.md"),
+    )?;
     Ok(owner)
 }
 

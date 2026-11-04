@@ -56,6 +56,10 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Main(
+        Arc<crate::runtime::main::Config>,
+        Box<crate::runtime::main::Change>,
+    ),
     SeedPausedGroup(String, String, String),
     RecoverGroup(Box<crate::ingress::group_recovery::Recovery>),
     Privacy(crate::privacy::Action),
@@ -117,6 +121,9 @@ impl Driver for SqliteDriver {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
+            }
+            Mutation::Main(cfg, change) => {
+                return crate::runtime::main::apply(self.connection(), cfg, change).await;
             }
             Mutation::RecoverGroup(request) => {
                 return crate::ingress::group_recovery::apply(self.connection(), request).await;
@@ -240,6 +247,7 @@ enum Command {
 
 #[derive(Clone)]
 pub struct Store {
+    pub main: Option<Arc<crate::runtime::main::Config>>,
     commands: mpsc::Sender<Command>,
     readers: SqlitePool,
     signals: Arc<Signals>,
@@ -317,6 +325,7 @@ impl Store {
             let _ = driver.close().await;
         });
         Self {
+            main: None,
             commands,
             readers,
             signals,
