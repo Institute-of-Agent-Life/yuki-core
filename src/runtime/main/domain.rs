@@ -134,13 +134,18 @@ pub async fn inspect(conn: &mut SqliteConnection, id: &str) -> Result<Value> {
             .fetch_all(&mut *conn)
             .await?;
     let receipts:Vec<(String,String,Option<String>)>=sqlx::query_as("SELECT a.id,a.state,a.diagnostic FROM model_attempts a JOIN model_requests r ON r.id=a.logical
-      JOIN activations v ON v.id=r.activation WHERE v.execution=? ORDER BY r.ordinal,a.ordinal").bind(id).fetch_all(conn).await?;
+      JOIN activations v ON v.id=r.activation WHERE v.execution=? ORDER BY r.ordinal,a.ordinal").bind(id).fetch_all(&mut *conn).await?;
+    let revision: Option<String> =
+        sqlx::query_scalar("SELECT revision FROM execution_tool_views WHERE execution=?")
+            .bind(id)
+            .fetch_optional(&mut *conn)
+            .await?;
     Ok(
         json!({"execution":id,"source":r.try_get::<Option<i64>,_>("source")?,"origin":actor,"kind":r.try_get::<String,_>("kind")?,
       "conversation":r.try_get::<String,_>("conversation")?,"window":r.try_get::<i64,_>("window")?,"state":r.try_get::<String,_>("state")?,
       "cancelled":r.try_get::<bool,_>("cancelled")?,"root":r.try_get::<String,_>("root")?,"attempts":receipts,"activations":activations,"inputs":inputs,
       "result":r.try_get::<Option<String>,_>("result")?.as_deref().map(serde_json::from_str::<Value>).transpose()?,
-      "diagnostic":r.try_get::<Option<String>,_>("diagnostic")?,"tool_contract":"main-chat-v1"}),
+      "diagnostic":r.try_get::<Option<String>,_>("diagnostic")?,"tool_contract":"main-chat-v1","tool_revision":revision}),
     )
 }
 
