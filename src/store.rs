@@ -61,6 +61,7 @@ pub enum Mutation {
     Work(Box<crate::work::Call>),
     WorkSignal(crate::work::signal::Action),
     Vector(Box<crate::memory::embedding::Change>),
+    Media(Box<crate::media::Change>),
     Extraction(Box<crate::memory::extract::Change>),
     Memory(Box<crate::memory::Change>),
     History(Box<crate::history::Change>),
@@ -143,6 +144,7 @@ impl Driver for SqliteDriver {
             Mutation::Memory(change) => {
                 return crate::memory::apply(self.connection(), change).await;
             }
+            Mutation::Media(change) => return crate::media::apply(self.connection(), change).await,
             Mutation::WorkSignal(action) => {
                 return crate::work::signal::apply(self.connection(), action).await;
             }
@@ -279,6 +281,7 @@ enum Command {
 
 #[derive(Clone)]
 pub struct Store {
+    pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
     pub vectors: Option<Arc<crate::memory::embedding::Engine>>,
     pub main: Option<Arc<crate::runtime::main::Config>>,
@@ -364,6 +367,7 @@ impl Store {
         });
         Self {
             vectors: None,
+            media: None,
             main: None,
             host: None,
             commands,

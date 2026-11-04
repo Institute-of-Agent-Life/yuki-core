@@ -92,7 +92,7 @@ pub async fn prepare(
                 continue_turn |=
                     cfg.protocol.is_messages() && original["stop_reason"] == "pause_turn";
                 if !parsed.intents.as_array().unwrap().is_empty() {
-                    let tools=sqlx::query("SELECT call_id,paired_receipt FROM model_tool_intents WHERE logical=? ORDER BY ordinal")
+                    let tools=sqlx::query("SELECT call_id,operation_id,paired_receipt FROM model_tool_intents WHERE logical=? ORDER BY ordinal")
                         .bind(&logical).fetch_all(&mut *conn).await?;
                     if tools.iter().any(|t| {
                         t.try_get::<Option<String>, _>("paired_receipt")
@@ -102,12 +102,22 @@ pub async fn prepare(
                     }) {
                         return Ok(json!({"pair":logical,"actor":actor}));
                     }
-                    for t in tools {
+                    for t in &tools {
                         cfg.protocol.output(
                             &mut body,
                             t.try_get("call_id")?,
                             t.try_get("paired_receipt")?,
                         )?;
+                    }
+                    for t in tools {
+                        crate::media::append_image(
+                            conn,
+                            cfg,
+                            exec,
+                            t.try_get("operation_id")?,
+                            &mut body,
+                        )
+                        .await?;
                     }
                     if crate::work::wait::settle(conn, exec, &logical).await? {
                         return Ok(Value::Null);

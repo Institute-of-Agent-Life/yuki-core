@@ -5,6 +5,7 @@ mod history;
 mod host;
 mod identity;
 mod ingress;
+mod media;
 mod memory;
 mod model;
 mod operator;
@@ -114,6 +115,8 @@ async fn execute(args: Args) -> Result<()> {
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let mut store = store::Store::open(&owner.data).await?;
             store.main = config.main.map(Arc::new);
+            store.media = Some(media::Runtime::open(&owner.data, config.media)?);
+            media::recover(&store).await?;
             let vectors = memory::embedding::start(&mut store, config.memory).await?;
             let extraction = memory::extract::start(store.clone(), config.extraction).await?;
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
@@ -144,6 +147,7 @@ async fn execute(args: Args) -> Result<()> {
                 .route("/healthz", get(health))
                 .with_state(store.clone())
                 .merge(qq.router());
+            let media = media::start(store.clone());
             let memory = memory::start(store.clone(), qq.clone());
             let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
             let history = history::start(store.clone());
@@ -162,6 +166,8 @@ async fn execute(args: Args) -> Result<()> {
                 worker.abort();
                 let _ = worker.await;
             }
+            media.abort();
+            let _ = media.await;
             if let Some(worker) = extraction {
                 worker.abort();
                 let _ = worker.await;

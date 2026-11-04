@@ -19,6 +19,8 @@ pub struct Config {
     pub extraction: Option<crate::memory::extract::Config>,
     #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
+    #[serde(default)]
+    pub media: crate::media::Config,
 }
 
 impl Config {

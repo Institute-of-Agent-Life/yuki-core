@@ -39,6 +39,8 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub native_web_search: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub vision_input: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result_page_budget: Option<usize>,

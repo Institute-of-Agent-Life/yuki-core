@@ -59,6 +59,9 @@ pub enum Segment {
         kind: String,
         reference: String,
     },
+    Opaque {
+        kind: String,
+    },
     Face {
         id: String,
         label: Option<String>,
@@ -130,6 +133,7 @@ impl Frame {
                 Segment::Mention {
                     account, native, ..
                 } => account.is_some() || native.is_some(),
+                Segment::Opaque { .. } => false,
                 Segment::Media { reference, .. } => !reference.is_empty(),
                 Segment::Face { id, .. } => !id.is_empty(),
                 Segment::Reply { native_id } => !native_id.is_empty(),

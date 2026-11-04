@@ -105,6 +105,9 @@ impl Dispatch {
             return Ok(());
         }
         match t.target.as_str() {
+            "inspect_conversation_attachment" | "workspace_inspect" => {
+                crate::media::perform(&store, &cfg, &hub, &exec, &actor, &id).await?;
+            }
             "read_memory" | "memory_change" => {
                 crate::memory::tools::perform(&store, &exec, &actor, &id).await?
             }

@@ -125,6 +125,10 @@
       "rust": true,
       "capabilities": ["persistent-any-all-waits","source-bound-private-answers","coalesced-progress"]
     },
+    "CORE-025": {
+      "case":"tests/cases/CORE-025.py","artifact":"media-versions.json","timeout_seconds":360,"rust":true,
+      "capabilities":["source-bound-media-slots","descriptor-rooted-input","immutable-transfer-version"]
+    },
     "CORE-023": {
       "case":"tests/cases/CORE-023.py","artifact":"compact-exec-next-wire.json","timeout_seconds":420,"rust":true,
       "capabilities":["original-observation-round","recoverable-private-checkpoints","portable-native-receipts"]

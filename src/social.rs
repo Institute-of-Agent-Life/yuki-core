@@ -4,7 +4,6 @@ pub mod split;
 use crate::{
     Result,
     gateway::qq::Hub,
-    runtime::effects,
     store::{Mutation, Store},
 };
 use clap::Subcommand;
@@ -61,7 +60,6 @@ pub enum Change {
     Recall(String, String, String, i64, u64),
     GatewayRecall(String, u64, String, Value),
     RecallReply(String, String, String),
-    BindMedia(Action),
     SelectImages(String, String),
 }
 
@@ -120,41 +118,6 @@ pub async fn apply(conn: &mut SqliteConnection, c: &Change) -> Result<Value> {
               .bind(digest).bind(owner).fetch_one(conn).await?;
             Ok(json!({"selected_owner":owner,"digest":digest}))
         }
-        Change::BindMedia(Action::BindMedia {
-            exec,
-            actor,
-            id,
-            kind,
-            filename,
-            peer_reference,
-        }) => {
-            effects::authorize(conn, exec, actor, true).await?;
-            if id.is_empty()
-                || filename.is_empty()
-                || filename.contains(['/', '\\', '\0'])
-                || !matches!(kind.as_str(), "file" | "image")
-                || peer_reference.is_empty()
-            {
-                return Err("invalid authorized media reference".into());
-            }
-            sqlx::query(
-                "INSERT INTO social_media_bindings VALUES(?,?,?,?,?) ON CONFLICT(id) DO NOTHING",
-            )
-            .bind(id)
-            .bind(exec)
-            .bind(kind)
-            .bind(filename)
-            .bind(peer_reference)
-            .execute(&mut *conn)
-            .await?;
-            let equal:bool=sqlx::query_scalar("SELECT execution=? AND kind=? AND filename=? AND peer_reference=? FROM social_media_bindings WHERE id=?")
-                .bind(exec).bind(kind).bind(filename).bind(peer_reference).bind(id).fetch_one(conn).await?;
-            if !equal {
-                return Err("media ID conflicts with original binding".into());
-            }
-            Ok(json!({"artifact":id,"kind":kind}))
-        }
-        Change::BindMedia(_) => Err("invalid media mutation".into()),
     }
 }
 
@@ -331,7 +294,28 @@ pub async fn invoke(store: &Store, hub: &Hub, action: Action) -> Result<Value> {
         Action::SelectImages { owner, digest } => {
             write(store, Change::SelectImages(owner, digest)).await
         }
-        bind @ Action::BindMedia { .. } => write(store, Change::BindMedia(bind)).await,
+        Action::BindMedia {
+            exec,
+            actor,
+            id,
+            kind,
+            filename,
+            peer_reference,
+        } => {
+            crate::media::snapshot(
+                store,
+                crate::media::FileInput {
+                    exec: &exec,
+                    actor: &actor,
+                    operation: &id,
+                    relative: &peer_reference,
+                    filename: &filename,
+                    kind: &kind,
+                    named: Some(&id),
+                },
+            )
+            .await
+        }
     }
 }
 async fn lookup(

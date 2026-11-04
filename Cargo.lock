@@ -2969,6 +2969,7 @@ name = "yuki-core"
 version = "0.1.0-dev"
 dependencies = [
  "axum",
+ "base64 0.22.1",
  "cc",
  "chrono",
  "chrono-tz",
@@ -2977,6 +2978,7 @@ dependencies = [
  "jsonschema",
  "regex",
  "reqwest",
+ "rustix",
  "serde",
  "serde_json",
  "sha2",
