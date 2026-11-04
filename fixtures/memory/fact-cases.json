@@ -1,0 +1,5 @@
+{
+  "normal": ["A's original private message about B binds author A, subject B and an exact quote", "independent facts with the same key coexist", "a direct common group permits a summary while its private evidence remains unavailable", "an enabled legacy person without an account remains the same owner after a merge"],
+  "faults": ["replay R1 after R2 retrieves R1 without overwriting R2", "same evidence count with substituted identity or original version invalidates correction proof", "subject impersonation, indirect common groups and a self-reported admin grant cannot open private evidence", "erasure between read and write rejects stale proof and scrubs original text"],
+  "reference": "R16, K07 and K11 at v4 commit 329ca7c487414d2f54ddd98ff4727446ed2446cd"
+}

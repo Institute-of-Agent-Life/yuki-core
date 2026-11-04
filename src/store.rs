@@ -59,6 +59,7 @@ pub enum Mutation {
     Host(Box<crate::host::Change>),
     Tool(Box<crate::tools::Change>),
     Work(Box<crate::work::Call>),
+    Memory(Box<crate::memory::Change>),
     History(Box<crate::history::Change>),
     Social(Box<crate::social::Change>),
     Main(
@@ -129,6 +130,9 @@ impl Driver for SqliteDriver {
             }
             Mutation::Host(change) => {
                 return crate::host::domain::apply(self.connection(), change).await;
+            }
+            Mutation::Memory(change) => {
+                return crate::memory::apply(self.connection(), change).await;
             }
             Mutation::Work(call) => return crate::work::apply(self.connection(), call).await,
             Mutation::Tool(change) => return crate::tools::apply(self.connection(), change).await,

@@ -79,6 +79,8 @@ jobs:
         run: python ci/check.py CORE-032 --out artifacts/CORE-032/ci
       - name: Recover original Work settlement and private child messages
         run: python ci/check.py CORE-016 --out artifacts/CORE-016/ci
+      - name: Verify fact visibility independently of private evidence and correction receipts
+        run: python ci/check.py CORE-026 --out artifacts/CORE-026/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
