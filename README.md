@@ -3,17 +3,40 @@
 Rust core rewrite, implemented card by card against the fixed Yuki baseline
 `329ca7c487414d2f54ddd98ff4727446ed2446cd`.
 
-The first executable component is the offline replay harness. Python 3.12 and
-the standard library are sufficient:
+The Rust executable provides data-directory ownership, additive SQLite migration,
+live/ready/health endpoints, and private local operator commands. Rust 1.96.0 is
+pinned in `rust-toolchain.toml`; SQLite has foreign keys, WAL and FTS5 enabled.
+
+```text
+cargo fetch --locked
+cargo build --locked --offline
+target/debug/yuki-core --data ./data init
+target/debug/yuki-core --data ./data run
+```
+
+`init` creates a config and an editable, initially empty `SOUL.md`. Existing files
+are preserved. `run`, `migrate` and `doctor` read the existing configuration.
+The operator uses a mode-0600 Unix socket or a Windows named pipe whose protected
+DACL permits the current OS user and SYSTEM. For example:
+
+```text
+target/debug/yuki-core --data ./data operator database-info
+target/debug/yuki-core --data ./data operator set-label "local instance"
+target/debug/yuki-core --data ./data operator shutdown
+```
+
+The Python 3.12 verifier drives the actual Rust binary and records evidence:
 
 ```text
 python ci/check.py CORE-001 --out artifacts/CORE-001/01
+python ci/check.py CORE-005 --out artifacts/CORE-005/01
 ```
 
 From the development Mac, run the same source on the authorized Windows SSH host:
 
 ```text
 python3 ci/windows.py CORE-001 --host hjw --out artifacts/CORE-001/windows-01
+python3 ci/windows.py CORE-005 --host hjw --out artifacts/CORE-005/windows-01
 ```
 
 Each attempt writes a manifest and named evidence. Output directories are never
@@ -22,4 +45,7 @@ then retrieves the original evidence. See [evidence](docs/evidence.md),
 [implementation progress](docs/implementation-progress.md), and the
 [taskbook](docs/taskbook/v3.2/Yuki-Rust重寫總任務書-v3.2.md).
 
-No runtime, SDK, stable protocol, or release is claimed by the harness bootstrap.
+The verifier builds with the lockfile and offline cache, runs Rust cleanup-boundary
+tests, then checks the service through real HTTP, local IPC and SQLite. CI covers
+Windows, macOS and Linux. Current completion and candidate status are recorded in
+the progress document.

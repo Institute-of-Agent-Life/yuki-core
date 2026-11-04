@@ -32,3 +32,15 @@ snapshot is verified against its file hashes before tests execute.
 The original taskbook ZIP remains unchanged. The working taskbook carries the
 approved K05 correction to CORE-011 step 2; its audit files remain the original
 document-review evidence and are not new product-test results.
+
+CORE-005 requires a prepared Cargo cache. The verifier runs formatting, Clippy,
+the named Rust cleanup tests, and builds the actual executable with `--locked
+--offline`. Its Python scenario exercises separate service/CLI processes, real
+SQLite and loopback HTTP. `sqlite-build.json` records the runtime SQLite version,
+compile options, foreign-key and WAL settings. Windows additionally inspects the
+actual named-pipe DACL; the user's SID is omitted from the resulting artifact.
+
+On filesystems that create AppleDouble files, the migration build script ignores
+those metadata entries and embeds the numbered SQL files. `ci/docker-build.py`
+creates a regular-file tar context, avoiding Docker xattr errors without changing
+host metadata. Example: `python ci/docker-build.py --out artifacts/CORE-005/image-01`.

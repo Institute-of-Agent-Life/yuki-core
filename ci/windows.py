@@ -47,7 +47,9 @@ from pathlib import Path
 import hashlib, json, subprocess, sys, zipfile
 archive=Path.home()/{incoming!r}
 assert hashlib.sha256(archive.read_bytes()).hexdigest()=={digest(archive.read_bytes())!r}
-root=Path.home()/'yuki-core-validation'/{run_id!r}
+profile_file=Path.home()/'yuki-core-tooling/environment.json'
+profile=json.loads(profile_file.read_text(encoding='utf-8')) if profile_file.is_file() else {{}}
+root=Path(profile.get('workspace',str(Path.home()/'yuki-core-validation')))/{run_id!r}
 root.mkdir(parents=True,exist_ok=False)
 with zipfile.ZipFile(archive) as z:
     for member in z.infolist():
@@ -58,7 +60,15 @@ from source import source_identity
 source_identity(root)
 command=[sys.executable,'ci/check.py',{args.card!r},'--out','artifacts/run']
 if {args.fault!r}: command.extend(['--fault',{args.fault!r}])
-r=subprocess.run(command,cwd=root)
+import os
+env=dict(os.environ)
+if profile.get('cargo_home'):
+    env.update(CARGO_HOME=profile['cargo_home'],RUSTUP_HOME=profile['rustup_home'])
+    env['PATH']=str(Path(profile['cargo_home'])/'bin')+os.pathsep+env['PATH']
+if profile.get('mingw_bin'):
+    env['YUKI_MINGW_BIN']=profile['mingw_bin']
+    env['PATH']=profile['mingw_bin']+os.pathsep+env['PATH']
+r=subprocess.run(command,cwd=root,env=env)
 with zipfile.ZipFile(Path.home()/{(run_id+'-artifacts.zip')!r},'w',zipfile.ZIP_DEFLATED) as z:
     for file in sorted((root/'artifacts/run').rglob('*')):
         if file.is_file(): z.write(file,file.relative_to(root/'artifacts/run'))

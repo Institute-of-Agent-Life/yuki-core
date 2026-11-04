@@ -10,6 +10,13 @@
       "artifact": "harness-selftest.json",
       "timeout_seconds": 60,
       "capabilities": ["offline-python-replay", "loopback-http-recorder"]
+    },
+    "CORE-005": {
+      "case": "tests/cases/CORE-005.py",
+      "artifact": "owner-probes.json",
+      "timeout_seconds": 90,
+      "rust": true,
+      "capabilities": ["rust-process", "single-sqlite-writer", "private-local-operator", "health-surfaces"]
     }
   }
 }

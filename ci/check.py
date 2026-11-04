@@ -18,7 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def clean_environment():
     allowed = {"PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT", "TEMP", "TMP",
-               "HOME", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "LANG", "LC_ALL"}
+               "HOME", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "LANG", "LC_ALL",
+               "CARGO_HOME", "RUSTUP_HOME", "CC", "AR", "INCLUDE", "LIB", "LIBPATH", "YUKI_MINGW_BIN"}
     result = {key: value for key, value in os.environ.items() if key.upper() in allowed}
     result.update(PYTHONUTF8="1", PYTHONDONTWRITEBYTECODE="1", CARGO_NET_OFFLINE="true",
                   UV_OFFLINE="1", NO_PROXY="127.0.0.1,::1,localhost")
@@ -58,6 +59,43 @@ def main():
             raise RuntimeError("locked Python " + lock["python"] + " required")
         spec = lock["cards"][args.card]
         manifest["capabilities"] = spec["capabilities"]
+        if spec.get("rust"):
+            environment = clean_environment()
+            if os.name == "nt" and environment.get("YUKI_MINGW_BIN"):
+                bin_dir = Path(environment["YUKI_MINGW_BIN"])
+                environment.update(CC=str(bin_dir / "gcc.exe"), AR=str(bin_dir / "ar.exe"),
+                                   CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=str(bin_dir / "gcc.exe"),
+                                   CARGO_ENCODED_RUSTFLAGS="\x1f".join(["-C", "link-self-contained=no", "-C", "dlltool=" + str(bin_dir / "dlltool.exe")]))
+            rustc = subprocess.check_output(["rustc", "--version"], env=environment, text=True).strip()
+            if not rustc.startswith("rustc 1.96.0 "):
+                raise RuntimeError("locked Rust 1.96.0 required: " + rustc)
+            manifest["tools"]["rustc"] = rustc
+            manifest["tools"]["cargo"] = subprocess.check_output(
+                ["cargo", "--version"], env=environment, text=True).strip()
+            manifest["cargo_lock_sha256"] = digest((ROOT / "Cargo.lock").read_bytes())
+            manifest["stages"] = []
+            stages = [
+                ("rust-format", ["cargo", "fmt", "--all", "--", "--check"]),
+                ("rust-clippy", ["cargo", "clippy", "--locked", "--offline", "--all-targets", "--", "-D", "warnings"]),
+                ("rust-writer-tests", ["cargo", "test", "--locked", "--offline", "--bin", "yuki-core", "--", "--nocapture"]),
+                ("rust-build", ["cargo", "build", "--locked", "--offline", "--bin", "yuki-core"]),
+            ]
+            for name, stage in stages:
+                process = subprocess.run(stage, cwd=ROOT, env=environment,
+                                         capture_output=True, timeout=600)
+                (out / (name + ".txt")).write_bytes(process.stdout + process.stderr)
+                manifest["stages"].append({"name": name, "command": stage, "exit_code": process.returncode})
+                if process.returncode:
+                    raise RuntimeError(name + " failed; see " + name + ".txt")
+                if name == "rust-writer-tests":
+                    required = ["r01_cancel_rollback_failure_keeps_writer_until_physical_close",
+                                "r01_unknown_close_stops_new_writers_while_reader_works",
+                                "root_commit_hints_exclude_savepoint_release_and_rollback"]
+                    output = process.stdout.decode("utf-8", errors="replace")
+                    manifest["rust_cases"] = {case: "test store::tests::" + case + " ... ok" in output
+                                              for case in required}
+                    if not all(manifest["rust_cases"].values()):
+                        raise RuntimeError("required Rust cleanup boundary test did not pass")
         try:
             process = subprocess.run(command, cwd=ROOT, env=clean_environment(),
                                      capture_output=True, timeout=spec["timeout_seconds"])
@@ -79,6 +117,14 @@ def main():
             raise RuntimeError("empty case")
         if not (out / spec["artifact"]).is_file():
             raise RuntimeError("missing named artifact: " + spec["artifact"])
+        if source_identity(ROOT)["tree_sha256"] != manifest["source"]["tree_sha256"]:
+            raise RuntimeError("source changed during verification")
+        if spec.get("rust"):
+            native = json.loads((out / "sqlite-build.json").read_text(encoding="utf-8"))
+            manifest["tools"]["rust_sqlite"] = native["sqlite_version"]
+            manifest["sqlite_compile_options_sha256"] = digest(json.dumps(sorted(native["compile_options"])).encode())
+            manifest["schema_version"] = native["schema_version"]
+            manifest["sdk_version"] = None
         manifest.update(status="verified", exit_code=0)
     except Exception as error:
         manifest.update(status="failed", exit_code=1, failure=str(error))
