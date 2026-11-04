@@ -3,12 +3,14 @@
 import json
 import os
 import socket
+from unittest.mock import patch
 
 from tests.harness import LoopbackRecorder
 
 
 def exchange(ctx, events):
-    with LoopbackRecorder(ctx.clock_origin) as recorder:
+    with patch("socket.getfqdn", side_effect=AssertionError("recorder must not resolve DNS")), \
+            LoopbackRecorder(ctx.clock_origin) as recorder:
         received = [recorder.post(event) for event in events]
         ctx.equal("HTTP responses are complete acknowledgements", received,
                   [{"accepted": event["event_id"]} for event in events])

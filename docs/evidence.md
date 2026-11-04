@@ -17,6 +17,8 @@ both responses and the independent fixture order. Swapping the two events must
 fail `event order`. Returning without assertions must fail `empty case`. A second
 normal replay must produce identical bodies and virtual timestamps. External IP
 and DNS requests must be refused by the Python socket boundary.
+The loopback HTTP listener uses its literal bound address without reverse DNS;
+the scenario injects a failing resolver to catch accidental hostname lookups.
 
 This boundary controls Python networking, not arbitrary native subprocesses.
 Later cards must identify the network controls used for their native processes.

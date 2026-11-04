@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from socketserver import TCPServer
 
 
 class CaseFailure(AssertionError):
@@ -89,7 +90,13 @@ class LoopbackRecorder:
             def log_message(self, *_args):
                 pass
 
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        class LiteralLoopbackServer(ThreadingHTTPServer):
+            def server_bind(self):
+                # HTTPServer otherwise performs an unnecessary reverse-DNS lookup.
+                TCPServer.server_bind(self)
+                self.server_name, self.server_port = self.server_address
+
+        self.server = LiteralLoopbackServer(("127.0.0.1", 0), Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         return self
