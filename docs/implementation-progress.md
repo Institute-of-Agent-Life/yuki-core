@@ -117,3 +117,13 @@ CORE-033 已補上 Client9 原檔目錄、依 `artifact_id + version` 下載及 
 | Linux arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/linux-arm64-02/candidate/yuki-personal-preview-718cba6b1cf2-linux-arm64.zip` | `4427bd183ae5ea95566e65cb7dc7bb1df282eaf140f94e81c526399e932968bd` |
 
 CORE-038 在 `codex/core-038-media` 完成有版本的 byte bridge 與原 Social 交接。Mac `artifacts/CORE-038/mac-09/`、HJW `windows-01/` 各 114 項；兩台實際 SDK 程序驗跨插件拒讀、分塊、source 清除途中 ASR 回覆、原操作冷恢復；兩個 Profile 驗兩張本插件圖片加外插件 handle，成功效果與呈現各自留回條。原 QQ 及受控外部 gateway 各自交原版本；篡改 plan 被拒。18 張相鄰卡在各卡 `media-broker-regression-01/` 通過。SDK Rust 1.0.0-alpha.4、Python 1.0.0a4，候選 `media.process/open/publish` revision 1；正式凍結待 EXT-021、030、031、032 真實消費。協議說明在 `protocol/plugin/media/README.md`。乾淨來源的候選包另按提交名封裝。
+
+CORE-038 三平台候選已由乾淨來源 `e25c2b8acce34858d5fd67ac408186e49a1da160` 建立。三端各通過 114 項斷言，解包啟動和每個 ZIP member 雜湊均已核對。共用來源樹 `27083f6d5273a689e8aa147edf551b97a70c4a5591b1d74db8c30e5f13bbd080`，握手 schema 1、Host 2、media 1、Rust SDK `1.0.0-alpha.4`、Python SDK `1.0.0a4`。實含 `media.process`、`media.open`、`media.publish`，使用受控 SDK 子程序驗證。下表均為未發布的開發候選，真實 EXT-021、030、031、032 消費證據待回傳。
+
+交接根目錄 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/handoff-e25c2b8acce3/`。每個 ZIP 旁附 `candidate.json`、`SHA256SUMS`，根目錄附 `handoff-verification.json`。
+
+| 平台 | 根目錄內 ZIP 路徑 | SHA-256 |
+|---|---|---|
+| Windows x86_64 | `windows-validation/handoff/yuki-media-preview-e25c2b8acce3-windows-x86_64.zip` | `f7bff236ca0c518016a4bf40dafaddb29b9d86d6fa92722fdce179620d296310` |
+| macOS ARM64 | `macos-arm64/yuki-media-preview-e25c2b8acce3-darwin-arm64.zip` | `8379af387c4080f3ce14bbeba898790cba9f06a0f03dff926b2ee30f0c01ee05` |
+| Linux ARM64 | `linux-arm64/candidate/yuki-media-preview-e25c2b8acce3-linux-arm64.zip` | `d93dbe77128699e2f02948dc14929f264565b0f36e59641994db0fd87ceb4281` |
