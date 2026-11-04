@@ -77,6 +77,13 @@
       "rust": true,
       "capabilities": ["immutable-effect-results", "exclusive-dispatch", "original-operation-recovery"]
     },
+    "CORE-032": {
+      "case": "tests/cases/CORE-032.py",
+      "artifact": "host-delegation.json",
+      "timeout_seconds": 300,
+      "rust": true,
+      "capabilities": ["scoped-bidirectional-host","durable-gateway-parts","offline-command-routing","instance-bound-metadata","original-forget-ack"]
+    },
     "CORE-031": {
       "case": "tests/cases/CORE-031.py",
       "artifact": "sdk-crosswire.json",
@@ -89,6 +96,20 @@
       "timeout_seconds": 140,
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
+    },
+    "CORE-026": {
+      "case": "tests/cases/CORE-026.py",
+      "artifact": "fact-evidence-acl.json",
+      "timeout_seconds": 210,
+      "rust": true,
+      "capabilities": ["subject-scoped-structured-facts","independent-original-evidence","conditional-fact-corrections"]
+    },
+    "CORE-016": {
+      "case": "tests/cases/CORE-016.py",
+      "artifact": "work-tree.json",
+      "timeout_seconds": 240,
+      "rust": true,
+      "capabilities": ["durable-work-tree","private-work-inbox","ordered-work-settlement"]
     },
     "CORE-015": {
       "case": "tests/cases/CORE-015.py",

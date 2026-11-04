@@ -137,7 +137,7 @@ def main():
     finally:
         manifest["duration_seconds"] = round(time.monotonic() - started, 6)
         for path in sorted(out.rglob("*")):
-            if path.is_file() and path != out / "manifest.json":
+            if path.is_file() and path != out / "manifest.json" and not any(part.startswith("._") for part in path.relative_to(out).parts):
                 manifest["artifacts"][path.relative_to(out).as_posix()] = digest(path.read_bytes())
         (out / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False)
                                            + "\n", encoding="utf-8")

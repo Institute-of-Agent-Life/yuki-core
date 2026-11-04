@@ -180,6 +180,29 @@ pub enum Action {
     },
 }
 
+pub(crate) async fn delegate(
+    conn: &mut SqliteConnection,
+    cfg: &Config,
+    registration: Action,
+    key: &str,
+    goal: &str,
+) -> Result<String> {
+    let registered = domain::operator(conn, cfg, &registration).await?;
+    let origin = registered["origin"]
+        .as_str()
+        .ok_or("missing delegated origin")?;
+    let cmd = Action::Trigger {
+        id: origin.into(),
+        key: key.into(),
+        body: serde_json::json!({"text":goal}).to_string(),
+    };
+    let result = domain::operator(conn, cfg, &cmd).await?;
+    Ok(result["execution"]
+        .as_str()
+        .ok_or("missing delegated execution")?
+        .into())
+}
+
 pub enum Change {
     Operator(Action),
     Human(i64, i64),
@@ -299,7 +322,7 @@ impl Runner {
             JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active'
             JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
             WHERE p.enabled AND r.enabled AND d.closed_at IS NULL AND NOT EXISTS(SELECT 1 FROM main_inputs WHERE event=s.event_id)
-            AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
+            AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
             AND NOT EXISTS(SELECT 1 FROM executions x WHERE x.source=s.event_id AND (x.state!='pending' OR x.cancelled))
             AND NOT EXISTS(SELECT 1 FROM main_admission_delays WHERE event=s.event_id AND retry_after>?) ORDER BY s.event_id LIMIT 64").bind(timestamp).fetch_all(self.store.readers()).await?;
         for event in events {
@@ -325,13 +348,13 @@ impl Runner {
                 let _ = job.cancel.send(true);
             }
         }
-        let rows=sqlx::query("SELECT x.id,t.conversation FROM executions x JOIN main_turns t ON t.execution=x.id WHERE x.state IN ('pending','running')
-          AND NOT x.cancelled AND t.ready_after<=? AND NOT EXISTS(SELECT 1 FROM main_turns prior JOIN executions p ON p.id=prior.execution
-          WHERE prior.conversation=t.conversation AND prior.rowid<t.rowid AND p.state IN ('pending','running') AND NOT p.cancelled) ORDER BY t.rowid LIMIT 32")
+        let rows=sqlx::query("SELECT x.id,l.lane FROM executions x JOIN main_turns t ON t.execution=x.id JOIN main_work_lanes l ON l.execution=x.id WHERE x.state IN ('pending','running')
+          AND NOT x.cancelled AND t.ready_after<=? AND NOT EXISTS(SELECT 1 FROM main_turns prior JOIN executions p ON p.id=prior.execution JOIN main_work_lanes pl ON pl.execution=p.id
+          WHERE pl.lane=l.lane AND prior.rowid<t.rowid AND p.state IN ('pending','running') AND NOT p.cancelled) ORDER BY t.rowid LIMIT 32")
           .bind(timestamp).fetch_all(self.store.readers()).await?;
         for row in rows {
             let exec: String = row.try_get("id")?;
-            let entry: String = row.try_get("conversation")?;
+            let entry: String = row.try_get("lane")?;
             if self.active.len() >= 32 {
                 break;
             }
@@ -345,6 +368,9 @@ impl Runner {
                 self.client.clone(),
                 self.data.clone(),
             );
+            let cfg = if let Some(profile)=sqlx::query_scalar::<_,String>("SELECT w.profile FROM work_runs r JOIN work_nodes w ON w.id=r.work WHERE r.execution=?").bind(&exec).fetch_optional(self.store.readers()).await?{
+                Arc::new(serde_json::from_str(&profile)?)
+            }else{cfg};
             let id = exec.clone();
             let hub = self.hub.clone();
             let task = self.tasks.spawn(async move {

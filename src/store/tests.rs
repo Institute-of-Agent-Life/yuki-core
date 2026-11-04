@@ -226,7 +226,7 @@ async fn root_commit_hints_exclude_savepoint_release_and_rollback() {
     store.shutdown().await.unwrap();
 }
 
-pub(super) async fn commit_barrier(phase: &str) {
+pub(crate) async fn commit_barrier(phase: &str) {
     if std::env::var("YUKI_WRITER_TEST_PHASE").as_deref() == Ok(phase) {
         std::fs::write(std::env::var_os("YUKI_WRITER_TEST_MARKER").unwrap(), phase).unwrap();
         tokio::time::sleep(Duration::from_secs(30)).await;
@@ -402,4 +402,121 @@ async fn tool_output_rechecks_revocation_after_decode_and_short_state_expires() 
         ""
     );
     readers.close().await;
+}
+
+#[tokio::test]
+async fn queued_host_part_survives_process_exit_as_proven_unsent() {
+    use crate::host::{Change, Install, calls, domain};
+    let (_temp, mut driver, readers) = fixture().await;
+    let conn = driver.connection();
+    seed_history_event(conn).await;
+    sqlx::raw_sql("INSERT INTO accepted_sources VALUES(1);
+       INSERT INTO executions(id,source,original_actor,state) VALUES('run',1,'00000000-0000-4000-8000-000000000088','running')").execute(&mut *conn).await.unwrap();
+    let install = Install {
+        id: "fixture".into(),
+        namespace: "history".into(),
+        program: std::env::current_exe().unwrap(),
+        args: vec![],
+        env: vec![],
+        platform: Some("qq".into()),
+        bot_stage: Some("self".into()),
+        grants: ["gateway.send".into()].into(),
+        commands: Default::default(),
+        tools: vec![],
+    };
+    let r = calls::Request {
+        plugin: install.id.clone(),
+        revision: install.revision().unwrap(),
+        execution: "run".into(),
+        operation: "op".into(),
+        method: "gateway.plan_send".into(),
+        name: "plan".into(),
+        parent: None,
+        ordinal: None,
+        args: json!({}),
+    };
+    domain::apply(conn, &Change::Configure(vec![install]))
+        .await
+        .unwrap();
+    let g = domain::apply(conn, &Change::Start("fixture".into()))
+        .await
+        .unwrap()
+        .as_str()
+        .unwrap()
+        .to_owned();
+    domain::apply(conn, &Change::Online("fixture".into(), g.clone()))
+        .await
+        .unwrap();
+    let original = calls::apply(conn, &calls::Change::Open(r.clone()))
+        .await
+        .unwrap();
+    domain::apply(conn, &Change::Close("fixture".into(), g))
+        .await
+        .unwrap();
+    let (host,effect):(String,String)=sqlx::query_as("SELECT c.state,o.state FROM host_calls c JOIN operations o ON c.execution=o.namespace AND c.operation=o.operation_id").fetch_one(&mut *conn).await.unwrap();
+    assert_eq!(
+        (host.as_str(), effect.as_str()),
+        ("not_dispatched", "intent")
+    );
+    let new_gen = domain::apply(conn, &Change::Start("fixture".into()))
+        .await
+        .unwrap()
+        .as_str()
+        .unwrap()
+        .to_owned();
+    domain::apply(conn, &Change::Online("fixture".into(), new_gen))
+        .await
+        .unwrap();
+    let next = calls::apply(conn, &calls::Change::Open(r)).await.unwrap();
+    assert_eq!(original["handle"], next["handle"]);
+    assert_ne!(original["generation"], next["generation"]);
+    let h = next["handle"].as_str().unwrap().to_owned();
+    let g = next["generation"].as_str().unwrap().to_owned();
+    calls::apply(
+        conn,
+        &calls::Change::Dispatch {
+            handle: h.clone(),
+            plugin: "fixture".into(),
+            generation: g.clone(),
+        },
+    )
+    .await
+    .unwrap();
+    domain::apply(conn, &Change::Close("fixture".into(), g.clone()))
+        .await
+        .unwrap();
+    let late = calls::apply(
+        conn,
+        &calls::Change::Settle {
+            handle: h.clone(),
+            plugin: "fixture".into(),
+            generation: g,
+            body: json!({"parts":[{"text":"private"}]}),
+            error: false,
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(late["state"], "unknown");
+    assert_eq!(late["observed_state"], "confirmed");
+    let raw: Option<String> =
+        sqlx::query_scalar("SELECT body FROM host_late_receipts WHERE handle=?")
+            .bind(h)
+            .fetch_one(&mut *conn)
+            .await
+            .unwrap();
+    assert!(raw.is_none());
+    readers.close().await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "launched and killed by the CORE-016 physical delivery harness"]
+async fn work_delivery_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    crate::execute(crate::Args {
+        data: Some(data),
+        command: crate::Action::Run,
+    })
+    .await
+    .unwrap();
 }

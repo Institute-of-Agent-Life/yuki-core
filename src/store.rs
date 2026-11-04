@@ -56,7 +56,10 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Host(Box<crate::host::Change>),
     Tool(Box<crate::tools::Change>),
+    Work(Box<crate::work::Call>),
+    Memory(Box<crate::memory::Change>),
     History(Box<crate::history::Change>),
     Social(Box<crate::social::Change>),
     Main(
@@ -125,6 +128,13 @@ impl Driver for SqliteDriver {
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
             }
+            Mutation::Host(change) => {
+                return crate::host::domain::apply(self.connection(), change).await;
+            }
+            Mutation::Memory(change) => {
+                return crate::memory::apply(self.connection(), change).await;
+            }
+            Mutation::Work(call) => return crate::work::apply(self.connection(), call).await,
             Mutation::Tool(change) => return crate::tools::apply(self.connection(), change).await,
             Mutation::History(change) => {
                 return crate::history::apply(self.connection(), change).await;
@@ -257,6 +267,7 @@ enum Command {
 
 #[derive(Clone)]
 pub struct Store {
+    pub host: Option<Arc<crate::host::Hub>>,
     pub main: Option<Arc<crate::runtime::main::Config>>,
     commands: mpsc::Sender<Command>,
     readers: SqlitePool,
@@ -340,6 +351,7 @@ impl Store {
         });
         Self {
             main: None,
+            host: None,
             commands,
             readers,
             signals,
@@ -415,4 +427,4 @@ impl Store {
 }
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

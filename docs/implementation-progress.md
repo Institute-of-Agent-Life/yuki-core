@@ -29,6 +29,9 @@
 | CORE-015 | 三平台 CI 通過，已合併 5c3b494 | `codex/core-015-tools` | `artifacts/CORE-015/{mac-04,windows-02}/{frozen-views,read-barriers,tool-result-pages}.json`，兩端各 105 項斷言。另以具名 Rust 測試驗證兩讀同時進入、隱藏 schema 改版、午夜、短槽到期及解碼後撤權。CORE-005、010、011、012、013、014、019、031、052 回歸均通過。 |
 | CORE-020 | Windows、Mac 實機通過，待 CI | `codex/core-020-messages` | `artifacts/CORE-020/{mac-02,windows-02}/{messages-wire,messages-choice-pause}.json`，兩端各 163 項斷言。固定舊版四次 HTTP 對拍覆蓋 thinking 開關與具名／必選；Rust 驗過簽名原序、失敗工具原 ID、伺服器工具錯誤，以及 pause_turn 用盡根額度。CORE-011、012、014、019 回歸通過。 |
 | CORE-021 | Windows、Mac 實機通過，待 CI | `codex/core-021-gemini` | `artifacts/CORE-021/{mac-02,windows-02}/{gemini-wire,gemini-parts}.json`，各 100 項斷言。舊版兩次真 HTTP 錄製包含有／無原生 ID 的平行回條。Rust 驗過簽名位置、原生搜尋失敗、來源引用、媒體、拒絕混用及傳輸中斷；CORE-011、012、019、020 回歸通過。 |
+| CORE-032 | Mac／HJW Windows 各通過 65 項斷言 | `codex/core-032-host` | `artifacts/CORE-032/{mac-08,windows-04}/host-delegation.json`。獨立安裝的 Rust、Python SDK 回呼同一宿主。涵蓋分段失答、離線命令與冷啟、撤權、觀察背壓、刪除回條。握手 v1、Host 業務 schema v2、Rust 1.0.0-alpha.2、Python 1.0.0a2。 |
+| CORE-016 | Mac 與 HJW Windows 各通過 56 項 | `codex/core-016-work` | `artifacts/CORE-016/{mac-06,windows-03}/{work-tree,settlement-tail,work-action-matrix}.json`。H04 在真收件後殺程序，重啟補原回條，維持一次送達、兩次模型請求。H10 核對中立前景、派生 worker 與跨樹權限。另驗私有問答、同批取消與遲到回條、空 final 及 unknown 後的新業務輸入。11 張相鄰卡回歸通過，見各卡 `work-regression-01/`。 |
+| CORE-026 | Mac、HJW Windows 各通過 118 項；已驗 13 張相鄰卡 | `codex/core-026-facts` | `artifacts/CORE-026/{mac-04,windows-02}/fact-evidence-acl.json`。共同群可讀結構化事實而不可讀來源私聊；原 R1 重放不覆寫 R2，原證據換列後舊 proof 被拒。實測 QQ 本人命令、原模型 read_memory／memory_change、撤回、工具／run 原件及 forget。 |
 
 **擴展交接。** EXT-007、EXT-019 可讀 CORE-002 執行產物
 `v4-oracle-candidate.zip`；本地路徑 `artifacts/CORE-002/handoff-89f15db/v4-oracle-candidate.zip`，
@@ -45,5 +48,12 @@ Rust SDK 1.0.0-alpha.1、Python SDK 1.0.0a1、schema revision 1。兩個乾淨�
 各檔雜湊及驗證在同目錄的 candidate.json 和 sdk-verification.json。僅提供 initialize、方法索引、
 golden 和獨立 stdio peer。原包於 GitHub 預發布，重新下載的 ZIP 與回條均通過校驗。見[固定發布頁](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/handshake-preview-dd694a0db605)、[ZIP](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/handshake-preview-dd694a0db605/yuki-handshake-preview.zip)、[發布回條](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/handshake-preview-dd694a0db605/release-receipt.json)。擴展 `87bc88d` 的 Windows 預覽回條 `artifacts/EXT-002/preview-03/handshake-preview.json` SHA-256 `e34b86d7919a97524c4c737e0402bdeb6ef8575060e5551dcd0ce9c5d0b47f3b`，manifest `368556e4872e697a865983cc4a2fa0a051dfa572ba542a2cd4610433b6170469`。擴展 `2b961bd` 已用發布 URL 在 Windows 重新下載、驗 digest 與安裝。正式 `artifacts/EXT-002/01/published-sdk.json` SHA-256 `5c5d944f126b2866760e7684b7d5f0a8b512fb0bb54b20ee503bc6fb57daf6c4`，manifest `5c1137b8cf5a0a5d91243d33a0826da218f521cf72b870756e9875f46b5e22b8`，兩者 PASS。已合併為 `969a059`。見[擴展 PR #10](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/10)。
 
-CORE-032 可開始使用本地已驗的 CORE-015、031、052。真正 Telegram、web-fetch 插件仍待同一版宿主候選。CORE-020 已推 [PR #21](https://github.com/Institute-of-Agent-Life/yuki-core/pull/21)，來源 `a009770`。歷史搜尋的 DJ 校準尚缺目標語料。
+CORE-017 可從已驗 CORE-016 開始。CORE-032 正等正式 Telegram、web-fetch 的相同版本回條；EXT-047 尚缺具名、已核准的 QQ 原生動作。CORE-020 已合併 `00e1f9f`，見 [PR #21](https://github.com/Institute-of-Agent-Life/yuki-core/pull/21)。歷史搜尋的 DJ 校準尚缺目標語料。
 缺目標 SnowLuma 映像 digest 和去識別雙端封包；部署預設採指定 ingress。
+
+**CORE-032 開發候選，尚未發布。** 來源 `199dff095be0bc87c9713beaa0419400cb424a7c` 已推 [PR #24](https://github.com/Institute-of-Agent-Life/yuki-core/pull/24)。握手 revision 1，業務 revision 2，業務 schema SHA-256 `4822f19fb937eba524e475b35c0753a713587f48feee87ae6bd7b53ccab06cba`。雙 SDK、宿主執行檔及方法清單均在包內。兩端各通過 65 項及隔離 PATH 啟動，逐成員雜湊已複驗。
+- HJW Windows x86_64：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/handoff-199dff095be0/windows-validation/handoff/yuki-host-preview-199dff095be0-windows-x86_64.zip`，SHA-256 `d3ef0f3ce8a7dedd175b6aa3392a22c744504cf6bea70eadc22d5408642e634c`。
+- Mac arm64：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/handoff-199dff095be0/macos-arm64/yuki-host-preview-199dff095be0-darwin-arm64.zip`，SHA-256 `07592cb449433512dcaf55306bfddbc8a6b3f93d025f15d7f51da59e844a5e9d`。
+
+CORE-016 實作 `d4fcafc`、整合 head `4213703`，已推 [PR #26](https://github.com/Institute-of-Agent-Life/yuki-core/pull/26)。CORE-017 正實作等待條件。CORE-027 可從本卡原事件證據與寫入合同開始。CORE-040 的本機三臂均逐筆通過 1,200 次 QQ 送達；原工具合同與群聊投影仍有差異，見 `artifacts/CORE-040/qq-1200-01/slice-decision.json`。
+CORE-012 提示詞補核在 `codex/core-012-prompt-order`。原版 HTTP 錄製顯示角色身份、SOUL、執行程式的先後順序。修正後 Mac 與 HJW Windows 各通過 163 項，見 `artifacts/CORE-012/{prefix-mac-01,prefix-windows-01}/main-wire.json`。CORE-014 已合併 [PR #20](https://github.com/Institute-of-Agent-Life/yuki-core/pull/20)。

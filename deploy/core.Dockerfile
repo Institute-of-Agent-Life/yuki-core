@@ -2,6 +2,8 @@ FROM rust:1.96.0-slim-bookworm@sha256:4732ca96fd086cb9be682050c3f0176288eebaac2b
 RUN apt-get update && apt-get install -y --no-install-recommends g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY Cargo.toml Cargo.lock rust-toolchain.toml build.rs ./
+COPY sdk/rust/ sdk/rust/
+COPY protocol/plugin/gateway/ protocol/plugin/gateway/
 COPY src/ src/
 COPY build/ build/
 COPY native/opencc/ native/opencc/

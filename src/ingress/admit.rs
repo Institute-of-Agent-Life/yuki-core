@@ -196,6 +196,23 @@ async fn facts(conn: &mut SqliteConnection, f: &Frame) -> Result<Facts> {
     })
 }
 
+pub(crate) async fn from_gateway(
+    conn: &mut SqliteConnection,
+    frame: Frame,
+    accept: bool,
+) -> Result<Value> {
+    let prepared = facts(conn, &frame).await?;
+    apply(
+        conn,
+        &Admission {
+            frame,
+            accept,
+            prepared,
+            shared_image: None,
+        },
+    )
+    .await
+}
 pub async fn record(store: &Store, frame: Frame, accept: bool) -> Result<Value> {
     record_scoped(store, frame, accept, None).await
 }
@@ -376,13 +393,26 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
         .bind(id)
         .execute(&mut *conn)
         .await?;
+        if !crate::memory::route(conn, id, f).await? {
+            crate::host::domain::route_command(conn, id, f).await?;
+        }
     }
     let accepted: bool =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accepted_sources WHERE event_id=?)")
             .bind(id)
-            .fetch_one(conn)
+            .fetch_one(&mut *conn)
             .await?;
-    Ok(json!({"event":id,"accepted":accepted}))
+    let mut receipt = json!({"event":id,"accepted":accepted});
+    if let Some((path, state)) = sqlx::query_as::<_, (String, String)>(
+        "SELECT path,state FROM host_command_events WHERE event=?",
+    )
+    .bind(id)
+    .fetch_optional(conn)
+    .await?
+    {
+        receipt["command"] = json!({"path":path,"state":state});
+    }
+    Ok(receipt)
 }
 
 pub async fn validate_claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {

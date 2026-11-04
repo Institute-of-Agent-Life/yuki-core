@@ -10,6 +10,8 @@ pub struct Config {
     pub format_version: u32,
     pub listen: std::net::SocketAddr,
     #[serde(default)]
+    pub plugins: Vec<crate::host::Install>,
+    #[serde(default)]
     pub main: Option<crate::runtime::main::Config>,
     #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,

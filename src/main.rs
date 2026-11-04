@@ -2,8 +2,10 @@ mod config;
 mod context;
 mod gateway;
 mod history;
+mod host;
 mod identity;
 mod ingress;
+mod memory;
 mod model;
 mod operator;
 mod privacy;
@@ -11,6 +13,7 @@ mod runtime;
 mod social;
 mod store;
 mod tools;
+mod work;
 
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 use clap::{Parser, Subcommand};
@@ -104,6 +107,7 @@ async fn execute(args: Args) -> Result<()> {
             let mut store = store::Store::open(&owner.data).await?;
             store.main = config.main.map(Arc::new);
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
+            host::Hub::start(&mut store, config.plugins, &owner.data, qq.clone()).await?;
             let stop = Arc::new(Notify::new());
             let control = match operator::listen(
                 &owner.data,
@@ -130,6 +134,7 @@ async fn execute(args: Args) -> Result<()> {
                 .route("/healthz", get(health))
                 .with_state(store.clone())
                 .merge(qq.router());
+            let memory = memory::start(store.clone(), qq.clone());
             let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
             let history = history::start(store.clone());
             let signal = stop.clone();
@@ -140,6 +145,11 @@ async fn execute(args: Args) -> Result<()> {
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
                 qq.shutdown();
             }).await;
+            if let Some(host) = &store.host {
+                host.stop().await;
+            }
+            memory.abort();
+            let _ = memory.await;
             history.abort();
             let _ = history.await;
             if let Some(runner) = runner {

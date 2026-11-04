@@ -105,6 +105,22 @@ impl Dispatch {
             return Ok(());
         }
         match t.target.as_str() {
+            "read_memory" | "memory_change" => {
+                crate::memory::tools::perform(&store, &exec, &actor, &id).await?
+            }
+            "task_control" | "subagent_start" | "subagent_control" => {
+                crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
+            }
+            "complete"
+                if sqlx::query_scalar::<_, bool>(
+                    "SELECT EXISTS(SELECT 1 FROM work_runs WHERE execution=?)",
+                )
+                .bind(&exec)
+                .fetch_one(store.readers())
+                .await? =>
+            {
+                crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
+            }
             "history_query" => {
                 if let Err(error) =
                     crate::history::query::run(&store, &exec, &actor, &t.payload, Some(&id)).await
@@ -117,6 +133,12 @@ impl Dispatch {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }
             "send" if cfg.binding_endpoint.is_none() => {
+                if let Some(host) = &store.host
+                    && host.deliver(&store, &exec, &actor, &id).await?.is_some()
+                {
+                    return Ok(());
+                }
+
                 let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
                 if !matches!(
                     result["state"].as_str(),
@@ -126,6 +148,25 @@ impl Dispatch {
                 }
             }
             _ => {
+                if let Some(host) = &store.host
+                    && let Some(receipt) = host
+                        .tool(
+                            &store,
+                            &exec,
+                            &id,
+                            &t.target,
+                            serde_json::from_str(&t.payload)?,
+                        )
+                        .await?
+                {
+                    if !matches!(
+                        receipt["state"].as_str(),
+                        Some("confirmed" | "failed" | "unknown")
+                    ) {
+                        return Err("original plugin effect pending".into());
+                    }
+                    return Ok(());
+                }
                 let endpoint = cfg
                     .binding_endpoint
                     .as_ref()
@@ -215,6 +256,10 @@ async fn pair(
         };
         crate::tools::batch::execute(&intents[start..end], |intent| dispatch.clone().one(intent))
             .await?;
+        #[cfg(test)]
+        if intents[start..end].iter().any(|t| t.name() == "send") {
+            crate::store::tests::commit_barrier("delivered-before-pair").await;
+        }
         for t in &intents[start..end] {
             attempt::invoke(
                 store,

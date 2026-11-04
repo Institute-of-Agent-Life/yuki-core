@@ -6,6 +6,12 @@ use sqlx::SqliteConnection;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Deserialize, Serialize)]
+pub struct Provider {
+    pub id: String,
+    pub revision: String,
+}
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct Tool {
     pub name: String,
     pub description: String,
@@ -13,6 +19,8 @@ pub struct Tool {
     pub parallel_read: bool,
     pub cacheable: bool,
     pub code_direct: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<Provider>,
 }
 impl Tool {
     pub fn wire(&self) -> Value {
@@ -23,6 +31,12 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if let Some(tool) = crate::memory::tools::declaration(name) {
+        return Some(tool);
+    }
+    if let Some(tool) = crate::work::declaration(name) {
+        return Some(tool);
+    }
     let target = json!({"type":"string","minLength":1});
     let (description, schema, parallel_read, cacheable, code_direct) = match name {
         "get" => (
@@ -113,6 +127,7 @@ pub fn builtin(name: &str) -> Option<Tool> {
         parallel_read,
         cacheable,
         code_direct,
+        provider: None,
     })
 }
 #[derive(Deserialize, Serialize)]
@@ -141,6 +156,11 @@ impl Manifest {
                 "update_short_state",
                 "read_tool_artifact",
                 "lookup_tools",
+                "read_memory",
+                "memory_change",
+                "task_control",
+                "subagent_start",
+                "subagent_control",
             ]
             .into_iter()
             .map(|name| builtin(name).expect("static core registry")),
@@ -221,7 +241,22 @@ pub async fn pinned(
         return Ok((serde_json::from_str(&body)?,original));
     }
     let code = cfg.code_projection;
-    let manifest = Manifest::core();
+    let mut tools: Vec<Tool> = Manifest::core().0.into_values().collect();
+    let installed: Vec<(String, String, String)> = sqlx::query_as(
+        "SELECT plugin,revision,tools FROM host_installations WHERE enabled ORDER BY plugin",
+    )
+    .fetch_all(&mut *conn)
+    .await?;
+    for (id, revision, raw) in installed {
+        for mut tool in serde_json::from_str::<Vec<Tool>>(&raw)? {
+            tool.provider = Some(Provider {
+                id: id.clone(),
+                revision: revision.clone(),
+            });
+            tools.push(tool);
+        }
+    }
+    let manifest = Manifest::freeze(tools)?;
     let rev = manifest.revision()?;
     sqlx::query("INSERT INTO tool_manifests VALUES(?,?) ON CONFLICT(revision) DO NOTHING")
         .bind(&rev)

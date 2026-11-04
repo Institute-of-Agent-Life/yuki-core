@@ -2986,6 +2986,15 @@ dependencies = [
  "toml",
  "unicode-normalization",
  "windows-sys 0.61.2",
+ "yuki-plugin-sdk",
+]
+
+[[package]]
+name = "yuki-plugin-sdk"
+version = "1.0.0-alpha.2"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -25,7 +25,7 @@ def main():
                 "NOTICE", "deploy/core.Dockerfile", ".dockerignore", "character/SOUL.md",
                 "config/qq_face_map.json"}
     paths = [Path(name) for name in source["files"]
-             if name in explicit or name.startswith(("src/", "migrations/", "build/", "native/opencc/"))]
+             if name in explicit or name.startswith(("src/", "migrations/", "build/", "native/opencc/", "sdk/rust/", "protocol/plugin/gateway/"))]
     with tarfile.open(archive, "w") as bundle:
         for name in sorted(paths):
             payload = (ROOT / name).read_bytes()

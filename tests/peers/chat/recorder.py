@@ -11,6 +11,7 @@ class Recorder:
         self.path = path
         self.wires = queue.Queue()
         self.deliveries = []
+        self.before_binding_reply = None
         self.header_shapes = []
         recorder = self
 
@@ -32,6 +33,8 @@ class Recorder:
                     status = binding_status
                     call = json.loads(raw)
                     recorder.deliveries.append(call)
+                    if recorder.before_binding_reply is not None:
+                        recorder.before_binding_reply(call)
                     body, missing = (
                         {
                             "accepted": call["operation"],

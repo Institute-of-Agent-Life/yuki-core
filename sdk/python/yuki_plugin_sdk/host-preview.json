@@ -1,0 +1,676 @@
+{
+  "format": 1,
+  "status": "unpublished-host-preview",
+  "schema_revision": 2,
+  "handshake_schema_revision": 1,
+  "wire": "stdio-jsonrpc-2.0",
+  "methods": {
+    "gateway.inbound": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "gateway.inbound",
+      "params": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "native_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sender": {
+            "type": "string",
+            "minLength": 1
+          },
+          "space": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "topic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurred": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "message",
+              "edit",
+              "recall",
+              "data",
+              "echo"
+            ]
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "accept": {
+            "type": "boolean"
+          },
+          "native_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "sender",
+          "kind",
+          "segments",
+          "accept"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "erased": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "queued",
+                  "unavailable",
+                  "complete",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "path",
+              "state"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "event",
+          "accepted"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "gateway.status": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "gateway.inbound",
+      "params": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sender": {
+            "type": "string",
+            "minLength": 1
+          },
+          "space": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "topic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "native_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "sender"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "erased": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "queued",
+                  "unavailable",
+                  "complete",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "path",
+              "state"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "event",
+          "accepted"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "tool.status": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "tool.call",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "result": {}
+        },
+        "required": [
+          "handle",
+          "state"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "tool.call": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "tool.call",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ordinal": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "parent",
+          "ordinal",
+          "revision",
+          "name",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "data": {},
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "command.invoke": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "command.invoke",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ordinal": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "parent",
+          "ordinal",
+          "revision",
+          "name",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "data": {},
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "gateway.plan_send": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "gateway.send",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ordinal": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "parent",
+          "ordinal",
+          "revision",
+          "name",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "parts"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "gateway.dispatch_part": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "gateway.send",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ordinal": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "parent",
+          "ordinal",
+          "revision",
+          "name",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "enum": [
+              "confirmed",
+              "failed",
+              "unknown"
+            ]
+          },
+          "locator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "gateway.part_status": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "gateway.send",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "result": {}
+        },
+        "required": [
+          "handle",
+          "state"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "observer.event": {
+      "revision": 1,
+      "direction": "host_notification",
+      "grant": "observe.metadata",
+      "params": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "entry": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "event",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "null"
+      }
+    },
+    "forget.request": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "forget.owner",
+      "params": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "watermark": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "required": [
+          "key",
+          "watermark",
+          "sources"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "watermark": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "proof": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "key",
+          "watermark",
+          "proof"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "forget.ack": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "forget.owner",
+      "params": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "watermark": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "proof": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "key",
+          "watermark",
+          "proof"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    }
+  }
+}
