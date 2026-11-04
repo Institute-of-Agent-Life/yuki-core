@@ -254,3 +254,14 @@ async fn effect_crash_child() {
         .unwrap();
     panic!("receipt returned before simulated reply loss");
 }
+
+#[tokio::test]
+#[ignore = "launched under the CORE-052 crash harness"]
+async fn privacy_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let store = Store::open(&data).await.unwrap();
+    let command = serde_json::from_str(&std::env::var("YUKI_ERASE_TEST").unwrap()).unwrap();
+    crate::privacy::invoke(&store, command).await.unwrap();
+    panic!("receipt returned before simulated reply loss");
+}

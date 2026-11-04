@@ -4,6 +4,7 @@ mod identity;
 mod ingress;
 mod model;
 mod operator;
+mod privacy;
 mod runtime;
 mod store;
 

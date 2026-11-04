@@ -229,7 +229,7 @@ pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
         Action::Pending => {
             let events: Vec<i64> = sqlx::query_scalar(
                 "SELECT s.event_id FROM accepted_sources s LEFT JOIN executions x
-                ON x.source=s.event_id WHERE x.id IS NULL ORDER BY s.event_id",
+                ON x.source=s.event_id WHERE x.id IS NULL AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id) ORDER BY s.event_id",
             )
             .fetch_all(store.readers())
             .await?;
@@ -302,7 +302,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
     };
     let existing = sqlx::query(
         "SELECT e.id,e.envelope,e.actor_stage,e.raw_actor,
-        EXISTS(SELECT 1 FROM entries WHERE id=e.entry_id AND closed_at IS NULL) AS open_entry
+        EXISTS(SELECT 1 FROM entries WHERE id=e.entry_id AND closed_at IS NULL) AS open_entry, EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) AS erased
         FROM events e WHERE source_scope=? AND source_key=?",
     )
     .bind(&scope)
@@ -310,6 +310,9 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
     .fetch_optional(&mut *conn)
     .await?;
     let (id, eligible) = if let Some(row) = existing {
+        if row.try_get::<bool, _>("erased")? {
+            return Ok(json!({"event":row.try_get::<i64,_>("id")?,"accepted":false,"erased":true}));
+        }
         let mut original: Frame = serde_json::from_str(row.try_get("envelope")?)?;
         original.observed = f.observed; // Arrival timestamps may differ on redelivery.
         let shared_peer = request.shared_image.is_some() && original.bot_stage != f.bot_stage;
@@ -385,7 +388,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
 pub async fn claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {
     let row = sqlx::query(
         "SELECT e.envelope,e.raw_actor,e.actor_stage,e.mentions,e.entry_id FROM accepted_sources s
-        JOIN events e ON e.id=s.event_id JOIN entries dest ON dest.id=e.entry_id AND dest.closed_at IS NULL WHERE s.event_id=?",
+        JOIN events e ON e.id=s.event_id JOIN entries dest ON dest.id=e.entry_id AND dest.closed_at IS NULL WHERE s.event_id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)",
     )
     .bind(event)
     .fetch_one(&mut *conn)

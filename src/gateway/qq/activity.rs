@@ -60,7 +60,7 @@ pub(super) async fn refresh(inner: &Inner, bot: &str, session: u64) {
 }
 
 pub(super) async fn change(inner: &Inner, event: i64, lease: String, begin: bool) -> Result<Value> {
-    let event=sqlx::query("SELECT e.entry_id,e.bot_stage,entry.scope FROM events e JOIN entries entry ON entry.id=e.entry_id WHERE e.id=?")
+    let event=sqlx::query("SELECT e.entry_id,e.bot_stage,entry.scope FROM events e JOIN entries entry ON entry.id=e.entry_id WHERE e.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)")
         .bind(event).fetch_one(inner.store.readers()).await?;
     let stage: String = event.try_get("bot_stage")?;
     let Some((bot, _)) = inner
