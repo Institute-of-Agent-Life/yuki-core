@@ -89,6 +89,13 @@
       "timeout_seconds": 120,
       "rust": true,
       "capabilities": ["logical-root-reservation", "physical-attempt-accounting", "paid-response-recovery"]
+    },
+    "CORE-052": {
+      "case": "tests/cases/CORE-052.py",
+      "artifact": "source-erasure-obligations.json",
+      "timeout_seconds": 150,
+      "rust": true,
+      "capabilities": ["source-publication-fence", "durable-owner-erasure"]
     }
   }
 }

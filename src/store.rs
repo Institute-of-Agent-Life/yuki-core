@@ -56,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Privacy(crate::privacy::Action),
     Model(Box<crate::model::attempt::Action>),
     Effect(crate::runtime::effects::Action),
     ObserveQqAccount(String, String),
@@ -148,6 +149,9 @@ impl Driver for SqliteDriver {
             }
             Mutation::Effect(action) => {
                 return crate::runtime::effects::apply(self.connection(), action).await;
+            }
+            Mutation::Privacy(action) => {
+                return crate::privacy::apply(self.connection(), action).await;
             }
             Mutation::Model(action) => {
                 return crate::model::attempt::apply(self.connection(), action).await;

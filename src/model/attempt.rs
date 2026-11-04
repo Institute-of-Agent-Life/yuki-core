@@ -134,6 +134,7 @@ async fn reserve(conn: &mut SqliteConnection, reservation: &Reservation) -> Resu
     .fetch_one(&mut *conn)
     .await?;
     let exec: String = context.try_get("execution")?;
+    execution::eligible(conn, &exec).await?;
     let root: String = context.try_get("root")?;
     let units = input
         .checked_add(output)
@@ -157,7 +158,6 @@ async fn reserve(conn: &mut SqliteConnection, reservation: &Reservation) -> Resu
             return Err("logical request conflicts with original reservation".into());
         }
     } else {
-        execution::eligible(conn, &exec).await?;
         if safe && native {
             return Err("native-tool call cannot opt into an unbilled retry".into());
         }
@@ -253,6 +253,11 @@ async fn reject(
     if !(400..600).contains(&status) {
         return Err("expected an HTTP error response".into());
     }
+    if let Some(receipt) =
+        crate::privacy::source::late_attempt(conn, attempt, status, usage).await?
+    {
+        return Ok(receipt);
+    }
     let body_valid = valid_json(raw).is_ok();
     let usage_value = valid_json(usage).unwrap_or(Value::Null);
     let old = sqlx::query(
@@ -298,6 +303,9 @@ async fn response(
     usage: &str,
     intent_text: &str,
 ) -> Result<Value> {
+    if let Some(receipt) = crate::privacy::source::late_attempt(conn, attempt, 200, usage).await? {
+        return Ok(receipt);
+    }
     let body_valid = valid_json(raw).is_ok();
     let row=sqlx::query("SELECT t.logical,t.state,t.response,t.usage_json,t.intents_json,a.execution,e.original_actor,e.cancelled
         FROM model_attempts t JOIN model_requests r ON r.id=t.logical JOIN activations a ON a.id=r.activation

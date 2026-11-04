@@ -13,6 +13,10 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Privacy {
+        #[command(subcommand)]
+        command: crate::privacy::Action,
+    },
     Model {
         #[command(subcommand)]
         command: crate::model::attempt::Action,
@@ -52,6 +56,9 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Privacy {
+        command: crate::privacy::Action,
+    },
     Model {
         command: crate::model::attempt::Action,
     },
@@ -114,6 +121,7 @@ async fn handle(
         Request::Ingress { command } => crate::ingress::admit::invoke(&store, command).await,
         Request::Qq { command } => qq.operator(command).await,
         Request::Effect { command } => crate::runtime::effects::invoke(&store, command).await,
+        Request::Privacy { command } => crate::privacy::invoke(&store, command).await,
         Request::Model { command } => crate::model::attempt::invoke(&store, command).await,
         Request::GetLabel => store.label().await,
         Request::SetLabel { value } => store.write(Mutation::SetLabel(value)).await,
@@ -158,6 +166,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Ingress { command } => Request::Ingress { command },
         Action::Qq { command } => Request::Qq { command },
         Action::Effect { command } => Request::Effect { command },
+        Action::Privacy { command } => Request::Privacy { command },
         Action::Model { command } => Request::Model { command },
         Action::GetLabel => Request::GetLabel,
         Action::SetLabel { value } => Request::SetLabel { value },

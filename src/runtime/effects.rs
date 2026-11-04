@@ -123,7 +123,7 @@ pub(crate) async fn authorize(
         FROM executions x JOIN events e ON e.id=x.source JOIN entries route ON route.id=e.entry_id
         JOIN persons p ON p.id=x.original_actor JOIN persons root ON root.id=coalesce(p.current_root,p.id)
         JOIN persons requester ON requester.id=? JOIN assignments a ON a.id=e.actor_stage
-        JOIN assignments b ON b.id=e.bot_stage WHERE x.id=?")
+        JOIN assignments b ON b.id=e.bot_stage WHERE x.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)")
         .bind(actor).bind(execution).fetch_one(conn).await?;
     let original: String = row.try_get("original")?;
     if !row.try_get::<bool, _>("readable")?
@@ -156,7 +156,9 @@ pub(crate) async fn receipt(
 
 async fn value(conn: &mut SqliteConnection, original: &str, target: &str) -> Result<Value> {
     let row = sqlx::query(
-        "SELECT value,revision FROM local_effect_values WHERE original_actor=? AND target=?",
+        "SELECT value,revision FROM local_effect_values v WHERE original_actor=? AND target=?
+          AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=v.source
+            OR (v.source IS NULL AND i.subject=v.original_actor))",
     )
     .bind(original)
     .bind(target)
@@ -214,9 +216,21 @@ pub async fn apply(conn: &mut SqliteConnection, command: &Action) -> Result<Valu
                 authorize(conn, execution, actor, true).await?;
                 let target: String = op.try_get("target")?;
                 if action == "put" {
-                    sqlx::query("INSERT INTO local_effect_values(original_actor,target,value,revision) VALUES(?,?,?,1)
-                        ON CONFLICT(original_actor,target) DO UPDATE SET value=excluded.value,revision=local_effect_values.revision+1")
-                        .bind(&original).bind(&target).bind(op.try_get::<String,_>("payload")?).execute(&mut *conn).await?;
+                    sqlx::query("INSERT INTO local_effect_values(original_actor,target,value,revision,source) VALUES(?,?,?,1,(SELECT source FROM executions WHERE id=?))
+                        ON CONFLICT(original_actor,target) DO UPDATE SET value=excluded.value,revision=local_effect_values.revision+1,source=excluded.source")
+                        .bind(&original).bind(&target).bind(op.try_get::<String,_>("payload")?).bind(execution).execute(&mut *conn).await?;
+                }
+                if action == "get" {
+                    sqlx::query(
+                        "UPDATE operations SET value_source=(SELECT source FROM local_effect_values
+                        WHERE original_actor=? AND target=?) WHERE namespace=? AND operation_id=?",
+                    )
+                    .bind(&original)
+                    .bind(&target)
+                    .bind(execution)
+                    .bind(id)
+                    .execute(&mut *conn)
+                    .await?;
                 }
                 let result = value(conn, &original, &target).await?;
                 sqlx::query("UPDATE operations SET state='confirmed',result=? WHERE namespace=? AND operation_id=?")
@@ -256,7 +270,16 @@ pub async fn apply(conn: &mut SqliteConnection, command: &Action) -> Result<Valu
             outcome,
             result,
         } => {
-            let result = serde_json::from_str::<Value>(result)?.to_string();
+            let source: i64 = sqlx::query_scalar("SELECT source FROM executions WHERE id=?")
+                .bind(execution)
+                .fetch_one(&mut *conn)
+                .await?;
+            let result = if crate::privacy::source::is_erased(conn, source).await? {
+                json!({"erased":true})
+            } else {
+                serde_json::from_str::<Value>(result)?
+            }
+            .to_string();
             let row = sqlx::query(
                 "SELECT action,state,result FROM operations WHERE namespace=? AND operation_id=?",
             )
