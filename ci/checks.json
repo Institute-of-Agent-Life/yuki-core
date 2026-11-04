@@ -29,6 +29,13 @@
       "timeout_seconds": 90,
       "rust": true,
       "capabilities": ["rust-process", "single-sqlite-writer", "private-local-operator", "health-surfaces"]
+    },
+    "CORE-006": {
+      "case": "tests/cases/CORE-006.py",
+      "artifact": "person-before-after.json",
+      "timeout_seconds": 90,
+      "rust": true,
+      "capabilities": ["original-person", "current-family", "device-original-authorization"]
     }
   }
 }

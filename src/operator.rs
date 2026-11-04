@@ -13,8 +13,14 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Person {
+        #[command(subcommand)]
+        command: crate::identity::person::Action,
+    },
     GetLabel,
-    SetLabel { value: String },
+    SetLabel {
+        value: String,
+    },
     DatabaseInfo,
     Shutdown,
 }
@@ -22,8 +28,13 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Person {
+        command: crate::identity::person::Action,
+    },
     GetLabel,
-    SetLabel { value: String },
+    SetLabel {
+        value: String,
+    },
     DatabaseInfo,
     Shutdown,
 }
@@ -54,6 +65,7 @@ async fn handle(
     let request: Request = serde_json::from_str(&line)?;
     let shutdown = matches!(request, Request::Shutdown);
     let result = match request {
+        Request::Person { command } => crate::identity::person::invoke(&store, command).await,
         Request::GetLabel => store.label().await,
         Request::SetLabel { value } => store.write(Mutation::SetLabel(value)).await,
         Request::DatabaseInfo => store.database_info().await,
@@ -91,6 +103,7 @@ async fn send(stream: impl AsyncRead + AsyncWrite + Unpin, request: Request) -> 
 
 pub async fn invoke(data: &Path, action: Action) -> Result<()> {
     let request = match action {
+        Action::Person { command } => Request::Person { command },
         Action::GetLabel => Request::GetLabel,
         Action::SetLabel { value } => Request::SetLabel { value },
         Action::DatabaseInfo => Request::DatabaseInfo,

@@ -49,3 +49,10 @@ The verifier builds with the lockfile and offline cache, runs Rust cleanup-bound
 tests, then checks the service through real HTTP, local IPC and SQLite. CI covers
 Windows, macOS and Linux. Current completion and candidate status are recorded in
 the progress document.
+
+The private operator can create accountless persons, merge them, and manage
+their current enablement and administrative grants. For example,
+`yuki-core --data ./data operator person get <original-uuid>` shows the original
+ID, current root and family. Device origins remain bound to the original ID.
+Schema 2 adds `persons` and `device_origins` to a schema 1 database through the
+numbered migration. Reader version 2 understands both tables.
