@@ -192,12 +192,13 @@ pub async fn prepare(
             input: estimated,
             output: cfg.max_output,
             safe_rate_limit_once: false,
-            native_tools: body["tools"].as_array().is_some_and(|tools| {
-                tools.iter().any(|tool| {
-                    matches!(
-                        tool["type"].as_str(),
-                        Some("web_search" | "web_search_20250305")
-                    )
+            native_tools: body["tools"].as_array().is_some_and(|items| {
+                items.iter().any(|t| {
+                    t["googleSearch"].is_object()
+                        || matches!(
+                            t["type"].as_str(),
+                            Some("web_search" | "web_search_20250305")
+                        )
                 })
             }),
             request: raw,

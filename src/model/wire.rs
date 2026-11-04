@@ -1,6 +1,6 @@
 use super::{
     chat::{self, Task, Turn},
-    messages, responses,
+    gemini, messages, responses,
 };
 use crate::{Result, runtime::main::Config};
 use serde::{Deserialize, Serialize};
@@ -15,15 +15,22 @@ pub enum Protocol {
     DeepseekResponsesLegacy,
     DeepseekResponses,
     AnthropicMessages,
+    Gemini,
 }
 impl Protocol {
     pub fn is_chat(&self) -> bool {
         *self == Self::Chat
     }
+    pub fn is_gemini(self) -> bool {
+        self == Self::Gemini
+    }
     pub fn is_messages(self) -> bool {
         self == Self::AnthropicMessages
     }
     pub fn request(self, layout: Value, cfg: &Config, task: Option<&Task>) -> Result<Value> {
+        if self.is_gemini() {
+            return gemini::request(layout, cfg, task);
+        }
         if self.is_chat() {
             Ok(layout)
         } else if self.is_messages() {
@@ -42,6 +49,9 @@ impl Protocol {
         let response: Value = serde_json::from_str(raw)?;
         if self.is_messages() {
             return messages::decode(&response, task, cfg, paid);
+        }
+        if self.is_gemini() {
+            return gemini::decode(&response, task, paid);
         }
         self.check_declarations(&response, paid)?;
         if self.is_chat() {
@@ -103,6 +113,9 @@ impl Protocol {
         Ok(())
     }
     pub fn complete(self, body: &Value) -> bool {
+        if self.is_gemini() {
+            return gemini::complete(body);
+        }
         if self.is_chat() {
             matches!(
                 body["choices"][0]["finish_reason"].as_str(),
@@ -116,6 +129,9 @@ impl Protocol {
         }
     }
     pub fn usage(self, raw: &str) -> Value {
+        if self.is_gemini() {
+            return gemini::usage(raw);
+        }
         if self.is_chat() {
             chat::usage(raw)
         } else {
@@ -131,6 +147,9 @@ impl Protocol {
             .ok_or_else(|| "missing paid conversation items".into())
     }
     pub fn replay(self, body: &mut Value, original: &Value) -> Result<()> {
+        if self.is_gemini() {
+            return gemini::replay(body, original);
+        }
         if self.is_messages() {
             return messages::replay(body, original);
         }
@@ -149,6 +168,9 @@ impl Protocol {
         Ok(())
     }
     pub fn output(self, body: &mut Value, call_id: &str, receipt: &str) -> Result<()> {
+        if self.is_gemini() {
+            return gemini::output(body, call_id, receipt);
+        }
         if self.is_messages() {
             return messages::output(body, call_id, receipt);
         }
@@ -161,6 +183,9 @@ impl Protocol {
         Ok(())
     }
     pub fn user(self, body: &mut Value, text: &str) -> Result<()> {
+        if self.is_gemini() {
+            return gemini::user(body, text);
+        }
         if self.is_messages() {
             return messages::user(body, text);
         }

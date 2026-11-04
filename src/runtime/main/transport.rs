@@ -30,6 +30,8 @@ async fn physical(
         let secret = std::env::var(key).map_err(|_| "provider credential unavailable")?;
         request = if cfg.protocol.is_messages() {
             request.header("x-api-key", secret)
+        } else if cfg.protocol.is_gemini() {
+            request.header("x-goog-api-key", secret)
         } else {
             request.bearer_auth(secret)
         };
@@ -369,6 +371,8 @@ pub async fn run(
                                 if !cfg.protocol.is_chat() && response.starts_with("event:") {
                                     if cfg.protocol.is_messages() {
                                         "incomplete_messages_stream"
+                                    } else if cfg.protocol.is_gemini() {
+                                        "incomplete_generate_content_stream"
                                     } else {
                                         "incomplete_responses_stream"
                                     }
