@@ -109,6 +109,7 @@ async fn execute(args: Args) -> Result<()> {
             store.main = config.main.map(Arc::new);
             store.media = Some(media::Runtime::open(&owner.data, config.media)?);
             media::recover(&store).await?;
+            let extraction = memory::extract::start(store.clone(), config.extraction).await?;
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
             host::Hub::start(&mut store, config.plugins, &owner.data, qq.clone()).await?;
             let stop = Arc::new(Notify::new());
@@ -154,6 +155,10 @@ async fn execute(args: Args) -> Result<()> {
             }
             media.abort();
             let _ = media.await;
+            if let Some(worker) = extraction {
+                worker.abort();
+                let _ = worker.await;
+            }
             memory.abort();
             let _ = memory.await;
             history.abort();

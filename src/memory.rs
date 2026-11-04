@@ -1,5 +1,6 @@
 mod commands;
 mod evidence;
+pub mod extract;
 pub mod facts;
 mod scope;
 pub mod tools;

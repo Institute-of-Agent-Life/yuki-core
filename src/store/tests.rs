@@ -540,3 +540,15 @@ async fn compact_crash_child() {
     .await
     .unwrap();
 }
+
+#[tokio::test]
+#[ignore = "launched and killed after the original extraction response commits"]
+async fn extract_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    crate::execute(crate::Args {
+        data: Some(data),
+        command: crate::Action::Run,
+    })
+    .await
+    .unwrap();
+}

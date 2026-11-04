@@ -14,7 +14,7 @@ use sqlx::Row;
 use std::{path::Path, sync::Arc};
 use tokio::sync::watch;
 
-async fn physical(
+pub(crate) async fn physical(
     client: &reqwest::Client,
     cfg: &Config,
     raw: &str,
