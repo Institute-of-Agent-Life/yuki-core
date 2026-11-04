@@ -10,7 +10,11 @@ permissions:
 
 jobs:
   offline:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -27,7 +31,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: core-evidence-windows-${{ github.run_attempt }}
+          name: core-evidence-${{ matrix.os }}-${{ github.run_attempt }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 30

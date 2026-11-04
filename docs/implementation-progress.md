@@ -9,7 +9,7 @@
 |---|---|---|---|
 | CORE-001 | Windows 本地驗證通過；待提交及 CI | `codex/rust-core-v3-2`；本卡 SHA 由其 `manifest.source.commit`／Git 提交記錄辨識 | `artifacts/CORE-001/01/manifest.json`：17 個斷言通過；swap、empty 各自非零退出，保留失敗 manifest；`02` 為補驗 |
 
-每卡完成後獨立提交、推送，等待 CI 通過再合併 main。空遠端首卡在
+每卡完成後獨立提交、推送，等待 Windows/macOS/Linux CI 通過再合併 main。空遠端首卡在
 CI 通過後以同一已驗 SHA 建立 main；後續以 PR 合併。
 
 尚無可供擴展使用的宿主／SDK 候選包；未發布，未進行正式跨倉驗收。
