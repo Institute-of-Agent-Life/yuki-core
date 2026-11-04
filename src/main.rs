@@ -10,6 +10,7 @@ mod privacy;
 mod runtime;
 mod social;
 mod store;
+mod tools;
 
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 use clap::{Parser, Subcommand};
