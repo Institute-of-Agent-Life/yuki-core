@@ -1,0 +1,16 @@
+{
+  "methods": {
+    "initialize": {
+      "params": "Initialize",
+      "result": "Initialized",
+      "revision": 1
+    }
+  },
+  "schema_revision": 1,
+  "schema_sha256": "cecbee860f010599b3ae3d8511c50c24adf3a4145945abae860338290d1a4ce0",
+  "sdk_versions": {
+    "python": "1.0.0a1",
+    "rust": "1.0.0-alpha.1"
+  },
+  "status": "unpublished-handshake-preview"
+}
