@@ -31,6 +31,9 @@ fn function(name: &str, schema: Value) -> Value {
     json!({"type":"function","function":{"name":name,"parameters":schema}})
 }
 fn binding(name: &str) -> Value {
+    if name == "history_query" {
+        return function(name, crate::history::query::schema());
+    }
     if name == "send" {
         return function(name, crate::social::content::schema());
     }
@@ -51,7 +54,7 @@ fn binding(name: &str) -> Value {
         json!({"type":"object","properties":properties,"required":required,"additionalProperties":false}),
     )
 }
-const TOOLS: [&str; 4] = ["get", "put", "complete", "send"];
+const TOOLS: [&str; 5] = ["get", "put", "complete", "send", "history_query"];
 pub fn configure(body: &mut Value, task: Option<&Task>) {
     match task {
         None => {

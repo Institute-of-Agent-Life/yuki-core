@@ -6,3 +6,7 @@ Behavioral reference: 329ca7c487414d2f54ddd98ff4727446ed2446cd
 Original authorship and third-party notices remain applicable to imported
 source and distributions. Individual reused dependencies retain their own
 licenses; the core license does not replace those notices.
+
+The core binary’s literal history search uses the original OpenCC 1.4.2 converter and its t2s dictionaries.
+Source hashes and bundled third-party license texts are in native/opencc/.
+The case-fold table reproduces the baseline Python 3.12 Unicode 15.0 mapping.

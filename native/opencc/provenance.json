@@ -1,0 +1,16 @@
+{
+  "version": "1.4.2",
+  "source_url": "https://files.pythonhosted.org/packages/e0/12/09e62f051af1de7ca84be1d69154bd0514416ef72237e2081584cc268bc9/opencc-1.4.2.tar.gz",
+  "source_sha256": "47977905f131d7d9cfcec29fba5d841154907e1da73103105a4a68744e0f4f1a",
+  "resource_wheel": "opencc-1.4.2-cp312-cp312-win_amd64.whl",
+  "resource_wheel_sha256": "7025dc276b2a60b30ed3aefb99f1ceb8616076fd3eb3310c0f8f2046e79e76b1",
+  "archive_sha256": "e5784d3f7aaea837b8be9e9f654e3385c8d6082cb4dd1d1f9e2027e1de90c64d",
+  "resource_hashes": {
+    "CJK_Compatibility_Ideographs.ocd2": "4b1faa6649012f524068ec18c0fb520ead343c11cbe0a8e4c8853ca61369d666",
+    "TSPhrases.ocd2": "2b722237cc00a4ac985790deb6a68c99f34de10e980a0029ac82c72b0f7ae22b",
+    "TSCharactersExt.ocd2": "e2b0286801dcd1d26119d19ba8b8a35cde021ec173468255d117c4c0951b2906",
+    "TSCharacters.ocd2": "7a994de7900707925fac9c68728a6bb9cf3059870426f661cf31b601efbf5f2f",
+    "t2s.json": "e266a6d906439a794d118e79a23456a39019516dc6642723223fa09308167f6b"
+  },
+  "baseline_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd"
+}

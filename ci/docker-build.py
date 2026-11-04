@@ -21,10 +21,11 @@ def main():
     source = source_identity(ROOT)
     tag = "yuki-core:core-005-" + source["tree_sha256"][:12]
     archive = args.out / "build-context.tar"
-    paths = [Path(name) for name in ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "build.rs",
-                                    "LICENSE", "NOTICE", "deploy/core.Dockerfile", ".dockerignore"]]
-    paths += [p.relative_to(ROOT) for folder in ["src", "migrations"] for p in (ROOT / folder).rglob("*")
-              if p.is_file() and not any(x.startswith("._") for x in p.parts)]
+    explicit = {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "build.rs", "LICENSE",
+                "NOTICE", "deploy/core.Dockerfile", ".dockerignore", "character/SOUL.md",
+                "config/qq_face_map.json"}
+    paths = [Path(name) for name in source["files"]
+             if name in explicit or name.startswith(("src/", "migrations/", "build/", "native/opencc/"))]
     with tarfile.open(archive, "w") as bundle:
         for name in sorted(paths):
             payload = (ROOT / name).read_bytes()

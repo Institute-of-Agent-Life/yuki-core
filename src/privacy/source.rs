@@ -152,6 +152,7 @@ pub async fn late_attempt(
 
 pub async fn scrub(conn: &mut SqliteConnection, event: i64) -> Result<()> {
     crate::social::send::erase(conn, event).await?;
+    crate::history::query::scrub(conn, event).await?;
     sqlx::query("UPDATE events SET envelope='{}',mentions='[]' WHERE id=?")
         .bind(event)
         .execute(&mut *conn)

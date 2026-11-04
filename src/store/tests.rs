@@ -286,3 +286,44 @@ async fn social_crash_child() {
         .unwrap();
     panic!("receipt returned before simulated reply loss");
 }
+
+#[tokio::test]
+async fn history_drops_projection_prepared_before_source_erasure() {
+    let (_temp, mut driver, readers) = fixture().await;
+    let conn = driver.connection();
+    sqlx::raw_sql("INSERT INTO persons(id) VALUES('00000000-0000-4000-8000-000000000088');
+      INSERT INTO accounts VALUES('a','qq','history','1'),('b','qq','history','2');
+      INSERT INTO assignments(id,account_id,original_person,kind,status,first_observed) VALUES('human','a','00000000-0000-4000-8000-000000000088','person','active',1),('self','b',NULL,'self','active',1);
+      INSERT INTO entries(id,scope,actor_stage,bot_stage) VALUES('private','private','human','self');
+      INSERT INTO events(id,source_scope,source_key,entry_id,account_id,raw_actor,actor_stage,bot_stage,observed_at,envelope,mentions) VALUES(1,'scope','key','private','a','00000000-0000-4000-8000-000000000088','human','self',1,'{\"kind\":\"message\",\"text\":\"canary\"}','[]');")
+      .execute(&mut *conn).await.unwrap();
+    let id: i64 = sqlx::query_scalar("SELECT id FROM history_items WHERE source_event=1")
+        .fetch_one(&mut *conn)
+        .await
+        .unwrap();
+    let pending = crate::history::index::Prepared {
+        id,
+        revision: 1,
+        fields: vec![],
+        terms: "private-index-canary".into(),
+    };
+    crate::privacy::apply(
+        conn,
+        &crate::privacy::Action::Erase {
+            key: "forget".into(),
+            person: "00000000-0000-4000-8000-000000000088".into(),
+            sources: "[1]".into(),
+        },
+    )
+    .await
+    .unwrap();
+    let replay = crate::history::index::publish(conn, &pending)
+        .await
+        .unwrap();
+    assert_eq!(replay["published"], false);
+    let rows: i64 = sqlx::query_scalar("SELECT count(*) FROM history_fts")
+        .fetch_one(&readers)
+        .await
+        .unwrap();
+    assert_eq!(rows, 0);
+}

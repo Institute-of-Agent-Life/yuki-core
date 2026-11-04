@@ -410,7 +410,7 @@ async fn inspect(conn: &mut SqliteConnection, logical: &str) -> Result<Value> {
 }
 
 async fn pair(conn: &mut SqliteConnection, logical: &str, ordinal: i64) -> Result<Value> {
-    let row=sqlx::query("SELECT i.execution,i.operation_id,i.call_id,i.paired_receipt,coalesce(e.original_actor,e.origin) AS original_actor,o.action
+    let row=sqlx::query("SELECT i.execution,i.operation_id,i.call_id,i.paired_receipt,coalesce(e.original_actor,e.origin) AS original_actor,o.action,o.target
         FROM model_tool_intents i JOIN executions e ON e.id=i.execution JOIN operations o ON o.namespace=i.execution AND o.operation_id=i.operation_id
         WHERE i.logical=? AND i.ordinal=?").bind(logical).bind(ordinal).fetch_one(&mut *conn).await?;
     let exec: String = row.try_get("execution")?;
@@ -426,7 +426,11 @@ async fn pair(conn: &mut SqliteConnection, logical: &str, ordinal: i64) -> Resul
         if earlier {
             return Err("earlier tool result has not been paired".into());
         }
-        let receipt = if row.try_get::<String, _>("action")? == "external" {
+        let receipt = if row.try_get::<String, _>("action")? == "external"
+            && row.try_get::<String, _>("target")? == "history_query"
+        {
+            crate::history::query::material(conn, &exec, &actor, &id).await?
+        } else if row.try_get::<String, _>("action")? == "external" {
             let r = effects::receipt(conn, &exec, &id).await?;
             if !matches!(
                 r["state"].as_str(),
