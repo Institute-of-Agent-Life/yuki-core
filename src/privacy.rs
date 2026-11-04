@@ -1,3 +1,4 @@
+pub(crate) mod forget;
 mod owner_erasure;
 pub mod source;
 use crate::{
@@ -27,6 +28,13 @@ pub enum Action {
         item: String,
         source: i64,
     },
+    Forget {
+        key: String,
+        person: String,
+    },
+    ForgetStatus {
+        key: String,
+    },
     Erase {
         key: String,
         person: String,
@@ -53,6 +61,10 @@ pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
             let mut tx = store.readers().begin().await?;
             source::read(&mut tx, &owner, &item, source).await
         }
+        Action::ForgetStatus { key } => {
+            let mut tx = store.readers().begin().await?;
+            forget::status(&mut tx, &key).await
+        }
         Action::Pending { owner } => {
             let mut tx = store.readers().begin().await?;
             owner_erasure::pending(&mut tx, &owner).await
@@ -73,6 +85,7 @@ pub async fn apply(conn: &mut SqliteConnection, action: &Action) -> Result<Value
             item,
             source,
         } => source::acquire(conn, owner, item, *source).await,
+        Action::Forget { key, person } => forget::apply(conn, key, person).await,
         Action::Erase {
             key,
             person,
@@ -84,7 +97,7 @@ pub async fn apply(conn: &mut SqliteConnection, action: &Action) -> Result<Value
             watermark,
             proof,
         } => owner_erasure::ack(conn, owner, key, *watermark, proof).await,
-        Action::Read { .. } | Action::Pending { .. } => {
+        Action::Read { .. } | Action::Pending { .. } | Action::ForgetStatus { .. } => {
             Err("read command belongs on snapshot reader".into())
         }
     }

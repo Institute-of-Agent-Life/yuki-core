@@ -233,6 +233,7 @@ platform="telegram"
 bot_stage={json.dumps(bot["assignment"])}
 program={json.dumps(sys.executable)}
 args={argv("tg")}
+erasure_args={argv("tg")}
 env=["YUKI_HOST_TEST_PUBLIC"]
 grants=["gateway.inbound","gateway.send","tool.call","command.invoke","forget.owner"]
 commands=["/game","/game/play"]

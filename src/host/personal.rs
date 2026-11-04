@@ -51,6 +51,7 @@ pub enum Command {
     Correct(i64, Value),
     Schedule(i64, String, Value),
     AdminRole(String, bool, String, i64),
+    Forget(String, String),
 }
 pub async fn write(store: &Store, r: Request) -> Result<Value> {
     store.write(Mutation::Personal(Box::new(r))).await
@@ -104,6 +105,21 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
                     domains::change_schedule(conn, &who, *n, action, v).await
                 }
                 Command::Message(v) => work::message(conn, &who, v).await,
+                Command::Forget(id, op) => {
+                    if !who.admin {
+                        return Err("forbidden".into());
+                    }
+                    credentials::uuid(op)?;
+                    let r = crate::privacy::forget::apply(
+                        conn,
+                        &format!("admin-forget:{}:{op}", who.owner),
+                        id,
+                    )
+                    .await?;
+                    Ok(
+                        json!({"person_id":id,"deleted":true,"peer_cleanup":r["owners_pending"],"managed_storage":r["managed_storage"]}),
+                    )
+                }
                 Command::AdminRole(id, enabled, op, revision) => {
                     if !who.admin {
                         return Err("forbidden".into());

@@ -13,6 +13,8 @@ pub struct Install {
     pub program: PathBuf,
     #[serde(default)]
     pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub erasure_args: Option<Vec<String>>,
     #[serde(default)]
     pub env: Vec<String>,
     #[serde(default)]
@@ -59,6 +61,9 @@ impl Install {
     pub fn validate(&self) -> Result<()> {
         if !identifier(&self.id) || !identifier(&self.namespace) || !self.program.is_absolute() {
             return Err("invalid plugin identity or executable".into());
+        }
+        if self.erasure_args.is_some() && !self.grants.contains("forget.owner") {
+            return Err("cleanup entry requires forget.owner".into());
         }
         let known = methods()["methods"].as_object().unwrap();
         if self
@@ -186,6 +191,7 @@ mod tests {
     #[test]
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
+            erasure_args: None,
             id: "p".into(),
             namespace: "qq.native".into(),
             program: std::env::current_exe().unwrap(),
