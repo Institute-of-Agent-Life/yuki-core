@@ -48,6 +48,8 @@ jobs:
         run: python ci/check.py CORE-006 --out artifacts/CORE-006/ci
       - name: Verify dated ownership, transfers and private entries
         run: python ci/check.py CORE-007 --out artifacts/CORE-007/ci
+      - name: Check offline provider evidence and the opt-in gate on loopback
+        run: python ci/check.py CORE-049 --out artifacts/CORE-049/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

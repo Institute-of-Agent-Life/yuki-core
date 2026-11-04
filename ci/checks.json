@@ -29,6 +29,12 @@
       "timeout_seconds": 30,
       "capabilities": ["qq-deployment-key-decision", "single-designated-ingress"]
     },
+    "CORE-049": {
+      "case": "tests/cases/CORE-049.py",
+      "artifact": "profile-evidence-register.json",
+      "timeout_seconds": 90,
+      "capabilities": ["offline-profile-grid", "explicit-bounded-probe"]
+    },
     "CORE-005": {
       "case": "tests/cases/CORE-005.py",
       "artifact": "owner-probes.json",

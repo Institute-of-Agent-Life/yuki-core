@@ -1,0 +1,22 @@
+{
+  "reviewed": "2026-11-04",
+  "wire_sha256": "d8806bc66671cc77be2ec60d6c0f6c6f93826b5c9ec585c431d47e4cb9d6f67d",
+  "documents": {
+    "chat": {
+      "url": "https://api-docs.deepseek.com/guides/json_mode/",
+      "capability": "A Chat request may select JSON object output and supply a JSON example. A valid JSON object is checked locally."
+    },
+    "responses": {
+      "url": "https://developers.openai.com/api/docs/guides/tools-web-search",
+      "capability": "A Responses search result can include web_search_call.action.sources. Tool availability is model and endpoint specific."
+    },
+    "messages": {
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool",
+      "capability": "Server tool use and its matching result carry search evidence. A tool error may arrive inside an HTTP 200 response."
+    },
+    "gemini": {
+      "url": "https://aistudio.google.com/api-reference/generate-content",
+      "capability": "GenerateContent exposes grounding metadata for a candidate. Inspect recorded tool and source evidence per candidate."
+    }
+  }
+}
