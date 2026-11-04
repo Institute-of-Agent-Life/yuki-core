@@ -1,4 +1,7 @@
 """Start the real Rust owner with private local IPC and a disposable data directory."""
+import hashlib
+import sqlite3
+from contextlib import closing
 import json
 import os
 import subprocess
@@ -32,3 +35,23 @@ class Service:
                 server.kill()
                 server.wait(timeout=10)
             server.stdout.close()
+
+
+def previous_schema(ctx, data, version):
+    data.mkdir()
+    (data / "yuki.toml").write_text('format_version = 1\nlisten = "127.0.0.1:0"\n')
+    with closing(sqlite3.connect(data / "core.sqlite")) as db:
+        db.executescript("""
+            CREATE TABLE _sqlx_migrations(version BIGINT PRIMARY KEY, description TEXT NOT NULL,
+                installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, success BOOLEAN NOT NULL,
+                checksum BLOB NOT NULL, execution_time BIGINT NOT NULL);
+        """)
+        for file in sorted((ctx.root/"migrations").glob("[0-9]*_*.sql")):
+            sequence, description = file.stem.split("_", 1)
+            if int(sequence) > version:
+                continue
+            sql = file.read_bytes()
+            db.executescript(sql.decode())
+            db.execute("INSERT INTO _sqlx_migrations(version,description,success,checksum,execution_time) VALUES(?,?,1,?,0)",
+                       (int(sequence),description.replace("_"," "),hashlib.sha384(sql).digest()))
+        db.commit()

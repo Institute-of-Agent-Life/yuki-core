@@ -56,6 +56,8 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Entry(crate::identity::entry::Action),
+    Assignment(crate::identity::assignment::Action),
     Person(crate::identity::person::Change),
     SetLabel(String),
     #[cfg(test)]
@@ -105,6 +107,12 @@ impl Driver for SqliteDriver {
         let label = match action {
             Mutation::Person(change) => {
                 return crate::identity::person::apply(self.connection(), change).await;
+            }
+            Mutation::Assignment(action) => {
+                return crate::identity::assignment::apply(self.connection(), action).await;
+            }
+            Mutation::Entry(action) => {
+                return crate::identity::entry::apply(self.connection(), action).await;
             }
             Mutation::SetLabel(value) => value.as_str(),
             #[cfg(test)]

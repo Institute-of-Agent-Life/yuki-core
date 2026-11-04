@@ -42,6 +42,13 @@
       "timeout_seconds": 90,
       "rust": true,
       "capabilities": ["original-person", "current-family", "device-original-authorization"]
+    },
+    "CORE-007": {
+      "case": "tests/cases/CORE-007.py",
+      "artifact": "assignment-timeline.json",
+      "timeout_seconds": 90,
+      "rust": true,
+      "capabilities": ["dated-assignment", "scoped-entry", "original-private-history"]
     }
   }
 }

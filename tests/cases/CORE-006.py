@@ -1,25 +1,14 @@
 """Original-author retention, flattened merges, two-ended execution authority and migration."""
-import hashlib
 import sqlite3
 from contextlib import closing
-from tests.harness.service import Service
+from tests.harness.service import Service, previous_schema
 
 
 def run(ctx):
     data = ctx.working / "upgrade"
-    data.mkdir()
-    data.joinpath("yuki.toml").write_text('format_version = 1\nlisten = "127.0.0.1:0"\n')
-    migration_one = (ctx.root / "migrations/0001_meta.sql").read_bytes()
+    previous_schema(ctx, data, 1)
     with closing(sqlite3.connect(data / "core.sqlite")) as db:
-        db.executescript(migration_one.decode())
-        db.executescript("""
-            CREATE TABLE _sqlx_migrations(version BIGINT PRIMARY KEY, description TEXT NOT NULL,
-              installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, success BOOLEAN NOT NULL,
-              checksum BLOB NOT NULL, execution_time BIGINT NOT NULL);
-            INSERT INTO core_meta VALUES('label','old store',3);
-        """)
-        db.execute("INSERT INTO _sqlx_migrations(version,description,success,checksum,execution_time) VALUES(1,'meta',1,?,0)",
-                   (hashlib.sha384(migration_one).digest(),))
+        db.execute("INSERT INTO core_meta VALUES('label','old store',3)")
         db.commit()
     owner = Service(ctx, data)
     upgrade = owner.command("migrate")
