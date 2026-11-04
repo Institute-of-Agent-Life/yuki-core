@@ -1,0 +1,194 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "wires": [
+    {
+      "path": "/v1beta/models/thinking-model:generateContent",
+      "body": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "task"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "maxOutputTokens": 8192,
+          "thinkingConfig": {
+            "thinkingLevel": "low"
+          }
+        },
+        "systemInstruction": {
+          "parts": [
+            {
+              "text": "fixed"
+            }
+          ]
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "inspect",
+                "description": "Read evidence",
+                "parametersJsonSchema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            ]
+          },
+          {
+            "googleSearch": {}
+          }
+        ],
+        "toolConfig": {
+          "functionCallingConfig": {
+            "mode": "VALIDATED"
+          },
+          "includeServerSideToolInvocations": true
+        }
+      },
+      "raw_sha256": "dfab952e494b25bee7f8a62c261f91dfb67910b86949fb7a595b9496e6bdf052"
+    },
+    {
+      "path": "/v1beta/models/thinking-model:generateContent",
+      "body": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "task"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "thought": true,
+                "text": "private synthetic thought"
+              },
+              {
+                "functionCall": {
+                  "name": "inspect",
+                  "id": "native-1",
+                  "args": {
+                    "index": 1
+                  }
+                },
+                "thoughtSignature": "signed+/first"
+              },
+              {
+                "functionCall": {
+                  "name": "inspect",
+                  "args": {
+                    "index": 2
+                  }
+                },
+                "thoughtSignature": "signed+/second"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "functionResponse": {
+                  "name": "inspect",
+                  "response": {
+                    "output": "{\"index\": 1}"
+                  },
+                  "id": "native-1"
+                }
+              },
+              {
+                "functionResponse": {
+                  "name": "inspect",
+                  "response": {
+                    "output": "{\"index\": 2}"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "maxOutputTokens": 8192,
+          "thinkingConfig": {
+            "thinkingLevel": "low"
+          }
+        },
+        "systemInstruction": {
+          "parts": [
+            {
+              "text": "fixed"
+            }
+          ]
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "inspect",
+                "description": "Read evidence",
+                "parametersJsonSchema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            ]
+          },
+          {
+            "googleSearch": {}
+          }
+        ],
+        "toolConfig": {
+          "functionCallingConfig": {
+            "mode": "VALIDATED"
+          },
+          "includeServerSideToolInvocations": true
+        }
+      },
+      "raw_sha256": "1e0fb245694f808c03465afb5a154985349a543cc6ddfa54365eec02a9ac9821"
+    }
+  ],
+  "original_response": {
+    "candidates": [
+      {
+        "finishReason": "STOP",
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "thought": true,
+              "text": "private synthetic thought"
+            },
+            {
+              "functionCall": {
+                "name": "inspect",
+                "id": "native-1",
+                "args": {
+                  "index": 1
+                }
+              },
+              "thoughtSignature": "signed+/first"
+            },
+            {
+              "functionCall": {
+                "name": "inspect",
+                "args": {
+                  "index": 2
+                }
+              },
+              "thoughtSignature": "signed+/second"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

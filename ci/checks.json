@@ -111,6 +111,13 @@
       "rust": true,
       "capabilities": ["original-qq-part-delivery","durable-image-intent","original-recall"]
     },
+    "CORE-021": {
+      "case": "tests/cases/CORE-021.py",
+      "artifact": "gemini-wire.json",
+      "timeout_seconds": 240,
+      "rust": true,
+      "capabilities": ["generate-content-parts","local-only-pairing-keys","native-search-profile"]
+    },
     "CORE-020": {
       "case": "tests/cases/CORE-020.py",
       "artifact": "messages-wire.json",
