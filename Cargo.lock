@@ -2836,6 +2836,7 @@ dependencies = [
  "axum",
  "clap",
  "jsonschema",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

@@ -265,3 +265,24 @@ async fn privacy_crash_child() {
     crate::privacy::invoke(&store, command).await.unwrap();
     panic!("receipt returned before simulated reply loss");
 }
+
+#[tokio::test]
+#[ignore = "launched under the CORE-013 crash harness"]
+async fn social_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let store = Store::open(&data).await.unwrap();
+    let [exec, id, actor]: [String; 3] =
+        serde_json::from_str(&std::env::var("YUKI_SOCIAL_TEST").unwrap()).unwrap();
+    store
+        .write(Mutation::Social(Box::new(crate::social::Change::Next(
+            exec,
+            id,
+            actor,
+            None,
+            crate::social::split::Limits::default(),
+        ))))
+        .await
+        .unwrap();
+    panic!("receipt returned before simulated reply loss");
+}

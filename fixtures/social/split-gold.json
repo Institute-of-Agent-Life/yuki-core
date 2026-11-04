@@ -1,0 +1,86 @@
+{
+  "baseline": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "call": "yuki.services.message_splitter.OutboundMessageSplitter.render",
+  "cases": [
+    {
+      "limit": 8,
+      "cap": 3,
+      "text": "one\ntwo\nthree\nfour\nfive",
+      "expected": [
+        "one\ntwo",
+        "three\nfo",
+        "ur\nfive"
+      ]
+    },
+    {
+      "limit": 10,
+      "cap": 10,
+      "text": "abcdefgh。abcdefg!abcdefg?",
+      "expected": [
+        "abcdefgh。",
+        "abcdefg!",
+        "abcdefg?"
+      ]
+    },
+    {
+      "limit": 16,
+      "cap": 10,
+      "text": "before\n```rs\n0123456789ABCDEF\nxy\n```\nafter",
+      "expected": [
+        "before",
+        "```rs\n012345\n```",
+        "```rs\n6789AB\n```",
+        "```rs\nCDEF\n```",
+        "```rs\nxy\n```",
+        "after"
+      ]
+    },
+    {
+      "limit": 8,
+      "cap": 3,
+      "text": "# heading\n\n甲乙丙丁。中文章節！",
+      "expected": [
+        "# headin",
+        "g",
+        "甲乙丙丁。\n中文章節！"
+      ]
+    },
+    {
+      "limit": 4,
+      "cap": 10,
+      "text": "🧊🌨️ABCDE",
+      "expected": [
+        "🧊🌨️A",
+        "BCDE"
+      ]
+    },
+    {
+      "limit": 25,
+      "cap": 10,
+      "text": "- item\n- item\n- item",
+      "expected": [
+        "- item\n- item\n- item"
+      ]
+    },
+    {
+      "limit": 12,
+      "cap": 10,
+      "text": "hello\n\nworld",
+      "expected": [
+        "hello",
+        "world"
+      ]
+    },
+    {
+      "limit": 16,
+      "cap": 10,
+      "text": "~~~math\n1234567890\n~~~~",
+      "expected": [
+        "~~~math\n1234\n~~~",
+        "~~~math\n5678\n~~~",
+        "~~~math\n90\n~~~",
+        "~"
+      ]
+    }
+  ]
+}

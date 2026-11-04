@@ -52,12 +52,33 @@ async fn pair(
     exec: &str,
     logical: &str,
     actor: &str,
+    hub: &crate::gateway::qq::Hub,
 ) -> Result<()> {
     let tools=sqlx::query("SELECT i.ordinal,i.operation_id,o.action,o.target,o.payload FROM model_tool_intents i JOIN operations o
         ON o.namespace=i.execution AND o.operation_id=i.operation_id WHERE i.logical=? AND i.paired_receipt IS NULL ORDER BY i.ordinal")
         .bind(logical).fetch_all(store.readers()).await?;
     for t in tools {
         if t.try_get::<String, _>("action")? == "external" {
+            if cfg.binding_endpoint.is_none() && t.try_get::<String, _>("target")? == "send" {
+                let result =
+                    crate::social::deliver(store, hub, exec, t.try_get("operation_id")?, actor)
+                        .await?;
+                if !matches!(
+                    result["state"].as_str(),
+                    Some("confirmed" | "failed" | "unknown")
+                ) {
+                    return Err("original social receipt pending".into());
+                }
+                attempt::invoke(
+                    store,
+                    Action::Pair {
+                        logical: logical.into(),
+                        ordinal: t.try_get("ordinal")?,
+                    },
+                )
+                .await?;
+                continue;
+            }
             let endpoint = cfg
                 .binding_endpoint
                 .as_ref()
@@ -123,6 +144,7 @@ pub async fn run(
     data: &Path,
     exec: &str,
     mut cancel: watch::Receiver<bool>,
+    hub: &crate::gateway::qq::Hub,
 ) -> Result<()> {
     loop {
         if *cancel.borrow() {
@@ -141,6 +163,7 @@ pub async fn run(
                 exec,
                 logical,
                 step["actor"].as_str().ok_or("missing original actor")?,
+                hub,
             )
             .await?;
             continue;

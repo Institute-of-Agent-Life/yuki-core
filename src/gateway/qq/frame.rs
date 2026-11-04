@@ -99,6 +99,10 @@ async fn segments(inner: &Inner, raw: &Value) -> Result<Vec<Segment>> {
                     label: face(&native),
                 }
             }
+            Some("forward") => Segment::Media {
+                kind: "forward".into(),
+                reference: id(&data["id"]).ok_or("forward lacks reference")?,
+            },
             Some("reply") => Segment::Reply {
                 native_id: id(&data["id"]).ok_or("reply lacks locator")?,
             },

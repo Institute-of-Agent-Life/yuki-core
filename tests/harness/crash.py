@@ -5,9 +5,12 @@ import subprocess
 import time
 
 
-def kill_writer(ctx, data, child_test, phase, variables):
+def kill_writer(ctx, data, child_test, phase, variables, *, sample=None):
     executable = (ctx.output / "rust-test-executable.txt").read_text().strip()
-    marker = ctx.working / (child_test + "-" + phase + ".ready")
+    label = child_test + "-" + phase + ("-" + sample if sample else "")
+    marker = ctx.working / (label + ".ready")
+    if marker.exists():
+        raise ValueError("commit barrier already used: " + label)
     env = {
         **os.environ,
         **variables,
@@ -15,7 +18,7 @@ def kill_writer(ctx, data, child_test, phase, variables):
         "YUKI_WRITER_TEST_PHASE": phase,
         "YUKI_WRITER_TEST_MARKER": str(marker),
     }
-    with (ctx.output / (child_test + "-" + phase + ".log")).open("w") as log:
+    with (ctx.output / (label + ".log")).open("x") as log:
         process = subprocess.Popen(
             [
                 executable,
