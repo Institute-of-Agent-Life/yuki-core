@@ -8,6 +8,13 @@
 !native/
 !native/opencc/
 !native/opencc/**
+!sdk/
+!sdk/rust/
+!sdk/rust/**
+!protocol/
+!protocol/plugin/
+!protocol/plugin/gateway/
+!protocol/plugin/gateway/**
 !src/
 !src/**
 !migrations/

@@ -1,4 +1,5 @@
 //! Line-framed JSON-RPC for the Yuki handshake preview. Each Peer belongs to one connection.
+pub mod host;
 #[rustfmt::skip]
 mod generated;
 pub use generated::*;

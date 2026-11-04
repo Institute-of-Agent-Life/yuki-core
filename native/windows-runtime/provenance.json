@@ -1,0 +1,15 @@
+{
+  "component": "GNU libstdc++ and GCC runtime",
+  "compiler": "16.2.0",
+  "source_commit": "78d4ac73dd391005b895a6148cd9831e28e1208b",
+  "members": {
+    "COPYING3": {
+      "source": "https://raw.githubusercontent.com/gcc-mirror/gcc/78d4ac73dd391005b895a6148cd9831e28e1208b/COPYING3",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    },
+    "COPYING.RUNTIME": {
+      "source": "https://raw.githubusercontent.com/gcc-mirror/gcc/78d4ac73dd391005b895a6148cd9831e28e1208b/COPYING.RUNTIME",
+      "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+    }
+  }
+}

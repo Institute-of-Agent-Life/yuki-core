@@ -13,6 +13,10 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Host {
+        #[command(subcommand)]
+        command: crate::host::Action,
+    },
     Tools {
         #[command(subcommand)]
         command: crate::tools::Action,
@@ -72,6 +76,9 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Host {
+        command: crate::host::Action,
+    },
     Tools {
         command: crate::tools::Action,
     },
@@ -149,6 +156,10 @@ async fn handle(
         Request::Ingress { command } => crate::ingress::admit::invoke(&store, command).await,
         Request::Qq { command } => qq.operator(command).await,
         Request::Effect { command } => crate::runtime::effects::invoke(&store, command).await,
+        Request::Host { command } => match &store.host {
+            Some(h) => h.operator(&store, command).await,
+            None => Err("plugin host not configured".into()),
+        },
         Request::Tools { command } => crate::tools::invoke(&store, command).await,
         Request::History { command } => crate::history::invoke(&store, command).await,
         Request::Social { command } => crate::social::invoke(&store, &qq, command).await,
@@ -198,6 +209,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Ingress { command } => Request::Ingress { command },
         Action::Qq { command } => Request::Qq { command },
         Action::Effect { command } => Request::Effect { command },
+        Action::Host { command } => Request::Host { command },
         Action::Tools { command } => Request::Tools { command },
         Action::History { command } => Request::History { command },
         Action::Social { command } => Request::Social { command },
