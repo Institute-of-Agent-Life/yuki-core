@@ -114,6 +114,9 @@ def run(ctx):
         send(pa, event(a, 900, 1, private=True))
         send(pa, event(a, 901, 2, "/ai on"))
         send(pa, event(a, 901, 12, "/ai on", private=True))
+        malformed = event(a, 900, 30)
+        malformed["group_id"] = "not-a-native-id"
+        send(pa, malformed)
         send(pa, event(a, 700, 3, "ordinary paused data"))
         send(pa, event(a, 700, 4))
         probe(pa, a, 700)
@@ -138,6 +141,18 @@ def run(ctx):
         probe(pa, a, 904)
         probe(pb, b, 904)
         expect(pb, "ambiguous")
+        send(pa, event(a, 910, 60))
+        probe(pa, a, 910)
+        wrong = pb.receive()
+        pb.send(
+            {
+                "echo": wrong["echo"],
+                "status": "ok",
+                "retcode": 0,
+                "data": {"group_id": 999, "user_id": int(b)},
+            }
+        )
+        expect(pa, "unavailable")
         send(pa, event(a, 905, 7))
         probe(pa, a, 905)
         probe(pb, b, 905, False)
