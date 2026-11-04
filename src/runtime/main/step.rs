@@ -67,7 +67,8 @@ pub async fn prepare(
         index = row.try_get::<i64, _>("ordinal")? + 1;
         body = serde_json::from_str::<Value>(row.try_get("request_json")?)?;
         let result = cfg.protocol.decode(&raw, task, cfg, &body);
-        let mut continue_turn = !fresh.is_empty();
+        let fresh_mail = crate::work::has_mail(conn, exec).await?;
+        let mut continue_turn = !fresh.is_empty() || fresh_mail;
         match result {
             Ok(parsed) => {
                 let original: Value = serde_json::from_str(&raw)?;
@@ -90,9 +91,15 @@ pub async fn prepare(
                             t.try_get("paired_receipt")?,
                         )?;
                     }
+                    if !continue_turn && crate::work::settle(conn, exec, &logical, None).await? {
+                        return Ok(Value::Null);
+                    }
                     continue_turn = true;
                 }
                 if !continue_turn {
+                    if crate::work::settle(conn, exec, &logical, Some(&parsed.result)).await? {
+                        return Ok(Value::Null);
+                    }
                     sqlx::query("UPDATE main_turns SET result=? WHERE execution=?")
                         .bind(parsed.result.to_string())
                         .bind(exec)
@@ -113,6 +120,17 @@ pub async fn prepare(
                 cfg.protocol
                     .user(&mut body, &format!("Correct the structured result: {err}"))?;
             }
+        }
+        if crate::work::bound(conn, exec).await?.is_some() {
+            let mut state = crate::work::context(conn, exec).await?;
+            let inbox = crate::work::private_input(conn, exec).await?;
+            if !inbox.is_empty() {
+                state["private_inbox"] = json!(inbox);
+            }
+            cfg.protocol.user(
+                &mut body,
+                &format!("\n\n<runtime_context>\n{state}\n</runtime_context>\n\n"),
+            )?;
         }
         if !fresh.is_empty() {
             cfg.protocol.user(&mut body, &material.text)?;
@@ -141,6 +159,12 @@ pub async fn prepare(
                 .context
                 .insert(0, json!({"source_kind":kind,"source_ref":origin}));
         }
+        let mut work = crate::work::context(conn, exec).await?;
+        let inbox = crate::work::private_input(conn, exec).await?;
+        if !inbox.is_empty() {
+            work["private_inbox"] = json!(inbox);
+        }
+        material.context.push(work);
         let (manifest, code) = crate::tools::registry::pinned(conn, exec, cfg).await?;
         let slots =
             crate::tools::transient::live(conn, exec, crate::tools::transient::now()?).await?;

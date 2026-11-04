@@ -11,6 +11,7 @@ class Recorder:
         self.path = path
         self.wires = queue.Queue()
         self.deliveries = []
+        self.before_binding_reply = None
         recorder = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -22,6 +23,8 @@ class Recorder:
                 if self.path == "/binding":
                     call = json.loads(raw)
                     recorder.deliveries.append(call)
+                    if recorder.before_binding_reply is not None:
+                        recorder.before_binding_reply(call)
                     body, missing = (
                         {
                             "accepted": call["operation"],

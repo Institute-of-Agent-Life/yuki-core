@@ -12,6 +12,7 @@ mod runtime;
 mod social;
 mod store;
 mod tools;
+mod work;
 
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 use clap::{Parser, Subcommand};

@@ -96,6 +96,19 @@ impl Dispatch {
             return Ok(());
         }
         match t.target.as_str() {
+            "task_control" | "subagent_start" | "subagent_control" => {
+                crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
+            }
+            "complete"
+                if sqlx::query_scalar::<_, bool>(
+                    "SELECT EXISTS(SELECT 1 FROM work_runs WHERE execution=?)",
+                )
+                .bind(&exec)
+                .fetch_one(store.readers())
+                .await? =>
+            {
+                crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
+            }
             "history_query" => {
                 if let Err(error) =
                     crate::history::query::run(&store, &exec, &actor, &t.payload, Some(&id)).await
@@ -231,6 +244,10 @@ async fn pair(
         };
         crate::tools::batch::execute(&intents[start..end], |intent| dispatch.clone().one(intent))
             .await?;
+        #[cfg(test)]
+        if intents[start..end].iter().any(|t| t.name() == "send") {
+            crate::store::tests::commit_barrier("delivered-before-pair").await;
+        }
         for t in &intents[start..end] {
             attempt::invoke(
                 store,
