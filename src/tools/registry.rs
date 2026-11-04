@@ -53,6 +53,9 @@ pub fn builtin(name: &str) -> Option<Tool> {
     if let Some(tool) = crate::memory::tools::declaration(name) {
         return Some(tool);
     }
+    if let Some(tool) = crate::work::schedule::declaration(name) {
+        return Some(tool);
+    }
     if let Some(tool) = crate::work::declaration(name) {
         return Some(tool);
     }
@@ -177,6 +180,8 @@ impl Manifest {
                 "lookup_tools",
                 "read_memory",
                 "memory_change",
+                "automation_query",
+                "automation_manage",
                 "task_control",
                 "subagent_start",
                 "subagent_control",

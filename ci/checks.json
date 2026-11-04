@@ -104,6 +104,11 @@
       "rust": true,
       "capabilities": ["subject-scoped-structured-facts","independent-original-evidence","conditional-fact-corrections"]
     },
+    "CORE-018": {
+      "case": "tests/cases/CORE-018.py", "artifact":"schedule-occurrences.json",
+      "timeout_seconds":360,"rust":true,
+      "capabilities":["original-due-occurrence","recoverable-human-self-schedule","timezone-cron"]
+    },
     "CORE-017": {
       "case": "tests/cases/CORE-017.py",
       "artifact": "wait-match.json",

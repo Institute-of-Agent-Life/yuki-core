@@ -1,5 +1,5 @@
 mod domain;
-pub(crate) use domain::{human_text as event_text, window as public_window};
+pub(crate) use domain::{human_text as event_text, window};
 mod step;
 pub(crate) use step::hold as hold_original;
 mod transport;
@@ -227,6 +227,7 @@ pub enum Change {
     Human(i64, i64),
     Defer(i64, i64),
     Wait(String, i64),
+    Schedule(i64, i64),
     Prepare(String, String),
     Hold(String, String),
 }
@@ -235,6 +236,10 @@ pub async fn apply(conn: &mut SqliteConnection, cfg: &Config, action: &Change) -
         Change::Wait(id, now) => Ok(serde_json::json!(
             crate::work::wait::reconcile(conn, id, *now).await?
         )),
+        Change::Schedule(id, now) => {
+            crate::work::schedule::due::reconcile(conn, cfg, *id, *now).await?;
+            Ok(Value::Null)
+        }
         Change::Operator(cmd) => domain::operator(conn, cfg, cmd).await,
         Change::Human(event, now) => {
             domain::admit_human(conn, cfg, *event, *now).await?;
@@ -341,6 +346,16 @@ impl Runner {
 
     async fn tick(&mut self) -> Result<()> {
         let timestamp = now()?;
+        for schedule in crate::work::schedule::due::ready(self.store.readers(), timestamp).await? {
+            write(
+                &self.store,
+                &self.cfg,
+                Change::Schedule(schedule, timestamp),
+            )
+            .await?;
+            #[cfg(test)]
+            crate::store::tests::commit_barrier("schedule-admitted").await;
+        }
         let waits:Vec<String>=sqlx::query_scalar("SELECT w.id FROM work_waits w JOIN work_nodes n ON n.id=w.work WHERE w.state='armed' AND n.goal IS NOT NULL AND NOT EXISTS(SELECT 1 FROM work_suspensions WHERE work=w.work) ORDER BY w.rowid").fetch_all(self.store.readers()).await?;
         for wait in waits {
             let mut read = self.store.readers().begin().await?;
@@ -400,7 +415,7 @@ impl Runner {
                 self.client.clone(),
                 self.data.clone(),
             );
-            let cfg = if let Some(profile)=sqlx::query_scalar::<_,String>("SELECT w.profile FROM work_runs r JOIN work_nodes w ON w.id=r.work WHERE r.execution=?").bind(&exec).fetch_optional(self.store.readers()).await?{
+            let cfg = if let Some(profile)=sqlx::query_scalar::<_,String>("SELECT w.profile FROM work_runs r JOIN work_nodes w ON w.id=r.work WHERE r.execution=?1 UNION ALL SELECT profile FROM schedule_occurrences WHERE execution=?1 LIMIT 1").bind(&exec).fetch_optional(self.store.readers()).await?{
                 Arc::new(serde_json::from_str(&profile)?)
             }else{cfg};
             let id = exec.clone();

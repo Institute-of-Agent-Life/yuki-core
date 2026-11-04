@@ -1,0 +1,448 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "clock": [
+    {
+      "trigger": {
+        "type": "after",
+        "seconds": 7
+      },
+      "now": "2026-03-08T06:30:00+00:00",
+      "due": "2026-03-08T06:30:07+00:00",
+      "settled": "2026-03-11T06:30:07+00:00",
+      "next": null
+    },
+    {
+      "trigger": {
+        "type": "interval",
+        "seconds": 17
+      },
+      "now": "2026-03-08T06:30:00+00:00",
+      "due": "2026-03-08T06:30:17+00:00",
+      "settled": "2026-03-11T06:30:17+00:00",
+      "next": "2026-03-11T06:30:34+00:00"
+    },
+    {
+      "trigger": {
+        "type": "once",
+        "local_datetime": "2026-03-08T09:00:00+05:30"
+      },
+      "now": "2026-03-07T10:00:00+00:00",
+      "due": "2026-03-08T03:30:00+00:00",
+      "settled": "2026-03-11T03:30:00+00:00",
+      "next": null
+    },
+    {
+      "trigger": {
+        "type": "daily",
+        "hour": 2,
+        "minute": 30,
+        "timezone": "America/New_York"
+      },
+      "now": "2026-03-08T05:00:00+00:00",
+      "due": "2026-03-08T07:30:00+00:00",
+      "settled": "2026-03-11T07:30:00+00:00",
+      "next": "2026-03-12T06:30:00+00:00"
+    },
+    {
+      "trigger": {
+        "type": "weekly",
+        "weekdays": [
+          7
+        ],
+        "hour": 1,
+        "minute": 30,
+        "timezone": "America/New_York"
+      },
+      "now": "2026-11-01T00:00:00+00:00",
+      "due": "2026-11-01T05:30:00+00:00",
+      "settled": "2026-11-04T05:30:00+00:00",
+      "next": "2026-11-08T06:30:00+00:00"
+    },
+    {
+      "trigger": {
+        "type": "daily",
+        "hour": 1,
+        "minute": 30,
+        "timezone": "America/New_York"
+      },
+      "now": "2026-11-01T06:00:00+00:00",
+      "due": "2026-11-02T06:30:00+00:00",
+      "settled": "2026-11-05T06:30:00+00:00",
+      "next": "2026-11-06T06:30:00+00:00"
+    },
+    {
+      "trigger": {
+        "type": "daily",
+        "hour": 2,
+        "minute": 15,
+        "timezone": "Australia/Lord_Howe"
+      },
+      "now": "2026-10-03T15:00:00+00:00",
+      "due": "2026-10-03T15:45:00+00:00",
+      "settled": "2026-10-06T15:45:00+00:00",
+      "next": "2026-10-07T15:15:00+00:00"
+    }
+  ],
+  "tools": {
+    "automation_query": {
+      "description": "查询自动化。list 为全局安全摘要（默认 active）；get 读取本人或超管获准的完整定义；history 读取获准的原发生与结果。目录可见不授予私有读取或修改权限。",
+      "parameters": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "view": {
+                "const": "list"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "paused",
+                  "completed",
+                  "cancelled",
+                  "failed",
+                  "blocked",
+                  "all"
+                ]
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "cursor": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              }
+            },
+            "required": [
+              "view"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "view": {
+                "const": "get"
+              },
+              "automation_id": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "view",
+              "automation_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "view": {
+                "const": "history"
+              },
+              "automation_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "cursor": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              }
+            },
+            "required": [
+              "view",
+              "automation_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "automation_manage": {
+      "description": "创建、更新、暂停、恢复、取消或立即调度自动化。create/update 提交完整 goal/trigger。update 中 name 缺省保留，null 清除公开标签；max_runs 缺省保留，null 解除次数限制。按真实 owner/超管权限管理；run_now 只确认入队。创建持久化安排。goal 保存完整要求与真实收件人线索，到期由同一个主 Agent 执行。运行时使用主 Agent 的完整工具，按创建者当前权限执行，无需选择工具或预算。是否需要沟通由完整要求决定，实际消息使用正常 send 发送。创建时不要提前执行任务；收到 confirmation='persisted' 和 automation_id 才表示成功。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "pause",
+              "resume",
+              "cancel",
+              "run_now"
+            ]
+          },
+          "automation_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "task": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "goal",
+              "trigger"
+            ],
+            "description": "完整的主 Agent 任务要求与时间安排。",
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1,
+                "description": "可选公开显示标签；不要从私有要求生成标签。"
+              },
+              "goal": {
+                "type": "string",
+                "minLength": 1
+              },
+              "trigger": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "type",
+                      "seconds"
+                    ],
+                    "properties": {
+                      "type": {
+                        "const": "after"
+                      },
+                      "seconds": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "type",
+                      "local_datetime"
+                    ],
+                    "properties": {
+                      "type": {
+                        "const": "once"
+                      },
+                      "local_datetime": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "包含 UTC offset 的绝对时刻。"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "type",
+                      "hour",
+                      "minute"
+                    ],
+                    "properties": {
+                      "type": {
+                        "const": "daily"
+                      },
+                      "hour": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 23
+                      },
+                      "minute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 59
+                      },
+                      "timezone": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "type",
+                      "weekdays",
+                      "hour",
+                      "minute"
+                    ],
+                    "properties": {
+                      "type": {
+                        "const": "weekly"
+                      },
+                      "weekdays": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 7
+                        }
+                      },
+                      "hour": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 23
+                      },
+                      "minute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 59
+                      },
+                      "timezone": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "type",
+                      "seconds"
+                    ],
+                    "properties": {
+                      "type": {
+                        "const": "interval"
+                      },
+                      "seconds": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "examples": [
+              {
+                "name": "五分钟后喝水提醒",
+                "goal": "提醒我喝水",
+                "trigger": {
+                  "type": "after",
+                  "seconds": 300
+                }
+              }
+            ]
+          },
+          "max_runs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "累计发生次数上限；create 缺省不限，update 缺省保留，null 解除限制。"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "create"
+              },
+              "task": {},
+              "max_runs": {}
+            },
+            "required": [
+              "action",
+              "task"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "update"
+              },
+              "automation_id": {},
+              "task": {},
+              "max_runs": {}
+            },
+            "required": [
+              "action",
+              "automation_id",
+              "task"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "pause"
+              },
+              "automation_id": {}
+            },
+            "required": [
+              "action",
+              "automation_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "resume"
+              },
+              "automation_id": {}
+            },
+            "required": [
+              "action",
+              "automation_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "cancel"
+              },
+              "automation_id": {}
+            },
+            "required": [
+              "action",
+              "automation_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "run_now"
+              },
+              "automation_id": {}
+            },
+            "required": [
+              "action",
+              "automation_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  }
+}
