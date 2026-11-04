@@ -29,7 +29,7 @@ fn options(data: &Path) -> SqliteConnectOptions {
         .busy_timeout(Duration::from_secs(5))
 }
 
-pub async fn bootstrap(data: &Path) -> Result<()> {
+pub async fn bootstrap(data: &Path) -> Result<i64> {
     let mut connection = SqliteConnection::connect_with(
         &options(data)
             .create_if_missing(true)
@@ -41,8 +41,11 @@ pub async fn bootstrap(data: &Path) -> Result<()> {
         .await?
         .run(&mut connection)
         .await?;
+    let version = sqlx::query_scalar("SELECT MAX(version) FROM _sqlx_migrations WHERE success")
+        .fetch_one(&mut connection)
+        .await?;
     connection.close().await?;
-    Ok(())
+    Ok(version)
 }
 
 async fn read_pool(data: &Path) -> Result<SqlitePool> {
@@ -53,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Person(crate::identity::person::Change),
     SetLabel(String),
     #[cfg(test)]
     Invalid,
@@ -99,6 +103,9 @@ impl Driver for SqliteDriver {
     }
     async fn apply(&mut self, action: &Mutation) -> Result<Value> {
         let label = match action {
+            Mutation::Person(change) => {
+                return crate::identity::person::apply(self.connection(), change).await;
+            }
             Mutation::SetLabel(value) => value.as_str(),
             #[cfg(test)]
             Mutation::Invalid => "must rollback",
@@ -263,6 +270,10 @@ impl Store {
             .map_err(|_| "writer stopped")?;
         result.await.map_err(|_| "writer stopped before response")?
     }
+    pub(crate) fn readers(&self) -> &SqlitePool {
+        &self.readers
+    }
+
     pub async fn label(&self) -> Result<Value> {
         let row = sqlx::query("SELECT value,revision FROM core_meta WHERE key='label'")
             .fetch_optional(&self.readers)
@@ -302,7 +313,7 @@ impl Store {
                 .await?;
         Ok(
             json!({"sqlite_version":version,"compile_options":compile_options,"foreign_keys":foreign_keys,
-            "journal_mode":journal_mode,"schema_version":schema_version,"minimum_reader":1}),
+            "journal_mode":journal_mode,"schema_version":schema_version,"minimum_reader":schema_version}),
         )
     }
     pub async fn shutdown(&self) -> Result<()> {

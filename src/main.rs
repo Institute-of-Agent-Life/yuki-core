@@ -1,4 +1,5 @@
 mod config;
+mod identity;
 mod operator;
 mod store;
 
@@ -62,14 +63,17 @@ async fn execute(args: Args) -> Result<()> {
     match args.command {
         Action::Init => {
             let owner = config::init(&data)?;
-            store::bootstrap(&owner.data).await?;
-            println!("{}", json!({"status":"initialized","schema_version":1}));
+            let version = store::bootstrap(&owner.data).await?;
+            println!(
+                "{}",
+                json!({"status":"initialized","schema_version":version})
+            );
         }
         Action::Migrate => {
             config::Config::read(&data)?;
             let owner = config::Owner::acquire(&data)?;
-            store::bootstrap(&owner.data).await?;
-            println!("{}", json!({"status":"migrated","schema_version":1}));
+            let version = store::bootstrap(&owner.data).await?;
+            println!("{}", json!({"status":"migrated","schema_version":version}));
         }
         Action::Doctor => {
             let config = config::Config::read(&data)?;
