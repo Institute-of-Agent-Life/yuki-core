@@ -23,6 +23,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if let Some(t) = crate::history::query::contacts::declaration(name) {
+        return Some(t);
+    }
     let target = json!({"type":"string","minLength":1});
     let (description, schema, parallel_read, cacheable, code_direct) = match name {
         "get" => (
@@ -137,6 +140,8 @@ impl Manifest {
                 "complete",
                 "history_query",
                 "history_directory",
+                "find_contacts",
+                "find_conversations",
                 "time_get_current",
                 "update_short_state",
                 "read_tool_artifact",
