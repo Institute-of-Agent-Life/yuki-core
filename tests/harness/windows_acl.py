@@ -2,7 +2,7 @@
 
 import csv
 import ctypes
-import re
+import struct
 import subprocess
 import time
 from ctypes import wintypes
@@ -20,8 +20,9 @@ def inspect_pipe(name):
     security.GetSecurityInfo.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.DWORD,
                                         pointer, pointer, pointer, pointer, ctypes.POINTER(pointer)]
     security.GetSecurityInfo.restype = wintypes.DWORD
-    security.ConvertSecurityDescriptorToStringSecurityDescriptorW.argtypes = [
-        pointer, wintypes.DWORD, wintypes.DWORD, ctypes.POINTER(wintypes.LPWSTR), pointer]
+    security.GetSecurityDescriptorControl.argtypes = [pointer, ctypes.POINTER(wintypes.WORD), ctypes.POINTER(wintypes.DWORD)]
+    security.GetAce.argtypes = [pointer, wintypes.DWORD, ctypes.POINTER(pointer)]
+    security.ConvertSidToStringSidW.argtypes = [pointer, ctypes.POINTER(wintypes.LPWSTR)]
     deadline = time.monotonic() + 5
     while True:
         handle = kernel.CreateFileW(name, 0x20000, 0, None, 3, 0, None)
@@ -32,23 +33,40 @@ def inspect_pipe(name):
             raise ctypes.WinError(error)
         time.sleep(0.01)
     descriptor = pointer()
-    text = wintypes.LPWSTR()
+    dacl = pointer()
     try:
-        error = security.GetSecurityInfo(handle, 1, 4, None, None, None, None, ctypes.byref(descriptor))
+        error = security.GetSecurityInfo(handle, 1, 4, None, None, ctypes.byref(dacl), None, ctypes.byref(descriptor))
         if error:
             raise ctypes.WinError(error)
-        if not security.ConvertSecurityDescriptorToStringSecurityDescriptorW(
-                descriptor, 1, 4, ctypes.byref(text), None):
+        if not dacl:
+            raise AssertionError("operator pipe has no DACL")
+        control, revision = wintypes.WORD(), wintypes.DWORD()
+        if not security.GetSecurityDescriptorControl(descriptor, ctypes.byref(control), ctypes.byref(revision)):
             raise ctypes.WinError(ctypes.get_last_error())
-        sddl = text.value
         user = subprocess.check_output(["whoami", "/user", "/fo", "csv", "/nh"], text=True)
         current_sid = next(value for row in csv.reader(user.splitlines()) for value in row
                            if value.startswith("S-1-"))
-        trustees = re.findall(r";;;([^)]+)\)", sddl)
-        return {"protected": sddl.startswith("D:P"), "trustees": sorted(
-            "current_user" if item == current_sid else "SYSTEM" if item == "SY" else item
-            for item in trustees)}
+        # Read the binary SIDs. SDDL can abbreviate RID 500 as LA on hosted runners.
+        _, _, _, count, _ = struct.unpack("<BBHHH", ctypes.string_at(dacl, 8))
+        trustees = []
+        for index in range(count):
+            ace = pointer()
+            if not security.GetAce(dacl, index, ctypes.byref(ace)):
+                raise ctypes.WinError(ctypes.get_last_error())
+            kind, _, size, _ = struct.unpack("<BBHI", ctypes.string_at(ace, 8))
+            if kind != 0 or size < 16:
+                raise AssertionError("unexpected operator ACE type or size")
+            text = wintypes.LPWSTR()
+            if not security.ConvertSidToStringSidW(ace.value + 8, ctypes.byref(text)):
+                raise ctypes.WinError(ctypes.get_last_error())
+            try:
+                sid = text.value
+                trustees.append("current_user" if sid == current_sid else
+                                "SYSTEM" if sid == "S-1-5-18" else "unexpected_principal")
+            finally:
+                kernel.LocalFree(ctypes.cast(text, pointer))
+        return {"protected": bool(control.value & 0x1000), "trustees": sorted(trustees)}
     finally:
-        if text: kernel.LocalFree(ctypes.cast(text, pointer))
-        if descriptor: kernel.LocalFree(descriptor)
+        if descriptor:
+            kernel.LocalFree(descriptor)
         kernel.CloseHandle(handle)
