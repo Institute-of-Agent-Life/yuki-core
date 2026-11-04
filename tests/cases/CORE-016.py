@@ -36,6 +36,9 @@ def answer(q, *calls, text=""):
 
 
 def run(ctx):
+    from tests.harness.work_segments import run as segment_recovery
+
+    ctx.write("work-segment-recovery.json", segment_recovery(ctx))
     svc = Service(ctx, ctx.working / "work")
     previous_schema(ctx, svc.data, 13)
     (svc.data / "SOUL.md").write_bytes((ctx.root / "character/SOUL.md").read_bytes())

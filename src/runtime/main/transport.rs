@@ -132,8 +132,8 @@ impl Dispatch {
                     crate::tools::reject(&store, &exec, &actor, &id, error.to_string()).await?;
                 }
             }
-            "lookup_tools" | "time_get_current" | "history_directory" | "update_short_state"
-            | "read_tool_artifact" => {
+            "lookup_tools" | "time_get_current" | "history_directory" | "find_contacts"
+            | "find_conversations" | "update_short_state" | "read_tool_artifact" => {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }
             "send" if cfg.binding_endpoint.is_none() => {
@@ -297,7 +297,17 @@ pub async fn run(
             return Ok(());
         }
         let soul = std::fs::read_to_string(data.join("SOUL.md"))?;
-        let step = write(store, cfg, Change::Prepare(exec.to_owned(), soul)).await?;
+        let step = write(
+            store,
+            cfg,
+            Change::Prepare(exec.to_owned(), soul, store.work_segments),
+        )
+        .await?;
+        if step["segment_yielded"] == true {
+            #[cfg(test)]
+            crate::store::tests::commit_barrier("work-segment-yielded").await;
+            return Ok(());
+        }
         if step.is_null() {
             return Ok(());
         }

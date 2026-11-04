@@ -117,3 +117,10 @@ CORE-033 已補上 Client9 原檔目錄、依 `artifact_id + version` 下載及 
 | Linux arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/linux-arm64-02/candidate/yuki-personal-preview-718cba6b1cf2-linux-arm64.zip` | `4427bd183ae5ea95566e65cb7dc7bb1df282eaf140f94e81c526399e932968bd` |
 
 CORE-038 在 `codex/core-038-media` 完成有版本的 byte bridge 與原 Social 交接。Mac `artifacts/CORE-038/mac-09/`、HJW `windows-01/` 各 114 項；兩台實際 SDK 程序驗跨插件拒讀、分塊、source 清除途中 ASR 回覆、原操作冷恢復；兩個 Profile 驗兩張本插件圖片加外插件 handle，成功效果與呈現各自留回條。原 QQ 及受控外部 gateway 各自交原版本；篡改 plan 被拒。18 張相鄰卡在各卡 `media-broker-regression-01/` 通過。SDK Rust 1.0.0-alpha.4、Python 1.0.0a4，候選 `media.process/open/publish` revision 1；正式凍結待 EXT-021、030、031、032 真實消費。協議說明在 `protocol/plugin/media/README.md`。乾淨來源的候選包另按提交名封裝。
+CORE-014 補核發現原版長 Work 在續接時呼叫 `find_contacts`。已於 `codex/core-014-contacts` 補原名稱、原參數 schema、單一人物的多帳號綁定、Person／Space keyset，以及分開的 `find_conversations`。讀取沿原 caller 和來源交集，發布前重查並綁真實來源；舊人物與會話目錄入口仍可用。固定 v4 八項對拍在 `artifacts/CORE-014/contacts-v4-01/`，正常 Main 的原 wire 在 `contacts-mac-04/original-contact-directory.json`。此修正供 CORE-040 原長 Work 消費，不以替代工具替換原劇本。
+
+聯絡人補核最終來源樹 `62ca2f8c48e6cf303e74cb780ebf47c4dd608182b04acb3e77b81d97319e7a53`，Mac 與 HJW Windows 各 142 項通過，產物在 `artifacts/CORE-014/{contacts-mac-06,contacts-windows-02}/original-contact-directory.json`。CORE-005、007、015、052 的 `contacts-regression-02` 均通過，另留 13 張相鄰卡的 `contacts-regression-01`。包含原 UUID 大小寫別名升級、現有來源的發布前重查與目錄來源依賴。下一步將此版本供 CORE-040 原長 Work 使用。
+
+CORE-016 分段續跑補核在 `codex/core-016-segments`，整合基底 `eb616e7` 包含已驗 CORE-033 文件下載及 CORE-014 原聯絡人工具。原 Work 到段額後在全批配對與完成判定後保存 queued，後續段沿原 request／operation／根預留接續。Mac、HJW Windows 各 184 項通過，來源樹 `6b09095e31c6de2f8b276cb6eec8de336456543ba4aa79b921491df845de6c2d`，見 `artifacts/CORE-016/{segments-mac-04,segments-windows-01}/work-segment-recovery.json`。兩個實際 kill 點、換段限額、根用盡、未知已付及 queued 取消均已驗。CORE-005、011、012、013、017、018、022、023、033、052 的 `work-segments-regression-01` 全過。
+
+CORE-040 Rust 六請求長 Work 已由正常執行檔跑通兩次冷啟、原私人補答、QQ 逐片送達及原文件版本下載，初步回條 `artifacts/CORE-040/C-long-functional-05/`。此回條只驗該劇本功能。固定原版歷史工具名稱與本倉名稱仍有差異，完整 A/B/C 同口徑量測及 Compact 長分支待完成。下一步補全比較及 CORE-034 Code 子呼叫。
