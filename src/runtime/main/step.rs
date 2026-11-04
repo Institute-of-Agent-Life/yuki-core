@@ -1,4 +1,4 @@
-use super::{Config, domain::human_text};
+use super::Config;
 use crate::{
     Result,
     context::assemble,
@@ -23,6 +23,17 @@ pub async fn prepare(
     ) {
         return Ok(Value::Null);
     }
+    if let Some(next) =
+        crate::context::compact_public::job::recover(conn, cfg, exec, &actor).await?
+    {
+        return Ok(next);
+    }
+    if let Some(next) = crate::context::compact_exec::recover(conn, cfg, exec, &actor).await? {
+        return Ok(next);
+    }
+    if crate::context::compact_public::history::stale(conn, exec).await? {
+        return hold(conn, exec, "public_source_changed").await;
+    }
     let activation = format!("main:{exec}");
     execution::activate(conn, exec, &activation, &cfg.contract()).await?;
     let prior=sqlx::query("SELECT r.id,r.ordinal,r.request_json,p.state,p.response,p.diagnostic
@@ -39,18 +50,23 @@ pub async fn prepare(
         Some(raw) => serde_json::from_str::<Input>(&raw)?,
         None => Input::default(),
     };
-    let fresh: Vec<String> = event_rows
+    let fresh: Vec<i64> = event_rows
         .iter()
         .filter(|r| r.try_get::<bool, _>("consumed").ok() == Some(false))
-        .map(|r| human_text(r.try_get("envelope")?))
-        .collect::<Result<_>>()?;
+        .map(|r| r.try_get("id"))
+        .collect::<std::result::Result<_, sqlx::Error>>()?;
+    let zone = cfg.timezone.as_deref().unwrap_or("Asia/Shanghai");
     if !fresh.is_empty() {
-        material.text = fresh.join("\n");
+        material.text = crate::context::event::trigger(conn, &fresh, zone).await?;
+        sqlx::query("INSERT OR IGNORE INTO exec_public_tails(execution,first_event,last_event,message) VALUES(?,?,?,?)")
+            .bind(exec).bind(fresh[0]).bind(fresh[fresh.len()-1]).bind(&material.text).execute(&mut *conn).await?;
     }
     let mut index = 0;
+    let mut original_logical = None;
     let mut body;
     if let Some(row) = prior {
         let logical: String = row.try_get("id")?;
+        original_logical = Some(logical.clone());
         let state: Option<String> = row.try_get("state")?;
         if state.is_none() {
             return Ok(json!({"logical":logical,"actor":actor,"task":material.structured}));
@@ -92,6 +108,9 @@ pub async fn prepare(
                             t.try_get("call_id")?,
                             t.try_get("paired_receipt")?,
                         )?;
+                    }
+                    if crate::work::wait::settle(conn, exec, &logical).await? {
+                        return Ok(Value::Null);
                     }
                     if !continue_turn && crate::work::settle(conn, exec, &logical, None).await? {
                         return Ok(Value::Null);
@@ -138,20 +157,14 @@ pub async fn prepare(
             cfg.protocol.user(&mut body, &material.text)?;
         }
     } else {
-        let mut history = Vec::new();
-        if turn.try_get::<Option<String>, _>("material")?.is_none() {
-            let rows=sqlx::query("SELECT e.id,e.envelope FROM main_inputs i JOIN events e ON e.id=i.event JOIN main_turns t ON t.execution=i.execution JOIN executions x ON x.id=t.execution
-              WHERE t.conversation=? AND t.window=? AND t.rowid<? AND e.raw_actor=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) ORDER BY e.id")
-                .bind(turn.try_get::<String,_>("conversation")?).bind(turn.try_get::<i64,_>("window")?).bind(turn.try_get::<i64,_>("rowid")?).bind(&actor).fetch_all(&mut *conn).await?;
-            for r in rows {
-                sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
-                    .bind(exec)
-                    .bind(r.try_get::<i64, _>("id")?)
-                    .execute(&mut *conn)
-                    .await?;
-                history.push(json!({"role":"user","content":human_text(r.try_get("envelope")?)?}));
-            }
-        }
+        let history = crate::context::compact_public::history::prepare(
+            conn,
+            exec,
+            &actor,
+            &assemble::static_program(cfg, soul),
+            zone,
+        )
+        .await?;
         if let Some(origin) = turn.try_get::<Option<String>, _>("origin")? {
             let kind: String = sqlx::query_scalar("SELECT kind FROM main_origins WHERE ref=?")
                 .bind(&origin)
@@ -181,6 +194,52 @@ pub async fn prepare(
     if cfg.protocol.is_messages() {
         crate::model::messages::cache_last(&mut body)?;
     }
+    if let Some(logical) = original_logical.as_deref() {
+        crate::context::compact_exec::adopt(conn, cfg, exec, logical, &mut body).await?;
+    }
+    loop {
+        match crate::context::compact_public::job::consider(
+            conn,
+            cfg,
+            exec,
+            &actor,
+            &mut body,
+            material.structured.is_some(),
+        )
+        .await
+        {
+            Ok(Some(next)) => return Ok(next),
+            Ok(None) => {}
+            Err(e) if e.to_string() == "model_request_capacity" => {}
+            Err(e) => return Err(e),
+        }
+        // A stored E may have been purchased after P changed the initial native
+        // prefix. Reapply it to that exact prefix, then check if retiring the
+        // private chain made another original public route legal.
+        if let Some(logical) = original_logical.as_deref()
+            && crate::context::compact_exec::adopt(conn, cfg, exec, logical, &mut body).await?
+        {
+            continue;
+        }
+        break;
+    }
+    match crate::context::compact_exec::consider(
+        conn,
+        cfg,
+        exec,
+        &actor,
+        &body,
+        material.structured.is_some(),
+    )
+    .await
+    {
+        Ok(Some(next)) => return Ok(next),
+        Ok(None) => {}
+        Err(e) if e.to_string() == "model_request_capacity" => {
+            return hold(conn, exec, "model_request_capacity").await;
+        }
+        Err(e) => return Err(e),
+    }
     let raw = body.to_string();
     let logical = format!("{exec}:logical:{index}");
     let estimated = i64::try_from(raw.len())?;
@@ -192,12 +251,13 @@ pub async fn prepare(
             input: estimated,
             output: cfg.max_output,
             safe_rate_limit_once: false,
-            native_tools: body["tools"].as_array().is_some_and(|tools| {
-                tools.iter().any(|tool| {
-                    matches!(
-                        tool["type"].as_str(),
-                        Some("web_search" | "web_search_20250305")
-                    )
+            native_tools: body["tools"].as_array().is_some_and(|items| {
+                items.iter().any(|t| {
+                    t["googleSearch"].is_object()
+                        || matches!(
+                            t["type"].as_str(),
+                            Some("web_search" | "web_search_20250305")
+                        )
                 })
             }),
             request: raw,

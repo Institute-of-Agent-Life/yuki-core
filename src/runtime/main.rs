@@ -1,5 +1,7 @@
 mod domain;
+pub(crate) use domain::{human_text as event_text, window};
 mod step;
+pub(crate) use step::hold as hold_original;
 mod transport;
 use crate::{
     Result,
@@ -33,6 +35,8 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking_budget: Option<i64>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub gemini_mixed_tools: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub native_web_search: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
@@ -42,6 +46,12 @@ pub struct Config {
     pub result_storage_bytes: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compact_soft_tokens: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_input_tokens: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<u64>,
     pub endpoint: String,
     pub model: String,
     pub name: String,
@@ -83,6 +93,17 @@ impl Config {
         if let Some(zone) = &self.timezone {
             zone.parse::<chrono_tz::Tz>()?;
         }
+        if [
+            self.compact_soft_tokens,
+            self.max_input_tokens,
+            self.context_window,
+        ]
+        .into_iter()
+        .flatten()
+        .any(|n| n == 0)
+        {
+            return Err("configured context capacities must be positive".into());
+        }
         if self.protocol.is_chat()
             && (self.native_web_search
                 || self.tool_choice.is_some()
@@ -104,6 +125,21 @@ impl Config {
             return Err("empty reasoning effort".into());
         }
         let url = reqwest::Url::parse(&self.endpoint)?;
+        if self.gemini_mixed_tools && !self.protocol.is_gemini() {
+            return Err("mixed Google Search profile requires GenerateContent".into());
+        }
+        if self.protocol.is_gemini() {
+            let model = self.model.strip_prefix("models/").unwrap_or(&self.model);
+            if model.is_empty()
+                || !url
+                    .path()
+                    .ends_with(&format!("/models/{model}:generateContent"))
+            {
+                return Err(
+                    "GenerateContent endpoint must select the original configured model".into(),
+                );
+            }
+        }
         let local = url
             .host_str()
             .and_then(|h| h.trim_matches(['[', ']']).parse::<std::net::IpAddr>().ok())
@@ -191,11 +227,20 @@ pub enum Change {
     Operator(Action),
     Human(i64, i64),
     Defer(i64, i64),
+    Wait(String, i64),
+    Schedule(i64, i64),
     Prepare(String, String),
     Hold(String, String),
 }
 pub async fn apply(conn: &mut SqliteConnection, cfg: &Config, action: &Change) -> Result<Value> {
     match action {
+        Change::Wait(id, now) => Ok(serde_json::json!(
+            crate::work::wait::reconcile(conn, id, *now).await?
+        )),
+        Change::Schedule(id, now) => {
+            crate::work::schedule::due::reconcile(conn, cfg, *id, *now).await?;
+            Ok(Value::Null)
+        }
         Change::Operator(cmd) => domain::operator(conn, cfg, cmd).await,
         Change::Human(event, now) => {
             domain::admit_human(conn, cfg, *event, *now).await?;
@@ -302,11 +347,30 @@ impl Runner {
 
     async fn tick(&mut self) -> Result<()> {
         let timestamp = now()?;
+        for schedule in crate::work::schedule::due::ready(self.store.readers(), timestamp).await? {
+            write(
+                &self.store,
+                &self.cfg,
+                Change::Schedule(schedule, timestamp),
+            )
+            .await?;
+            #[cfg(test)]
+            crate::store::tests::commit_barrier("schedule-admitted").await;
+        }
+        let waits:Vec<String>=sqlx::query_scalar("SELECT w.id FROM work_waits w JOIN work_nodes n ON n.id=w.work WHERE w.state='armed' AND n.goal IS NOT NULL AND NOT EXISTS(SELECT 1 FROM work_suspensions WHERE work=w.work) ORDER BY w.rowid").fetch_all(self.store.readers()).await?;
+        for wait in waits {
+            let mut read = self.store.readers().begin().await?;
+            let ready = crate::work::wait::ready(&mut read, &wait, timestamp).await?;
+            drop(read);
+            if ready {
+                let _ = write(&self.store, &self.cfg, Change::Wait(wait, timestamp)).await;
+            }
+        }
         let events:Vec<i64>=sqlx::query_scalar("SELECT s.event_id FROM accepted_sources s JOIN events e ON e.id=s.event_id JOIN entries d ON d.id=e.entry_id
             JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active'
             JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
             WHERE p.enabled AND r.enabled AND d.closed_at IS NULL AND NOT EXISTS(SELECT 1 FROM main_inputs WHERE event=s.event_id)
-            AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
+            AND NOT EXISTS(SELECT 1 FROM compact_manual WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_explicit_answers WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_wait_routed WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
             AND NOT EXISTS(SELECT 1 FROM executions x WHERE x.source=s.event_id AND (x.state!='pending' OR x.cancelled))
             AND NOT EXISTS(SELECT 1 FROM main_admission_delays WHERE event=s.event_id AND retry_after>?) ORDER BY s.event_id LIMIT 64").bind(timestamp).fetch_all(self.store.readers()).await?;
         for event in events {
@@ -333,8 +397,8 @@ impl Runner {
             }
         }
         let rows=sqlx::query("SELECT x.id,l.lane FROM executions x JOIN main_turns t ON t.execution=x.id JOIN main_work_lanes l ON l.execution=x.id WHERE x.state IN ('pending','running')
-          AND NOT x.cancelled AND t.ready_after<=? AND NOT EXISTS(SELECT 1 FROM main_turns prior JOIN executions p ON p.id=prior.execution JOIN main_work_lanes pl ON pl.execution=p.id
-          WHERE pl.lane=l.lane AND prior.rowid<t.rowid AND p.state IN ('pending','running') AND NOT p.cancelled) ORDER BY t.rowid LIMIT 32")
+          AND NOT x.cancelled AND NOT EXISTS(SELECT 1 FROM work_suspensions suspended WHERE suspended.work=x.work_id) AND t.ready_after<=? AND NOT EXISTS(SELECT 1 FROM main_turns prior JOIN executions p ON p.id=prior.execution JOIN main_work_lanes pl ON pl.execution=p.id
+          WHERE pl.lane=l.lane AND prior.rowid<t.rowid AND p.state IN ('pending','running') AND NOT p.cancelled AND NOT EXISTS(SELECT 1 FROM work_suspensions paused WHERE paused.work=p.work_id)) ORDER BY t.rowid LIMIT 32")
           .bind(timestamp).fetch_all(self.store.readers()).await?;
         for row in rows {
             let exec: String = row.try_get("id")?;
@@ -352,7 +416,7 @@ impl Runner {
                 self.client.clone(),
                 self.data.clone(),
             );
-            let cfg = if let Some(profile)=sqlx::query_scalar::<_,String>("SELECT w.profile FROM work_runs r JOIN work_nodes w ON w.id=r.work WHERE r.execution=?").bind(&exec).fetch_optional(self.store.readers()).await?{
+            let cfg = if let Some(profile)=sqlx::query_scalar::<_,String>("SELECT w.profile FROM work_runs r JOIN work_nodes w ON w.id=r.work WHERE r.execution=?1 UNION ALL SELECT profile FROM schedule_occurrences WHERE execution=?1 LIMIT 1").bind(&exec).fetch_optional(self.store.readers()).await?{
                 Arc::new(serde_json::from_str(&profile)?)
             }else{cfg};
             let id = exec.clone();

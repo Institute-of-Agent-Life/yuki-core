@@ -4,6 +4,19 @@ use crate::{
 };
 use serde_json::{Value, json};
 
+pub fn static_program(profile: &Config, soul: &str) -> String {
+    let name = &profile.name;
+    // The original compiler emits the character contribution before the direct-mode program.
+    let mut prefix = format!("【角色身份】\n当前角色的名称是 {name}。");
+    if !soul.trim().is_empty() {
+        prefix.push_str("\n\n【SOUL】\n");
+        prefix.push_str(&soul.replace("{{name}}", name));
+    }
+    prefix.push_str("\n\n");
+    prefix.push_str(include_str!("main-program.txt"));
+    prefix
+}
+
 /// Assemble once, before reservation. Runtime data has its own message and never impersonates the trigger.
 pub fn body(
     profile: &Config,
@@ -12,16 +25,7 @@ pub fn body(
     history: Vec<Value>,
     declarations: Vec<Value>,
 ) -> Value {
-    let name = &profile.name;
-    // Direct-mode program and SOUL follow the pinned v4 prompting contract.
-    let mut prefix = format!(
-        "{}\n\n【角色身份】\n当前角色的名称是 {name}。",
-        include_str!("main-program.txt")
-    );
-    if !soul.trim().is_empty() {
-        prefix.push_str("\n\n【SOUL】\n");
-        prefix.push_str(&soul.replace("{{name}}", name));
-    }
+    let prefix = static_program(profile, soul);
     let mut messages = vec![json!({"role":"system","content":prefix})];
     messages.extend(history);
     if !input.context.is_empty() {

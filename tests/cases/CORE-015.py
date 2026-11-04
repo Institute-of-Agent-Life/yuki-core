@@ -42,7 +42,9 @@ def run(ctx):
     for mode in ("direct", "code", "quota"):
         svc = Service(ctx, ctx.working / mode)
         previous_schema(ctx, svc.data, 11)
-        (svc.data / "SOUL.md").write_bytes((ctx.root / "character/SOUL.md").read_bytes())
+        (svc.data / "SOUL.md").write_bytes(
+            (ctx.root / "character/SOUL.md").read_bytes()
+        )
         ctx.check(
             "previous database upgrades additively",
             svc.command("migrate")["schema_version"] >= 12,
@@ -168,6 +170,12 @@ def run(ctx):
                     ctx.check(
                         "paged lookup omits schemas",
                         all("parameters" not in i for i in r[1]["result"]["items"]),
+                    )
+                    directory = {item["name"]: item for item in r[1]["result"]["items"]}
+                    ctx.check(
+                        "long wait tool uses a short directory summary",
+                        len(directory["task_control"]["description"]) <= 121
+                        and "time_get_current" in directory,
                     )
                     ctx.equal(
                         "one denied call does not lose independent result",

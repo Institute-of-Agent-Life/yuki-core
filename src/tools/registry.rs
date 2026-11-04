@@ -23,6 +23,25 @@ pub struct Tool {
     pub provider: Option<Provider>,
 }
 impl Tool {
+    /// Directory pages show a short description. Exact-name lookup returns the entire
+    /// frozen declaration, even when the provider wrote a long instruction manual.
+    fn summary(&self) -> String {
+        let first = self
+            .description
+            .split_inclusive(['。', '！', '？', '\n'])
+            .next()
+            .unwrap_or("")
+            .trim();
+        let first = first
+            .split_once(". ")
+            .map_or(first, |(sentence, _)| sentence);
+        let mut chars = first.chars();
+        let mut text: String = chars.by_ref().take(120).collect();
+        if chars.next().is_some() {
+            text.push('…');
+        }
+        text
+    }
     pub fn wire(&self) -> Value {
         json!({"type":"function","function":{"name":self.name,"description":self.description,"parameters":self.schema}})
     }
@@ -32,6 +51,9 @@ fn object(props: Value, required: &[&str]) -> Value {
 }
 pub fn builtin(name: &str) -> Option<Tool> {
     if let Some(tool) = crate::memory::tools::declaration(name) {
+        return Some(tool);
+    }
+    if let Some(tool) = crate::work::schedule::declaration(name) {
         return Some(tool);
     }
     if let Some(tool) = crate::work::declaration(name) {
@@ -158,6 +180,8 @@ impl Manifest {
                 "lookup_tools",
                 "read_memory",
                 "memory_change",
+                "automation_query",
+                "automation_manage",
                 "task_control",
                 "subagent_start",
                 "subagent_control",
@@ -212,7 +236,7 @@ impl Manifest {
             .iter()
             .skip(offset)
             .take(limit as usize)
-            .map(|t| json!({"name":t.name,"description":t.description}))
+            .map(|t| json!({"name":t.name,"description":t.summary()}))
             .collect();
         Ok(
             json!({"items":rows,"next_offset":offset.checked_add(rows.len()).filter(|n|*n<hits.len()),"executed":false}),

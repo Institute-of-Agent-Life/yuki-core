@@ -15,6 +15,9 @@ pub struct Route {
 }
 pub async fn route(conn: &mut SqliteConnection, exec: &str, actor: &str) -> Result<Route> {
     effects::authorize(conn, exec, actor, true).await?;
+    if let Some(route) = crate::work::schedule::due::self_group_route(conn, exec).await? {
+        return Ok(route);
+    }
     let r=sqlx::query("WITH RECURSIVE owners(id) AS(SELECT ? UNION SELECT o.parent FROM owners f JOIN executions x ON x.id=f.id JOIN main_origins o ON o.ref=x.origin WHERE o.parent IS NOT NULL)
         SELECT e.id,e.entry_id,e.bot_stage,e.actor_stage,e.envelope,e.raw_actor,entry.scope,entry.space,ac.native AS human,bot.namespace,bot.native AS receiver,
         coalesce(t.window,w.generation,1) AS generation,coalesce(w.generation,1) AS current_window
@@ -236,7 +239,11 @@ pub async fn aggregate(conn: &mut SqliteConnection, exec: &str, id: &str) -> Res
     .bind(id)
     .fetch_one(&mut *conn)
     .await?;
-    let result = json!({"parts":states,"public_delivery_confirmed":!states.is_empty() && states.iter().all(|s|s=="confirmed"),"image_intent_accepted":image,"image_delivered":false});
+    let rows=sqlx::query("SELECT p.ordinal,p.child,p.state,p.locator,o.id AS outbound_id,o.echo_event FROM social_parts p LEFT JOIN social_outbound o ON o.namespace=p.namespace AND o.child=p.child WHERE p.namespace=? AND p.operation_id=? ORDER BY p.ordinal")
+        .bind(exec).bind(id).fetch_all(&mut *conn).await?;
+    let deliveries:Vec<_>=rows.iter().map(|r|json!({"ordinal":r.get::<i64,_>("ordinal"),"child":r.get::<String,_>("child"),"state":r.get::<String,_>("state"),
+        "locator":r.get::<Option<String>,_>("locator"),"outbound_id":r.get::<Option<i64>,_>("outbound_id"),"echo_event":r.get::<Option<i64>,_>("echo_event")})).collect();
+    let result = json!({"parts":states,"deliveries":deliveries,"public_delivery_confirmed":!states.is_empty() && states.iter().all(|s|s=="confirmed"),"image_intent_accepted":image,"image_delivered":false});
     sqlx::query("UPDATE operations SET state=?,result=? WHERE namespace=? AND operation_id=?")
         .bind(state)
         .bind(result.to_string())

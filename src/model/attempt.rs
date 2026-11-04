@@ -175,7 +175,7 @@ async fn reserve(conn: &mut SqliteConnection, reservation: &Reservation) -> Resu
         let unresolved: bool = sqlx::query_scalar(
             "SELECT EXISTS(SELECT 1 FROM model_requests prior
              JOIN activations previous ON previous.id=prior.activation
-             WHERE previous.execution=? AND NOT EXISTS(
+             WHERE previous.execution=? AND NOT EXISTS(SELECT 1 FROM closed_local_compacts c WHERE c.logical=prior.id) AND NOT EXISTS(
                 SELECT 1 FROM model_attempts t WHERE t.logical=prior.id AND
                 (t.state='paired' OR (t.state='response' AND NOT EXISTS(
                   SELECT 1 FROM model_tool_intents i WHERE i.logical=prior.id)))))",

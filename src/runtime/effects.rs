@@ -117,6 +117,7 @@ pub(crate) async fn authorize(
     actor: &str,
     dispatch: bool,
 ) -> Result<String> {
+    if dispatch && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM executions x JOIN work_suspensions s ON s.work=x.work_id WHERE x.id=?)").bind(execution).fetch_one(&mut *conn).await?{return Err("Work independently suspended".into());}
     let erased:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=?)").bind(execution).fetch_one(&mut *conn).await?;
     if erased {
         return Err("execution source erased".into());

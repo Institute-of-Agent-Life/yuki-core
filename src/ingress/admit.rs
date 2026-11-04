@@ -95,6 +95,8 @@ pub struct Frame {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reply_bot: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub answer_work_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
 }
 
@@ -393,7 +395,10 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
         .bind(id)
         .execute(&mut *conn)
         .await?;
-        if !crate::memory::route(conn, id, f).await? {
+        if f.answer_work_id.is_some() {
+            crate::work::questions::explicit(conn, id, f.answer_work_id.as_deref().unwrap())
+                .await?;
+        } else if !crate::memory::route(conn, id, f).await? {
             crate::host::domain::route_command(conn, id, f).await?;
         }
     }
@@ -407,10 +412,18 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
         "SELECT path,state FROM host_command_events WHERE event=?",
     )
     .bind(id)
-    .fetch_optional(conn)
+    .fetch_optional(&mut *conn)
     .await?
     {
         receipt["command"] = json!({"path":path,"state":state});
+    }
+    if let Some(routed) =
+        sqlx::query_scalar::<_, bool>("SELECT matched FROM work_explicit_answers WHERE event=?")
+            .bind(id)
+            .fetch_optional(&mut *conn)
+            .await?
+    {
+        receipt["work_answer"] = json!({"matched":routed});
     }
     Ok(receipt)
 }

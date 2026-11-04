@@ -512,6 +512,26 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "launched and killed by the CORE-016 physical delivery harness"]
 async fn work_delivery_crash_child() {
+    run_owner_child().await;
+}
+#[tokio::test]
+#[ignore]
+async fn schedule_crash_child() {
+    run_owner_child().await;
+}
+async fn run_owner_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    crate::execute(crate::Args {
+        data: Some(data),
+        command: crate::Action::Run,
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "CORE-022 kills the original owner after a durable compact response"]
+async fn compact_crash_child() {
     let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
     crate::execute(crate::Args {
         data: Some(data),

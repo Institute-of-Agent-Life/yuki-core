@@ -13,6 +13,10 @@ pub async fn operator(conn: &mut SqliteConnection, config: &Config, cmd: &Action
     {
         return Err("extraction origin belongs to its original batch".into());
     }
+    if matches!(cmd, Action::Register{id,..}|Action::Trigger{id,..}|Action::Revoke{id} if id.starts_with("schedule-occurrence:"))
+    {
+        return Err("scheduled occurrence belongs to its original admission".into());
+    }
     match cmd {
         Action::Register {
             kind,
@@ -196,6 +200,24 @@ pub async fn admit_human(
             .bind(proof["execution"].as_str())
             .execute(conn)
             .await?;
+        return Ok(());
+    }
+    if text
+        .split_whitespace()
+        .take(2)
+        .map(|s| s.to_ascii_lowercase())
+        .eq(["/ai", "compact"].into_iter().map(str::to_owned))
+    {
+        let focus = text
+            .trim()
+            .splitn(3, char::is_whitespace)
+            .nth(2)
+            .unwrap_or("")
+            .trim();
+        crate::context::compact_public::job::manual(conn, cfg, event, focus).await?;
+        return Ok(());
+    }
+    if crate::work::wait::route_event(conn, event).await? {
         return Ok(());
     }
     let previous=sqlx::query("SELECT x.id,x.state,x.work_id,t.ready_after,

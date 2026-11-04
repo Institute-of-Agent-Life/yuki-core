@@ -166,7 +166,11 @@ pub async fn tick(
     let mut layout = json!({"model":profile.model,"max_tokens":profile.max_output,"stream":false,"messages":[{"role":"system","content":GOLD["instruction"]},{"role":"user","content":input.to_string()}]});
     chat::configure(&mut layout, Some(&task), vec![]);
     let mut wire = profile.protocol.request(layout, profile, Some(&task))?;
-    wire["temperature"] = json!(0.1);
+    if profile.protocol.is_gemini() {
+        wire["generationConfig"]["temperature"] = json!(0.1);
+    } else if !profile.protocol.is_messages() || wire.get("thinking").is_none() {
+        wire["temperature"] = json!(0.1);
+    }
     let raw = wire.to_string();
     execution::root(conn, &exec, profile.root_slots, profile.max_input_units).await?;
     execution::activate(conn, &exec, &origin, &profile.contract()).await?;
