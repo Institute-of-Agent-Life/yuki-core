@@ -122,7 +122,7 @@ pub async fn reconcile(conn: &mut SqliteConnection, cfg: &Config, id: i64, now: 
     .bind(occurrence)
     .execute(&mut *conn)
     .await?;
-    let window = crate::runtime::main::schedule_window(conn, &entry).await?;
+    let window = crate::runtime::main::window(conn, &entry).await?;
     let input = json!({"text":s.get::<String,_>("goal"),"context":[{"schedule_id":id,"occurrence":occurrence,"planned_utc_ms":planned,"definition_version":version,"owner":owner}]});
     sqlx::query("INSERT INTO main_turns(execution,conversation,window,origin,occurrence,material,ready_after) VALUES(?,?,?,?,?,?,0)")
         .bind(&exec).bind(&entry).bind(window).bind(&origin).bind(planned.to_string()).bind(input.to_string()).execute(&mut *conn).await?;

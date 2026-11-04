@@ -528,3 +528,15 @@ async fn run_owner_child() {
     .await
     .unwrap();
 }
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "CORE-022 kills the original owner after a durable compact response"]
+async fn compact_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    crate::execute(crate::Args {
+        data: Some(data),
+        command: crate::Action::Run,
+    })
+    .await
+    .unwrap();
+}

@@ -11,3 +11,5 @@ NOTICE text eol=lf
 *.ndjson text eol=lf
 sdk/rust/Cargo.lock text eol=lf
 native/windows-runtime/COPYING.RUNTIME text eol=lf whitespace=-blank-at-eof
+src/context/main-program.txt text eol=lf
+character/SOUL.md text eol=lf

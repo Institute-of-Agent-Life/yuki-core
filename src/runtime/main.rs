@@ -1,6 +1,7 @@
 mod domain;
-pub(crate) use domain::human_text as event_text;
+pub(crate) use domain::{human_text as event_text, window};
 mod step;
+pub(crate) use step::hold as hold_original;
 mod transport;
 use crate::{
     Result,
@@ -33,6 +34,8 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking_budget: Option<i64>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub gemini_mixed_tools: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub native_web_search: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
@@ -42,6 +45,12 @@ pub struct Config {
     pub result_storage_bytes: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compact_soft_tokens: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_input_tokens: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<u64>,
     pub endpoint: String,
     pub model: String,
     pub name: String,
@@ -83,6 +92,17 @@ impl Config {
         if let Some(zone) = &self.timezone {
             zone.parse::<chrono_tz::Tz>()?;
         }
+        if [
+            self.compact_soft_tokens,
+            self.max_input_tokens,
+            self.context_window,
+        ]
+        .into_iter()
+        .flatten()
+        .any(|n| n == 0)
+        {
+            return Err("configured context capacities must be positive".into());
+        }
         if self.protocol.is_chat()
             && (self.native_web_search
                 || self.tool_choice.is_some()
@@ -104,6 +124,21 @@ impl Config {
             return Err("empty reasoning effort".into());
         }
         let url = reqwest::Url::parse(&self.endpoint)?;
+        if self.gemini_mixed_tools && !self.protocol.is_gemini() {
+            return Err("mixed Google Search profile requires GenerateContent".into());
+        }
+        if self.protocol.is_gemini() {
+            let model = self.model.strip_prefix("models/").unwrap_or(&self.model);
+            if model.is_empty()
+                || !url
+                    .path()
+                    .ends_with(&format!("/models/{model}:generateContent"))
+            {
+                return Err(
+                    "GenerateContent endpoint must select the original configured model".into(),
+                );
+            }
+        }
         let local = url
             .host_str()
             .and_then(|h| h.trim_matches(['[', ']']).parse::<std::net::IpAddr>().ok())
@@ -163,8 +198,6 @@ pub enum Action {
         execution: String,
     },
 }
-
-pub(crate) use domain::window as schedule_window;
 
 pub(crate) async fn delegate(
     conn: &mut SqliteConnection,
@@ -336,7 +369,7 @@ impl Runner {
             JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active'
             JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
             WHERE p.enabled AND r.enabled AND d.closed_at IS NULL AND NOT EXISTS(SELECT 1 FROM main_inputs WHERE event=s.event_id)
-            AND NOT EXISTS(SELECT 1 FROM work_explicit_answers WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_wait_routed WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
+            AND NOT EXISTS(SELECT 1 FROM compact_manual WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_explicit_answers WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_wait_routed WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
             AND NOT EXISTS(SELECT 1 FROM executions x WHERE x.source=s.event_id AND (x.state!='pending' OR x.cancelled))
             AND NOT EXISTS(SELECT 1 FROM main_admission_delays WHERE event=s.event_id AND retry_after>?) ORDER BY s.event_id LIMIT 64").bind(timestamp).fetch_all(self.store.readers()).await?;
         for event in events {

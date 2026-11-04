@@ -30,6 +30,8 @@ async fn physical(
         let secret = std::env::var(key).map_err(|_| "provider credential unavailable")?;
         request = if cfg.protocol.is_messages() {
             request.header("x-api-key", secret)
+        } else if cfg.protocol.is_gemini() {
+            request.header("x-goog-api-key", secret)
         } else {
             request.bearer_auth(secret)
         };
@@ -292,6 +294,9 @@ pub async fn run(
         if step.is_null() {
             return Ok(());
         }
+        if step["compact_committed"] == true {
+            continue;
+        }
         if let Some(logical) = step["pair"].as_str() {
             pair(
                 store,
@@ -373,6 +378,8 @@ pub async fn run(
                                 if !cfg.protocol.is_chat() && response.starts_with("event:") {
                                     if cfg.protocol.is_messages() {
                                         "incomplete_messages_stream"
+                                    } else if cfg.protocol.is_gemini() {
+                                        "incomplete_generate_content_stream"
                                     } else {
                                         "incomplete_responses_stream"
                                     }
@@ -389,6 +396,30 @@ pub async fn run(
                     )
                     .await?;
                 } else {
+                    if step["compact"] == true
+                        && (decoded.as_ref().is_ok_and(|turn| {
+                            turn.intents.as_array().is_none_or(|v| !v.is_empty())
+                                || ["native_events", "citations", "media"].iter().any(|k| {
+                                    turn.result[*k].as_array().is_some_and(|v| !v.is_empty())
+                                })
+                                || !turn.result["grounding"].is_null()
+                        }) || parsed["stop_reason"] == "pause_turn")
+                    {
+                        attempt::invoke(
+                            store,
+                            Action::Hold {
+                                attempt: attempt_id,
+                                body: response,
+                                usage,
+                                diagnostic: "public_compact_called_tool_or_paused".into(),
+                                partial_bytes: None,
+                                unknown: false,
+                                status: status.into(),
+                            },
+                        )
+                        .await?;
+                        continue;
+                    }
                     let intents = decoded
                         .map(|d| d.intents)
                         .unwrap_or_else(|_| json!([]))
@@ -403,6 +434,11 @@ pub async fn run(
                         },
                     )
                     .await?;
+                    #[cfg(test)]
+                    if step["compact"] == true {
+                        crate::store::tests::commit_barrier("compact-response-before-publication")
+                            .await;
+                    }
                 }
             }
         } else {
