@@ -14,6 +14,8 @@ pub struct Config {
     #[serde(default)]
     pub main: Option<crate::runtime::main::Config>,
     #[serde(default)]
+    pub extraction: Option<crate::memory::extract::Config>,
+    #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
 }
 
@@ -25,6 +27,9 @@ impl Config {
         }
         if let Some(main) = &config.main {
             main.validate()?;
+        }
+        if let Some(extract) = &config.extraction {
+            extract.validate()?;
         }
         Ok(config)
     }

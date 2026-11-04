@@ -48,6 +48,54 @@ fn texts(value: &Value, strings: &mut Vec<String>) {
         _ => {}
     }
 }
+/// Preserve existing text evidence versions. Transcript evidence binds the
+/// exact original segment as well as its event. A referenced message is not
+/// treated as speech authored by the sender of the reply.
+pub async fn event_proof(conn: &mut SqliteConnection, id: i64, quote: &str) -> Result<Proof> {
+    if quote.trim().is_empty() {
+        return Err("empty event quote".into());
+    }
+    let row=sqlx::query("SELECT e.entry_id,e.raw_actor,e.envelope FROM events e WHERE e.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)").bind(id).fetch_one(&mut *conn).await?;
+    let raw: Value = serde_json::from_str(row.try_get("envelope")?)?;
+    let texts: Vec<&str> = raw["segments"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|s| s["type"] == "text")
+        .filter_map(|s| s["text"].as_str())
+        .collect();
+    let text = texts.join("");
+    let source = if raw["text"].as_str().is_some_and(|s| s.contains(quote)) || text.contains(quote)
+    {
+        raw
+    } else {
+        let speech: Vec<(i64, String)> = sqlx::query_as(
+            "SELECT segment,text FROM history_transcripts WHERE source=? ORDER BY segment",
+        )
+        .bind(id)
+        .fetch_all(&mut *conn)
+        .await?;
+        let combined = std::iter::once(text.as_str())
+            .chain(speech.iter().map(|(_, s)| s.as_str()))
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+        if speech.is_empty() || !combined.contains(quote) {
+            return Err("quote is absent from original event text or transcript".into());
+        }
+        json!([raw, speech])
+    };
+    Ok(Proof {
+        kind: "event",
+        key: id.to_string(),
+        version: scope::hash(&source),
+        author: row.try_get("raw_actor")?,
+        entry: row.try_get("entry_id")?,
+        event: Some(id),
+        execution: None,
+        quote: quote.into(),
+    })
+}
 pub async fn resolve(
     conn: &mut SqliteConnection,
     r: &Reader,
@@ -56,34 +104,11 @@ pub async fn resolve(
 ) -> Result<Proof> {
     let (kind, key, value, author, entry, event, execution, quote) = match source {
         Source::Event { id, quote } => {
-            let row=sqlx::query("SELECT e.entry_id,e.raw_actor,e.envelope FROM events e WHERE e.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)").bind(id).fetch_one(&mut *conn).await?;
-            let raw: Value = serde_json::from_str(row.try_get("envelope")?)?;
-            let mut texts = Vec::new();
-            if let Some(s) = raw["text"].as_str() {
-                texts.push(s);
+            let original = event_proof(conn, *id, quote).await?;
+            if !r.admits_entry(&original.entry) {
+                return Err("original evidence unavailable".into());
             }
-            if let Some(segments) = raw["segments"].as_array() {
-                for segment in segments {
-                    if segment["type"] == "text"
-                        && let Some(s) = segment["text"].as_str()
-                    {
-                        texts.push(s);
-                    }
-                }
-            }
-            if !texts.iter().any(|t| t.contains(quote)) {
-                return Err("quote is absent from original event text".into());
-            }
-            (
-                "event",
-                id.to_string(),
-                raw,
-                row.try_get("raw_actor")?,
-                row.try_get("entry_id")?,
-                Some(*id),
-                None,
-                quote,
-            )
+            return Ok(original);
         }
         Source::Tool {
             execution,

@@ -127,6 +127,12 @@ pub(crate) async fn authorize(
             .fetch_one(&mut *conn)
             .await?
     {
+        if dispatch
+            && origin.starts_with("memory-extract:")
+            && !crate::memory::extract::can_dispatch(conn, execution).await?
+        {
+            return Err("original extraction scope unavailable".into());
+        }
         // Resolve every registered parent afresh. A delegated run never substitutes the
         // current owner of a transferred human account for its original actor.
         let allowed:bool=sqlx::query_scalar("WITH RECURSIVE family(id) AS(
@@ -217,6 +223,16 @@ pub async fn apply(conn: &mut SqliteConnection, command: &Action) -> Result<Valu
             parent,
             ordinal,
         } => {
+            if sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM extraction_batches WHERE execution=?)",
+            )
+            .bind(execution)
+            .fetch_one(&mut *conn)
+            .await?
+            {
+                return Err("extraction execution cannot issue business effects".into());
+            }
+
             authorize(conn, execution, actor, false).await?;
             let canonical = serde_json::from_str::<Value>(payload)?.to_string();
             if let Some(old)=sqlx::query("SELECT action,target,payload,parent,ordinal FROM operations WHERE namespace=? AND operation_id=?")

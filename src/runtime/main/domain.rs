@@ -8,6 +8,11 @@ pub async fn window(conn: &mut SqliteConnection, entry: &str) -> Result<i64> {
         .bind(entry).fetch_one(conn).await?)
 }
 pub async fn operator(conn: &mut SqliteConnection, config: &Config, cmd: &Action) -> Result<Value> {
+    if matches!(cmd,Action::Register{kind,..} if kind=="memory_extract")
+        || matches!(cmd,Action::Register{id,..}|Action::Trigger{id,..}|Action::Revoke{id} if id.starts_with("memory-extract:"))
+    {
+        return Err("extraction origin belongs to its original batch".into());
+    }
     match cmd {
         Action::Register {
             kind,

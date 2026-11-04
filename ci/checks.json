@@ -97,6 +97,10 @@
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
     },
+    "CORE-027": {
+      "case":"tests/cases/CORE-027.py","artifact":"extraction-batches.json","timeout_seconds":330,"rust":true,
+      "capabilities":["scoped-live-extraction","paid-batch-recovery","atomic-extraction-watermark"]
+    },
     "CORE-026": {
       "case": "tests/cases/CORE-026.py",
       "artifact": "fact-evidence-acl.json",
