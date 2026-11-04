@@ -23,6 +23,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if name == "web_search" {
+        return Some(crate::model::search::declaration());
+    }
     let target = json!({"type":"string","minLength":1});
     let (description, schema, parallel_read, cacheable, code_direct) = match name {
         "get" => (
@@ -221,7 +224,11 @@ pub async fn pinned(
         return Ok((serde_json::from_str(&body)?,original));
     }
     let code = cfg.code_projection;
-    let manifest = Manifest::core();
+    let mut manifest = Manifest::core();
+    if cfg.bridge_search {
+        let tool = crate::model::search::declaration();
+        manifest.0.insert(tool.name.clone(), tool);
+    }
     let rev = manifest.revision()?;
     sqlx::query("INSERT INTO tool_manifests VALUES(?,?) ON CONFLICT(revision) DO NOTHING")
         .bind(&rev)

@@ -139,6 +139,13 @@
       "rust": true,
       "capabilities": ["chat-completions-main","internal-source-runner","structured-modes","turn-steering"]
     },
+    "CORE-024": {
+      "case": "tests/cases/CORE-024.py",
+      "artifact": "search-attempts.json",
+      "timeout_seconds": 240,
+      "rust": true,
+      "capabilities": ["isolated-native-search","native-source-proof","scoped-success-cache"]
+    },
     "CORE-011": {
       "case": "tests/cases/CORE-011.py",
       "artifact": "attempts-and-budget.json",
