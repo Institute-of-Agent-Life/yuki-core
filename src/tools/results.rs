@@ -1,0 +1,169 @@
+use crate::{Result, identity::new_id, runtime::effects};
+use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+use sqlx::{Row, SqliteConnection};
+
+pub const DEFAULT_PAGE: usize = 8000;
+pub const DEFAULT_QUOTA: i64 = 64 * 1024 * 1024;
+fn size(v: &Value) -> usize {
+    v.to_string().chars().count()
+}
+fn version(raw: &str) -> String {
+    format!("{:x}", Sha256::digest(raw.as_bytes()))
+}
+
+// The limit includes the complete JSON model receipt. A stored array length describes only
+// that artifact; an original query's total and next_cursor have independent meanings.
+pub async fn present(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    op: &str,
+    original: Value,
+    limit: usize,
+    quota: i64,
+) -> Result<Value> {
+    if size(&original) <= limit {
+        return Ok(original);
+    }
+    let raw = original.to_string();
+    let hash = version(&raw);
+    let bytes = i64::try_from(raw.len())?;
+    let existing:Option<String>=sqlx::query_scalar("SELECT handle FROM tool_artifacts WHERE execution=? AND operation=? AND version=? AND body IS NOT NULL")
+        .bind(exec).bind(op).bind(&hash).fetch_optional(&mut *conn).await?;
+    let handle = if existing.is_some() {
+        existing
+    } else {
+        let used: i64 = sqlx::query_scalar(
+            "SELECT coalesce(sum(length(CAST(body AS BLOB))),0) FROM tool_artifacts",
+        )
+        .fetch_one(&mut *conn)
+        .await?;
+        if quota.saturating_sub(used) < bytes {
+            None
+        } else {
+            let h = new_id(conn).await?;
+            sqlx::query("INSERT INTO tool_artifacts VALUES(?,?,?,?,?)")
+                .bind(&h)
+                .bind(&hash)
+                .bind(exec)
+                .bind(op)
+                .bind(&raw)
+                .execute(&mut *conn)
+                .await?;
+            Some(h)
+        }
+    };
+    let cursor = original["result"].get("next_cursor").cloned();
+    let mut out = json!({"id":op,"state":original["state"],"result":{"truncated":true,"reason":if handle.is_some(){"size"}else{"storage_full"},"total":original["result"].get("total")}});
+    if let Some(cursor) = cursor {
+        out["result"]["next_cursor"] = cursor;
+    }
+    if let Some(h) = handle {
+        out["result"]["artifact"] = json!({"handle":h,"version":hash,"path":"/result","offset":0});
+    }
+    let text = original.get("result").unwrap_or(&original).to_string();
+    out["result"]["preview"] = json!("");
+    let chars: Vec<_> = text.chars().take(limit).collect();
+    let mut low = 0;
+    let mut high = chars.len();
+    while low < high {
+        let mid = (low + high).div_ceil(2);
+        out["result"]["preview"] = json!(chars[..mid].iter().collect::<String>());
+        if size(&out) <= limit {
+            low = mid
+        } else {
+            high = mid - 1;
+        }
+    }
+    out["result"]["preview"] = json!(chars[..low].iter().collect::<String>());
+    if size(&out) > limit {
+        return Err("tool result budget cannot hold continuation metadata".into());
+    }
+    Ok(out)
+}
+pub async fn authorize(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+    handle: &str,
+    hash: &str,
+) -> Result<String> {
+    effects::authorize(conn, exec, actor, false).await?;
+    let owner: String = sqlx::query_scalar(
+        "SELECT execution FROM tool_artifacts WHERE handle=? AND version=? AND body IS NOT NULL",
+    )
+    .bind(handle)
+    .bind(hash)
+    .fetch_optional(&mut *conn)
+    .await?
+    .ok_or("artifact unavailable")?;
+    effects::authorize(conn, &owner, actor, false).await?;
+    if owner != exec {
+        let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM executions x JOIN executions y ON y.id=? LEFT JOIN events e ON e.id=x.source LEFT JOIN events f ON f.id=y.source
+            WHERE x.id=? AND x.work_id IS y.work_id AND ((x.origin IS NOT NULL AND x.origin=y.origin) OR (e.entry_id=f.entry_id AND x.original_actor=y.original_actor)))")
+            .bind(exec).bind(&owner).fetch_one(conn).await?;
+        if !allowed {
+            return Err("artifact unavailable in current execution scope".into());
+        }
+    }
+    Ok(owner)
+}
+pub async fn load(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+    args: &Value,
+) -> Result<String> {
+    let handle = args["handle"].as_str().ok_or("missing handle")?;
+    let hash = args["version"].as_str().ok_or("missing artifact version")?;
+    authorize(conn, exec, actor, handle, hash).await?;
+    let row = sqlx::query(
+        "SELECT body FROM tool_artifacts WHERE handle=? AND version=? AND body IS NOT NULL",
+    )
+    .bind(handle)
+    .bind(hash)
+    .fetch_one(conn)
+    .await?;
+    Ok(row.try_get("body")?)
+}
+pub fn page(raw: &str, args: &Value, budget: usize) -> Result<Value> {
+    let root: Value = serde_json::from_str(raw)?;
+    let path = args["path"].as_str().unwrap_or("/result");
+    let value = root.pointer(path).ok_or("artifact path does not exist")?;
+    let offset = usize::try_from(args["offset"].as_u64().unwrap_or(0))?;
+    let limit = usize::try_from(args["limit"].as_u64().unwrap_or(DEFAULT_PAGE as u64))?
+        .clamp(1, DEFAULT_PAGE);
+    let (total, unit) = match value {
+        Value::String(s) => (s.chars().count(), "characters"),
+        Value::Array(a) => (a.len(), "items"),
+        _ => (1, "value"),
+    };
+    if offset > total {
+        return Err("offset beyond artifact length".into());
+    }
+    let make = |length: usize| -> Value {
+        let next = offset + length;
+        let part = match value {
+            Value::String(s) => json!(s.chars().skip(offset).take(length).collect::<String>()),
+            Value::Array(a) => json!(a[offset..next]),
+            _ if length > 0 => value.clone(),
+            _ => Value::Null,
+        };
+        json!({"handle":args["handle"],"version":args["version"],"path":path,"offset":offset,"offset_unit":unit,"length":length,"total":total,"next_offset":(next<total).then_some(next),"truncated":next<total,"reason":if next==total{None}else if length==0{Some("item_exceeds_budget")}else{Some("page_limit")},"value":part})
+    };
+    let mut low = 0;
+    let mut high = limit.min(total - offset);
+    while low < high {
+        let n = (low + high).div_ceil(2);
+        if size(&make(n)) <= budget {
+            low = n;
+        } else {
+            high = n - 1;
+        }
+    }
+    let out = make(low);
+    if size(&out) > budget {
+        return Err("page metadata exceeds tool result budget".into());
+    }
+    Ok(out)
+}

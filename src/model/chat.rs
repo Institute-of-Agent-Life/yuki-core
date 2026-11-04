@@ -30,35 +30,10 @@ pub struct Input {
 fn function(name: &str, schema: Value) -> Value {
     json!({"type":"function","function":{"name":name,"parameters":schema}})
 }
-fn binding(name: &str) -> Value {
-    if name == "history_query" {
-        return function(name, crate::history::query::schema());
-    }
-    if name == "send" {
-        return function(name, crate::social::content::schema());
-    }
-    let (properties, required) = match name {
-        "get" => (
-            json!({"target":{"type":"string","minLength":1}}),
-            json!(["target"]),
-        ),
-        "put" => (
-            json!({"target":{"type":"string","minLength":1},"value":{}}),
-            json!(["target", "value"]),
-        ),
-        "complete" => (json!({"summary":{"type":"string"}}), json!(["summary"])),
-        _ => unreachable!(),
-    };
-    function(
-        name,
-        json!({"type":"object","properties":properties,"required":required,"additionalProperties":false}),
-    )
-}
-const TOOLS: [&str; 5] = ["get", "put", "complete", "send", "history_query"];
-pub fn configure(body: &mut Value, task: Option<&Task>) {
+pub fn configure(body: &mut Value, task: Option<&Task>, declarations: Vec<Value>) {
     match task {
         None => {
-            body["tools"] = TOOLS.iter().map(|name| binding(name)).collect();
+            body["tools"] = Value::Array(declarations);
             body["tool_choice"] = json!("auto");
         }
         Some(task) => match task.mode {
@@ -81,11 +56,9 @@ pub struct Turn {
     pub result: Value,
 }
 pub fn intent(id: &str, name: &str, arguments: Value) -> Result<Value> {
-    if !TOOLS.contains(&name)
-        || !jsonschema::validator_for(&binding(name)["function"]["parameters"])?
-            .is_valid(&arguments)
-    {
-        return Err("tool outside pinned contract".into());
+    let tool = crate::tools::registry::builtin(name).ok_or("tool outside execution manifest")?;
+    if !jsonschema::validator_for(&tool.schema)?.is_valid(&arguments) {
+        return Err("invalid tool arguments".into());
     }
     let (action, target) = if matches!(name, "get" | "put") {
         (name, arguments["target"].as_str().unwrap())
