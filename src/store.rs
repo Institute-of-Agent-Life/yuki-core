@@ -56,6 +56,8 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Ingress(Box<crate::ingress::admit::Admission>),
+    Claim(i64),
     Entry(crate::identity::entry::Action),
     Assignment(crate::identity::assignment::Action),
     Person(crate::identity::person::Change),
@@ -114,6 +116,12 @@ impl Driver for SqliteDriver {
             Mutation::Entry(action) => {
                 return crate::identity::entry::apply(self.connection(), action).await;
             }
+            Mutation::Ingress(request) => {
+                return crate::ingress::admit::apply(self.connection(), request).await;
+            }
+            Mutation::Claim(event) => {
+                return crate::ingress::admit::claim(self.connection(), *event).await;
+            }
             Mutation::SetLabel(value) => value.as_str(),
             #[cfg(test)]
             Mutation::Invalid => "must rollback",
@@ -143,7 +151,11 @@ impl Driver for SqliteDriver {
         )
     }
     async fn commit(&mut self) -> Result<()> {
+        #[cfg(test)]
+        tests::ingress_barrier("before").await;
         sqlx::query("COMMIT").execute(self.connection()).await?;
+        #[cfg(test)]
+        tests::ingress_barrier("after").await;
         Ok(())
     }
     async fn rollback(&mut self) -> Result<()> {

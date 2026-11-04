@@ -64,3 +64,11 @@ time selects a half-open ownership interval. Ambiguous undated input returns
 only the account. `operator entry` creates private and group entries, and
 checks current private read/send eligibility. Transferring either endpoint
 closes its old private entry while retaining its original key and history.
+
+Schema 4 separates observed events from accepted sources. The protected
+`operator ingress record` command takes a normalized JSON frame. `--accept`
+requests ordinary admission after the writer rechecks the original actor,
+receiving bot, scope, and segment type. `operator ingress pending` lists
+accepted sources without an execution. `operator ingress claim <event>`
+returns the same execution on retry, together with the retained envelope
+and ordered native mentions after checking current authority.
