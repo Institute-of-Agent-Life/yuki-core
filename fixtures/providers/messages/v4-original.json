@@ -1,0 +1,222 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "wires": [
+    {
+      "path": "/v1/messages",
+      "version": "2023-06-01",
+      "body": {
+        "model": "thinking-model",
+        "max_tokens": 8192,
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "task",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "system": [
+          {
+            "type": "text",
+            "text": "fixed",
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "tools": [
+          {
+            "name": "inspect",
+            "description": "Read evidence",
+            "input_schema": {
+              "type": "object",
+              "properties": {}
+            },
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "any"
+        }
+      },
+      "raw_sha256": "0d01f1974d0312f1a9473adbccbb2d7991171e1058e7035988e2c1d6aaa926ce",
+      "thinking_enabled": false,
+      "requested_choice": "required"
+    },
+    {
+      "path": "/v1/messages",
+      "version": "2023-06-01",
+      "body": {
+        "model": "thinking-model",
+        "max_tokens": 8192,
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "task",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "system": [
+          {
+            "type": "text",
+            "text": "fixed",
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "tools": [
+          {
+            "name": "inspect",
+            "description": "Read evidence",
+            "input_schema": {
+              "type": "object",
+              "properties": {}
+            },
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "tool",
+          "name": "inspect"
+        }
+      },
+      "raw_sha256": "70c6dd06ea7ac36f8a59190c8ac7620c6da71a0cad49624b6262a6a750fbe549",
+      "thinking_enabled": false,
+      "requested_choice": "inspect"
+    },
+    {
+      "path": "/v1/messages",
+      "version": "2023-06-01",
+      "body": {
+        "model": "thinking-model",
+        "max_tokens": 8192,
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "task",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "system": [
+          {
+            "type": "text",
+            "text": "fixed",
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "thinking": {
+          "type": "adaptive"
+        },
+        "output_config": {
+          "effort": "low"
+        },
+        "tools": [
+          {
+            "name": "inspect",
+            "description": "Read evidence",
+            "input_schema": {
+              "type": "object",
+              "properties": {}
+            },
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "auto"
+        }
+      },
+      "raw_sha256": "2cb5d088176abd5c77fd7c237fba4658af2d9ed7a2cc1f7c79490b69ce51f360",
+      "thinking_enabled": true,
+      "requested_choice": "required"
+    },
+    {
+      "path": "/v1/messages",
+      "version": "2023-06-01",
+      "body": {
+        "model": "thinking-model",
+        "max_tokens": 8192,
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "task",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "system": [
+          {
+            "type": "text",
+            "text": "fixed",
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "thinking": {
+          "type": "adaptive"
+        },
+        "output_config": {
+          "effort": "low"
+        },
+        "tools": [
+          {
+            "name": "inspect",
+            "description": "Read evidence",
+            "input_schema": {
+              "type": "object",
+              "properties": {}
+            },
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "auto"
+        }
+      },
+      "raw_sha256": "2cb5d088176abd5c77fd7c237fba4658af2d9ed7a2cc1f7c79490b69ce51f360",
+      "thinking_enabled": true,
+      "requested_choice": "inspect"
+    }
+  ]
+}
