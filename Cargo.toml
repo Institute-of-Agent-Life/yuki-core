@@ -12,6 +12,7 @@ chrono = { version = "=0.4.45", default-features = false, features = ["std"] }
 chrono-tz = { version = "=0.10.4", default-features = false, features = ["std"] }
 clap = { version = "=4.5.50", features = ["derive"] }
 futures-util = { version = "=0.3.34", default-features = false, features = ["std"] }
+getrandom = "=0.3.4"
 jsonschema = { version = "=0.37.1", default-features = false }
 regex = "=1.13.1"
 reqwest = { version = "=0.12.28", default-features = false, features = ["rustls-tls"] }

@@ -1,0 +1,348 @@
+{
+  "status": "unpublished-personal-preview",
+  "revision": 1,
+  "methods": {
+    "device.auth": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "personal.auth",
+      "params": {
+        "type": "object",
+        "properties": {
+          "proof": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "proof"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "scope": {
+            "enum": [
+              "work",
+              "native"
+            ]
+          },
+          "expires_in": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "handle",
+          "scope",
+          "expires_in"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "work.get": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "personal.work",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    },
+    "work.input": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "personal.work",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "request": {
+            "additionalProperties": false,
+            "properties": {
+              "agent_target": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "cwd": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "device_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "execution_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "instance_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "intent": {
+                        "anyOf": [
+                          {
+                            "enum": [
+                              "prompt",
+                              "watch",
+                              "queue",
+                              "steer",
+                              "respond",
+                              "cancel",
+                              "detach"
+                            ],
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "operation_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "option_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "permission_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "response": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "session_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "request_id": {
+                "format": "uuid4",
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "request_id",
+              "text"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "request"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    },
+    "work.cancel": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "personal.work",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "request": {
+            "additionalProperties": false,
+            "properties": {
+              "expected_revision": {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              "request_id": {
+                "format": "uuid4",
+                "type": "string"
+              }
+            },
+            "required": [
+              "request_id",
+              "expected_revision"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "request"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    },
+    "native.notify": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "native.events",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "event_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "payload": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "event_key",
+          "payload"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    },
+    "native.queryAck": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "native.events",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "event_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "event_key"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    }
+  }
+}

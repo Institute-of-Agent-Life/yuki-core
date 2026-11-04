@@ -101,6 +101,8 @@ jobs:
         run: python ci/check.py CORE-028 --out artifacts/CORE-028/ci
       - name: Replay authorized top-k against original v4 ranking and coverage faults
         run: python ci/check.py CORE-029 --out artifacts/CORE-029/ci
+      - name: Verify actual personal entry and generation-bound native receipts
+        run: python ci/check.py CORE-033 --out artifacts/CORE-033/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

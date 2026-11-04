@@ -25,14 +25,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("card")
     parser.add_argument("--host", default="hjw")
-    parser.add_argument("--host-candidate",action="store_true",help="also package the exact verified clean CORE-032 host")
+    parser.add_argument("--host-candidate",action="store_true",help="also package the exact verified host or personal candidate")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--fault", choices=["swap", "empty"])
     args = parser.parse_args()
     out = args.out.resolve()
     if out.exists():
         parser.exit(2, "output exists; choose a new attempt\n")
-    if args.host_candidate and args.card!="CORE-032":parser.exit(2,"host candidate requires CORE-032\n")
+    if args.host_candidate and args.card not in {"CORE-032","CORE-033"}:parser.exit(2,"host candidate requires CORE-032 or CORE-033\n")
     source = source_identity(ROOT)
     run_id = args.card + "-" + source["tree_sha256"][:12] + "-" + uuid.uuid4().hex[:8]
     cache = ROOT / ".cache/windows" / run_id

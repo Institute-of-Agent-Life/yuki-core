@@ -37,6 +37,7 @@
 | CORE-018 | macOS、HJW Windows 實機已驗，待 CI | `codex/core-018-schedule` | `artifacts/CORE-018/{mac-03,windows-01}/schedule-occurrences.json`。H08 強殺接納後的 writer，重啟以原 goal 與原 QQ 私聊收件端完成；兩次到期有獨立根執行，重掃不重購。SELF 經指定群接收階段實際送達。R14 驗編輯、暫停、漏過多次到期、已完成次數，以及轉移後拒送。五種原規則、另加 cron 與舊時鐘對拍。18 張相鄰卡回歸通過。 |
 | CORE-023 | Mac、HJW Windows 各通過 223 項，待 CI | `codex/core-023-private` | `artifacts/CORE-023/{mac-06,windows-01}/{compact-exec-next-wire,partial-native-next,native-E-P-next,next-normal-unknown}.json`。同一批在配對後與 E 回應落庫後各強殺一次，下一普通請求仍有原參數及效果鍵。原生 QQ 部分送達保留三段狀態、已送 locator 與出站 ID。另驗 E→P 換鏈、P 拒絕轉 E、來源失效、不可容納及 Work 喚醒。固定舊版 `v4-oracle-01/junit.xml` 的 21 項通過。 |
 | CORE-025 | Mac 與 HJW Windows 各通過 83 項，待 CI | `codex/core-025-media` | `artifacts/CORE-025/{mac-03,windows-02}/media-versions.json`、`paid-image-wire.json`、`paid-messages-image.json`。原 QQ 段與引用、不可變交付、替換路徑、Windows junction、硬連結、忘記在途來源、TTL、無視覺能力均已實測。Mac 22 張卡回歸通過，見各卡 `media-regression-02/`。 |
+| CORE-033 | Mac、HJW Windows 各通過 187 項，待 CI | `codex/core-033-personal` | `artifacts/CORE-033/{mac-08,windows-03}/personal-handoff.json`。Client 9 本人入站、分頁、原 QQ Work 私有輸入及取消、事實更正與排程暫停。兩台設備同 UUID 僅留一筆；在 mailbox 之後注入失敗會整筆回滾。SDK 子程序冷啟後重新兌換憑證；獨立 wire4 假設備遺失 ACK 後重投，同 event 與 watermark。26 張相鄰卡回歸通過。 |
 | CORE-027 | HJW Windows、Mac 各通過 172 項，待 CI | `codex/core-027-extract` | `artifacts/CORE-027/{mac-04,windows-01}/{extraction-batches,extraction-wire}.json`。按原事件數、字數、等待年齡選批；上下文只消歧。真實前景執行先行，提取使用專屬 schema。原文／ASR、三種事實分域、同 key、零結果、強殺與寫庫故障均驗過。未保存回應、SELF 偽造、來源刪除都不能推進水位。 |
 | CORE-028 | Mac 與 HJW Windows 各通過 93 項，待 CI | `codex/core-028-vectors` | `artifacts/CORE-028/{mac-03,windows-01}/{vector-coverage,physical-embedding-wire}.json`。標準 hybrid 要求有效配置；純詞法須明選。實測相同維度不同模型、部分批次只補缺項、在途改文和 forget、查詢共用與斷線未知不重購。25 張卡回歸通過，見各卡 `vector-regression-01/`。 |
 
@@ -96,3 +97,15 @@ CORE-028 實作 `1dd86c1` 見 [PR #35](https://github.com/Institute-of-Agent-Lif
 
 CORE-029 在 `codex/core-029-retrieval` 完成授權集合內的詞法／向量排序及 Main 的 `search_memory`。Mac 與 HJW 各通過 71 項斷言，見 `artifacts/CORE-029/{mac-06,windows-03}/authorized-topk.json`，包含原來源在查詢途中被擦除及跨 Person 拒絕。相鄰 25 張卡通過 `retrieval-regression-{01,02}`；031 首次揭露主機 NOTICE 影響既有 SDK 封裝，修正後重驗通過。固定 v4 Vec1 對照同一 Rust owner 的精確與 Vec1 路徑，36/36 組排序一致，原始資料和摘要位於 `bench/retrieval/decision.json` 及同目錄的兩份壓縮證據。CORE-030 可沿該檢索路徑補 source 清除，CORE-035 可使用授權內的 fact 結果。此卡不新增公開協議版本。
 最終 Mac `artifacts/CORE-029/mac-07/` 與 HJW `artifacts/CORE-029/windows-04/` 各核對兩份原始 DV 壓縮報告；兩機驗證來源 `63f05cc5555f426a0db8255a3e46929164c674e0c69bd7092b8c83a8d64aac15`。另以 Git Windows 換行設定核對 Vec1 原件逐位元相同。
+CORE-033 的固定規格索引為 `protocol/personal/source.json`、`protocol/connector/4/source.json` 及 `protocol/plugin/personal/methods.json`。握手 1，Host 2，個人方法組 1，Rust SDK `1.0.0-alpha.3`、Python `1.0.0a3`。固定來源候選供 EXT-011／015 發展對拍，正式擴展驗收仍待其真包。
+
+
+CORE-033 候選已驗證，尚未發布。來源 `994aee20ced762d4132186144e718d8946321347`，見 [PR #36](https://github.com/Institute-of-Agent-Life/yuki-core/pull/36)。每包均有實測執行檔、Client 9 及 Connector 4 固定規格、兩種 SDK、6 個個人方法與 20 條已驗 HTTP 路由清單。三平台各 187 項通過，解包後逐項核對 SHA-256。Linux 在斷網容器執行。本候選可驗個人與 Work 交接；已交付檔案的個人下載路由另行補驗。
+
+| 平台 | 候選包 | ZIP SHA-256 |
+|---|---|---|
+| Windows x86_64 | `artifacts/CORE-033/handoff-994aee20ced7/windows-validation/handoff/yuki-personal-preview-994aee20ced7-windows-x86_64.zip` | `ddc2cf1c01dd9df9e0eecf6b1b85984176810b8c763a4b7bd493d924e40a53f8` |
+| Mac arm64 | `artifacts/CORE-033/handoff-994aee20ced7/macos-arm64/yuki-personal-preview-994aee20ced7-darwin-arm64.zip` | `9b7a014334727466d14fe9add6e0d83fc17b0641eb120f6bf5e33afff2d51ea2` |
+| Linux arm64 | `artifacts/CORE-033/handoff-994aee20ced7/linux-arm64/candidate/yuki-personal-preview-994aee20ced7-linux-arm64.zip` | `91da3ff307e1f908e82ee00472c41d1c74ce9d2da998001e17ecaed483f8ce8c` |
+
+握手 revision 1、Host revision 2、個人方法組 revision 1。個人 schema SHA-256 `061b40a245ff7a75bc747684760d7964cae5fa7f685dab855ff96a5458682827`，組合 Host schema `9feab6196953ef66a04a745b801b2bf528564cfc0d9d0ff545a81e522624f42e`。Rust `1.0.0-alpha.3`、Python `1.0.0a3`。

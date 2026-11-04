@@ -147,14 +147,20 @@ def generate():
             k: meta[k] for k in ("status", "schema_revision", "sdk_versions", "methods")
         },
     }
+    host=json.loads((ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes())
+    personal=json.loads((ROOT/"protocol/plugin/personal/methods.json").read_bytes())
+    if host["methods"].keys() & personal["methods"].keys():
+        raise ValueError("duplicate host methods")
+    host["methods"].update(personal["methods"])
+    host_bytes=(json.dumps(host,indent=2,ensure_ascii=False)+"\n").encode()
     return {
         ROOT / "sdk/rust/src/generated.rs": ("\n".join(rust) + "\n").encode(),
         ROOT / "sdk/python/yuki_plugin_sdk/generated.py": (
             "\n".join(py) + "\n"
         ).encode(),
         ROOT / "sdk/python/yuki_plugin_sdk/handshake.schema.json": raw,
-        ROOT / "sdk/python/yuki_plugin_sdk/host-preview.json": (ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes(),
-        ROOT / "sdk/rust/src/host-preview.json": (ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes(),
+        ROOT / "sdk/python/yuki_plugin_sdk/host-preview.json": host_bytes,
+        ROOT / "sdk/rust/src/host-preview.json": host_bytes,
         ROOT / "protocol/plugin/method-index.json": (
             json.dumps(index, sort_keys=True, indent=2) + "\n"
         ).encode(),

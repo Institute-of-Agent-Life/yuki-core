@@ -146,7 +146,8 @@ async fn execute(args: Args) -> Result<()> {
                 .route("/readyz", get(ready))
                 .route("/healthz", get(health))
                 .with_state(store.clone())
-                .merge(qq.router());
+                .merge(qq.router())
+                .merge(host::personal::router(store.clone()));
             let media = media::start(store.clone());
             let memory = memory::start(store.clone(), qq.clone());
             let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
