@@ -13,6 +13,14 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Tools {
+        #[command(subcommand)]
+        command: crate::tools::Action,
+    },
+    History {
+        #[command(subcommand)]
+        command: crate::history::Action,
+    },
     Social {
         #[command(subcommand)]
         command: crate::social::Action,
@@ -64,6 +72,12 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Tools {
+        command: crate::tools::Action,
+    },
+    History {
+        command: crate::history::Action,
+    },
     Social {
         command: crate::social::Action,
     },
@@ -135,6 +149,8 @@ async fn handle(
         Request::Ingress { command } => crate::ingress::admit::invoke(&store, command).await,
         Request::Qq { command } => qq.operator(command).await,
         Request::Effect { command } => crate::runtime::effects::invoke(&store, command).await,
+        Request::Tools { command } => crate::tools::invoke(&store, command).await,
+        Request::History { command } => crate::history::invoke(&store, command).await,
         Request::Social { command } => crate::social::invoke(&store, &qq, command).await,
         Request::Main { command } => crate::runtime::main::invoke(&store, command).await,
         Request::Privacy { command } => crate::privacy::invoke(&store, command).await,
@@ -182,6 +198,8 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Ingress { command } => Request::Ingress { command },
         Action::Qq { command } => Request::Qq { command },
         Action::Effect { command } => Request::Effect { command },
+        Action::Tools { command } => Request::Tools { command },
+        Action::History { command } => Request::History { command },
         Action::Social { command } => Request::Social { command },
         Action::Main { command } => Request::Main { command },
         Action::Privacy { command } => Request::Privacy { command },

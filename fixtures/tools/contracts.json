@@ -1,0 +1,9 @@
+{
+  "baseline": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "cases": {
+    "H09": ["freeze sorted execution schemas including hidden names", "inspect code projection without a VM", "lookup name and directory in separate queries", "reject duplicate and preserve prior revision"],
+    "H12": ["enter two adjacent safe reads together", "both finish before write", "run final dynamic read after the write", "pair in original order", "revoke during await, retain confirmed earlier effect"],
+    "H15": ["page Unicode by characters or whole array entries", "reassemble same-length first and last page", "deny after revocation", "storage full returns bounded obtained material without handle", "first oversized array element is never split"],
+    "transient": ["current time changes at local midnight under new IDs", "clear by empty update", "snapshot never extends 24-hour TTL", "short state never becomes a permanent public item"]
+  }
+}

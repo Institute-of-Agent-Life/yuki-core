@@ -64,9 +64,9 @@ pub async fn prepare(
         }
         let raw: String = row.try_get("response")?;
         let task = material.structured.as_ref();
-        let result = cfg.protocol.decode(&raw, task, cfg);
         index = row.try_get::<i64, _>("ordinal")? + 1;
         body = serde_json::from_str::<Value>(row.try_get("request_json")?)?;
+        let result = cfg.protocol.decode(&raw, task, cfg, &body);
         let mut continue_turn = !fresh.is_empty();
         match result {
             Ok(parsed) => {
@@ -141,11 +141,16 @@ pub async fn prepare(
                 .context
                 .insert(0, json!({"source_kind":kind,"source_ref":origin}));
         }
-        body = cfg.protocol.request(
-            assemble::body(cfg, soul, &material, history),
-            cfg,
-            material.structured.as_ref(),
-        )?;
+        let (manifest, code) = crate::tools::registry::pinned(conn, exec, cfg).await?;
+        let slots =
+            crate::tools::transient::live(conn, exec, crate::tools::transient::now()?).await?;
+        if !slots.is_empty() {
+            material.context.push(json!({"short_state":slots}));
+        }
+        let layout = assemble::body(cfg, soul, &material, history, manifest.declarations(code));
+        body = cfg
+            .protocol
+            .request(layout, cfg, material.structured.as_ref())?;
     }
     let raw = body.to_string();
     let logical = format!("{exec}:logical:{index}");

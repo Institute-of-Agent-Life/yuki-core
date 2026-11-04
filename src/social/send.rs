@@ -304,7 +304,7 @@ pub async fn settle(
         _ => None,
     };
     if state == "confirmed" {
-        sqlx::query("INSERT INTO social_outbound(stage,entry,locator,namespace,child,original_actor,body,echo_event) VALUES(?,?,?,?,?,?,?,?)")
+        sqlx::query("INSERT INTO social_outbound(stage,entry,locator,namespace,child,original_actor,body,echo_event,observed_at) VALUES(?,?,?,?,?,?,?,?,CAST(unixepoch('subsec')*1000 AS INTEGER))")
             .bind(&stage).bind(&entry).bind(&locator).bind(exec).bind(&child).bind(row.try_get::<String,_>("actor")?)
             .bind(if erased{"{}"}else{row.try_get("params")?}).bind(echo).execute(&mut *conn).await?;
     }

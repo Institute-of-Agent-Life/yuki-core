@@ -1,6 +1,9 @@
 use std::{collections::BTreeMap, env, fs, path::PathBuf};
 
+#[path = "build/opencc.rs"]
+mod opencc;
 fn main() {
+    opencc::compile(&PathBuf::from(env::var_os("OUT_DIR").unwrap()));
     let directory = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("migrations");
     println!("cargo:rerun-if-changed=migrations");
     let mut migrations = BTreeMap::new();

@@ -56,6 +56,8 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Tool(Box<crate::tools::Change>),
+    History(Box<crate::history::Change>),
     Social(Box<crate::social::Change>),
     Main(
         Arc<crate::runtime::main::Config>,
@@ -122,6 +124,10 @@ impl Driver for SqliteDriver {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
+            }
+            Mutation::Tool(change) => return crate::tools::apply(self.connection(), change).await,
+            Mutation::History(change) => {
+                return crate::history::apply(self.connection(), change).await;
             }
             Mutation::Social(change) => {
                 return crate::social::apply(self.connection(), change).await;
@@ -265,6 +271,9 @@ pub struct Health {
 }
 
 impl Store {
+    pub fn subscribe_commits(&self) -> broadcast::Receiver<u64> {
+        self.signals.hints.subscribe()
+    }
     pub async fn open(data: &Path) -> Result<Self> {
         if !data.join("core.sqlite").is_file() {
             return Err("database missing; use init/migrate".into());

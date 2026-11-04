@@ -71,6 +71,10 @@ jobs:
         run: python ci/check.py CORE-013 --out artifacts/CORE-013/ci
       - name: Replay ordered Responses items with three explicit dialects
         run: python ci/check.py CORE-019 --out artifacts/CORE-019/ci
+      - name: Match authorized literal history against the v4 Unicode and OpenCC oracle
+        run: python ci/check.py CORE-014 --out artifacts/CORE-014/ci
+      - name: Replay frozen native tools, effect barriers and immutable result pages
+        run: python ci/check.py CORE-015 --out artifacts/CORE-015/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

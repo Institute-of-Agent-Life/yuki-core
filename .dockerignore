@@ -3,6 +3,11 @@
 !Cargo.lock
 !rust-toolchain.toml
 !build.rs
+!build/
+!build/**
+!native/
+!native/opencc/
+!native/opencc/**
 !src/
 !src/**
 !migrations/
