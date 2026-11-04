@@ -1,6 +1,7 @@
 mod activity;
 mod frame;
 mod projection;
+mod recovery;
 
 use crate::{Result, store::Store};
 use axum::{
@@ -58,6 +59,7 @@ pub struct Bot {
 #[derive(Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GroupPolicy {
+    Paused,
     Observe,
     Mention,
     Open,
@@ -135,6 +137,7 @@ struct Inner {
     groups: HashMap<String, GroupPolicy>,
     bots: HashMap<String, Endpoint>,
     shared: Option<Shared>,
+    topology: tokio::sync::RwLock<()>,
     active: Mutex<HashMap<String, Peer>>,
     next: AtomicU64,
 }
@@ -143,6 +146,7 @@ struct Peer {
     tx: mpsc::Sender<String>,
     cancel: watch::Sender<bool>,
     echoes: HashSet<String>,
+    probes: HashMap<String, tokio::sync::oneshot::Sender<Value>>,
     matched: u64,
     leases: HashMap<String, activity::Leases>,
 }
@@ -176,6 +180,17 @@ impl Hub {
             .as_ref()
             .map(|s| Shared::load(s, data))
             .transpose()?;
+        for (group, policy) in &config.groups {
+            if matches!(policy, GroupPolicy::Paused) {
+                store
+                    .write(crate::store::Mutation::SeedPausedGroup(
+                        config.namespace.clone(),
+                        group.clone(),
+                        bots[&config.designated_ingress].spec.stage.clone(),
+                    ))
+                    .await?;
+            }
+        }
         Ok(Self(Some(Arc::new(Inner {
             store,
             namespace: config.namespace,
@@ -183,6 +198,7 @@ impl Hub {
             groups: config.groups,
             bots,
             shared,
+            topology: tokio::sync::RwLock::new(()),
             active: Mutex::new(HashMap::new()),
             next: AtomicU64::new(1),
         }))))
@@ -271,6 +287,7 @@ async fn connection(inner: Arc<Inner>, bot: String, mut socket: WebSocket) {
     let session = inner.next.fetch_add(1, Ordering::Relaxed);
     let (tx, mut outgoing) = mpsc::channel(32);
     let (cancel, mut cancelled) = watch::channel(false);
+    let registering = inner.topology.write().await;
     if let Some(old) = inner.active.lock().unwrap().insert(
         bot.clone(),
         Peer {
@@ -278,12 +295,15 @@ async fn connection(inner: Arc<Inner>, bot: String, mut socket: WebSocket) {
             tx,
             cancel,
             echoes: HashSet::new(),
+            probes: HashMap::new(),
             matched: 0,
             leases: HashMap::new(),
         },
     ) {
         let _ = old.cancel.send(true);
     }
+    drop(registering);
+    let mut controls = tokio::task::JoinSet::new();
     let mut refresh = tokio::time::interval(Duration::from_secs(4));
     refresh.tick().await;
     loop {
@@ -295,12 +315,17 @@ async fn connection(inner: Arc<Inner>, bot: String, mut socket: WebSocket) {
                     let Ok(packet)=serde_json::from_str::<Value>(&raw)else{break};
                     if packet.get("post_type").is_some(){
                         if frame::id(&packet["self_id"]).as_deref()!=Some(&bot){break}
+                        if recovery::command(&packet,&bot){
+                            if controls.len()<8 {controls.spawn(recovery::handle(inner.clone(),bot.clone(),session,packet));}
+                            continue;
+                        }
                         if frame::receive(&inner,&bot,&packet).await.is_err(){break}
                     }else if let Some(echo)=packet["echo"].as_str(){
                         let mut active=inner.active.lock().unwrap();
                         if let Some(peer)=active.get_mut(&bot).filter(|p|p.session==session)
-                            && packet.get("retcode").is_some() && peer.echoes.remove(echo) {
-                            peer.matched+=1;
+                            && packet.get("retcode").is_some(){
+                            if let Some(probe)=peer.probes.remove(echo){let _=probe.send(packet);}
+                            else if peer.echoes.remove(echo){peer.matched+=1;}
                         }
                     }
                 },
@@ -308,11 +333,13 @@ async fn connection(inner: Arc<Inner>, bot: String, mut socket: WebSocket) {
                 Some(Ok(Message::Pong(_)))=>{},
                 _=>break,
             },
+            _=controls.join_next(), if !controls.is_empty()=>{},
             Some(body)=outgoing.recv()=>if socket.send(Message::Text(body.into())).await.is_err(){break},
             _=refresh.tick()=>activity::refresh(&inner,&bot,session).await,
         }
     }
     {
+        let _unregister = inner.topology.write().await;
         let mut active = inner.active.lock().unwrap();
         if active.get(&bot).is_some_and(|p| p.session == session) {
             active.remove(&bot);
