@@ -1,5 +1,9 @@
+mod actions;
 mod activity;
 mod frame;
+pub(crate) fn native_id(v: &serde_json::Value) -> Option<String> {
+    frame::id(v)
+}
 mod projection;
 mod recovery;
 
@@ -35,6 +39,8 @@ pub struct Config {
     pub namespace: String,
     pub designated_ingress: String,
     pub bots: Vec<Bot>,
+    #[serde(default)]
+    pub reply: crate::social::split::Limits,
     #[serde(default)]
     pub groups: HashMap<String, GroupPolicy>,
     #[serde(default)]
@@ -131,6 +137,7 @@ pub enum Action {
 #[derive(Clone)]
 pub struct Hub(Option<Arc<Inner>>);
 struct Inner {
+    reply: crate::social::split::Limits,
     store: Store,
     namespace: String,
     designated: String,
@@ -156,6 +163,9 @@ impl Hub {
         let Some(config) = config else {
             return Ok(Self(None));
         };
+        if config.reply.max_qq_message_chars == 0 || config.reply.hard_max_messages == 0 {
+            return Err("QQ split limits must be positive".into());
+        }
         let mut bots = HashMap::new();
         let mut tokens = HashSet::new();
         for bot in config.bots {
@@ -191,7 +201,11 @@ impl Hub {
                     .await?;
             }
         }
+        let first: i64 = sqlx::query_scalar("SELECT abs(random() % 4611686018427387904)+1")
+            .fetch_one(store.readers())
+            .await?;
         Ok(Self(Some(Arc::new(Inner {
+            reply: config.reply,
             store,
             namespace: config.namespace,
             designated: config.designated_ingress,
@@ -200,7 +214,7 @@ impl Hub {
             shared,
             topology: tokio::sync::RwLock::new(()),
             active: Mutex::new(HashMap::new()),
-            next: AtomicU64::new(1),
+            next: AtomicU64::new(first as u64),
         }))))
     }
     pub fn shutdown(&self) {
@@ -321,6 +335,15 @@ async fn connection(inner: Arc<Inner>, bot: String, mut socket: WebSocket) {
                         }
                         if frame::receive(&inner,&bot,&packet).await.is_err(){break}
                     }else if let Some(echo)=packet["echo"].as_str(){
+                        if let Some(child)=echo.strip_prefix("social:") && packet["retcode"].as_i64().is_some() {
+                            // Commit the original physical receipt even if its in-memory waiter timed out.
+                            let change=crate::social::Change::GatewayReply(inner.bots[&bot].spec.stage.clone(),session,child.to_owned(),packet.clone());
+                            let _=inner.store.write(crate::store::Mutation::Social(Box::new(change))).await;
+                        }
+                        if let Some(child)=echo.strip_prefix("social-recall:") && packet["retcode"].as_i64().is_some(){
+                            let change=crate::social::Change::GatewayRecall(inner.bots[&bot].spec.stage.clone(),session,child.to_owned(),packet.clone());
+                            let _=inner.store.write(crate::store::Mutation::Social(Box::new(change))).await;
+                        }
                         let mut active=inner.active.lock().unwrap();
                         if let Some(peer)=active.get_mut(&bot).filter(|p|p.session==session)
                             && packet.get("retcode").is_some(){

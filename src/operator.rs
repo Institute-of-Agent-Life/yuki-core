@@ -13,6 +13,10 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Social {
+        #[command(subcommand)]
+        command: crate::social::Action,
+    },
     Main {
         #[command(subcommand)]
         command: crate::runtime::main::Action,
@@ -60,6 +64,9 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Social {
+        command: crate::social::Action,
+    },
     Main {
         command: crate::runtime::main::Action,
     },
@@ -128,6 +135,7 @@ async fn handle(
         Request::Ingress { command } => crate::ingress::admit::invoke(&store, command).await,
         Request::Qq { command } => qq.operator(command).await,
         Request::Effect { command } => crate::runtime::effects::invoke(&store, command).await,
+        Request::Social { command } => crate::social::invoke(&store, &qq, command).await,
         Request::Main { command } => crate::runtime::main::invoke(&store, command).await,
         Request::Privacy { command } => crate::privacy::invoke(&store, command).await,
         Request::Model { command } => crate::model::attempt::invoke(&store, command).await,
@@ -174,6 +182,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Ingress { command } => Request::Ingress { command },
         Action::Qq { command } => Request::Qq { command },
         Action::Effect { command } => Request::Effect { command },
+        Action::Social { command } => Request::Social { command },
         Action::Main { command } => Request::Main { command },
         Action::Privacy { command } => Request::Privacy { command },
         Action::Model { command } => Request::Model { command },

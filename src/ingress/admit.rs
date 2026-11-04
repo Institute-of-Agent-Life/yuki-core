@@ -302,7 +302,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
     };
     let existing = sqlx::query(
         "SELECT e.id,e.envelope,e.actor_stage,e.raw_actor,
-        EXISTS(SELECT 1 FROM entries WHERE id=e.entry_id AND closed_at IS NULL) AS open_entry, EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) AS erased
+        EXISTS(SELECT 1 FROM entries WHERE id=e.entry_id AND closed_at IS NULL) AS open_entry, (EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) OR EXISTS(SELECT 1 FROM social_outbound WHERE echo_event=e.id AND body='{}')) AS erased
         FROM events e WHERE source_scope=? AND source_key=?",
     )
     .bind(&scope)

@@ -62,6 +62,9 @@ command=[sys.executable,'ci/check.py',{args.card!r},'--out','artifacts/run']
 if {args.fault!r}: command.extend(['--fault',{args.fault!r}])
 import os
 env=dict(os.environ)
+temporary=root/'.cache'/'test-temp'
+temporary.mkdir(parents=True,exist_ok=True)
+env.update(TEMP=str(temporary),TMP=str(temporary))
 if profile.get('cargo_home'):
     env.update(CARGO_HOME=profile['cargo_home'],RUSTUP_HOME=profile['rustup_home'])
     env['PATH']=str(Path(profile['cargo_home'])/'bin')+os.pathsep+env['PATH']

@@ -7,6 +7,7 @@ mod model;
 mod operator;
 mod privacy;
 mod runtime;
+mod social;
 mod store;
 
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
@@ -127,7 +128,7 @@ async fn execute(args: Args) -> Result<()> {
                 .route("/healthz", get(health))
                 .with_state(store.clone())
                 .merge(qq.router());
-            let runner = runtime::main::start(store.clone(), owner.data.clone())?;
+            let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
             let signal = stop.clone();
             let service = axum::serve(listener, router).with_graceful_shutdown(async move {
                 #[cfg(unix)]

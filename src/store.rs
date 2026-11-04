@@ -56,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Social(Box<crate::social::Change>),
     Main(
         Arc<crate::runtime::main::Config>,
         Box<crate::runtime::main::Change>,
@@ -121,6 +122,9 @@ impl Driver for SqliteDriver {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
+            }
+            Mutation::Social(change) => {
+                return crate::social::apply(self.connection(), change).await;
             }
             Mutation::Main(cfg, change) => {
                 return crate::runtime::main::apply(self.connection(), cfg, change).await;
@@ -268,6 +272,7 @@ impl Store {
         bootstrap(data).await?;
         let mut driver = SqliteDriver::open(data).await?;
         crate::model::attempt::recover_unanswered(driver.connection()).await?;
+        crate::social::send::recover(driver.connection()).await?;
         Ok(Self::start(driver, read_pool(data).await?))
     }
     fn start(mut driver: impl Driver, readers: SqlitePool) -> Self {

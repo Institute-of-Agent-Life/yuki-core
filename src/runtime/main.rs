@@ -148,7 +148,11 @@ fn now() -> Result<i64> {
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis(),
     )?)
 }
-pub fn start(store: Store, data: PathBuf) -> Result<Option<tokio::task::JoinHandle<()>>> {
+pub fn start(
+    store: Store,
+    data: PathBuf,
+    hub: crate::gateway::qq::Hub,
+) -> Result<Option<tokio::task::JoinHandle<()>>> {
     let Some(cfg) = store.main.clone() else {
         return Ok(None);
     };
@@ -160,6 +164,7 @@ pub fn start(store: Store, data: PathBuf) -> Result<Option<tokio::task::JoinHand
         .timeout(Duration::from_secs(30))
         .build()?;
     let runner = Runner {
+        hub,
         store,
         cfg,
         client,
@@ -176,6 +181,7 @@ struct Job {
     task: tokio::task::Id,
 }
 struct Runner {
+    hub: crate::gateway::qq::Hub,
     store: Store,
     cfg: Arc<Config>,
     client: reqwest::Client,
@@ -262,8 +268,9 @@ impl Runner {
                 self.data.clone(),
             );
             let id = exec.clone();
+            let hub = self.hub.clone();
             let task = self.tasks.spawn(async move {
-                if transport::run(&store, &cfg, &client, &data, &id, rx)
+                if transport::run(&store, &cfg, &client, &data, &id, rx, &hub)
                     .await
                     .is_err()
                 {

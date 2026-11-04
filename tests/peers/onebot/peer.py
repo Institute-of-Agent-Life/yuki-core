@@ -77,7 +77,7 @@ class Peer:
             n = start[1] & 127
             if n == 126:
                 n = struct.unpack("!H", self.reader.read(2))[0]
-            if n == 127:
+            elif n == 127:
                 n = struct.unpack("!Q", self.reader.read(8))[0]
             if n > 1048576:
                 raise ValueError("oversized test frame")

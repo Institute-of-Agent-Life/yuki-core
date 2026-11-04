@@ -31,6 +31,9 @@ fn function(name: &str, schema: Value) -> Value {
     json!({"type":"function","function":{"name":name,"parameters":schema}})
 }
 fn binding(name: &str) -> Value {
+    if name == "send" {
+        return function(name, crate::social::content::schema());
+    }
     let (properties, required) = match name {
         "get" => (
             json!({"target":{"type":"string","minLength":1}}),
@@ -41,7 +44,6 @@ fn binding(name: &str) -> Value {
             json!(["target", "value"]),
         ),
         "complete" => (json!({"summary":{"type":"string"}}), json!(["summary"])),
-        "send" => (json!({"text":{"type":"string"}}), json!(["text"])),
         _ => unreachable!(),
     };
     function(
