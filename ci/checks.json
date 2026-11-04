@@ -76,6 +76,12 @@
       "timeout_seconds": 120,
       "rust": true,
       "capabilities": ["immutable-effect-results", "exclusive-dispatch", "original-operation-recovery"]
+    },
+    "CORE-031": {
+      "case": "tests/cases/CORE-031.py",
+      "artifact": "sdk-crosswire.json",
+      "timeout_seconds": 300,
+      "capabilities": ["handshake-preview", "python-sdk", "rust-sdk", "stdio-conformance-peer"]
     }
   }
 }

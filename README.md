@@ -72,3 +72,8 @@ receiving bot, scope, and segment type. `operator ingress pending` lists
 accepted sources without an execution. `operator ingress claim <event>`
 returns the same execution on retry, together with the retained envelope
 and ordered native mentions after checking current authority.
+
+The stdio handshake preview ships an independently installable Rust crate,
+Python wheel, JSON Schema, method index and portable conformance peer. Build
+and compare it with `python ci/check.py CORE-031 --out artifacts/CORE-031/local`.
+See the [handshake contract](protocol/plugin/README.md).

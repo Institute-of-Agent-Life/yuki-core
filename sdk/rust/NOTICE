@@ -1,0 +1,8 @@
+This repository implements the Yuki core rewrite under AGPL-3.0-only.
+
+Original Yuki project: https://github.com/YuanYeYouTao/Yuki
+Behavioral reference: 329ca7c487414d2f54ddd98ff4727446ed2446cd
+
+Original authorship and third-party notices remain applicable to imported
+source and distributions. Individual reused dependencies retain their own
+licenses; the core license does not replace those notices.

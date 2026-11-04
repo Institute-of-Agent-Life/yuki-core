@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:yuki:plugin:handshake-preview:1",
+  "title": "Yuki plugin handshake preview",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Initialize"
+    },
+    {
+      "$ref": "#/$defs/Initialized"
+    }
+  ],
+  "$defs": {
+    "Version": {
+      "type": "object",
+      "properties": {
+        "major": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "major",
+        "minor"
+      ],
+      "additionalProperties": true
+    },
+    "VersionRange": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "$ref": "#/$defs/Version"
+        },
+        "max": {
+          "$ref": "#/$defs/Version"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "additionalProperties": true
+    },
+    "Declaration": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "revision"
+      ],
+      "additionalProperties": true
+    },
+    "MethodRevision": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "name",
+        "revision"
+      ],
+      "additionalProperties": true
+    },
+    "Initialize": {
+      "type": "object",
+      "properties": {
+        "versions": {
+          "$ref": "#/$defs/VersionRange"
+        },
+        "required_features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 128
+        },
+        "optional_features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 128
+        },
+        "manifest_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "declarations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Declaration"
+          },
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "versions",
+        "required_features",
+        "manifest_revision",
+        "declarations"
+      ],
+      "additionalProperties": true
+    },
+    "Initialized": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/Version"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 128
+        },
+        "extension_points": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 128
+        },
+        "method_revisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MethodRevision"
+          },
+          "maxItems": 128
+        },
+        "schema_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "grants": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 128
+        },
+        "manifest_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "version",
+        "features",
+        "extension_points",
+        "method_revisions",
+        "schema_revision",
+        "namespace",
+        "grants",
+        "manifest_revision"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "x-yuki": {
+    "status": "unpublished-handshake-preview",
+    "schema_revision": 1,
+    "sdk_versions": {
+      "rust": "1.0.0-alpha.1",
+      "python": "1.0.0a1"
+    },
+    "versions": [
+      {
+        "major": 1,
+        "minor": 0
+      }
+    ],
+    "features": [
+      "initialize"
+    ],
+    "extension_points": [],
+    "max_frame_bytes": 65536,
+    "methods": {
+      "initialize": {
+        "revision": 1,
+        "params": "Initialize",
+        "result": "Initialized"
+      }
+    },
+    "errors": {
+      "unsupported_version": -32010,
+      "missing_feature": -32011,
+      "manifest_mismatch": -32012,
+      "duplicate_declaration": -32013,
+      "method_not_found": -32601,
+      "invalid_request": -32600,
+      "invalid_params": -32602,
+      "parse_error": -32700
+    }
+  }
+}
