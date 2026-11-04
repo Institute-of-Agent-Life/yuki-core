@@ -62,6 +62,7 @@ def build(manifest_path, out, development=False):
         "evidence/host-delegation.json": proof,
         "LICENSE": (ROOT / "LICENSE").read_bytes(),
         "NOTICE": (ROOT / "NOTICE").read_bytes(),
+        "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
     target_info = subprocess.check_output(["rustc", "-vV"], text=True)

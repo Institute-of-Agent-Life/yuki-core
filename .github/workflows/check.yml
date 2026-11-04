@@ -99,6 +99,8 @@ jobs:
         run: python ci/check.py CORE-027 --out artifacts/CORE-027/ci
       - name: Verify committed vector coverage, original physical charges and erasure
         run: python ci/check.py CORE-028 --out artifacts/CORE-028/ci
+      - name: Replay authorized top-k against original v4 ranking and coverage faults
+        run: python ci/check.py CORE-029 --out artifacts/CORE-029/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -1,0 +1,122 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "query": "桂花烏龍",
+  "rows": [
+    [
+      "桂花烏龍",
+      "飲茶習慣",
+      "春天",
+      "2024-01-01T00:00:00Z",
+      [
+        0.5,
+        0.5
+      ],
+      3
+    ],
+    [
+      "桂花烏龍",
+      "另一批桂花烏龍",
+      "春天",
+      "2024-01-04T00:00:00Z",
+      [
+        0.5,
+        0.5
+      ],
+      5
+    ],
+    [
+      "內容",
+      "桂花烏龍",
+      "茶",
+      "2024-02-01T00:00:00Z",
+      [
+        0.9,
+        0.2
+      ],
+      3
+    ],
+    [
+      "分類",
+      "旅行期間的偏好",
+      "桂花烏龍",
+      null,
+      [
+        0.6,
+        0.8
+      ],
+      4
+    ],
+    [
+      "習慣",
+      "很喜歡桂花的香氣",
+      "茶",
+      "2024-01-08T00:00:00Z",
+      [
+        1.0,
+        0.0
+      ],
+      3
+    ],
+    [
+      "其他",
+      "圖書館開放時間",
+      "時間",
+      "2024-01-05T00:00:00Z",
+      [
+        0.0,
+        1.0
+      ],
+      3
+    ]
+  ],
+  "expected": [
+    {
+      "fact_id": 1,
+      "band": 21,
+      "reason": "memory_key_exact",
+      "lexical_rank": 1,
+      "semantic_rank": 3,
+      "fusion": 0.032266458495966696
+    },
+    {
+      "fact_id": 2,
+      "band": 21,
+      "reason": "memory_key_exact",
+      "lexical_rank": 2,
+      "semantic_rank": 4,
+      "fusion": 0.031754032258064516
+    },
+    {
+      "fact_id": 3,
+      "band": 21,
+      "reason": "content_exact",
+      "lexical_rank": 4,
+      "semantic_rank": 2,
+      "fusion": 0.031754032258064516
+    },
+    {
+      "fact_id": 5,
+      "band": 20,
+      "reason": "semantic_match",
+      "lexical_rank": null,
+      "semantic_rank": 1,
+      "fusion": 0.01639344262295082
+    },
+    {
+      "fact_id": 4,
+      "band": 12,
+      "reason": "category_exact",
+      "lexical_rank": 3,
+      "semantic_rank": 5,
+      "fusion": 0.03125763125763126
+    },
+    {
+      "fact_id": 6,
+      "band": 0,
+      "reason": "semantic_match",
+      "lexical_rank": null,
+      "semantic_rank": 6,
+      "fusion": 0.015151515151515152
+    }
+  ]
+}

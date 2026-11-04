@@ -3,7 +3,11 @@ pub mod embedding;
 mod evidence;
 pub mod extract;
 pub mod facts;
+pub(crate) mod index;
+mod rank;
+pub(crate) mod retrieve;
 mod scope;
+pub(crate) mod search_tool;
 pub mod tools;
 use crate::{
     Result,
@@ -17,7 +21,12 @@ use sqlx::SqliteConnection;
 #[derive(clap::Subcommand, Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Action {
+    Retrieve(retrieve::Query),
     VectorStatus,
+    PrepareReference {
+        execution: String,
+        actor: String,
+    },
     VectorQuery {
         execution: String,
         actor: String,
@@ -67,6 +76,13 @@ pub enum Change {
 }
 pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
     match action {
+        Action::Retrieve(q) => retrieve::retrieve(store, &q).await,
+        Action::PrepareReference { execution, actor } => {
+            let mut tx = store.readers().begin().await?;
+            scope::Reader::at(&mut tx, &execution, &actor, false, false).await?;
+            tx.commit().await?;
+            Ok(json!({"ready": embedding::open_reference(store).await?}))
+        }
         Action::VectorStatus => embedding::status(store).await,
         Action::VectorQuery {
             execution,

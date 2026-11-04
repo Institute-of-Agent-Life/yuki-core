@@ -3,6 +3,14 @@ use std::{collections::BTreeMap, env, fs, path::PathBuf};
 #[path = "build/opencc.rs"]
 mod opencc;
 fn main() {
+    println!("cargo:rerun-if-changed=native/vec1");
+    cc::Build::new()
+        .file("native/vec1/vec1.c")
+        .include("native/vec1")
+        .define("VEC1_STATIC", None)
+        .define("sqlite3_extension_init", "sqlite3_yuki_vec1_init")
+        .warnings(false)
+        .compile("yuki_vec1");
     opencc::compile(&PathBuf::from(env::var_os("OUT_DIR").unwrap()));
     let directory = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("migrations");
     println!("cargo:rerun-if-changed=migrations");

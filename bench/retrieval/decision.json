@@ -1,0 +1,51 @@
+{
+  "selected": "exact",
+  "cases": 36,
+  "matches": 36,
+  "min_recall_at_20": 1.0,
+  "v4": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "platform": "macOS arm64 release",
+  "dimension": 1024,
+  "sources": {
+    "core_matrix": {
+      "file": "core-dv-release-03/core-observations.json",
+      "sha256": "786f839dbfc9c376ee6c22b10262c8eb99709824ea6d3661f0222d116cc01ef0",
+      "raw_gzip": "bench/retrieval/core_matrix.json.gz"
+    },
+    "reference_matrix": {
+      "file": "vec1-matrix-01/vec1-observations.json",
+      "sha256": "dc2f9fe7a91c52581c7f93d1f22a376e180fe52a0c7e0928624dade7314b48ad",
+      "raw_gzip": "bench/retrieval/reference_matrix.json.gz"
+    },
+    "build": {
+      "file": "core-dv-release-03/build.json",
+      "sha256": "0b7d582cc9c3db43bd844fef3782219ae4f319f84990f9e69e371b47de586209"
+    }
+  },
+  "observed_100k_full_scope": {
+    "vec1": {
+      "wall_ms": [
+        3396.273917,
+        3372.527333,
+        3127.3815,
+        3330.010666
+      ],
+      "authorized": 98592,
+      "disk_bytes": 976962848,
+      "sampled_owner_rss_bytes": 58507264,
+      "reference_prepare_ms": 36793.086083
+    },
+    "exact": {
+      "wall_ms": [
+        1924.569958,
+        2469.970458,
+        2403.290958,
+        2403.611625
+      ],
+      "authorized": 98592,
+      "disk_bytes": 976962848,
+      "sampled_owner_rss_bytes": 64749568,
+      "reference_prepare_ms": 36793.086083
+    }
+  }
+}

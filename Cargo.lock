@@ -2975,6 +2975,7 @@ dependencies = [
  "chrono-tz",
  "clap",
  "flate2",
+ "futures-util",
  "jsonschema",
  "regex",
  "reqwest",

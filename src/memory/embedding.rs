@@ -1,4 +1,4 @@
-mod profile;
+pub(super) mod profile;
 mod writer;
 use crate::{
     Result,
@@ -11,7 +11,7 @@ use sqlx::{Row, SqliteConnection};
 use std::{sync::Arc, time::Duration};
 
 pub struct Engine {
-    profile: Arc<Profile>,
+    pub(super) profile: Arc<Profile>,
     client: reqwest::Client,
     query_locks: [tokio::sync::Mutex<()>; 32],
 }
@@ -22,6 +22,7 @@ pub enum Outcome {
 }
 pub enum Change {
     Init,
+    OpenReference(Arc<Profile>),
     Documents(Arc<Profile>),
     Query(Arc<Profile>, String, String, String, String),
     Dispatch(Arc<Profile>, String),
@@ -31,6 +32,7 @@ pub enum Change {
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
     match change {
         Change::Init => writer::init(conn).await,
+        Change::OpenReference(p) => Ok(json!(super::index::open(conn, p).await?)),
         Change::Documents(p) => writer::documents(conn, p).await,
         Change::Query(p, exec, actor, op, text) => {
             writer::query_job(conn, p, exec, actor, op, text).await
@@ -170,4 +172,17 @@ pub async fn start(store: &mut Store, cfg: Config) -> Result<Option<tokio::task:
             }
         }
     })))
+}
+
+/// Advance the optional comparison index by one committed page. A caller can
+/// resume after a cold owner or short IPC deadline without claiming paid work.
+pub(super) async fn open_reference(store: &Store) -> Result<bool> {
+    let p = engine(store)?.profile.clone();
+    let ready: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM retrieval_profiles WHERE profile=? AND cursor>=upper_bound)",
+    )
+    .bind(p.identity())
+    .fetch_one(store.readers())
+    .await?;
+    Ok(ready || write(store, Change::OpenReference(p)).await? == true)
 }
