@@ -18,13 +18,13 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] != "CORE-032"
+        m["card"] not in {"CORE-032", "CORE-033"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
         or not all(a["passed"] for a in m["assertions"])
     ):
-        raise ValueError("passing CORE-032 manifest required")
+        raise ValueError("passing host or personal manifest required")
     if m["source"] != source or (source["dirty"] and not development):
         raise ValueError("candidate needs matching source identity and clean commit")
 
@@ -34,7 +34,9 @@ def build(manifest_path, out, development=False):
             raise ValueError("unverified member " + name)
         return raw
 
-    proof = receipt("host-delegation.json")
+    personal = m["card"] == "CORE-033"
+    proof_name = "personal-handoff.json" if personal else "host-delegation.json"
+    proof = receipt(proof_name)
     data = json.loads(proof)
     sdk = json.loads(receipt("sdk-distributions/candidate.json"))
     binary = (
@@ -43,7 +45,12 @@ def build(manifest_path, out, development=False):
     raw = binary.read_bytes()
     if digest(raw) != data["binary_sha256"]:
         raise ValueError("binary differs from exercised host")
-    idl = (ROOT / "protocol/plugin/gateway/host-preview.json").read_bytes()
+    idl_path = (
+        "sdk/rust/src/host-preview.json"
+        if personal
+        else "protocol/plugin/gateway/host-preview.json"
+    )
+    idl = (ROOT / idl_path).read_bytes()
     if digest(idl) != data["host_idl_sha256"]:
         raise ValueError("host interface differs from tested IDL")
     os_name = platform.system().lower()
@@ -59,11 +66,30 @@ def build(manifest_path, out, development=False):
         "protocol/handshake.schema.json": (
             ROOT / "protocol/plugin/handshake.schema.json"
         ).read_bytes(),
-        "evidence/host-delegation.json": proof,
+        "evidence/" + proof_name: proof,
         "LICENSE": (ROOT / "LICENSE").read_bytes(),
         "NOTICE": (ROOT / "NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if personal:
+        methods = (ROOT / "protocol/plugin/personal/methods.json").read_bytes()
+        if digest(methods) != data["personal_schema_sha256"] or set(
+            data["negotiated_methods"]
+        ) != set(json.loads(methods)["methods"]):
+            raise ValueError("personal interface differs from exercised methods")
+        files["protocol/personal/methods.json"] = methods
+        for index in (
+            "protocol/personal/source.json",
+            "protocol/connector/4/source.json",
+        ):
+            index_raw = (ROOT / index).read_bytes()
+            files[index] = index_raw
+            for member in json.loads(index_raw)["members"]:
+                name = member["path"]
+                blob = (ROOT / name).read_bytes()
+                if digest(blob) != member["sha256"]:
+                    raise ValueError("fixed wire changed: " + name)
+                files[name] = blob
     target_info = subprocess.check_output(["rustc", "-vV"], text=True)
     host = next(
         line.split(": ", 1)[1]
@@ -102,11 +128,11 @@ def build(manifest_path, out, development=False):
         exe.write_bytes(raw)
         exe.chmod(0o755)
         env = {
-            "PATH": os.path.join(
-                os.environ.get("SystemRoot", "C:\\Windows"), "System32"
+            "PATH": (
+                os.path.join(os.environ.get("SystemRoot", "C:\\Windows"), "System32")
+                if os.name == "nt"
+                else "/usr/bin:/bin"
             )
-            if os.name == "nt"
-            else "/usr/bin:/bin"
         }
         if os.name == "nt":
             env["SystemRoot"] = os.environ["SystemRoot"]
@@ -125,7 +151,14 @@ def build(manifest_path, out, development=False):
                     + result.stderr.decode(errors="replace")[:200]
                 )
             json.loads(result.stdout)
-    target = "yuki-host-preview-" + source["commit"][:12] + "-" + os_name + "-" + arch
+    target = (
+        ("yuki-personal-preview-" if personal else "yuki-host-preview-")
+        + source["commit"][:12]
+        + "-"
+        + os_name
+        + "-"
+        + arch
+    )
     members = {
         n: {"sha256": digest(content), "bytes": len(content)}
         for n, content in sorted(files.items())
@@ -145,7 +178,7 @@ def build(manifest_path, out, development=False):
         "sdk_versions": sdk["sdk_versions"],
         "implemented_methods": sorted(json.loads(idl)["methods"]),
         "validation": {
-            "card": "CORE-032",
+            "card": m["card"],
             "platform": m["platform"],
             "assertions": len(m["assertions"]),
             "manifest_sha256": digest(manifest_path.read_bytes()),
@@ -155,6 +188,13 @@ def build(manifest_path, out, development=False):
         },
         "members": members,
     }
+    if personal:
+        candidate["personal_schema_revision"] = 1
+        candidate["personal_schema_sha256"] = data["personal_schema_sha256"]
+        candidate["client_api_revision"] = 9
+        candidate["connector_wire_revision"] = 4
+        candidate["validated_personal_methods"] = sorted(data["negotiated_methods"])
+        candidate["validated_http_routes"] = data["validated_routes"]
     files["candidate.json"] = (
         json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     ).encode()

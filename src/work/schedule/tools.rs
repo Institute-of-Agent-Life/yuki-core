@@ -229,6 +229,14 @@ pub(crate) async fn action(
     if action == "update" {
         return update(conn, id, exec, args, now).await;
     }
+    state_change(conn, id, action, now).await
+}
+pub(crate) async fn state_change(
+    conn: &mut SqliteConnection,
+    id: i64,
+    action: &str,
+    now: i64,
+) -> Result<Value> {
     let sql = match action {
         "pause" => {
             "UPDATE schedules SET status='paused' WHERE id=?1 AND status NOT IN('cancelled','completed')"

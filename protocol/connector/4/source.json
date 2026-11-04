@@ -1,0 +1,10 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "wire_revision": 4,
+  "members": [
+    {
+      "path": "protocol/baseline-v4/wire4-frames.json",
+      "sha256": "6a8c4a9feb1d4db803e86fe629d935636ee9507338804432799b760df0f78531"
+    }
+  ]
+}
