@@ -109,7 +109,7 @@ pub async fn line(conn: &mut SqliteConnection, id: i64, zone: &str) -> Result<St
             .to_string(),
         None => String::new(),
     };
-    let text = crate::runtime::main::public_event_text(row.try_get("envelope")?)?;
+    let text = crate::runtime::main::event_text(row.try_get("envelope")?)?;
     Ok(format!(
         "[{clock}{display}|person:{person}]\n{}>{text}",
         fields.join("|")

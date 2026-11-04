@@ -215,6 +215,7 @@ async fn inbound(
         kind: serde_json::from_value(p["kind"].clone())?,
         segments,
         sender: None,
+        answer_work_id: None,
         reply_bot: None,
         text: None,
     };

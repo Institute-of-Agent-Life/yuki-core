@@ -85,6 +85,8 @@ jobs:
         run: python ci/check.py CORE-016 --out artifacts/CORE-016/ci
       - name: Verify fact visibility independently of private evidence and correction receipts
         run: python ci/check.py CORE-026 --out artifacts/CORE-026/ci
+      - name: Replay timed, conversation and child wait boundaries
+        run: python ci/check.py CORE-017 --out artifacts/CORE-017/ci
       - name: Verify original public Compact publication and next normal wire
         run: python ci/check.py CORE-022 --out artifacts/CORE-022/ci
       - name: Retain evidence on success or failure

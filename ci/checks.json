@@ -104,6 +104,13 @@
       "rust": true,
       "capabilities": ["subject-scoped-structured-facts","independent-original-evidence","conditional-fact-corrections"]
     },
+    "CORE-017": {
+      "case": "tests/cases/CORE-017.py",
+      "artifact": "wait-match.json",
+      "timeout_seconds": 300,
+      "rust": true,
+      "capabilities": ["persistent-any-all-waits","source-bound-private-answers","coalesced-progress"]
+    },
     "CORE-022": {
       "case": "tests/cases/CORE-022.py",
       "artifact": "compact-public-next-wire.json",

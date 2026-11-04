@@ -131,7 +131,7 @@ pub async fn prepare(
         let ids:Vec<i64>=sqlx::query_scalar("SELECT h.id FROM history_items h LEFT JOIN events e ON e.id=h.source_event LEFT JOIN social_outbound o ON o.id=h.outbound LEFT JOIN main_turns t ON t.execution=o.namespace
           WHERE h.entry=?1 AND h.visible AND h.id>?2 AND h.id<?3 AND (
            (e.id IS NOT NULL AND EXISTS(SELECT 1 FROM accepted_sources WHERE event_id=e.id) AND e.id>coalesce((SELECT max(c.event) FROM main_controls c JOIN events ctrl ON ctrl.id=c.event WHERE ctrl.entry_id=?1 AND c.command='/ai new' AND c.generation=?4),0)
-            AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM memory_command_events WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM compact_manual WHERE event=e.id))
+            AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM memory_command_events WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM compact_manual WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM work_explicit_answers WHERE event=e.id) AND NOT EXISTS(SELECT 1 FROM work_wait_routed WHERE event=e.id))
            OR (o.id IS NOT NULL AND t.window=?4)) ORDER BY h.id")
             .bind(&entry).bind(since).bind(ceiling).bind(generation).fetch_all(&mut *conn).await?;
         for item in ids {

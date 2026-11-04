@@ -102,6 +102,9 @@ pub async fn prepare(
                             t.try_get("paired_receipt")?,
                         )?;
                     }
+                    if crate::work::wait::settle(conn, exec, &logical).await? {
+                        return Ok(Value::Null);
+                    }
                     if !continue_turn && crate::work::settle(conn, exec, &logical, None).await? {
                         return Ok(Value::Null);
                     }

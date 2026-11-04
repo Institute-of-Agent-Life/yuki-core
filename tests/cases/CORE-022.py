@@ -58,7 +58,7 @@ class Owner:
     def __init__(self, ctx, path):
         self.ctx = ctx
         self.svc = Service(ctx, ctx.working / path)
-        previous_schema(ctx, self.svc.data, 15)
+        previous_schema(ctx, self.svc.data, 16)
         (self.svc.data / "SOUL.md").write_text(
             "Fixed public character.", encoding="utf-8"
         )
