@@ -272,6 +272,8 @@ async fn pair(
         }
         start = end;
     }
+    #[cfg(test)]
+    crate::store::tests::commit_barrier("paired-before-normal-observation").await;
     Ok(())
 }
 
@@ -382,6 +384,11 @@ pub async fn run(
                                     } else {
                                         "incomplete_responses_stream"
                                     }
+                                } else if step["compact"] == true
+                                    && complete_choice
+                                    && !cfg.native_web_search
+                                {
+                                    "compact_local_response_invalid"
                                 } else {
                                     "invalid_or_incomplete_choice"
                                 }
@@ -410,7 +417,12 @@ pub async fn run(
                                 attempt: attempt_id,
                                 body: response,
                                 usage,
-                                diagnostic: "public_compact_called_tool_or_paused".into(),
+                                diagnostic: if step["private_compact"] == true {
+                                    "private_compact_called_tool_or_paused"
+                                } else {
+                                    "public_compact_called_tool_or_paused"
+                                }
+                                .into(),
                                 partial_bytes: None,
                                 unknown: false,
                                 status: status.into(),
@@ -435,8 +447,12 @@ pub async fn run(
                     .await?;
                     #[cfg(test)]
                     if step["compact"] == true {
-                        crate::store::tests::commit_barrier("compact-response-before-publication")
-                            .await;
+                        crate::store::tests::commit_barrier(if step["private_compact"] == true {
+                            "private-response-before-publication"
+                        } else {
+                            "compact-response-before-publication"
+                        })
+                        .await;
                     }
                 }
             }

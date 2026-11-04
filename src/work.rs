@@ -101,10 +101,10 @@ pub async fn context(conn: &mut SqliteConnection, exec: &str) -> Result<Value> {
     };
     let row=sqlx::query("SELECT w.id,w.root,w.parent,w.goal,w.note,w.status,r.kind FROM work_nodes w JOIN work_runs r ON r.work=w.id WHERE r.execution=? AND w.goal IS NOT NULL")
         .bind(exec).fetch_one(&mut *conn).await?;
-    Ok(
-        json!({"state_scope":"current_activation","work_id":id,"root_work_id":row.try_get::<String,_>("root")?,"parent_work_id":row.try_get::<Option<String>,_>("parent")?,"goal":row.try_get::<String,_>("goal")?,
-        "kind":row.try_get::<String,_>("kind")?,"state":row.try_get::<String,_>("status")?,"context_note":row.try_get::<Option<String>,_>("note")?.as_deref().map(serde_json::from_str::<Value>).transpose()?}),
-    )
+    let mut context = json!({"state_scope":"current_activation","work_id":id,"root_work_id":row.try_get::<String,_>("root")?,"parent_work_id":row.try_get::<Option<String>,_>("parent")?,"goal":row.try_get::<String,_>("goal")?,
+        "kind":row.try_get::<String,_>("kind")?,"state":row.try_get::<String,_>("status")?,"context_note":row.try_get::<Option<String>,_>("note")?.as_deref().map(serde_json::from_str::<Value>).transpose()?});
+    crate::context::compact_exec::restore_work(conn, exec, &id, &mut context).await?;
+    Ok(context)
 }
 pub async fn private_input(conn: &mut SqliteConnection, exec: &str) -> Result<Vec<Value>> {
     match bound(conn, exec).await? {

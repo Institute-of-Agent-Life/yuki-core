@@ -34,6 +34,7 @@
 | CORE-026 | Mac、HJW Windows 各通過 118 項；已驗 13 張相鄰卡 | `codex/core-026-facts` | `artifacts/CORE-026/{mac-04,windows-02}/fact-evidence-acl.json`。共同群可讀結構化事實而不可讀來源私聊；原 R1 重放不覆寫 R2，原證據換列後舊 proof 被拒。實測 QQ 本人命令、原模型 read_memory／memory_change、撤回、工具／run 原件及 forget。 |
 | CORE-017 | macOS 與 HJW Windows 已驗，待三平台 CI | `codex/core-017-wait` | `artifacts/CORE-017/{mac-11,windows-02}/wait-{match,before-settle,parent-questions,plugin-events}.json`。原批結算後才掛起；原定位與身份命中後一次啟動，保留 all 的部分私有輸入。十次提示與重放均不增購；父工作終止後不復活。App／ACP 明確目標按核心入口驗證，實際擴展消費仍待交接。CORE-015 工具摘要及相鄰 13 張回歸通過。 |
 | CORE-022 | macOS 與 HJW Windows 各通過 214 項，待 CI | `codex/core-022-compact` | `artifacts/CORE-022/{mac-07,windows-02}/{compact-public-next-wire,native-public-wires,compact-public-faults}.json`。送後跨 96k，只換公開前綴；保留原工具配對與未覆蓋尾。實際強殺後重用原已付回應；刪除、重置或撤管理權後舊 P 無法發布。三種原生協議均驗下一筆實際請求與 opaque 重放。 |
+| CORE-023 | Mac、HJW Windows 各通過 223 項，待 CI | `codex/core-023-private` | `artifacts/CORE-023/{mac-06,windows-01}/{compact-exec-next-wire,partial-native-next,native-E-P-next,next-normal-unknown}.json`。同一批在配對後與 E 回應落庫後各強殺一次，下一普通請求仍有原參數及效果鍵。原生 QQ 部分送達保留三段狀態、已送 locator 與出站 ID。另驗 E→P 換鏈、P 拒絕轉 E、來源失效、不可容納及 Work 喚醒。固定舊版 `v4-oracle-01/junit.xml` 的 21 項通過。 |
 
 **擴展交接。** EXT-007、EXT-019 可讀 CORE-002 執行產物
 `v4-oracle-candidate.zip`；本地路徑 `artifacts/CORE-002/handoff-89f15db/v4-oracle-candidate.zip`，
@@ -63,3 +64,5 @@ CORE-012 提示詞補核在 `codex/core-012-prompt-order`。原版 HTTP 錄製�
 CORE-017 實作 `8a41277`，HJW 與 Mac 各通過 106 項，已推 [PR #29](https://github.com/Institute-of-Agent-Life/yuki-core/pull/29)。CORE-018 與 CORE-023 可分別使用等待與公共整理的本地驗證結果。CORE-040 在 HJW Windows 另跑 A/B/C 各 1,200 筆；收件端、正文、回應原因及出站筆數相符。三臂各錄到 2,400 筆物理模型請求。中間報告 `artifacts/CORE-040/windows-1200-02/report/slice-decision.json` SHA-256 `22f5813d116dc164afcaf8e829e410a645a0d264b7e31d91d15d211f29c48cdf`，工具與群聊輸入仍有差異。
 
 CORE-022 實作 `cc1a95e` 已推 [PR #30](https://github.com/Institute-of-Agent-Life/yuki-core/pull/30)。
+
+CORE-021 的 [PR #23](https://github.com/Institute-of-Agent-Life/yuki-core/pull/23) head `23fc3b2` 三平台六項檢查通過，已合併 `7fd1002`。CORE-030 還需要排程保存與其他卡輸入，按其原前置核對。

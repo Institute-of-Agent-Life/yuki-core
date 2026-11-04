@@ -148,70 +148,35 @@ pub(super) fn base(cfg: &crate::runtime::main::Config, paid: &Value) -> Value {
     }
     view
 }
-pub(super) fn estimate(cfg: &crate::runtime::main::Config, body: &Value) -> u64 {
+/// Add the JSON separators and round once for the complete request. Index both
+/// prefix and retained suffix costs without serializing the conversation at each cut.
+#[derive(Default, Clone, Copy)]
+pub(crate) struct Count {
+    value: Cost,
+    items: usize,
+}
+impl Count {
+    pub(crate) fn join(mut self, rhs: Self) -> Self {
+        if self.items != 0 && rhs.items != 0 {
+            self.value.ascii += 2;
+        }
+        self.value.add(rhs.value);
+        self.items += rhs.items;
+        self
+    }
+    pub(crate) fn tokens(self) -> u64 {
+        self.value.tokens()
+    }
+    fn item(value: &Value) -> Self {
+        Self {
+            value: Cost::value(value),
+            items: 1,
+        }
+    }
+}
+pub(crate) fn start(cfg: &crate::runtime::main::Config, body: &Value) -> Count {
     let p = cfg.protocol;
     let mut input = base(cfg, body);
-    let mut messages = Vec::new();
-    let mut media = 0;
-    if let Some(rules) = body["instructions"].as_str() {
-        messages.push(json!({"role":"system","content":rules}));
-    }
-    if p.is_messages() {
-        for item in body["system"].as_array().into_iter().flatten() {
-            messages.push(json!({"role":"system","content":item["text"]}));
-        }
-    }
-    if p.is_gemini() {
-        for item in body["systemInstruction"]["parts"]
-            .as_array()
-            .into_iter()
-            .flatten()
-        {
-            messages.push(json!({"role":"system","content":item["text"]}));
-        }
-    }
-    for message in body[sequence(p)].as_array().into_iter().flatten() {
-        if p.is_gemini() {
-            let mut normalized = message.clone();
-            if let Some(parts) = normalized["parts"].as_array_mut() {
-                for part in parts {
-                    for key in ["inlineData", "inline_data"] {
-                        if part.get(key).is_some_and(|v| v["data"].is_string()) {
-                            part[key] = json!("[prepared media]");
-                            media += 4096;
-                        }
-                    }
-                }
-            }
-            messages.push(normalized);
-        } else if p.is_messages() {
-            for block in message["content"].as_array().into_iter().flatten() {
-                if block["type"] == "text" {
-                    messages.push(json!({"role":message["role"],"content":block["text"]}));
-                } else {
-                    messages.push(json!({"role":message["role"],"content":block}));
-                }
-            }
-        } else if p.is_chat() {
-            let mut value = message.clone();
-            if let Some(parts) = value["content"].as_array_mut() {
-                for part in parts {
-                    if part["type"] == "image_url"
-                        && part["image_url"]["url"]
-                            .as_str()
-                            .is_some_and(|u| u.starts_with("data:"))
-                    {
-                        *part = json!({"data_url":"[prepared media]"});
-                        media += 4096;
-                    }
-                }
-            }
-            messages.push(value);
-        } else {
-            messages.push(message.clone());
-        }
-    }
-    input["messages"] = json!(messages);
     if cfg.native_web_search {
         input["native_tools"] = body["tools"]
             .as_array()
@@ -224,9 +189,84 @@ pub(super) fn estimate(cfg: &crate::runtime::main::Config, body: &Value) -> u64 
             })
             .unwrap_or_default();
     }
-    Cost::value(&input).tokens() + media
+    let mut count = Count {
+        value: Cost::value(&input),
+        items: 0,
+    };
+    let mut system = |rules: &Value| {
+        count = count.join(Count::item(&json!({"role":"system","content":rules})));
+    };
+    if body["instructions"].is_string() {
+        system(&body["instructions"]);
+    }
+    if p.is_messages() {
+        for block in body["system"].as_array().into_iter().flatten() {
+            system(&block["text"]);
+        }
+    } else if p.is_gemini() {
+        for part in body["systemInstruction"]["parts"]
+            .as_array()
+            .into_iter()
+            .flatten()
+        {
+            system(&part["text"]);
+        }
+    }
+    count
 }
-pub(super) fn summary(p: Protocol, raw: &str) -> Result<String> {
+pub(crate) fn part_cost(p: Protocol, unit: &Value) -> Count {
+    if p.is_messages() {
+        let block = &unit["block"];
+        return Count::item(
+            &json!({"role":unit["role"],"content":if block["type"]=="text"{&block["text"]}else{block}}),
+        );
+    }
+    let mut normalized = unit.clone();
+    let mut media = 0;
+    if p.is_gemini()
+        && let Some(parts) = normalized["parts"].as_array_mut()
+    {
+        for part in parts {
+            for key in ["inlineData", "inline_data"] {
+                if part.get(key).is_some_and(|v| v["data"].is_string()) {
+                    part[key] = json!("[prepared media]");
+                    media += 4096;
+                }
+            }
+        }
+    } else if p.is_chat()
+        && let Some(parts) = normalized["content"].as_array_mut()
+    {
+        for part in parts {
+            if part["type"] == "image_url"
+                && part["image_url"]["url"]
+                    .as_str()
+                    .is_some_and(|u| u.starts_with("data:"))
+            {
+                *part = json!({"data_url":"[prepared media]"});
+                media += 4096;
+            }
+        }
+    }
+    let mut c = Count::item(&normalized);
+    c.value.media += media;
+    c
+}
+pub(crate) fn estimate(cfg: &crate::runtime::main::Config, body: &Value) -> u64 {
+    let mut count = start(cfg, body);
+    let p = cfg.protocol;
+    for msg in body[sequence(p)].as_array().into_iter().flatten() {
+        if p.is_messages() {
+            for block in msg["content"].as_array().into_iter().flatten() {
+                count = count.join(part_cost(p, &json!({"role":msg["role"],"block":block})));
+            }
+        } else {
+            count = count.join(part_cost(p, msg));
+        }
+    }
+    count.tokens()
+}
+pub(crate) fn summary(p: Protocol, raw: &str) -> Result<String> {
     let v: Value = serde_json::from_str(raw)?;
     let text = if p.is_chat() {
         v["choices"][0]["message"]["content"]

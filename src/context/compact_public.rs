@@ -1,6 +1,6 @@
 pub(crate) mod history;
 pub(crate) mod job;
-mod wire;
+pub(crate) mod wire;
 use crate::Result;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
