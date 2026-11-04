@@ -12,16 +12,29 @@ pub struct Config {
     #[serde(default)]
     pub main: Option<crate::runtime::main::Config>,
     #[serde(default)]
+    pub search: Option<crate::model::search::Config>,
+    #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
 }
 
 impl Config {
     pub fn read(data: &Path) -> Result<Self> {
-        let config: Self = toml::from_str(&fs::read_to_string(data.join("yuki.toml"))?)?;
+        let mut config: Self = toml::from_str(&fs::read_to_string(data.join("yuki.toml"))?)?;
         if config.format_version != 1 {
             return Err("unsupported configuration format".into());
         }
-        if let Some(main) = &config.main {
+        if let Some(search) = &config.search {
+            search.validate()?;
+        }
+        if let Some(main) = &mut config.main {
+            // The old explicit native_web_search flag remains an opt-in when no search
+            // deployment is configured. A configured global policy always bounds it.
+            main.bridge_search = false;
+            if let Some(search) = &config.search {
+                main.native_web_search &= search.inline();
+                main.bridge_search =
+                    search.bridge() && !(main.protocol.is_messages() && main.native_web_search);
+            }
             main.validate()?;
         }
         Ok(config)
