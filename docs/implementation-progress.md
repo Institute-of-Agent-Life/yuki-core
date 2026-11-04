@@ -115,3 +115,6 @@ CORE-033 已補上 Client9 原檔目錄、依 `artifact_id + version` 下載及 
 | Windows x86_64 | `artifacts/CORE-033/handoff-718cba6b1cf2/windows-validation/handoff/yuki-personal-preview-718cba6b1cf2-windows-x86_64.zip` | `5482c2628c57fdadb8a4ddc0f4680b73621a1307c476a582d341056a139e37f1` |
 | macOS arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/macos-arm64/yuki-personal-preview-718cba6b1cf2-darwin-arm64.zip` | `4b0cb965d048e11063dc235756c104f83d22670cf02670ac3467e75dc72310ae` |
 | Linux arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/linux-arm64-02/candidate/yuki-personal-preview-718cba6b1cf2-linux-arm64.zip` | `4427bd183ae5ea95566e65cb7dc7bb1df282eaf140f94e81c526399e932968bd` |
+CORE-014 補核發現原版長 Work 在續接時呼叫 `find_contacts`。已於 `codex/core-014-contacts` 補原名稱、原參數 schema、單一人物的多帳號綁定、Person／Space keyset，以及分開的 `find_conversations`。讀取沿原 caller 和來源交集，發布前重查並綁真實來源；舊人物與會話目錄入口仍可用。固定 v4 八項對拍在 `artifacts/CORE-014/contacts-v4-01/`，正常 Main 的原 wire 在 `contacts-mac-04/original-contact-directory.json`。此修正供 CORE-040 原長 Work 消費，不以替代工具替換原劇本。
+
+聯絡人補核最終來源樹 `62ca2f8c48e6cf303e74cb780ebf47c4dd608182b04acb3e77b81d97319e7a53`，Mac 與 HJW Windows 各 142 項通過，產物在 `artifacts/CORE-014/{contacts-mac-06,contacts-windows-02}/original-contact-directory.json`。CORE-005、007、015、052 的 `contacts-regression-02` 均通過，另留 13 張相鄰卡的 `contacts-regression-01`。包含原 UUID 大小寫別名升級、現有來源的發布前重查與目錄來源依賴。下一步將此版本供 CORE-040 原長 Work 使用。
