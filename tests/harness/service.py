@@ -41,7 +41,7 @@ class Service:
 
 def previous_schema(ctx, data, version):
     data.mkdir()
-    (data / "yuki.toml").write_text('format_version = 1\nlisten = "127.0.0.1:0"\n')
+    (data / "yuki.toml").write_text('format_version = 1\nlisten = "127.0.0.1:0"\n[memory]\nmode="lexical-only"\n')
     with closing(sqlite3.connect(data / "core.sqlite")) as db:
         db.executescript("""
             CREATE TABLE _sqlx_migrations(version BIGINT PRIMARY KEY, description TEXT NOT NULL,

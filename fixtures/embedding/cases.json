@@ -1,0 +1,12 @@
+{
+  "normal": [
+    "commit independent facts with the HTTP response held, then publish vectors at their original profile and document hash",
+    "two equal-dimension models each physically receive their own batch; charge query, initial documents and reindex separately",
+    "return only a normalized query vector from cache, never a prior fact selection; delete clears in-flight and cached query publication"
+  ],
+  "faults": [
+    "default hybrid requires configured route; explicit lexical-only boots and sends no embedding request",
+    "provider disconnect and unknown response are degraded; do not retry a possibly charged request",
+    "a verified partial batch only permits missing indices to be repaired; corrected, retracted and erased facts reject their old response"
+  ]
+}

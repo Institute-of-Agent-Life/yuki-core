@@ -1,4 +1,5 @@
 mod commands;
+pub mod embedding;
 mod evidence;
 pub mod extract;
 pub mod facts;
@@ -16,6 +17,14 @@ use sqlx::SqliteConnection;
 #[derive(clap::Subcommand, Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Action {
+    VectorStatus,
+    VectorQuery {
+        execution: String,
+        actor: String,
+        operation: String,
+        text: String,
+    },
+    RetryMissing {},
     /// Query as the original execution. Evidence requires its own source authorization.
     Read {
         execution: String,
@@ -58,6 +67,14 @@ pub enum Change {
 }
 pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
     match action {
+        Action::VectorStatus => embedding::status(store).await,
+        Action::VectorQuery {
+            execution,
+            actor,
+            operation,
+            text,
+        } => embedding::query(store, &execution, &actor, &operation, &text).await,
+        Action::RetryMissing {} => embedding::retry_missing(store).await,
         Action::Read {
             execution,
             actor,

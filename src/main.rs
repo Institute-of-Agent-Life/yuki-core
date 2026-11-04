@@ -34,7 +34,10 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Action {
-    Init,
+    Init {
+        #[arg(long, value_enum, default_value = "hybrid")]
+        memory_mode: memory::embedding::Mode,
+    },
     Migrate,
     Doctor,
     Run,
@@ -56,8 +59,13 @@ async fn ready(State(store): State<store::Store>) -> (StatusCode, Json<serde_jso
         Json(json!({"ready":ready})),
     )
 }
-async fn health(State(store): State<store::Store>) -> Json<store::Health> {
-    Json(store.health().await)
+async fn health(State(store): State<store::Store>) -> Json<serde_json::Value> {
+    let mut health = json!(store.health().await);
+    health["memory"] = match memory::embedding::status(&store).await {
+        Ok(v) => json!({"mode":v["mode"],"degraded":v["degraded"].as_bool().unwrap_or(false)}),
+        Err(_) => json!({"degraded":true}),
+    };
+    Json(health)
 }
 
 async fn close_writer(store: &store::Store) {
@@ -73,8 +81,8 @@ async fn close_writer(store: &store::Store) {
 async fn execute(args: Args) -> Result<()> {
     let data = args.data.ok_or("--data is required")?;
     match args.command {
-        Action::Init => {
-            let owner = config::init(&data)?;
+        Action::Init { memory_mode } => {
+            let owner = config::init(&data, memory_mode)?;
             let version = store::bootstrap(&owner.data).await?;
             println!(
                 "{}",
@@ -106,6 +114,7 @@ async fn execute(args: Args) -> Result<()> {
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let mut store = store::Store::open(&owner.data).await?;
             store.main = config.main.map(Arc::new);
+            let vectors = memory::embedding::start(&mut store, config.memory).await?;
             let extraction = memory::extract::start(store.clone(), config.extraction).await?;
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
             host::Hub::start(&mut store, config.plugins, &owner.data, qq.clone()).await?;
@@ -148,6 +157,10 @@ async fn execute(args: Args) -> Result<()> {
             }).await;
             if let Some(host) = &store.host {
                 host.stop().await;
+            }
+            if let Some(worker) = vectors {
+                worker.abort();
+                let _ = worker.await;
             }
             if let Some(worker) = extraction {
                 worker.abort();
