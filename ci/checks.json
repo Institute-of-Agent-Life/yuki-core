@@ -69,6 +69,13 @@
       "timeout_seconds": 120,
       "rust": true,
       "capabilities": ["reverse-onebot-ws", "receiver-bound-routing", "private-typing"]
+    },
+    "CORE-010": {
+      "case": "tests/cases/CORE-010.py",
+      "artifact": "effects-ledger.json",
+      "timeout_seconds": 120,
+      "rust": true,
+      "capabilities": ["immutable-effect-results", "exclusive-dispatch", "original-operation-recovery"]
     }
   }
 }

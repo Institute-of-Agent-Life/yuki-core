@@ -56,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Effect(crate::runtime::effects::Action),
     ObserveQqAccount(String, String),
     Ingress(Box<crate::ingress::admit::Admission>),
     Claim(i64),
@@ -144,6 +145,9 @@ impl Driver for SqliteDriver {
                 .await?;
                 return Ok(json!(original));
             }
+            Mutation::Effect(action) => {
+                return crate::runtime::effects::apply(self.connection(), action).await;
+            }
             Mutation::SetLabel(value) => value.as_str(),
             #[cfg(test)]
             Mutation::Invalid => "must rollback",
@@ -174,10 +178,10 @@ impl Driver for SqliteDriver {
     }
     async fn commit(&mut self) -> Result<()> {
         #[cfg(test)]
-        tests::ingress_barrier("before").await;
+        tests::commit_barrier("before").await;
         sqlx::query("COMMIT").execute(self.connection()).await?;
         #[cfg(test)]
-        tests::ingress_barrier("after").await;
+        tests::commit_barrier("after").await;
         Ok(())
     }
     async fn rollback(&mut self) -> Result<()> {
