@@ -1,0 +1,540 @@
+{
+  "adapter_files": {
+    "src/yuki/llm/anthropic_messages.py": "c436756f913eb3d3b34c7a6115902b22efca72e351a18b4fde4778cba8a819e6",
+    "src/yuki/llm/gemini.py": "28fd801c3f51562ba07c41bf1042f7ff7ea5badda7a0c067e0beb117410118b6",
+    "src/yuki/llm/openai_compatible.py": "46720446f2277c1cc3d5a9e7f93cbb8e7b985c6dbd0ba8d9d77f14b67069eb36",
+    "src/yuki/llm/openai_responses.py": "16e48f0f423e0c6e2d3b2bbe2f811acac197c0e613cb5dd7e49edb5ffb03d898"
+  },
+  "cases": {
+    "cache_isolated": {
+      "attempts": [],
+      "case_sha256": "19b47affc482fac6d42127674a67f0c7bce3f637cdc9cc95ec72fdd224d66e49",
+      "nodeid": "tests/unit/test_native_search_bridge.py::test_cache_isolates_actual_connection_and_request_profile[protocol]",
+      "payloads": []
+    },
+    "chat": {
+      "attempts": [
+        {
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "request": {
+            "max_tokens": 8192,
+            "messages": [
+              {
+                "content": "fixed",
+                "role": "system"
+              },
+              {
+                "content": "task",
+                "role": "user"
+              }
+            ],
+            "model": "thinking-model",
+            "reasoning_effort": "low",
+            "stream": false,
+            "tool_choice": "auto",
+            "tools": [
+              {
+                "function": {
+                  "description": "Read evidence",
+                  "name": "inspect",
+                  "parameters": {
+                    "properties": {},
+                    "type": "object"
+                  }
+                },
+                "type": "function"
+              }
+            ]
+          },
+          "response": {
+            "choices": [
+              {
+                "finish_reason": "stop",
+                "message": {
+                  "annotations": [
+                    {
+                      "type": "url_citation",
+                      "url_citation": {
+                        "title": "Source",
+                        "url": "https://example.com/source"
+                      }
+                    }
+                  ],
+                  "content": [
+                    {
+                      "text": "answer",
+                      "type": "text"
+                    }
+                  ],
+                  "reasoning_content": "private"
+                }
+              }
+            ],
+            "id": "req-1",
+            "usage": {
+              "completion_tokens": 5,
+              "completion_tokens_details": {
+                "reasoning_tokens": 3
+              },
+              "prompt_tokens": 10,
+              "prompt_tokens_details": {
+                "cached_tokens": 4
+              },
+              "total_tokens": 15
+            }
+          },
+          "status": 200
+        }
+      ],
+      "case_sha256": "1fe9fc4ed5d875966300ed374eda2668f24c06ec09ec79b9191cd222e7cb6896",
+      "nodeid": "tests/unit/test_provider_protocols.py::test_chat_reasoning_citations_and_usage[stop]",
+      "payloads": []
+    },
+    "chat_structured": {
+      "attempts": [],
+      "case_sha256": "1fe9fc4ed5d875966300ed374eda2668f24c06ec09ec79b9191cd222e7cb6896",
+      "nodeid": "tests/unit/test_provider_protocols.py::test_image_and_json_schema_reach_wire[OpenAICompatibleProvider]",
+      "payloads": [
+        {
+          "max_tokens": 8192,
+          "messages": [
+            {
+              "content": [
+                {
+                  "text": "image",
+                  "type": "text"
+                },
+                {
+                  "image_url": {
+                    "url": "data:image/png;base64,aW1hZ2U="
+                  },
+                  "type": "image_url"
+                }
+              ],
+              "role": "user"
+            }
+          ],
+          "model": "thinking-model",
+          "reasoning_effort": "low",
+          "response_format": {
+            "json_schema": {
+              "name": "answer",
+              "schema": {
+                "type": "object"
+              },
+              "strict": true
+            },
+            "type": "json_schema"
+          },
+          "stream": false
+        }
+      ]
+    },
+    "gemini": {
+      "attempts": [
+        {
+          "method": "POST",
+          "path": "/v1/models/synthetic:generateContent",
+          "request": {
+            "contents": [
+              {
+                "parts": [
+                  {
+                    "text": "audit"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "generationConfig": {},
+            "systemInstruction": {
+              "parts": [
+                {
+                  "text": "fixed"
+                }
+              ]
+            },
+            "toolConfig": {
+              "includeServerSideToolInvocations": true
+            },
+            "tools": [
+              {
+                "googleSearch": {}
+              }
+            ]
+          },
+          "response": {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "thoughtSignature": "original-signature",
+                      "toolCall": {
+                        "args": {
+                          "queries": [
+                            "audit"
+                          ]
+                        },
+                        "id": "search-original",
+                        "toolType": "GOOGLE_SEARCH_WEB"
+                      }
+                    },
+                    {
+                      "toolResponse": {
+                        "id": "search-original",
+                        "response": {
+                          "source": "https://example.org/source"
+                        }
+                      }
+                    }
+                  ],
+                  "role": "model"
+                },
+                "finishReason": "STOP",
+                "groundingMetadata": {
+                  "groundingChunks": [
+                    {
+                      "web": {
+                        "title": "Source",
+                        "uri": "https://example.org/source"
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "usageMetadata": {
+              "candidatesTokenCount": 3,
+              "promptTokenCount": 10,
+              "totalTokenCount": 13
+            }
+          },
+          "status": 200
+        }
+      ],
+      "case_sha256": "cee7a83efb719780cdbb7c192b9fa5628b17cbe1612c41c1f9ded4c14d2ffbd0",
+      "nodeid": "tests/unit/test_provider_native_result_boundaries.py::test_native_only_complete_keeps_real_checkpoint_usage_and_http_shape[GeminiProvider]",
+      "payloads": []
+    },
+    "messages": {
+      "attempts": [
+        {
+          "method": "POST",
+          "path": "/v1/messages",
+          "request": {
+            "max_tokens": 4096,
+            "messages": [
+              {
+                "content": [
+                  {
+                    "cache_control": {
+                      "type": "ephemeral"
+                    },
+                    "text": "audit",
+                    "type": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "model": "synthetic",
+            "stream": false,
+            "system": [
+              {
+                "cache_control": {
+                  "type": "ephemeral"
+                },
+                "text": "fixed",
+                "type": "text"
+              }
+            ],
+            "tools": [
+              {
+                "cache_control": {
+                  "type": "ephemeral"
+                },
+                "name": "web_search",
+                "type": "web_search_20250305"
+              }
+            ]
+          },
+          "response": {
+            "content": [
+              {
+                "signature": "original-signature",
+                "thinking": "private",
+                "type": "thinking"
+              },
+              {
+                "id": "search-original",
+                "input": {
+                  "query": "audit"
+                },
+                "name": "web_search",
+                "type": "server_tool_use"
+              },
+              {
+                "content": [
+                  {
+                    "encrypted_content": "opaque-source",
+                    "title": "Source",
+                    "type": "web_search_result",
+                    "url": "https://example.org/source"
+                  }
+                ],
+                "tool_use_id": "search-original",
+                "type": "web_search_tool_result"
+              }
+            ],
+            "stop_reason": "end_turn",
+            "usage": {
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 0,
+              "input_tokens": 10,
+              "output_tokens": 3
+            }
+          },
+          "status": 200
+        }
+      ],
+      "case_sha256": "cee7a83efb719780cdbb7c192b9fa5628b17cbe1612c41c1f9ded4c14d2ffbd0",
+      "nodeid": "tests/unit/test_provider_native_result_boundaries.py::test_native_only_complete_keeps_real_checkpoint_usage_and_http_shape[AnthropicMessagesProvider]",
+      "payloads": []
+    },
+    "missing_sources": {
+      "attempts": [],
+      "case_sha256": "19b47affc482fac6d42127674a67f0c7bce3f637cdc9cc95ec72fdd224d66e49",
+      "nodeid": "tests/unit/test_native_search_bridge.py::test_failure_never_searches_extraction_backend_or_caches_failure[body_only]",
+      "payloads": []
+    },
+    "responses": {
+      "attempts": [
+        {
+          "method": "POST",
+          "path": "/v1/responses",
+          "request": {
+            "include": [
+              "reasoning.encrypted_content",
+              "web_search_call.action.sources"
+            ],
+            "input": [
+              {
+                "content": "task",
+                "role": "user"
+              }
+            ],
+            "instructions": "fixed",
+            "max_output_tokens": 8192,
+            "model": "thinking-model",
+            "reasoning": {
+              "effort": "low"
+            },
+            "store": false,
+            "stream": false,
+            "tool_choice": "auto",
+            "tools": [
+              {
+                "type": "web_search"
+              }
+            ]
+          },
+          "response": {
+            "id": "resp-1",
+            "output": [
+              {
+                "encrypted_content": "original-secret",
+                "id": "reason-1",
+                "type": "reasoning"
+              },
+              {
+                "action": {
+                  "query": "verified query",
+                  "sources": [
+                    {
+                      "title": "Real",
+                      "type": "url",
+                      "url": "https://source.test/page"
+                    }
+                  ],
+                  "type": "search"
+                },
+                "id": "search-1",
+                "status": "completed",
+                "type": "web_search_call"
+              },
+              {
+                "content": [
+                  {
+                    "annotations": [
+                      {
+                        "title": "Cited",
+                        "type": "url_citation",
+                        "url": "https://cited.test/page"
+                      }
+                    ],
+                    "text": "Uncited https://invented.test/ is not a source.",
+                    "type": "output_text"
+                  }
+                ],
+                "id": "msg-1",
+                "role": "assistant",
+                "type": "message"
+              }
+            ],
+            "status": "completed",
+            "usage": {
+              "input_tokens": 100,
+              "input_tokens_details": {
+                "cached_tokens": 80
+              },
+              "output_tokens": 12,
+              "output_tokens_details": {
+                "reasoning_tokens": 3
+              },
+              "total_tokens": 112
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/v1/responses",
+          "request": {
+            "include": [
+              "reasoning.encrypted_content",
+              "web_search_call.action.sources"
+            ],
+            "input": [
+              {
+                "content": "task",
+                "role": "user"
+              },
+              {
+                "encrypted_content": "original-secret",
+                "id": "reason-1",
+                "type": "reasoning"
+              },
+              {
+                "action": {
+                  "query": "verified query",
+                  "sources": [
+                    {
+                      "title": "Real",
+                      "type": "url",
+                      "url": "https://source.test/page"
+                    }
+                  ],
+                  "type": "search"
+                },
+                "id": "search-1",
+                "status": "completed",
+                "type": "web_search_call"
+              },
+              {
+                "content": [
+                  {
+                    "annotations": [
+                      {
+                        "title": "Cited",
+                        "type": "url_citation",
+                        "url": "https://cited.test/page"
+                      }
+                    ],
+                    "text": "Uncited https://invented.test/ is not a source.",
+                    "type": "output_text"
+                  }
+                ],
+                "id": "msg-1",
+                "role": "assistant",
+                "type": "message"
+              },
+              {
+                "content": "continue original chain",
+                "role": "user",
+                "type": "message"
+              }
+            ],
+            "instructions": "fixed",
+            "max_output_tokens": 8192,
+            "model": "thinking-model",
+            "reasoning": {
+              "effort": "low"
+            },
+            "store": false,
+            "stream": false,
+            "tool_choice": "auto",
+            "tools": [
+              {
+                "type": "web_search"
+              }
+            ]
+          },
+          "response": {
+            "id": "resp-1",
+            "output": [
+              {
+                "encrypted_content": "original-secret",
+                "id": "reason-1",
+                "type": "reasoning"
+              },
+              {
+                "action": {
+                  "query": "verified query",
+                  "sources": [
+                    {
+                      "title": "Real",
+                      "type": "url",
+                      "url": "https://source.test/page"
+                    }
+                  ],
+                  "type": "search"
+                },
+                "id": "search-1",
+                "status": "completed",
+                "type": "web_search_call"
+              },
+              {
+                "content": [
+                  {
+                    "annotations": [
+                      {
+                        "title": "Cited",
+                        "type": "url_citation",
+                        "url": "https://cited.test/page"
+                      }
+                    ],
+                    "text": "Uncited https://invented.test/ is not a source.",
+                    "type": "output_text"
+                  }
+                ],
+                "id": "msg-1",
+                "role": "assistant",
+                "type": "message"
+              }
+            ],
+            "status": "completed",
+            "usage": {
+              "input_tokens": 100,
+              "input_tokens_details": {
+                "cached_tokens": 80
+              },
+              "output_tokens": 12,
+              "output_tokens_details": {
+                "reasoning_tokens": 3
+              },
+              "total_tokens": 112
+            }
+          },
+          "status": 200
+        }
+      ],
+      "case_sha256": "408b3b7a87d482f7b9ced008fbd44dcdab093984fc1ca0ad9dd942b3e3471903",
+      "nodeid": "tests/unit/test_native_search_provenance.py::test_responses_sources_include_and_original_tail_survive_replay[OpenAIResponsesProvider]",
+      "payloads": []
+    }
+  },
+  "junit_sha256": "5b4c6413a0e55b00d53eeb1a216c1c3e9d28bb2ebc0030e74314e3baf6545613",
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd"
+}
