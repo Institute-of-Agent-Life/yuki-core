@@ -193,6 +193,21 @@ pub async fn admit_human(
             .await?;
         return Ok(());
     }
+    if text
+        .split_whitespace()
+        .take(2)
+        .map(|s| s.to_ascii_lowercase())
+        .eq(["/ai", "compact"].into_iter().map(str::to_owned))
+    {
+        let focus = text
+            .trim()
+            .splitn(3, char::is_whitespace)
+            .nth(2)
+            .unwrap_or("")
+            .trim();
+        crate::context::compact_public::job::manual(conn, cfg, event, focus).await?;
+        return Ok(());
+    }
     let previous=sqlx::query("SELECT x.id,x.state,x.work_id,t.ready_after,
       EXISTS(SELECT 1 FROM operations WHERE namespace=x.id AND state!='intent') OR EXISTS(SELECT 1 FROM model_requests r JOIN activations a ON a.id=r.activation JOIN model_attempts p ON p.logical=r.id WHERE a.execution=x.id AND r.native_tools) AS crossed
       FROM main_turns t JOIN executions x ON x.id=t.execution WHERE x.original_actor=? AND t.conversation=? AND t.window=?
