@@ -99,6 +99,8 @@ jobs:
         run: python ci/check.py CORE-027 --out artifacts/CORE-027/ci
       - name: Verify actual personal entry and generation-bound native receipts
         run: python ci/check.py CORE-033 --out artifacts/CORE-033/ci
+      - name: Exercise two media owners, actual bytes and late callbacks
+        run: python ci/check.py CORE-038 --out artifacts/CORE-038/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

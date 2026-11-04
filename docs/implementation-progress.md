@@ -115,3 +115,5 @@ CORE-033 已補上 Client9 原檔目錄、依 `artifact_id + version` 下載及 
 | Windows x86_64 | `artifacts/CORE-033/handoff-718cba6b1cf2/windows-validation/handoff/yuki-personal-preview-718cba6b1cf2-windows-x86_64.zip` | `5482c2628c57fdadb8a4ddc0f4680b73621a1307c476a582d341056a139e37f1` |
 | macOS arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/macos-arm64/yuki-personal-preview-718cba6b1cf2-darwin-arm64.zip` | `4b0cb965d048e11063dc235756c104f83d22670cf02670ac3467e75dc72310ae` |
 | Linux arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/linux-arm64-02/candidate/yuki-personal-preview-718cba6b1cf2-linux-arm64.zip` | `4427bd183ae5ea95566e65cb7dc7bb1df282eaf140f94e81c526399e932968bd` |
+
+CORE-038 在 `codex/core-038-media` 完成有版本的 byte bridge 與原 Social 交接。Mac `artifacts/CORE-038/mac-09/`、HJW `windows-01/` 各 114 項；兩台實際 SDK 程序驗跨插件拒讀、分塊、source 清除途中 ASR 回覆、原操作冷恢復；兩個 Profile 驗兩張本插件圖片加外插件 handle，成功效果與呈現各自留回條。原 QQ 及受控外部 gateway 各自交原版本；篡改 plan 被拒。18 張相鄰卡在各卡 `media-broker-regression-01/` 通過。SDK Rust 1.0.0-alpha.4、Python 1.0.0a4，候選 `media.process/open/publish` revision 1；正式凍結待 EXT-021、030、031、032 真實消費。協議說明在 `protocol/plugin/media/README.md`。乾淨來源的候選包另按提交名封裝。

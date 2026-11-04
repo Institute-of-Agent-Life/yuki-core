@@ -148,10 +148,11 @@ def generate():
         },
     }
     host=json.loads((ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes())
-    personal=json.loads((ROOT/"protocol/plugin/personal/methods.json").read_bytes())
-    if host["methods"].keys() & personal["methods"].keys():
-        raise ValueError("duplicate host methods")
-    host["methods"].update(personal["methods"])
+    for group in ("personal","media"):
+        extension=json.loads((ROOT/f"protocol/plugin/{group}/methods.json").read_bytes())
+        if host["methods"].keys() & extension["methods"].keys():
+            raise ValueError("duplicate host methods")
+        host["methods"].update(extension["methods"])
     host_bytes=(json.dumps(host,indent=2,ensure_ascii=False)+"\n").encode()
     return {
         ROOT / "sdk/rust/src/generated.rs": ("\n".join(rust) + "\n").encode(),

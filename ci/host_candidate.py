@@ -18,13 +18,13 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-038"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
         or not all(a["passed"] for a in m["assertions"])
     ):
-        raise ValueError("passing host or personal manifest required")
+        raise ValueError("passing host capability manifest required")
     if m["source"] != source or (source["dirty"] and not development):
         raise ValueError("candidate needs matching source identity and clean commit")
 
@@ -35,7 +35,12 @@ def build(manifest_path, out, development=False):
         return raw
 
     personal = m["card"] == "CORE-033"
-    proof_name = "personal-handoff.json" if personal else "host-delegation.json"
+    media = m["card"] == "CORE-038"
+    proof_name = {
+        "CORE-032": "host-delegation.json",
+        "CORE-033": "personal-handoff.json",
+        "CORE-038": "media-handle-bridge.json",
+    }[m["card"]]
     proof = receipt(proof_name)
     data = json.loads(proof)
     sdk = json.loads(receipt("sdk-distributions/candidate.json"))
@@ -47,7 +52,7 @@ def build(manifest_path, out, development=False):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal
+        if personal or media
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -71,6 +76,13 @@ def build(manifest_path, out, development=False):
         "NOTICE": (ROOT / "NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if media:
+        methods = (ROOT / "protocol/plugin/media/methods.json").read_bytes()
+        if digest(methods) != data["media_schema_sha256"] or set(
+            data["negotiated_media_methods"]
+        ) != set(json.loads(methods)["methods"]):
+            raise ValueError("media methods differ from exercised original")
+        files["protocol/media/methods.json"] = methods
     if personal:
         methods = (ROOT / "protocol/plugin/personal/methods.json").read_bytes()
         if digest(methods) != data["personal_schema_sha256"] or set(
@@ -152,7 +164,13 @@ def build(manifest_path, out, development=False):
                 )
             json.loads(result.stdout)
     target = (
-        ("yuki-personal-preview-" if personal else "yuki-host-preview-")
+        (
+            {
+                "CORE-032": "yuki-host-preview-",
+                "CORE-033": "yuki-personal-preview-",
+                "CORE-038": "yuki-media-preview-",
+            }[m["card"]]
+        )
         + source["commit"][:12]
         + "-"
         + os_name
@@ -195,6 +213,10 @@ def build(manifest_path, out, development=False):
         candidate["connector_wire_revision"] = 4
         candidate["validated_personal_methods"] = sorted(data["negotiated_methods"])
         candidate["validated_http_routes"] = data["validated_routes"]
+    if media:
+        candidate["media_schema_revision"] = 1
+        candidate["media_schema_sha256"] = data["media_schema_sha256"]
+        candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
     files["candidate.json"] = (
         json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     ).encode()

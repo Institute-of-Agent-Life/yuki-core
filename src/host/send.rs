@@ -54,11 +54,25 @@ impl Hub {
         if !message["file"].is_null() || !message["emoji"].is_null() {
             return Err("gateway media capability unavailable".into());
         }
+        let selected = if let Some(id) = message["artifact_id"].as_str() {
+            let grants: Vec<String> = serde_json::from_str(row.get("grants"))?;
+            if !grants.iter().any(|g| g == "media.open") {
+                return Err("original gateway lacks a selected media reader".into());
+            }
+            let (digest,kind):(String,String)=sqlx::query_as("SELECT v.digest,v.kind FROM media_versions v JOIN media_version_readers r ON r.version=v.id WHERE v.id=? AND r.reader=?").bind(id).bind(exec).fetch_one(&mut *tx).await?;
+            if message["attachment_kind"] != kind {
+                return Err("original attachment kind differs".into());
+            }
+            Some(json!({"artifact_id":id,"version":digest}))
+        } else {
+            None
+        };
         let address = json!({"entry":row.try_get::<String,_>("entry_id")?,"bot":row.try_get::<String,_>("bot")?,"chat":native_group.as_deref().unwrap_or(row.try_get("sender")?),"topic":row.try_get::<Option<String>,_>("topic")?});
         let plugin: String = row.try_get("plugin")?;
         let revision: String = row.try_get("revision")?;
         drop(tx);
         let request = |ordinal: i64, method: &str, name: &str, args: Value| calls::Request {
+            vision: false,
             plugin: plugin.clone(),
             revision: revision.clone(),
             execution: exec.into(),
@@ -78,12 +92,15 @@ impl Hub {
             },
         )
         .await?;
-        let planner = request(
+        let mut planner = request(
             0,
             "gateway.plan_send",
             "gateway.plan_send",
             json!({"route":address,"message":message}),
         );
+        if let Some(media) = &selected {
+            planner.args["media"] = media.clone();
+        }
         let planned = self.execute(store, planner.clone()).await?;
         let (state, result) = if planned["state"] == "confirmed" {
             let stored = effects::invoke(
@@ -99,15 +116,40 @@ impl Hub {
                 .as_array()
                 .filter(|items| !items.is_empty() && items.len() <= 64)
                 .ok_or("invalid original send plan")?;
+            let media_parts: Vec<_> = parts.iter().filter_map(|part| part.get("media")).collect();
+            if media_parts.len() != usize::from(selected.is_some())
+                || media_parts
+                    .first()
+                    .is_some_and(|p| Some(*p) != selected.as_ref())
+            {
+                let failure =
+                    json!({"state":"failed","error":"gateway_plan_media_mismatch","receipts":[]});
+                return Ok(Some(
+                    effects::invoke(
+                        store,
+                        effects::Action::Settle {
+                            execution: exec.into(),
+                            id: operation.into(),
+                            outcome: effects::Outcome::Failed,
+                            result: failure.to_string(),
+                        },
+                    )
+                    .await?,
+                ));
+            }
             let mut receipts = Vec::new();
             let mut state = "confirmed";
             for (i, part) in parts.iter().enumerate() {
-                let child = request(
+                let mut child = request(
                     i as i64 + 1,
                     "gateway.dispatch_part",
                     "gateway.dispatch_part",
                     json!({"route":address,"part":part,"part_ordinal":i}),
                 );
+                if let Some(media) = part.get("media") {
+                    child.args["media"] = media.clone();
+                    child.args["purpose"] = json!("deliver");
+                }
                 let outcome = self.execute(store, child.clone()).await?;
                 if !matches!(
                     outcome["state"].as_str(),
