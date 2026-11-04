@@ -39,6 +39,7 @@
 | CORE-025 | Mac 與 HJW Windows 各通過 83 項，待 CI | `codex/core-025-media` | `artifacts/CORE-025/{mac-03,windows-02}/media-versions.json`、`paid-image-wire.json`、`paid-messages-image.json`。原 QQ 段與引用、不可變交付、替換路徑、Windows junction、硬連結、忘記在途來源、TTL、無視覺能力均已實測。Mac 22 張卡回歸通過，見各卡 `media-regression-02/`。 |
 | CORE-033 | Mac、HJW Windows 各通過 187 項，待 CI | `codex/core-033-personal` | `artifacts/CORE-033/{mac-08,windows-03}/personal-handoff.json`。Client 9 本人入站、分頁、原 QQ Work 私有輸入及取消、事實更正與排程暫停。兩台設備同 UUID 僅留一筆；在 mailbox 之後注入失敗會整筆回滾。SDK 子程序冷啟後重新兌換憑證；獨立 wire4 假設備遺失 ACK 後重投，同 event 與 watermark。26 張相鄰卡回歸通過。 |
 | CORE-027 | HJW Windows、Mac 各通過 172 項，待 CI | `codex/core-027-extract` | `artifacts/CORE-027/{mac-04,windows-01}/{extraction-batches,extraction-wire}.json`。按原事件數、字數、等待年齡選批；上下文只消歧。真實前景執行先行，提取使用專屬 schema。原文／ASR、三種事實分域、同 key、零結果、強殺與寫庫故障均驗過。未保存回應、SELF 偽造、來源刪除都不能推進水位。 |
+| CORE-028 | Mac 與 HJW Windows 各通過 93 項，待 CI | `codex/core-028-vectors` | `artifacts/CORE-028/{mac-03,windows-01}/{vector-coverage,physical-embedding-wire}.json`。標準 hybrid 要求有效配置；純詞法須明選。實測相同維度不同模型、部分批次只補缺項、在途改文和 forget、查詢共用與斷線未知不重購。25 張卡回歸通過，見各卡 `vector-regression-01/`。 |
 
 **擴展交接。** EXT-007、EXT-019 可讀 CORE-002 執行產物
 `v4-oracle-candidate.zip`；本地路徑 `artifacts/CORE-002/handoff-89f15db/v4-oracle-candidate.zip`，
@@ -89,8 +90,13 @@ CORE-028 可消費已提交的事實版本；CORE-040 的舊版 A、B 各通過 
 
 CORE-027 實作 `b755907`，已推 [PR #33](https://github.com/Institute-of-Agent-Life/yuki-core/pull/33)。
 
+CORE-028 的文件與查詢範本、OpenAI-compatible 與 Qwen 原始請求位於 `fixtures/embedding/v4-wire.json`。CORE-029 下一步按授權集合與固定舊版對拍排序及費用。
 CORE-025 實作 `d40d4f5`，見 [PR #34](https://github.com/Institute-of-Agent-Life/yuki-core/pull/34)。在同一份測試來源上，HJW 另跑 CORE-013，見 `artifacts/CORE-013/media-windows-02/social-parts.json`。
 
+CORE-028 實作 `1dd86c1` 見 [PR #35](https://github.com/Institute-of-Agent-Life/yuki-core/pull/35)。
+
+CORE-029 在 `codex/core-029-retrieval` 完成授權集合內的詞法／向量排序及 Main 的 `search_memory`。Mac 與 HJW 各通過 71 項斷言，見 `artifacts/CORE-029/{mac-06,windows-03}/authorized-topk.json`，包含原來源在查詢途中被擦除及跨 Person 拒絕。相鄰 25 張卡通過 `retrieval-regression-{01,02}`；031 首次揭露主機 NOTICE 影響既有 SDK 封裝，修正後重驗通過。固定 v4 Vec1 對照同一 Rust owner 的精確與 Vec1 路徑，36/36 組排序一致，原始資料和摘要位於 `bench/retrieval/decision.json` 及同目錄的兩份壓縮證據。CORE-030 可沿該檢索路徑補 source 清除，CORE-035 可使用授權內的 fact 結果。此卡不新增公開協議版本。
+最終 Mac `artifacts/CORE-029/mac-07/` 與 HJW `artifacts/CORE-029/windows-04/` 各核對兩份原始 DV 壓縮報告；兩機驗證來源 `63f05cc5555f426a0db8255a3e46929164c674e0c69bd7092b8c83a8d64aac15`。另以 Git Windows 換行設定核對 Vec1 原件逐位元相同。
 CORE-033 的固定規格索引為 `protocol/personal/source.json`、`protocol/connector/4/source.json` 及 `protocol/plugin/personal/methods.json`。握手 1，Host 2，個人方法組 1，Rust SDK `1.0.0-alpha.3`、Python `1.0.0a3`。固定來源候選供 EXT-011／015 發展對拍，正式擴展驗收仍待其真包。
 
 
@@ -124,3 +130,5 @@ CORE-014 補核發現原版長 Work 在續接時呼叫 `find_contacts`。已於 
 CORE-016 分段續跑補核在 `codex/core-016-segments`，整合基底 `eb616e7` 包含已驗 CORE-033 文件下載及 CORE-014 原聯絡人工具。原 Work 到段額後在全批配對與完成判定後保存 queued，後續段沿原 request／operation／根預留接續。Mac、HJW Windows 各 184 項通過，來源樹 `6b09095e31c6de2f8b276cb6eec8de336456543ba4aa79b921491df845de6c2d`，見 `artifacts/CORE-016/{segments-mac-04,segments-windows-01}/work-segment-recovery.json`。兩個實際 kill 點、換段限額、根用盡、未知已付及 queued 取消均已驗。CORE-005、011、012、013、017、018、022、023、033、052 的 `work-segments-regression-01` 全過。
 
 CORE-040 Rust 六請求長 Work 已由正常執行檔跑通兩次冷啟、原私人補答、QQ 逐片送達及原文件版本下載，初步回條 `artifacts/CORE-040/C-long-functional-05/`。此回條只驗該劇本功能。固定原版歷史工具名稱與本倉名稱仍有差異，完整 A/B/C 同口徑量測及 Compact 長分支待完成。下一步補全比較及 CORE-034 Code 子呼叫。
+CORE-030 在 `codex/core-030-forget` 增補同人族與歷史私聊清除、原管理路由、可續 GC，以及有待清義務時的獨立插件清除入口。Mac `artifacts/CORE-030/mac-11/forget-canaries.json` 已驗 115 項；先前 HJW `windows-02` 驗過同一核心清除劇本，後續 raw-method gate 補強會隨新來源重驗。固定 v4 七項測試在 `artifacts/CORE-030/v4-oracle-01/`。25 張相鄰卡通過各卡 `family-forget-01/`，包括 ASR、附件、兩種 Compact、提取、向量、歷史及 Host 的實際遲到來源斷言。原人物 ID、付費計數和防重放鍵保留；去內容及實體回收分欄。可繼續 CORE-041 的資料交接準備；其跨倉部分仍須對方 owner 的公開見證。啟動配置與外部邊界見 `docs/owner-erasure.md`。
+最終 `artifacts/CORE-030/mac-12/` 與 `windows-04/` 各 115 項，來源 `f290cb757a66d82361fa610819f4a0338f00d3316e2d0a3cf9c348fba39a2b83`。清除世代的底層 raw method gate 也已反驗；CORE-032、033、052 重跑 `family-forget-03/` 通過。

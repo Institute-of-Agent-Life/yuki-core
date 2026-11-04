@@ -66,7 +66,7 @@ def run(ctx):
             [(1, None, '{"verified":true}')],
         )
     service = Service(ctx, ctx.working / "data")
-    service.command("init")
+    service.command("init", "--memory-mode", "lexical-only")
     actor = "00000000-0000-4000-8000-000000000012"
 
     def op(*args, ok=True):

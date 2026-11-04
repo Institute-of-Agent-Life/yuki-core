@@ -21,7 +21,7 @@ def main():
     errors = (args.out / "server-stderr.txt").open("w")
     server = subprocess.Popen(["docker", "run", "--rm", "--name", name, "--network", "none",
                                "--entrypoint", "/bin/sh", image["image_id"], "-c",
-                               "yuki-core --data /tmp/yuki-core-smoke init && exec yuki-core --data /tmp/yuki-core-smoke run"],
+                               "yuki-core --data /tmp/yuki-core-smoke init --memory-mode lexical-only && exec yuki-core --data /tmp/yuki-core-smoke run"],
                               stdout=subprocess.PIPE, stderr=errors, text=True)
     try:
         observations.append(json.loads(server.stdout.readline()))

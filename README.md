@@ -10,7 +10,7 @@ pinned in `rust-toolchain.toml`; SQLite has foreign keys, WAL and FTS5 enabled.
 ```text
 cargo fetch --locked
 cargo build --locked --offline
-target/debug/yuki-core --data ./data init
+target/debug/yuki-core --data ./data init --memory-mode lexical-only
 target/debug/yuki-core --data ./data run
 ```
 
@@ -122,3 +122,5 @@ owner treats dispatched attempts without a response as unknown. Only an
 explicit one-retry policy with a documented unbilled pre-model rejection can
 grant another attempt on the same logical request. Cancellation or an unknown
 attempt cannot create that permission.
+
+The offline example explicitly selects lexical-only memory. A standard `init` selects hybrid. Configure the embedding provider, model, base URL, dimensions and optional credential environment name in `[memory.embedding]` before starting the owner. Existing configurations without a memory mode resolve to hybrid and are checked by `doctor`.

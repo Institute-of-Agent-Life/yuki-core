@@ -59,7 +59,7 @@ def run(ctx):
     ] + [(True, "auto", None)]
     for num, (thinking, choice, base) in enumerate(profiles):
         svc = Service(ctx, ctx.working / f"profile-{num}")
-        svc.command("init")
+        svc.command("init", "--memory-mode", "lexical-only")
 
         def op(*args):
             return svc.command("operator", *map(str, args))

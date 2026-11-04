@@ -41,7 +41,7 @@ def run(ctx):
         ]
     ):
         service = Service(ctx, ctx.working / f"data-{num}")
-        service.command("init")
+        service.command("init", "--memory-mode", "lexical-only")
 
         def op(*args, ok=True):
             return service.command("operator", *map(str, args), accepted=ok)

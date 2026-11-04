@@ -16,6 +16,8 @@ pub struct Config {
     #[serde(default)]
     pub work_segments: crate::runtime::main::segment::Config,
     #[serde(default)]
+    pub memory: crate::memory::embedding::Config,
+    #[serde(default)]
     pub extraction: Option<crate::memory::extract::Config>,
     #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
@@ -30,6 +32,7 @@ impl Config {
             return Err("unsupported configuration format".into());
         }
         config.work_segments.validate()?;
+        config.memory.validate()?;
         if let Some(main) = &config.main {
             main.validate()?;
         }
@@ -40,7 +43,7 @@ impl Config {
     }
 }
 
-pub fn init(data: &Path) -> Result<Owner> {
+pub fn init(data: &Path, mode: crate::memory::embedding::Mode) -> Result<Owner> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::DirBuilderExt;
@@ -59,7 +62,11 @@ pub fn init(data: &Path) -> Result<Owner> {
     }
     create_file(
         &data.join("yuki.toml"),
-        b"format_version = 1\nlisten = \"127.0.0.1:0\"\n",
+        format!(
+            "format_version = 1\nlisten = \"127.0.0.1:0\"\n\n[memory]\nmode = \"{}\"\n",
+            mode.label()
+        )
+        .as_bytes(),
     )?;
     create_file(
         &data.join("SOUL.md"),

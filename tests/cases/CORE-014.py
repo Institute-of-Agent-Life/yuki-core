@@ -313,7 +313,7 @@ def run(ctx):
     def run_cli(*args):
         return runner.command(*map(str, args))
 
-    run_cli("init")
+    run_cli("init", "--memory-mode", "lexical-only")
     with runner.running():
         run_cli("operator", "person", "create", a)
         acct = run_cli(

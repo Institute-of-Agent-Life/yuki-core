@@ -97,10 +97,16 @@ jobs:
         run: python ci/check.py CORE-025 --out artifacts/CORE-025/ci
       - name: Verify paid extraction sources and atomic cursor
         run: python ci/check.py CORE-027 --out artifacts/CORE-027/ci
+      - name: Verify committed vector coverage, original physical charges and erasure
+        run: python ci/check.py CORE-028 --out artifacts/CORE-028/ci
+      - name: Replay authorized top-k against original v4 ranking and coverage faults
+        run: python ci/check.py CORE-029 --out artifacts/CORE-029/ci
       - name: Verify actual personal entry and generation-bound native receipts
         run: python ci/check.py CORE-033 --out artifacts/CORE-033/ci
       - name: Exercise two media owners, actual bytes and late callbacks
         run: python ci/check.py CORE-038 --out artifacts/CORE-038/ci
+      - name: Verify Person source closure, cold cleanup and retained costs
+        run: python ci/check.py CORE-030 --out artifacts/CORE-030/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

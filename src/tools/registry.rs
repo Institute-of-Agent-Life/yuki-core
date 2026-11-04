@@ -189,6 +189,7 @@ impl Manifest {
                 "workspace_inspect",
                 "lookup_tools",
                 "read_memory",
+                "search_memory",
                 "memory_change",
                 "automation_query",
                 "automation_manage",
