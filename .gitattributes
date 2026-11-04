@@ -4,3 +4,7 @@
 *.toml text eol=lf
 *.json text eol=lf
 *.yml text eol=lf
+fixtures/oracle/v4/material/** -text
+*.gz binary
+LICENSE text eol=lf
+NOTICE text eol=lf

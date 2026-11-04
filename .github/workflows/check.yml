@@ -36,6 +36,8 @@ jobs:
         run: python ci/check.py CORE-001 --out artifacts/CORE-001/ci
         env:
           PYTHONDONTWRITEBYTECODE: '1'
+      - name: Compare both v4 captures and hash the offline consumer bundle
+        run: python ci/check.py CORE-002 --out artifacts/CORE-002/ci
       - name: Verify Rust owner, cleanup barriers and actual binary
         run: python ci/check.py CORE-005 --out artifacts/CORE-005/ci
       - name: Retain evidence on success or failure

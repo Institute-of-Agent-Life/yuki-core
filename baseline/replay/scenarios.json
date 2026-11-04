@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_tree": "c1885cc75e3273aea6f4ed4e994b762b0cdfba6e",
+  "seed": 329,
+  "utc": "2026-11-04T00:00:00+00:00",
+  "cases": {
+    "next_main": "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-batch]",
+    "signature": "tests/integration/test_compact_hard_capacity.py::test_native_execution_compact_can_hand_over_to_newly_legal_public_compact",
+    "partial": "tests/integration/test_native_social_delivery.py::test_qq_confirmed_file_is_not_reuploaded_when_caption_fails[timeout]",
+    "app_work": "tests/integration/test_client_continuation.py::test_original_work_continues_across_devices_tools_and_two_cold_runtimes[qq]",
+    "wire4": "packages/yuki-agent-connector/tests/test_journal_connector.py::test_pipeline_sends_backlog_before_ack_and_replays_only_unacked_sequence"
+  },
+  "load": {
+    "private": 200,
+    "groups": {
+      "20001": 500,
+      "20002": 500
+    },
+    "long_works": 20
+  },
+  "normalization": {
+    "controlled_inputs": [
+      "UTC wall clock for Compact/partial/wire4; App device expiry uses the native clock",
+      "synthetic UUIDs and nonces",
+      "same per-host temporary directory for both runs"
+    ],
+    "measurements": [
+      "active_seconds",
+      "latency_seconds"
+    ],
+    "preserve": [
+      "order",
+      "native signatures",
+      "tool call IDs",
+      "body",
+      "event and effect associations"
+    ],
+    "applied_to_compared_transcript": []
+  }
+}

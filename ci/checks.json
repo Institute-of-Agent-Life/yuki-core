@@ -11,6 +11,12 @@
       "timeout_seconds": 60,
       "capabilities": ["offline-python-replay", "loopback-http-recorder"]
     },
+    "CORE-002": {
+      "case": "tests/cases/CORE-002.py",
+      "artifact": "v4-oracle-index.json",
+      "timeout_seconds": 90,
+      "capabilities": ["v4-transcript-replay", "legacy-wire4", "client9-admin-openapi", "A-load-evidence"]
+    },
     "CORE-005": {
       "case": "tests/cases/CORE-005.py",
       "artifact": "owner-probes.json",
