@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: [windows-latest, macos-15-intel, ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 45
     env:
       CARGO_HOME: ${{ github.workspace }}/.cache/cargo
     steps:
