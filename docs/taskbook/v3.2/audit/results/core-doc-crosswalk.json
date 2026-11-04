@@ -1,0 +1,1630 @@
+{
+  "version": "v3.2 核心文檔補核版",
+  "behavior_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "input_sha256": "8e73bdf30fdf12ce56d0ae3aa1b96cc1015f078afb666cd92251fdf9754fc1a3",
+  "desktop_commit": "bee5692292d8601033798cb2772a075b8db8004b",
+  "desktop_backend_pin": "004ae36dbe26046d3946b78934c4766333831bcf",
+  "ci_run": 41551516736,
+  "ci_head": "b7fad5c89c4e261b5221285a0ecc277b3f4b37bb",
+  "documents": [
+    {
+      "name": "Main",
+      "path": "docs/architecture/main-agent-runtime.md",
+      "commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+      "git_blob": "9aa35f64377342d84131a8c299dc945202a0342b",
+      "read_windows": "1–84、85–165、166–247、248–330、331–415、416–493、494–580、581–666、667–末",
+      "reported_read": "full_text_semantic_review",
+      "scope": "從原真人／SELF／發生與 Work 分辨是否須接納；再跟到正常 wire、結束結算、遲到輸入與原送達。"
+    },
+    {
+      "name": "Tool Kernel",
+      "path": "docs/architecture/tool-kernel.md",
+      "commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+      "git_blob": "0ea863ef1d2834922a4f84a58f3c096f53aec2d8",
+      "read_windows": "1–100、101–187、188–299、300–末",
+      "reported_read": "full_text_semantic_review",
+      "scope": "比對目錄、直調及執行權；按動作判 Work，組合父子、餵回位置、typed 部分結果及讀權分開驗。"
+    },
+    {
+      "name": "模型協議",
+      "path": "docs/architecture/model-providers.md",
+      "commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+      "git_blob": "84b0440877d90cced157ca8c91a6d9974dc62abb",
+      "read_windows": "1–80、81–160、161–242、243–328、329–末",
+      "reported_read": "full_text_semantic_review",
+      "scope": "實際 wire 與邏輯 tool_choice 分開，四協議各驗配對、拒絕、截斷與私有狀態。搜索快取與供應商 usage 不是一筆帳。"
+    },
+    {
+      "name": "Client API",
+      "path": "docs/architecture/client-api.md",
+      "commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+      "git_blob": "399a3116d88dcc89d5412d22f8ff9e18b1d64a01",
+      "read_windows": "1–72、73–140、141–218、219–294、295–末",
+      "reported_read": "full_text_semantic_review",
+      "scope": "查原入口／裝置／UUID，跨入口補原 Work；對照 Desktop 實呼、ACP 分頁與終止、檔案版本及撤權。"
+    }
+  ],
+  "cases": [
+    {
+      "case": "H01",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "7–21；272–313",
+      "task": "CORE-012",
+      "contract": "K05",
+      "decision": "細化",
+      "title": "同一主循環，不同原始主體",
+      "acceptance": "普通聊天不必建立 Work。以同一 Runner 的來源裝配接收真人、受權插件、SELF、排程、原 Work 和已登記子工作；明列每筆內部來源、Conversation、執行、工具合同與預算根。無真人事件不得造 event；插件主入口不是插件的隔離會話。此卡用來源 fixture 驗共用入口；各插件壓力／實物留其發布卡，不引為本卡前置。",
+      "implementation": [
+        {
+          "file": "src/yuki/services/main_agent_turns.py",
+          "lines": [
+            600,
+            668
+          ],
+          "sha256": "05582aceb33eb1645eb950de58814018240a1dd7b4262306112f3091f89c000e",
+          "span_sha256": "fe6adb92603d4bbb899c177bd5c27c8424959b6c86a975a1f8eb55b212f98a6d",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/main_agent_turns.py#L600-L668"
+        },
+        {
+          "file": "src/yuki/services/subagent_execution.py",
+          "lines": [
+            124,
+            205
+          ],
+          "sha256": "0e57810ad17b47113a2945ed4a00c77664e4329d3db4e270d9db205a1250b47b",
+          "span_sha256": "fb7e69fed0cd3bfa57b4d0bc81dcbe21a93a7d035d6a70b39a74e9addd4aad3b",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/subagent_execution.py#L124-L205"
+        },
+        {
+          "file": "src/yuki/runtime/work_control.py",
+          "lines": [
+            767,
+            792
+          ],
+          "sha256": "26716e53e78454d1a7486842f1067aa7c41a24f18d59c3e9554336edccf6f908",
+          "span_sha256": "f7ae56c6716d5c0db1087f7c76f64f62637ca781a3732bd3f550472192ec3ad1",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_control.py#L767-L792"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_external_event_prompt_isolation",
+        "test": "test_external_wakeup_uses_the_same_main_agent_prompt_program[False]",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_external_event_prompt_isolation.py"
+      },
+      "command": "python ci/check.py CORE-012 --out artifacts/CORE-012/01/",
+      "artifact": "artifacts/CORE-012/01/entry-origin.json",
+      "selector": "cases.H01",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H02",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "497–511",
+      "task": "CORE-012",
+      "contract": "K05",
+      "decision": "修正",
+      "title": "真人補充與精確搶占",
+      "acceptance": "同一受允許的私聊補充在既有輸入邊界處理。尚未接納 Work、尚未開始本地效果且尚未派發原生工具的可中斷前景與已接納／已越本地或原生派發邊界分測；取消只捕捉原 task，收攏其清理，不取消後來的 owner。群旁聽不接管已受保護的直接回覆；新資料不插進已付請求。記兩次輸入、各 activation、收取消者和下一次正常 wire。",
+      "implementation": [
+        {
+          "file": "src/yuki/services/turn_coordinator.py",
+          "lines": [
+            84,
+            160
+          ],
+          "sha256": "40a7e46b63b5ce77922c933a37ae1b59fa8baf40c8e4cf616ab4cf94a193220d",
+          "span_sha256": "ba71ccdfeaaedfba369212d78cfa4f7bdf36973f3cf104a25fbd572faa9795be",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_coordinator.py#L84-L160"
+        },
+        {
+          "file": "src/yuki/services/turn_execution.py",
+          "lines": [
+            484,
+            524
+          ],
+          "sha256": "a550ee1f20add8f3bc38e2e611f2415d0f3620e23ebe9ca10595a2ea2904c601",
+          "span_sha256": "84046375456b8507e51c3f632ad031e63e548ef2b11355eac5873fbcbcdeffc1",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py#L484-L524"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_ordinary_input_handoff",
+        "test": "test_observed_ordinary_input_joins_original_activation_without_work[continuation--True]",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_ordinary_input_handoff.py"
+      },
+      "command": "python ci/check.py CORE-012 --out artifacts/CORE-012/01/",
+      "artifact": "artifacts/CORE-012/01/steer-boundary.json",
+      "selector": "cases.H02",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H03",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "64–84；85–108",
+      "task": "CORE-012",
+      "contract": "K06",
+      "decision": "修正",
+      "title": "固定前綴與當輪資料",
+      "acceptance": "保固定工具順序、程式規則和單一 SOUL；只替換原人格模板已定義的 {{name}}，空 SOUL 不補預設人格。普通請求不因牆鐘跳秒改固定前綴；有資料才在觸發正文前以獨立邊界組裝 <runtime_context>，不當作真人話語、不進公共摘要。用原實際序列化 body 比對空資料／多段資料，換 SOUL 不改已付原件。",
+      "implementation": [
+        {
+          "file": "src/yuki/services/turn_execution.py",
+          "lines": [
+            838,
+            884
+          ],
+          "sha256": "a550ee1f20add8f3bc38e2e611f2415d0f3620e23ebe9ca10595a2ea2904c601",
+          "span_sha256": "90d7e8cd692a766b1eea5a2bbd2d8cff7a38066c897b8a3507c1d713a2b833da",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py#L838-L884"
+        },
+        {
+          "file": "src/yuki/services/main_agent_turns.py",
+          "lines": [
+            103,
+            175
+          ],
+          "sha256": "05582aceb33eb1645eb950de58814018240a1dd7b4262306112f3091f89c000e",
+          "span_sha256": "34d952bb3c41f4f63b569b1ab457801360ebab2309be2596f60341e0f58f7bbf",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/main_agent_turns.py#L103-L175"
+        },
+        {
+          "file": "src/yuki/config.py",
+          "lines": [
+            468,
+            483
+          ],
+          "sha256": "71067ec122ab4eb4dd8f2c2320d7cc69fd82bbd2bcb443dccfa483d21b4283ac",
+          "span_sha256": "760dcb43fab48a2d14b0eeaa2c71c1570c21b9fec8793f14cef0bd57d46c09fb",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/config.py#L468-L483"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_current_material_main_contract",
+        "test": "test_actual_main_http_separates_host_material_before_final_user_body[deepseek]",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_current_material_main_contract.py"
+      },
+      "command": "python ci/check.py CORE-012 --out artifacts/CORE-012/01/",
+      "artifact": "artifacts/CORE-012/01/input-layout.json",
+      "selector": "cases.H03",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H04",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "237–251；534–550",
+      "task": "CORE-016",
+      "contract": "K05",
+      "decision": "細化",
+      "title": "完成提案與尾部送達",
+      "acceptance": "同一完整回應順序 complete→send；殺在領域已送而最後配對未存處。較早的提案不截斷送達，原回執補配對，無第二次外發／購買。將前項替換為取消當前 Work 則後項不派發；取消另一可管理目標不截斷本輪。合法無工具 final（含空）沿原完成，真新業務輸入可令原 Work 接續，歷史 unknown／觀察中執行不能作新否決。",
+      "implementation": [
+        {
+          "file": "src/yuki/services/turn_execution.py",
+          "lines": [
+            1408,
+            1490
+          ],
+          "sha256": "a550ee1f20add8f3bc38e2e611f2415d0f3620e23ebe9ca10595a2ea2904c601",
+          "span_sha256": "cedc9648858f4a0da4f601147f6819d3ccb6cad6a0df62c762c9c2711ea231fd",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py#L1408-L1490"
+        },
+        {
+          "file": "src/yuki/services/agent_runner.py",
+          "lines": [
+            786,
+            852
+          ],
+          "sha256": "1e199c0a29297417961553087885507eb6472963ee1e5363346a36f917d1d807",
+          "span_sha256": "0bef062cb08f57f93e6567679124f12ecaa756066c8cee302e67dc2f53c28378",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py#L786-L852"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_work_lifecycle_tail",
+        "test": "test_complete_then_send_keeps_real_social_receipt_without_recovery_resend",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_work_lifecycle_tail.py"
+      },
+      "command": "python ci/check.py CORE-016 --out artifacts/CORE-016/01/",
+      "artifact": "artifacts/CORE-016/01/settlement-tail.json",
+      "selector": "cases.H04",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H05",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "242–251；547–577",
+      "task": "CORE-017",
+      "contract": "K08",
+      "decision": "細化",
+      "title": "等待、提問與子樹",
+      "acceptance": "any 部分命中保留剩餘條件供明確再等，all 只對該組等齊。結算前已到信號、重啟、同鍵重入都不續期限。QQ 對原問題的引用須匹配同代、同人、原 Social 成功事件；App/ACP 同入口無引用回覆可匹配最近本人 waiting_user，跨入口須指定 Work。子問已終態父：問題可存但不復活父，也不強迫子等待。取消指定子樹不撤回既有送達。",
+      "implementation": [
+        {
+          "file": "src/yuki/runtime/work_wait.py",
+          "lines": [
+            193,
+            262
+          ],
+          "sha256": "f2af8b98cec4868514816f2c75f13ea14ecafac0968d86dd6804b3563ef9707a",
+          "span_sha256": "51dcf8a06f1f9ab3aade8d16fc06552791ac739001a2c8f2474b578739d86bb9",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_wait.py#L193-L262"
+        },
+        {
+          "file": "src/yuki/runtime/work_wait.py",
+          "lines": [
+            842,
+            936
+          ],
+          "sha256": "f2af8b98cec4868514816f2c75f13ea14ecafac0968d86dd6804b3563ef9707a",
+          "span_sha256": "d3c593043a5516eedd8d1e9fecc45497ef698fa8adc82f860daf3890d44fda94",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_wait.py#L842-L936"
+        },
+        {
+          "file": "src/yuki/runtime/subagent_tools.py",
+          "lines": [
+            59,
+            115
+          ],
+          "sha256": "b1487883571e31d390dda64d54ca5570aedf527cd338dc431d801e1b9381fdfa",
+          "span_sha256": "cfac9270ca5722fad9ac3889a28c19b72bcc7bb0b7f891af06e310c76fea2457",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/subagent_tools.py#L59-L115"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_work_settlement_writer",
+        "test": "test_fulfilled_wait_before_first_settlement_retires_original_decision",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_work_settlement_writer.py"
+      },
+      "command": "python ci/check.py CORE-017 --out artifacts/CORE-017/01/",
+      "artifact": "artifacts/CORE-017/01/wait-before-settle.json",
+      "selector": "cases.H05",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H06",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "294–315；473–491；581–650",
+      "task": "CORE-011",
+      "contract": "K04",
+      "decision": "修正",
+      "title": "派發不等於付費確認",
+      "acceptance": "記 logical request、activation、execution、可空 Work、物理 attempt、根預算與外部操作，互不替代。已存原 response 而未配對，沿原序號繼續；只有派發記號而無可證原回應，不換鍵再買；僅純 DB 且能證未提交的工作可按原鍵收尾。測兄弟共爭一個有限根額度，普通輪後來 accept 帶入已開始請求，分段／重啟不歸零。此階段用競爭 writer fixture，實際派生由 CORE-016 消費。",
+      "implementation": [
+        {
+          "file": "src/yuki/runtime/work_budget.py",
+          "lines": [
+            16,
+            53
+          ],
+          "sha256": "3cbc524fb05d81500f878b69f6615f29494bbb31ee1da4d6a407f6c8e9a842ba",
+          "span_sha256": "a9736e2ed0da734ea510fd71e3f76cfa719b4adfd318ec948d923870ff2f54d3",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_budget.py#L16-L53"
+        },
+        {
+          "file": "src/yuki/runtime/work_control.py",
+          "lines": [
+            853,
+            914
+          ],
+          "sha256": "26716e53e78454d1a7486842f1067aa7c41a24f18d59c3e9554336edccf6f908",
+          "span_sha256": "092e18cd0c98c1c542b8897ed1170af878a47fc2a5ec9d4ff9997e8bab3f3a68",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_control.py#L853-L914"
+        },
+        {
+          "file": "src/yuki/runtime/work_session.py",
+          "lines": [
+            115,
+            173
+          ],
+          "sha256": "60ffba4c3e5a343fb91e57e4d18ea53c5a6533f16dd9163ec1d846d1d165a569",
+          "span_sha256": "0a5882302d659fccfb84c6def0151aa80dc7d03eb73acbe52c8e575eb25806ec",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_session.py#L115-L173"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_person_paid_recovery",
+        "test": "test_merge_cold_work_keeps_lost_paid_response_unknown_without_repurchase",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_person_paid_recovery.py"
+      },
+      "command": "python ci/check.py CORE-011 --out artifacts/CORE-011/01/",
+      "artifact": "artifacts/CORE-011/01/paid-boundaries.json",
+      "selector": "cases.H06",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H07",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "315–328；430–439；494–498",
+      "task": "CORE-023",
+      "contract": "K06",
+      "decision": "已覆蓋",
+      "title": "配對不是模型已看見",
+      "acceptance": "沿既有私有 E／公共 P 回放：指向上一個真實 call/result，配對後、下一次正常模型呼叫前崩潰。重入以原鍵帶回詳細回執；新業務鏈不搬舊 opaque、簽名或私聊正文到公共部分。已付 compact 結果可發布且不重買，不能重派原工具。保留正常下一個完整模型請求和媒體來源，不增加摘要器或完成門。",
+      "implementation": [
+        {
+          "file": "src/yuki/runtime/work_session.py",
+          "lines": [
+            444,
+            592
+          ],
+          "sha256": "60ffba4c3e5a343fb91e57e4d18ea53c5a6533f16dd9163ec1d846d1d165a569",
+          "span_sha256": "809f049a0a142ee60789cc9d4035a374314f24f05c94a7a86893cd85513afac2",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_session.py#L444-L592"
+        },
+        {
+          "file": "src/yuki/services/turn_execution.py",
+          "lines": [
+            1039,
+            1091
+          ],
+          "sha256": "a550ee1f20add8f3bc38e2e611f2415d0f3620e23ebe9ca10595a2ea2904c601",
+          "span_sha256": "649ce9bdc69e163ec3d39895f9e0defcbdfda2d6645501d1cf290619ea3c29eb",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py#L1039-L1091"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_compact_checkpoint_regressions",
+        "test": "test_native_compact_preserves_fitting_unobserved_tool_tail[finite-gemini]",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_compact_checkpoint_regressions.py"
+      },
+      "command": "python ci/check.py CORE-023 --out artifacts/CORE-023/01/",
+      "artifact": "artifacts/CORE-023/01/compact-exec-next-wire.json",
+      "selector": "cases.H07",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H08",
+      "group": "M",
+      "source": "docs/architecture/main-agent-runtime.md",
+      "source_location": "211–238；512–526",
+      "task": "CORE-018",
+      "contract": "K08",
+      "decision": "已覆蓋",
+      "title": "原到期批次不借真人",
+      "acceptance": "以同一定義兩個 planned UTC 和同次重掃測試：相同 occurrence 只接納原次，不同 occurrence 有自己的來源；首次用原版本 goal，接納 Work 後才用 Work.goal。after/interval 用秒，once 含 offset，daily/weekly 用 trigger 時區。SELF 不借最近真人；改定義／暫停未來不撤銷原次。無 Work 仍可合法顯式 send。保留此卡已明標為新增的 cron，不混為基線功能。",
+      "implementation": [
+        {
+          "file": "src/yuki/services/main_agent_turns.py",
+          "lines": [
+            103,
+            173
+          ],
+          "sha256": "05582aceb33eb1645eb950de58814018240a1dd7b4262306112f3091f89c000e",
+          "span_sha256": "17e775fe42e30fdc0e6da43006e8310cd69bf0b5a79de5f81bb075d12baf4c32",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/main_agent_turns.py#L103-L173"
+        },
+        {
+          "file": "src/yuki/runtime/work_control.py",
+          "lines": [
+            840,
+            914
+          ],
+          "sha256": "26716e53e78454d1a7486842f1067aa7c41a24f18d59c3e9554336edccf6f908",
+          "span_sha256": "0f5bdc234a9ba945358f702bf2a59dfa8b5b9028e656e8d07cadae6a658637ec",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_control.py#L840-L914"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_automation_lifecycle",
+        "test": "test_waiting_occurrence_keeps_original_version_and_current_work_recovery",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_automation_lifecycle.py"
+      },
+      "command": "python ci/check.py CORE-018 --out artifacts/CORE-018/01/",
+      "artifact": "artifacts/CORE-018/01/schedule-occurrences.json",
+      "selector": "cases.H08",
+      "consumer": {
+        "label": "Main 派發、回應與重新組裝",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py"
+      }
+    },
+    {
+      "case": "H09",
+      "group": "T",
+      "source": "docs/architecture/tool-kernel.md",
+      "source_location": "7–37；101–115",
+      "task": "CORE-015",
+      "contract": "K05",
+      "decision": "修正",
+      "title": "三種工具視圖",
+      "acceptance": "完整可執行清單、模型直調清單、查詢目錄分開。direct 不載 VM；code 視圖只投影固定集合，lookup(query) 只回摘要頁，lookup(name) 回單項原 schema、腳本名及可見性，不注冊或授權。重名報錯，不以排序勝出；連隱藏 schema 變更也換 revision，不竄改原鏈。此卡先驗無 VM 的清單及投影純輸入，EXT-024 才驗腳本實際呼叫隱藏能力。",
+      "implementation": [
+        {
+          "file": "src/yuki/services/main_agent_contract.py",
+          "lines": [
+            62,
+            155
+          ],
+          "sha256": "9fd7161c9026a6f2712804b5d0fd9cc76a0a377401e961654c34cdcb734bb7c7",
+          "span_sha256": "394bca7e28f7c4f45ebcb9f660108baa783066b1357ca88b90a74912c2801657",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/main_agent_contract.py#L62-L155"
+        },
+        {
+          "file": "src/yuki/codemode/tool_visibility.py",
+          "lines": [
+            68,
+            116
+          ],
+          "sha256": "75255fde500b2d55789d6c4037efb6052e01149b849dd5263695356f1ad1a395",
+          "span_sha256": "f99355d1063d10c7e7401c2d9c47aa66e4790fe3a03522421ca19a8b860cf03e",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/codemode/tool_visibility.py#L68-L116"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_codemode_history_sources",
+        "test": "test_code_discovers_entries_and_queries_same_source_with_projected_schemas[False]",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_codemode_history_sources.py"
+      },
+      "command": "python ci/check.py CORE-015 --out artifacts/CORE-015/01/",
+      "artifact": "artifacts/CORE-015/01/frozen-views.json",
+      "selector": "cases.H09",
+      "consumer": {
+        "label": "Runner / 真正執行後端",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py"
+      }
+    },
+    {
+      "case": "H10",
+      "group": "T",
+      "source": "docs/architecture/tool-kernel.md",
+      "source_location": "101–125；321–末；另見 Main 187–196、546–549",
+      "task": "CORE-016",
+      "contract": "K08",
+      "decision": "細化",
+      "title": "逐動作 Work 門檻",
+      "acceptance": "用無 Work、有原 Work、無權目標三組測下列主合同准入表。send 和普通領域寫入不造 Work；新子工作和 derive 無原 Work 要拒；已派生 worker 再 accept 要拒；無工作亦可按權限管理原子工作。查得到目錄不能代替管理權。不得用「全部寫操作要 accept」或「查詢永遠可做」兩種近似。",
+      "implementation": [
+        {
+          "file": "src/yuki/runtime/work_control.py",
+          "lines": [
+            697,
+            858
+          ],
+          "sha256": "26716e53e78454d1a7486842f1067aa7c41a24f18d59c3e9554336edccf6f908",
+          "span_sha256": "841abaea3052e52b2f3d4e3cedeae3b3c063f1e96884559a48352b45385506a6",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_control.py#L697-L858"
+        },
+        {
+          "file": "src/yuki/runtime/subagent_tools.py",
+          "lines": [
+            58,
+            151
+          ],
+          "sha256": "b1487883571e31d390dda64d54ca5570aedf527cd338dc431d801e1b9381fdfa",
+          "span_sha256": "75f485e0d4d8d53823214bd6f1a1a7036b7c601ee490f32215bbf27879e31e8c",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/subagent_tools.py#L58-L151"
+        },
+        {
+          "file": "src/yuki/services/agent_runner.py",
+          "lines": [
+            580,
+            630
+          ],
+          "sha256": "1e199c0a29297417961553087885507eb6472963ee1e5363346a36f917d1d807",
+          "span_sha256": "4e1b0e45c5095e5f7e5b06122cf84820dfc1b41d1bad369aff4b71b24a3a7a96",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py#L580-L630"
+        },
+        {
+          "file": "src/yuki/runtime/work_control.py",
+          "lines": [
+            902,
+            978
+          ],
+          "sha256": "26716e53e78454d1a7486842f1067aa7c41a24f18d59c3e9554336edccf6f908",
+          "span_sha256": "1e9653bc243557b3d71c713feb370b8aaeafd6ba7f35e525f22e28112daece38",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/runtime/work_control.py#L902-L978"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_work_delivery_ownership",
+        "test": "test_direct_memory_and_send_follow_original_order_without_work_admission[neutral]",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_work_delivery_ownership.py"
+      },
+      "command": "python ci/check.py CORE-016 --out artifacts/CORE-016/01/",
+      "artifact": "artifacts/CORE-016/01/work-action-matrix.json",
+      "selector": "cases.H10",
+      "consumer": {
+        "label": "Runner / 真正執行後端",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py"
+      }
+    },
+    {
+      "case": "H11",
+      "group": "T",
+      "source": "docs/architecture/tool-kernel.md",
+      "source_location": "321–332；另見 Main 455–461",
+      "task": "EXT-012",
+      "contract": "K13",
+      "decision": "細化",
+      "title": "本機 Agent 的三個 Work 動作",
+      "acceptance": "prompt、queue、watch 會建立執行或持久監督關係，未 accept 在 native 派發前拒絕；watch 本身不重啟用戶既有執行。list/get 不需先建 Work；steer/respond/cancel/detach 查既有 operation、execution、session、權限問題及實際授權，不把「不用新 Work」解成可控制陌生 run。斷線／ACK 不明查原 operation，不重派。 respond/detach 須認原 operation_id 或 run_id；execution_id 能識別執行，不能代替監督權。",
+      "implementation": [
+        {
+          "file": "src/yuki/external_agents/service.py",
+          "lines": [
+            413,
+            565
+          ],
+          "sha256": "dc4e5a6c4688ea4548e352fa359a52423ce2278ded7949fcac500bb5709e9cb0",
+          "span_sha256": "4c241a8861d1254eb568689c19ec354cf4d2ba939fb3e1310ff3bf3341462d26",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/external_agents/service.py#L413-L565"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_external_agent_bridge",
+        "test": "test_mutating_work_relationship_requires_real_work_before_native_dispatch[watch]",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_external_agent_bridge.py"
+      },
+      "command": "python ci/check.py EXT-012 --out artifacts/EXT-012/01/",
+      "artifact": "artifacts/EXT-012/01/native-work-gate.json",
+      "selector": "cases.H11",
+      "consumer": {
+        "label": "Runner / 真正執行後端",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py"
+      }
+    },
+    {
+      "case": "H12",
+      "group": "T",
+      "source": "docs/architecture/tool-kernel.md",
+      "source_location": "143–187；195–216",
+      "task": "CORE-015",
+      "contract": "K05",
+      "decision": "細化",
+      "title": "並行、別名與授權時點",
+      "acceptance": "只併發連續且明示可安全並行的讀；控制、寫、發送及不確定效果為屏障，按原 call 順序配對。平行安全不等於結果可快取。只有明示 cacheable 的讀能依原代表鍵復用；動態業務讀用新 ID 必須重新查。await 期間撤銷授權不能繼續派發，已獲確認的效果不能被撤權改寫；拒一項不任意終止獨立同批項。",
+      "implementation": [
+        {
+          "file": "src/yuki/services/agent_runner.py",
+          "lines": [
+            757,
+            930
+          ],
+          "sha256": "1e199c0a29297417961553087885507eb6472963ee1e5363346a36f917d1d807",
+          "span_sha256": "6f5415c4ea9dac6d771b072cdd43f332acde97e3fd4e5276fba16185f4913fd2",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py#L757-L930"
+        },
+        {
+          "file": "src/yuki/services/main_agent_contract.py",
+          "lines": [
+            155,
+            163
+          ],
+          "sha256": "9fd7161c9026a6f2712804b5d0fd9cc76a0a377401e961654c34cdcb734bb7c7",
+          "span_sha256": "58baf4c9f2887273a36fec177bc0c1ce63da14b5f05a6b81c2cb34f311e92f74",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/main_agent_contract.py#L155-L163"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_new_call_read_facts",
+        "test": "test_runner_does_not_reuse_a_different_read_call[False]",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_new_call_read_facts.py"
+      },
+      "command": "python ci/check.py CORE-015 --out artifacts/CORE-015/01/",
+      "artifact": "artifacts/CORE-015/01/read-barriers.json",
+      "selector": "cases.H12",
+      "consumer": {
+        "label": "Runner / 真正執行後端",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py"
+      }
+    },
+    {
+      "case": "H13",
+      "group": "T",
+      "source": "docs/architecture/tool-kernel.md",
+      "source_location": "104–132；143–175",
+      "task": "CORE-034",
+      "contract": "K12",
+      "decision": "細化",
+      "title": "T1、T2、T3 與 VM 恢復",
+      "acceptance": "T1 同一短寫發布父 checkpoint、VM snapshot 及子 intent；子身份沿 parent_operation_id/child_ordinal，VM 位置為 feed_index/engine_call_id，不能用參數雜湊替代。T2 接納和派發各存真值，T3 原回執才可餵回。測 T1 後、T2 已越界、T3 後未餵、餵後重啟；逐欄比 VM 位點、子鍵、已收結果、扣費和實際外派次數。父組合不扣業務次數；read_tool_artifact 子讀有派發及回執但免業務扣次。",
+      "implementation": [
+        {
+          "file": "src/yuki/codemode/driver.py",
+          "lines": [
+            422,
+            548
+          ],
+          "sha256": "5b197253248f473a7b38ed9449a5a266d796ba2e613c600207f6dcb9a70a228b",
+          "span_sha256": "300b7c3d230bbfd694a621376c4d77a05cad2af247688006d7d0c05be582fdd1",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/codemode/driver.py#L422-L548"
+        },
+        {
+          "file": "src/yuki/codemode/driver.py",
+          "lines": [
+            1082,
+            1142
+          ],
+          "sha256": "5b197253248f473a7b38ed9449a5a266d796ba2e613c600207f6dcb9a70a228b",
+          "span_sha256": "428478c3a1e7cce08844cf9274b9b086de0f627bed01d51d071234527c723d28",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/codemode/driver.py#L1082-L1142"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_codemode_native_boundary_crash",
+        "test": "test_host_death_after_accepted_receipt_restores_original_boundary[lookup]",
+        "archive": "upstream-native.zip",
+        "member": "native.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_codemode_native_boundary_crash.py"
+      },
+      "command": "python ci/check.py CORE-034 --out artifacts/CORE-034/01/",
+      "artifact": "artifacts/CORE-034/01/vm-recovery-cuts.json",
+      "selector": "cases.H13",
+      "consumer": {
+        "label": "實際 Monty 驅動",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/codemode/driver.py"
+      }
+    },
+    {
+      "case": "H14",
+      "group": "T",
+      "source": "docs/architecture/tool-kernel.md",
+      "source_location": "147–184；216–231",
+      "task": "EXT-024",
+      "contract": "K12",
+      "decision": "細化",
+      "title": "已配對 partial 不復活",
+      "acceptance": "真 VM 重播：段額見底且父仍未配對才續原快照；父已配對 partial 或原 code_stop 不復活；不兼容的未配對快照報 snapshot_unavailable 並保原身份與預算。子已派未知只依原領域證據，不能重新執行；若某項已返回普通拒絕，獨立後續呼叫仍各自授權。輸出原控決定、子結果、餵入位點與 worker 實際次數。",
+      "implementation": [
+        {
+          "file": "src/yuki/codemode/driver.py",
+          "lines": [
+            294,
+            378
+          ],
+          "sha256": "5b197253248f473a7b38ed9449a5a266d796ba2e613c600207f6dcb9a70a228b",
+          "span_sha256": "21acd337345e0a15bf1b4fd70e22dd9d5c13096e3b83f68d53ee50641ddd9348",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/codemode/driver.py#L294-L378"
+        },
+        {
+          "file": "src/yuki/codemode/driver.py",
+          "lines": [
+            554,
+            621
+          ],
+          "sha256": "5b197253248f473a7b38ed9449a5a266d796ba2e613c600207f6dcb9a70a228b",
+          "span_sha256": "5771559360ce86dbdeca087f8ea7a5f187c75852ebccfd34c4c985cd86707027",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/codemode/driver.py#L554-L621"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_codemode_composition",
+        "test": "test_returned_unknown_child_allows_independent_call_without_replaying_original",
+        "archive": "upstream-native.zip",
+        "member": "native.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_codemode_composition.py"
+      },
+      "command": "python ci/check.py EXT-024 --out artifacts/EXT-024/01/",
+      "artifact": "artifacts/EXT-024/01/vm-partial-vs-pending.json",
+      "selector": "cases.H14",
+      "consumer": {
+        "label": "實際 Monty 驅動",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/codemode/driver.py"
+      }
+    },
+    {
+      "case": "H15",
+      "group": "T",
+      "source": "docs/architecture/tool-kernel.md",
+      "source_location": "188–232；248–末；另核同基線 tool-results.md 的結構化讀取與來源段",
+      "task": "CORE-015",
+      "contract": "K10",
+      "decision": "已覆蓋",
+      "title": "長結果與撤權",
+      "acceptance": "在 R19 原產物下記錄整體 JSON 信封超額、第一個陣列項放不下、Unicode 字串頁和原件存檔失敗。原查詢 next_cursor 與固定版本 path/offset 分開；陣列不切半個元素，小預覽不得冒充全文，無句柄不承諾續讀。讀完 bytes／worker 解碼後撤權不得發布；已確認部分效果仍可對賬。",
+      "implementation": [
+        {
+          "file": "src/yuki/tool_results/artifacts.py",
+          "lines": [
+            391,
+            571
+          ],
+          "sha256": "04556e97b544d2421f3b172f3faa1e913cf0496464f19c1219ae9e351526999c",
+          "span_sha256": "67c93db914121b3ed21a292290af7d8d2c648e563beb53999dcc5785e1b58476",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/tool_results/artifacts.py#L391-L571"
+        },
+        {
+          "file": "src/yuki/tool_results/artifacts.py",
+          "lines": [
+            1027,
+            1103
+          ],
+          "sha256": "04556e97b544d2421f3b172f3faa1e913cf0496464f19c1219ae9e351526999c",
+          "span_sha256": "4d43c2bc8bd4ca07c3e0f9ac13e94369db8d88e0459684085d47af30eb42618a",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/tool_results/artifacts.py#L1027-L1103"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_tool_artifact_paging",
+        "test": "test_source_is_rechecked_after_worker_page_preparation[get]",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_tool_artifact_paging.py"
+      },
+      "command": "python ci/check.py CORE-015 --out artifacts/CORE-015/01/",
+      "artifact": "artifacts/CORE-015/01/tool-result-pages.json",
+      "selector": "cases.H15",
+      "consumer": {
+        "label": "Runner / 真正執行後端",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/agent_runner.py"
+      }
+    },
+    {
+      "case": "H16",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "43–63；161–220；另核 structured.py 的 _decode_response",
+      "task": "CORE-012",
+      "contract": "K09",
+      "decision": "細化",
+      "title": "Chat 與三種結構化模式",
+      "acceptance": "Chat 用 assistant.tool_calls[].id 對 tool.tool_call_id；正文形似 DSML／JSON 不執行。reasoning_content/details 保在原協議、不要合成 send。結構化任務選 function_tool、text_json 或 json_schema：前者只接一個 emit_result，後二者只接合 schema 的 JSON 物件、拒意外工具或多餘正文。validation_retries 預設零，顯式修復才算新請求。此卡建立相同測例的基礎，其他 adapter 驗自己的 wire。",
+      "implementation": [
+        {
+          "file": "src/yuki/llm/openai_compatible.py",
+          "lines": [
+            103,
+            178
+          ],
+          "sha256": "46720446f2277c1cc3d5a9e7f93cbb8e7b985c6dbd0ba8d9d77f14b67069eb36",
+          "span_sha256": "9e24ad4bd82a95278963ff10a0c8038a5f0c8f68635457a64b8519dcc2cb6719",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/openai_compatible.py#L103-L178"
+        },
+        {
+          "file": "src/yuki/model_runtime/structured.py",
+          "lines": [
+            132,
+            180
+          ],
+          "sha256": "315af08fa1ab74e644808da83ffb6d086b1380b45e8fba17741b0c011eb8ee24",
+          "span_sha256": "32b7a870f9395411735b0605b350a9038e32ae57e52cbae3350e0da6cdccd828",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/structured.py#L132-L180"
+        },
+        {
+          "file": "src/yuki/model_runtime/structured.py",
+          "lines": [
+            253,
+            301
+          ],
+          "sha256": "315af08fa1ab74e644808da83ffb6d086b1380b45e8fba17741b0c011eb8ee24",
+          "span_sha256": "f9c25ff000bae8c0130b3ced57b56c2221534af2bb94c74f67da9ef61c31d1d3",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/structured.py#L253-L301"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_provider_protocols",
+        "test": "test_image_and_json_schema_reach_wire[OpenAICompatibleProvider]",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_provider_protocols.py"
+      },
+      "command": "python ci/check.py CORE-012 --out artifacts/CORE-012/01/",
+      "artifact": "artifacts/CORE-012/01/chat-structured-mode.json",
+      "selector": "cases.H16",
+      "consumer": {
+        "label": "結構化任務呼叫方",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/structured.py"
+      }
+    },
+    {
+      "case": "H17",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "45–63；235–328",
+      "task": "CORE-019",
+      "contract": "K09",
+      "decision": "細化",
+      "title": "Responses 的 item 與方言",
+      "acceptance": "按原順序保存 reasoning／message／function_call；function_call_output 配 call_id（不是 item.id），重複 local ID 不派發。標準 adapter 用 store=false、include reasoning.encrypted_content；本地重送原序列，不假定 previous_response_id。基線 DeepSeek 略去 tool_choice，聲明 native 又要求 none 且不能執行時，派發前拒絕。不可看今天官方功能改寫這組基線 golden。",
+      "implementation": [
+        {
+          "file": "src/yuki/llm/openai_responses.py",
+          "lines": [
+            11,
+            32
+          ],
+          "sha256": "16e48f0f423e0c6e2d3b2bbe2f811acac197c0e613cb5dd7e49edb5ffb03d898",
+          "span_sha256": "e4e5f780751293e0715ccf522eb337bbb4e93b95a9b3dcab885c5832f7c9cb4f",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/openai_responses.py#L11-L32"
+        },
+        {
+          "file": "src/yuki/llm/deepseek_responses.py",
+          "lines": [
+            69,
+            122
+          ],
+          "sha256": "d18f31e289cfb1d12587176b096bf8672fc8b58b7ee0f88524b1120019a13b65",
+          "span_sha256": "98f3c5f22248a8033d6d4d72f4cd8cfee286d26765f2bd8f2d4eeb22ed153c69",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/deepseek_responses.py#L69-L122"
+        },
+        {
+          "file": "src/yuki/llm/deepseek_responses.py",
+          "lines": [
+            250,
+            362
+          ],
+          "sha256": "d18f31e289cfb1d12587176b096bf8672fc8b58b7ee0f88524b1120019a13b65",
+          "span_sha256": "215ad9f6b8360c696cf7c053134a72d6e8e88e34d6b29d95f852e174cf42361f",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/deepseek_responses.py#L250-L362"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_invocation_identity",
+        "test": "test_duplicate_response_ids_are_rejected_before_dispatch",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_invocation_identity.py"
+      },
+      "command": "python ci/check.py CORE-019 --out artifacts/CORE-019/01/",
+      "artifact": "artifacts/CORE-019/01/responses-dialect.json",
+      "selector": "cases.H17",
+      "consumer": {
+        "label": "結構化或普通執行器",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/executor.py"
+      }
+    },
+    {
+      "case": "H18",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "204–219；243–285",
+      "task": "CORE-020",
+      "contract": "K09",
+      "decision": "修正",
+      "title": "Claude：邏輯 required 不等於 wire any",
+      "acceptance": "同 Profile 測 thinking 開／關：function_tool 只宣告 emit_result。基線在 thinking 開啟時把邏輯 required／具名選擇投影成 auto；關閉時 required→any，具名→tool/name。回來零個、錯名或兩個 emit_result 均在本地驗證失敗；不暗關思考、不自動重購。帶簽名的 assistant blocks 原序回送，tool_result 配 tool_use_id；pause_turn 帶可續原件由共同 Runner 和原額度接手，不在 adapter 內自行補買。",
+      "implementation": [
+        {
+          "file": "src/yuki/llm/anthropic_messages.py",
+          "lines": [
+            185,
+            258
+          ],
+          "sha256": "c436756f913eb3d3b34c7a6115902b22efca72e351a18b4fde4778cba8a819e6",
+          "span_sha256": "75eeb7104c587a0fc0c3210471616f89407db42cfbcb03ed6b1555568146c357",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/anthropic_messages.py#L185-L258"
+        },
+        {
+          "file": "src/yuki/model_runtime/structured.py",
+          "lines": [
+            253,
+            301
+          ],
+          "sha256": "315af08fa1ab74e644808da83ffb6d086b1380b45e8fba17741b0c011eb8ee24",
+          "span_sha256": "f9c25ff000bae8c0130b3ced57b56c2221534af2bb94c74f67da9ef61c31d1d3",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/structured.py#L253-L301"
+        },
+        {
+          "file": "src/yuki/services/turn_execution.py",
+          "lines": [
+            1408,
+            1445
+          ],
+          "sha256": "a550ee1f20add8f3bc38e2e611f2415d0f3620e23ebe9ca10595a2ea2904c601",
+          "span_sha256": "8c3282690461b297e46f8e40b76d80ff5a296e393ea587a24c96b5fb035c39f0",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py#L1408-L1445"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_provider_protocols",
+        "test": "test_claude_native_search_pause_requires_explicit_continuation",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_provider_protocols.py"
+      },
+      "command": "python ci/check.py CORE-020 --out artifacts/CORE-020/01/",
+      "artifact": "artifacts/CORE-020/01/messages-choice-pause.json",
+      "selector": "cases.H18",
+      "consumer": {
+        "label": "結構化任務呼叫方",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/structured.py"
+      }
+    },
+    {
+      "case": "H19",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "207–232；243–288",
+      "task": "CORE-021",
+      "contract": "K09",
+      "decision": "細化",
+      "title": "Gemini：有無上游 ID 都配對",
+      "acceptance": "以含兩個 functionCall 的原生 model Content 回放，保 parts 順序和所在 Part 的 thoughtSignature；functionResponse 用原 name 和原生 id（原先沒有便不要上 wire）。沒有上游 id 時用穩定本地配對鍵，不能把本地鍵當成對方發的欄位。區分 typed 失敗 error／正常 output，原生搜尋 toolCall 不作本地函數執行；模型返回 thought text 不對外送。",
+      "implementation": [
+        {
+          "file": "src/yuki/llm/gemini.py",
+          "lines": [
+            163,
+            186
+          ],
+          "sha256": "28fd801c3f51562ba07c41bf1042f7ff7ea5badda7a0c067e0beb117410118b6",
+          "span_sha256": "787dd08bb0310e7d49a5e5333bdd11fcab7e98005f2265521d13d9ff4119ddfc",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/gemini.py#L163-L186"
+        },
+        {
+          "file": "src/yuki/llm/gemini.py",
+          "lines": [
+            340,
+            384
+          ],
+          "sha256": "28fd801c3f51562ba07c41bf1042f7ff7ea5badda7a0c067e0beb117410118b6",
+          "span_sha256": "bf65741cdf43c8996e07c828ee302d8cfeb2a82f8b4b329e35ce41193fef8cf2",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/gemini.py#L340-L384"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_provider_protocols",
+        "test": "test_gemini_parallel_receipts_keep_signature_and_call_order",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_provider_protocols.py"
+      },
+      "command": "python ci/check.py CORE-021 --out artifacts/CORE-021/01/",
+      "artifact": "artifacts/CORE-021/01/gemini-parts.json",
+      "selector": "cases.H19",
+      "consumer": {
+        "label": "結構化或普通執行器",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/executor.py"
+      }
+    },
+    {
+      "case": "H20",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "243–328；另見 Main 667–末",
+      "task": "CORE-012",
+      "contract": "K09",
+      "decision": "細化",
+      "title": "傳輸中斷不產生業務呼叫",
+      "acceptance": "基線是完整 HTTP body 解析，不是增量派發。分已完整內部 final（含合法靜默）、完整工具、協議明示 incomplete/length、已派發後 body 中斷／回應未持久四種。即使片段參數可解析也不得執行或把文字外發；真有上游 usage／部分資料各自保留。額外支援 Provider SSE 屬新版選配；採用時須等對應協議完成事件及完整配對，不以 TCP EOF 或最後一段 JSON 當完成。",
+      "implementation": [
+        {
+          "file": "src/yuki/llm/json_http.py",
+          "lines": [
+            155,
+            233
+          ],
+          "sha256": "e6d62366605b3eb9f30204988a3d8edbaa44ffe5615b5b9dc47d794f6c4b9050",
+          "span_sha256": "ec0a23c976f1ec3660fb224ccc492465c0705b95560968cc7761444a03dee547",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/json_http.py#L155-L233"
+        },
+        {
+          "file": "src/yuki/services/turn_execution.py",
+          "lines": [
+            1360,
+            1490
+          ],
+          "sha256": "a550ee1f20add8f3bc38e2e611f2415d0f3620e23ebe9ca10595a2ea2904c601",
+          "span_sha256": "a7000463a53125ff930745fa45da89e931a51089e24516016e3a7388fa0488a4",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/services/turn_execution.py#L1360-L1490"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_provider_native_result_boundaries",
+        "test": "test_duplicate_local_ids_are_not_executable_and_keep_native_result[False]",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_provider_native_result_boundaries.py"
+      },
+      "command": "python ci/check.py CORE-012 --out artifacts/CORE-012/01/",
+      "artifact": "artifacts/CORE-012/01/provider-interruption.json",
+      "selector": "cases.H20",
+      "consumer": {
+        "label": "結構化或普通執行器",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/executor.py"
+      }
+    },
+    {
+      "case": "H21",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "7–22；77–137；329–末",
+      "task": "CORE-024",
+      "contract": "K09",
+      "decision": "細化",
+      "title": "搜索的配置、證據與成功快取",
+      "acceptance": "分部署 disabled/native/tavily/both 與實際搜索後端、獨立 search_connection、主輪 inline 聲明。disabled 不准呼叫；沒有授權不將 native 工具送上游；獨立搜索只帶規範化查詢和限制，不攜主聊天。成功且非 partial 才快取，查快取在預留新模型次數之前；同查詢改限制、連線、金鑰域或實際 Profile 必須 miss。一般正文 URL、無來源或 native 失敗均不得兜底 Tavily。 四種 Profile 搜索策略 external／bridge／native／both 不等於全域 mode；Claude 的同名本地與內聯工具不能雙列。分別認 groundingChunks.web、關聯的 web_search_tool_result、web_search_call.action.sources／annotations，不以摘要冒充來源。",
+      "implementation": [
+        {
+          "file": "src/yuki/web/native_bridge.py",
+          "lines": [
+            64,
+            121
+          ],
+          "sha256": "b11b632edea48f6c7c0f9f50b7245a5eb52ae70c7ba9d93ff968920f8a46eb2c",
+          "span_sha256": "074e654ef90d53868c5743f9a220647c8fc2d9b9b6eee3937ffd1e70317d7082",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/web/native_bridge.py#L64-L121"
+        },
+        {
+          "file": "src/yuki/web/native_bridge.py",
+          "lines": [
+            252,
+            306
+          ],
+          "sha256": "b11b632edea48f6c7c0f9f50b7245a5eb52ae70c7ba9d93ff968920f8a46eb2c",
+          "span_sha256": "18a866f4f70bb4319c424865a241544d89fe0030cbfd80862f2f1238805796aa",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/web/native_bridge.py#L252-L306"
+        },
+        {
+          "file": "src/yuki/model_runtime/models.py",
+          "lines": [
+            58,
+            73
+          ],
+          "sha256": "c8fa7701075687d2c530ba115006d5b078b0e00a8a960cf51412d43e7dcd8fd5",
+          "span_sha256": "ed9d6fbdd0c4475a68567f9afd0cbdc810238ca6ca6152ebaa924f61c506e1cd",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/models.py#L58-L73"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_native_search_bridge",
+        "test": "test_partial_search_does_not_pin_later_complete_receipt",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_native_search_bridge.py"
+      },
+      "command": "python ci/check.py CORE-024 --out artifacts/CORE-024/01/",
+      "artifact": "artifacts/CORE-024/01/search-proof-cache.json",
+      "selector": "cases.H21",
+      "consumer": {
+        "label": "結構化或普通執行器",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/executor.py"
+      }
+    },
+    {
+      "case": "H22",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "243–328",
+      "task": "CORE-011",
+      "contract": "K09",
+      "decision": "細化",
+      "title": "usage 缺欄與費用未知",
+      "acceptance": "在一次邏輯呼叫內回放兩個物理嘗試，一次只報部分欄。分報實派、報 usage 的嘗試數及原回條；輸入或 cache 任一所需嘗試缺欄便未知，已知 completion/reasoning/total 小計要標覆蓋，不是假定完整。未定價與沒有資料不記為零元；不把估計預留、快取命中或 logical success 當帳單。",
+      "implementation": [
+        {
+          "file": "src/yuki/model_runtime/request_accounting.py",
+          "lines": [
+            24,
+            78
+          ],
+          "sha256": "cd315fc45d98983471b1c4deb15dd88d8ce6a85f581096771a3d88440cf4e74f",
+          "span_sha256": "5b8b455249321f175037cad8eb6bda1ccb9c022cf6ec00fc9be1b7266765be5b",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/request_accounting.py#L24-L78"
+        },
+        {
+          "file": "src/yuki/llm/json_http.py",
+          "lines": [
+            170,
+            233
+          ],
+          "sha256": "e6d62366605b3eb9f30204988a3d8edbaa44ffe5615b5b9dc47d794f6c4b9050",
+          "span_sha256": "3866621bff553d99161322cb2543d5464c6850054cfcd09cbd5cf9eca31e7bb2",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/json_http.py#L170-L233"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_native_search_bridge",
+        "test": "test_cancelled_model_request_records_one_unknown_paid_attempt",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_native_search_bridge.py"
+      },
+      "command": "python ci/check.py CORE-011 --out artifacts/CORE-011/01/",
+      "artifact": "artifacts/CORE-011/01/usage-denominator.json",
+      "selector": "cases.H22",
+      "consumer": {
+        "label": "結構化或普通執行器",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/executor.py"
+      }
+    },
+    {
+      "case": "H23",
+      "group": "P",
+      "source": "docs/architecture/model-providers.md",
+      "source_location": "43–82；94–155；另核原 Profile／指定端點",
+      "task": "CORE-049",
+      "contract": "K09",
+      "decision": "現場待證",
+      "title": "Profile 能力的四層證據",
+      "acceptance": "輸入基線 adapter fixture、查閱日官方文件與部署者選定的 endpoint/model/region。預設離線，逐格報基線實作、官方文件、離線回放、真端點四欄。將來另獲准才用無私聊、合成最小工具／搜索樣本，保存脫敏 request/response、實際 attempt、來源與 usage。拒絕／400、被忽略、沒有 source、未獲授權分記；只限制該 profile/功能，不加 B0 門檻。",
+      "implementation": [
+        {
+          "file": "src/yuki/model_runtime/profiles.py",
+          "lines": [
+            83,
+            124
+          ],
+          "sha256": "6f176b25bdf5e5c1defd5863d8b086ad36b6db509592b07a8d03d61131190660",
+          "span_sha256": "91910d68ed2ed103c897f300827bf25a538f22588e9488bf72c2c460e85b4e54",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/profiles.py#L83-L124"
+        },
+        {
+          "file": "src/yuki/llm/deepseek_responses.py",
+          "lines": [
+            69,
+            120
+          ],
+          "sha256": "d18f31e289cfb1d12587176b096bf8672fc8b58b7ee0f88524b1120019a13b65",
+          "span_sha256": "d90e35a1a0930d2a15789ed13136817f6b92ac8c2e99572cffe89a26164307c9",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/llm/deepseek_responses.py#L69-L120"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_deployment_setup",
+        "test": "test_setup_rejects_deepseek_responses_as_a_native_search_connection",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_deployment_setup.py"
+      },
+      "command": "python ci/check.py CORE-049 --out artifacts/CORE-049/01/",
+      "artifact": "artifacts/CORE-049/01/endpoint-evidence-grid.json",
+      "selector": "cases.H23",
+      "consumer": {
+        "label": "結構化或普通執行器",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/model_runtime/executor.py"
+      }
+    },
+    {
+      "case": "H24",
+      "group": "C",
+      "source": "docs/architecture/client-api.md",
+      "source_location": "103–120；151–165；296–311",
+      "task": "EXT-015",
+      "contract": "K13",
+      "decision": "細化",
+      "title": "裝置、入口及原 UUID",
+      "acceptance": "測同一 Person 兩台 chat 裝置共享一個 App 入口：相同 UUID/正規化相同內容只一原事件；改 operation、target、有序附件或 agent_target 即衝突。設備不是 namespace。合併兩個人物後其原入口各保 request_person_id 與歷史，X-Yuki-Entry 選錯不得讀對方原件。ACP new 走選定 App 鍵域，session 內請求由原 Conversation 限定；舊 NULL 不回填成當前會話。",
+      "implementation": [
+        {
+          "file": "src/yuki/client_api/identity.py",
+          "lines": [
+            60,
+            110
+          ],
+          "sha256": "0c30ce251f4c5bbfd18e1acbf491be600da2771b7e6ce1c5b06999bd15a1a5cb",
+          "span_sha256": "bdb7951cae5d97f13af4a3afaf55e4f6def465b11ac5af67a0ebaf28852ed717",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/identity.py#L60-L110"
+        },
+        {
+          "file": "src/yuki/client_api/messages.py",
+          "lines": [
+            47,
+            128
+          ],
+          "sha256": "a6dc7f3358842785b5e3bc0fdeff299d6ab16286dc47d56331f8ff1b3f91abf1",
+          "span_sha256": "ab72a832db9c02efdb61acda533138e74781351ce56b34f387c61476795c93b0",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/messages.py#L47-L128"
+        },
+        {
+          "file": "src/yuki/client_api/sessions.py",
+          "lines": [
+            24,
+            99
+          ],
+          "sha256": "c8ff92215cc1b888483daed3a6b2d9e88f6314d1e9dcda4ec4aecba80c1dbf65",
+          "span_sha256": "aebacf26c736c101d7d8351c676819c1ac32e086a411da3cdaa64c007f1cde15",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/sessions.py#L24-L99"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_client_works",
+        "test": "test_input_request_identity_spans_work_message_and_devices",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_client_works.py"
+      },
+      "command": "python ci/check.py EXT-015 --out artifacts/EXT-015/01/",
+      "artifact": "artifacts/EXT-015/01/original-uuid-entry.json",
+      "selector": "cases.H24",
+      "consumer": {
+        "label": "Desktop：原 Work 補充、取消、確認遺失後原鍵查證",
+        "url": "https://github.com/Institute-of-Agent-Life/Yuki-Desktop/blob/bee5692292d8601033798cb2772a075b8db8004b/src/main/outbox/work-commands.ts"
+      }
+    },
+    {
+      "case": "H25",
+      "group": "C",
+      "source": "docs/architecture/client-api.md",
+      "source_location": "1–25；88–121；345–末",
+      "task": "CORE-033",
+      "contract": "K13",
+      "decision": "已覆蓋",
+      "title": "chat、connector、operator 不互換",
+      "acceptance": "用同一 Person 配對兩種用途的憑據；chat 才能進個人入口，connector 配對不建聊天、不取代 chat 工作身份；operator 走獨立管理授權。另測真正 Person 超管可用其有效 chat 設備在允許的管理路由操作，普通 chat 不行，二者都不是 operator。撤設備和撤角色不可互相替代；復用原 operation 不授予新控制。以負例驗 CORE-033 的邊界，不在此實作完整 admin UI。",
+      "implementation": [
+        {
+          "file": "src/yuki/client_api/identity.py",
+          "lines": [
+            119,
+            225
+          ],
+          "sha256": "0c30ce251f4c5bbfd18e1acbf491be600da2771b7e6ce1c5b06999bd15a1a5cb",
+          "span_sha256": "d966c9e4ccb4503c75f29dc4c5546ce250e0fa6eb85cb5b7f5d0ace95446e96f",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/identity.py#L119-L225"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_connector_identity",
+        "test": "test_connector_pair_does_not_create_chat_entry_and_credentials_cannot_cross",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_connector_identity.py"
+      },
+      "command": "python ci/check.py CORE-033 --out artifacts/CORE-033/01/",
+      "artifact": "artifacts/CORE-033/01/personal-handoff.json",
+      "selector": "cases.H25",
+      "consumer": {
+        "label": "Desktop HTTP：entry、bearer、data／problem",
+        "url": "https://github.com/Institute-of-Agent-Life/Yuki-Desktop/blob/bee5692292d8601033798cb2772a075b8db8004b/src/main/api/client.ts"
+      }
+    },
+    {
+      "case": "H26",
+      "group": "C",
+      "source": "docs/architecture/client-api.md",
+      "source_location": "164–198",
+      "task": "EXT-017",
+      "contract": "K13",
+      "decision": "細化",
+      "title": "桌面補原 QQ Work",
+      "acceptance": "用同一用戶從 App 補原 QQ Work；一個 writer 原子登記 App 私有 action event、原 Work 的 ready input、原 UUID receipt；在 mailbox 後注入失敗三者全退，無 App Main、無新根預算、回覆仍認原會話。running 不搶 lease；waiting/suspended 必須能安全續原執行，busy 不留下孤兒 action；終態返回原 precondition_failed、不復活。input 不要求 expected_revision，cancel 用原 revision；ACK 丟失 Desktop 先 GET requests/{id}，只按原鍵與原 payload 對賬。",
+      "implementation": [
+        {
+          "file": "src/yuki/client_api/works.py",
+          "lines": [
+            616,
+            667
+          ],
+          "sha256": "a2aaa7f6b547adb267c9b6c373e712109748ec38418356820de4eb35e028cac3",
+          "span_sha256": "13be23f771b074f4816d029e32bd85e075e75352b569868f72a2361a8b496101",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/works.py#L616-L667"
+        },
+        {
+          "file": "src/yuki/client_api/works.py",
+          "lines": [
+            709,
+            818
+          ],
+          "sha256": "a2aaa7f6b547adb267c9b6c373e712109748ec38418356820de4eb35e028cac3",
+          "span_sha256": "d8eed4699c529c4dab403cd4e5d1960c09f88ed684267d82b7ef16e7693167c6",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/works.py#L709-L818"
+        },
+        {
+          "file": "src/yuki/client_api/works.py",
+          "lines": [
+            818,
+            860
+          ],
+          "sha256": "a2aaa7f6b547adb267c9b6c373e712109748ec38418356820de4eb35e028cac3",
+          "span_sha256": "59f87279d5dcc41d049fd8cb17adff1b150bd48a547782b016a470f2f0a1bc54",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/works.py#L818-L860"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_client_works",
+        "test": "test_failure_after_mailbox_insert_rolls_back_all_facts",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_client_works.py"
+      },
+      "command": "python ci/check.py EXT-017 --out artifacts/EXT-017/01/",
+      "artifact": "artifacts/EXT-017/01/qq-work-private-input.json",
+      "selector": "cases.H26",
+      "consumer": {
+        "label": "Desktop：原 Work 補充、取消、確認遺失後原鍵查證",
+        "url": "https://github.com/Institute-of-Agent-Life/Yuki-Desktop/blob/bee5692292d8601033798cb2772a075b8db8004b/src/main/outbox/work-commands.ts"
+      }
+    },
+    {
+      "case": "H27",
+      "group": "C",
+      "source": "docs/architecture/client-api.md",
+      "source_location": "171–218；311–324",
+      "task": "EXT-016",
+      "contract": "K13",
+      "decision": "細化",
+      "title": "SSE 最後提示遺失",
+      "acceptance": "先訂閱再建初始 sync；讓最後一個變更正好溢出且其後沒有新事件，舊 stream 必須收束。重連後 GET 原入口的 history/events、原 request/Work 和當前可見狀態；不拿 SSE 自增 id 充當帳本 cursor。對照 HTTP ACK、Main 結束、Work 終態、確認出站與 SSE 觀察；無獨立客戶端已讀證據就不回報已讀。撤權後關舊流，不補播已清正文。",
+      "implementation": [
+        {
+          "file": "src/yuki/client_api/views.py",
+          "lines": [
+            369,
+            432
+          ],
+          "sha256": "92118e991dffa8b2a0330bf05ce38b8b13b235fc7e345a4aaa6270c976d1bc02",
+          "span_sha256": "76459f731d3e0faa6724cc385185499fcffde384341791fd2346ba9eb6d6f93c",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/views.py#L369-L432"
+        },
+        {
+          "file": "src/yuki/client_api/requests.py",
+          "lines": [
+            1,
+            66
+          ],
+          "sha256": "2a309fe63976d72ea7d66806a2bf70333b7ee3ba6f12af42ec4594903969517b",
+          "span_sha256": "b4370c9aa04fc4b89418a7cf9c968989d8db1906708f81112ab3d2b696a609bb",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/requests.py#L1-L66"
+        },
+        {
+          "file": "src/yuki/client_sdk/client.py",
+          "lines": [
+            374,
+            435
+          ],
+          "sha256": "2dc8b7064f7ca7e5bce0abc006dfbb78ea1b6f17f09459181ba596d566762405",
+          "span_sha256": "36c8f9ad71f4fc1300dba98cd11357209e8b2e83af19487e670e3911e295fb92",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_sdk/client.py#L374-L435"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_client_continuation",
+        "test": "test_real_sse_reconnects_after_last_hint_lost_and_refreshes_every_entry",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_client_continuation.py"
+      },
+      "command": "python ci/check.py EXT-016 --out artifacts/EXT-016/01/",
+      "artifact": "artifacts/EXT-016/01/sse-last-hint.json",
+      "selector": "cases.H27",
+      "consumer": {
+        "label": "Python 參考客戶端：完整同步與監看",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_sdk/client.py"
+      }
+    },
+    {
+      "case": "H28",
+      "group": "C",
+      "source": "docs/architecture/client-api.md",
+      "source_location": "129–152；190–258；325–340",
+      "task": "EXT-016",
+      "contract": "K10",
+      "decision": "修正",
+      "title": "舊上傳回執、新使用與原版下載",
+      "acceptance": "上傳用內容 bytes、宣告長度／SHA-256、filename、kind、原 UUID；同鍵變參拒，同一人物仍有訪問權且只是臨時上傳到期清理，重送才讀原回執；人物 forget 是另一分支，不能取回已清退內容或以舊設備重建，但不讓過期 media 加入新訊息。歷史附件按 conversation/event/index 核 bytes 和來源；不可變 artifact 按 id+version、確認引用、當前讀權核驗，讀檔前後再查，forget 或撤權拒。目錄元資料不是下載權。舊 HTTP 返回完整 bytes/ETag，未見 Range/206 實作；本版不要求續傳。若日後 consumer 需要，另列新版能力。",
+      "implementation": [
+        {
+          "file": "src/yuki/client_api/files.py",
+          "lines": [
+            253,
+            331
+          ],
+          "sha256": "019df8c7f3bd81a5d8db4d84baffcf2837a7b3698f69ba34d75eac1534df64af",
+          "span_sha256": "b84ae373bbe10eb9797d2448be1ae2e5bfb645542fd3884e18e894b11a18d1e5",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/files.py#L253-L331"
+        },
+        {
+          "file": "src/yuki/client_api/files.py",
+          "lines": [
+            400,
+            411
+          ],
+          "sha256": "019df8c7f3bd81a5d8db4d84baffcf2837a7b3698f69ba34d75eac1534df64af",
+          "span_sha256": "ee39a658261799983ac4fb916015c7c61659ba8d745fa079bfa0869ac1aa9089",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/files.py#L400-L411"
+        },
+        {
+          "file": "src/yuki/client_api/http.py",
+          "lines": [
+            430,
+            489
+          ],
+          "sha256": "a6990f67a2fb616dd58368540ec905b84b42daa4953c83f5e5a0d35ed283869c",
+          "span_sha256": "b88db30d3b88e3b4ab4f56edb0fd1be552a35e21598350b58fd5d183bc1d8b46",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/http.py#L430-L489"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_client_person_identity",
+        "test": "test_expired_upload_receipt_replays_after_real_cleanup_without_new_use",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_client_person_identity.py"
+      },
+      "command": "python ci/check.py EXT-016 --out artifacts/EXT-016/01/",
+      "artifact": "artifacts/EXT-016/01/versioned-file-replay.json",
+      "selector": "cases.H28",
+      "consumer": {
+        "label": "Desktop：先讀原上傳回執，再決定是否重送原 bytes",
+        "url": "https://github.com/Institute-of-Agent-Life/Yuki-Desktop/blob/bee5692292d8601033798cb2772a075b8db8004b/src/main/media/uploads.ts"
+      }
+    },
+    {
+      "case": "H29",
+      "group": "C",
+      "source": "docs/architecture/client-api.md",
+      "source_location": "295–343",
+      "task": "EXT-018",
+      "contract": "K13",
+      "decision": "修正／新版行為",
+      "title": "ACP load/prompt/cancel 的真實停止條件",
+      "acceptance": "load 讀到 has_more=false，按 next_after 翻頁，零模型派發；舊 adapter 僅對 artifact_id＋version 提供 ResourceLink，其餘顯示引用不可下載。新版補齊文檔承諾：臨時原件可由原 Conversation/event/attachment_index 確切定位時給同一授權 GET 的不帶 token 連結；缺定位、已知清理或不可讀則保留不可用引用。下載仍在讀前後驗權；不加公開文件服務。prompt 輪詢原 request、沖出已確認 result_event_ids，不靠 elapsed/寂靜判完成；Main ended 且無 Work 或不再 active 且 state 屬 completed/failed/cancelled/waiting_user/suspended 才退出。waiting_user 可結束本次 prompt，不是 Work 完成；suspended/failed 回錯、cancelled 回取消。只取消原 prompt／實際關聯 Work，另一 session 不受影響，stdio 斷開不取消；cwd 不授權，非空 MCP 拒絕。",
+      "implementation": [
+        {
+          "file": "src/yuki/acp_adapter/agent.py",
+          "lines": [
+            187,
+            259
+          ],
+          "sha256": "92589279c615155683851079db59962bd8bf3c462e270260912aeb5fcae0c696",
+          "span_sha256": "e4c18a7570c79ad42a09ad8042280ec88a2e7ec00a4ea33da79335f913ad79e7",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/acp_adapter/agent.py#L187-L259"
+        },
+        {
+          "file": "src/yuki/acp_adapter/agent.py",
+          "lines": [
+            288,
+            375
+          ],
+          "sha256": "92589279c615155683851079db59962bd8bf3c462e270260912aeb5fcae0c696",
+          "span_sha256": "79ea741f2b976742b3d650084760a8107d218a6c89f7112a4b9eea3a108fcc3a",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/acp_adapter/agent.py#L288-L375"
+        },
+        {
+          "file": "src/yuki/acp_adapter/agent.py",
+          "lines": [
+            375,
+            394
+          ],
+          "sha256": "92589279c615155683851079db59962bd8bf3c462e270260912aeb5fcae0c696",
+          "span_sha256": "14999787bdd58a211cda6535c3f655ff31b88a7342064df615c7c727623dc3f0",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/acp_adapter/agent.py#L375-L394"
+        }
+      ],
+      "historical": {
+        "classname": "tests.integration.test_acp_runtime_integration",
+        "test": "test_cancel_only_the_original_prompt_while_another_session_keeps_running",
+        "archive": "upstream-integration.zip",
+        "member": "integration.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/integration/test_acp_runtime_integration.py"
+      },
+      "command": "python ci/check.py EXT-018 --out artifacts/EXT-018/01/",
+      "artifact": "artifacts/EXT-018/01/acp-stop-and-replay.json",
+      "selector": "cases.H29",
+      "consumer": {
+        "label": "stdio ACP：load 消費事件頁、prompt 輪詢與取消",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/acp_adapter/agent.py"
+      }
+    },
+    {
+      "case": "H30",
+      "group": "C",
+      "source": "docs/architecture/client-api.md",
+      "source_location": "1–140；295–末；實際釘選檔及 Desktop 呼叫點另列",
+      "task": "EXT-019",
+      "contract": "K13",
+      "decision": "細化",
+      "title": "Desktop 釘選與呼叫證人",
+      "acceptance": "固定 Desktop bee5692、其 source.json 的後端 004ae36、client/admin 兩個 OpenAPI 檔及真呼叫位置。記 URL、方法、header、query、JSON envelope、ordered payload、error.code 和再查行為；假刪 Work.cancel.expected_revision、改上傳編碼或拿 SSE 序號當業務游標，對消費者會失敗。此卡只做靜態差分／舊測資，候選服務與打包 UI 實測留 EXT-044，絕不把相同 revision 9 當作相容證書。",
+      "implementation": [
+        {
+          "file": "src/yuki/client_api/http.py",
+          "lines": [
+            430,
+            489
+          ],
+          "sha256": "a6990f67a2fb616dd58368540ec905b84b42daa4953c83f5e5a0d35ed283869c",
+          "span_sha256": "b88db30d3b88e3b4ab4f56edb0fd1be552a35e21598350b58fd5d183bc1d8b46",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/http.py#L430-L489"
+        },
+        {
+          "file": "src/yuki/client_api/works.py",
+          "lines": [
+            818,
+            862
+          ],
+          "sha256": "a2aaa7f6b547adb267c9b6c373e712109748ec38418356820de4eb35e028cac3",
+          "span_sha256": "c03cd7f08bad8c1f31a811b284247ec420ab62263f463c185cccf84e3b42bd5d",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/works.py#L818-L862"
+        },
+        {
+          "file": "src/yuki/client_api/identity.py",
+          "lines": [
+            60,
+            110
+          ],
+          "sha256": "0c30ce251f4c5bbfd18e1acbf491be600da2771b7e6ce1c5b06999bd15a1a5cb",
+          "span_sha256": "bdb7951cae5d97f13af4a3afaf55e4f6def465b11ac5af67a0ebaf28852ed717",
+          "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/client_api/identity.py#L60-L110"
+        }
+      ],
+      "historical": {
+        "classname": "tests.unit.test_client_sdk",
+        "test": "test_work_input_persists_original_target_and_server_fingerprint",
+        "archive": "upstream-unit.zip",
+        "member": "unit.xml",
+        "status": "passed",
+        "url": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/tests/unit/test_client_sdk.py"
+      },
+      "command": "python ci/check.py EXT-019 --out artifacts/EXT-019/01/",
+      "artifact": "artifacts/EXT-019/01/desktop-callsite-pin.json",
+      "selector": "cases.H30",
+      "consumer": {
+        "label": "Desktop：原 Work 補充、取消、確認遺失後原鍵查證",
+        "url": "https://github.com/Institute-of-Agent-Life/Yuki-Desktop/blob/bee5692292d8601033798cb2772a075b8db8004b/src/main/outbox/work-commands.ts"
+      }
+    }
+  ],
+  "new_product_tests_run": false
+}

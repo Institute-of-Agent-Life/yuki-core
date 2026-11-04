@@ -1,0 +1,78 @@
+{
+  "status": "PASS",
+  "user_supplied_base_verified": true,
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "reviewed_documents": {
+    "main-agent-runtime": "9aa35f64377342d84131a8c299dc945202a0342b",
+    "tool-kernel": "0ea863ef1d2834922a4f84a58f3c096f53aec2d8",
+    "model-providers": "84b0440877d90cced157ca8c91a6d9974dc62abb",
+    "client-api": "399a3116d88dcc89d5412d22f8ff9e18b1d64a01"
+  },
+  "mapped_cases": 30,
+  "cases_by_document": {
+    "M": 8,
+    "T": 7,
+    "P": 8,
+    "C": 7
+  },
+  "case_owner_cards": 21,
+  "wheel_source_files": 37,
+  "distinct_checked_code_ranges": 71,
+  "historical_junit_nodes_located": 30,
+  "local_graph_check": {
+    "tasks": 126,
+    "core": 58,
+    "extensions": 68,
+    "direct_edges": 274,
+    "cross_edges": 64,
+    "inherited_named_inputs": 87,
+    "waves": 24,
+    "B0_wave": 16,
+    "B0_ancestors": 27,
+    "capability_rows": 126,
+    "adversarial_gate_rows": 11,
+    "local_file_anchor_links": 1773,
+    "external_link_occurrences_not_network_tested": 424,
+    "product_tests_run": false,
+    "status": "PASS"
+  },
+  "baseline_difference": {
+    "ids_unchanged": true,
+    "B0_ancestor_set_unchanged": true,
+    "direct_added": [
+      [
+        "EXT-016",
+        "EXT-018"
+      ]
+    ],
+    "direct_removed": [
+      [
+        "EXT-016",
+        "EXT-052"
+      ]
+    ],
+    "inherited_added": [
+      [
+        "CORE-013",
+        "CORE-016",
+        "social-parts.json"
+      ],
+      [
+        "EXT-016",
+        "EXT-052",
+        "client-resync.json"
+      ]
+    ],
+    "historical_archives_byte_equal": true
+  },
+  "evidence_limits": {
+    "source_documents": "semantic reading via GitHub; Git blobs recorded, originals not rehashed by this script",
+    "github_and_vendor_links": "selected external references read; only local links/anchors exhaustively checked",
+    "junit": "historical observations; no product tests rerun",
+    "live_provider_probes": false,
+    "desktop_reexport_or_ui_e2e": false,
+    "new_rust_e2e": false,
+    "repository_writes": false,
+    "deployment": false
+  }
+}

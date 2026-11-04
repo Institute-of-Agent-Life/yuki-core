@@ -1,0 +1,15 @@
+{
+  "fixture_only": true,
+  "git_tree": "0ae6e4a39f261bdd10bd33873a15402c8a01258c",
+  "zip_result": {
+    "tree": "0ae6e4a39f261bdd10bd33873a15402c8a01258c",
+    "verified_blob_count": 4,
+    "markdown": [
+      "檔.md"
+    ],
+    "semantic_review_claimed": false
+  },
+  "tampered_zip_rejected": true,
+  "cross_directory_attachment_found": true,
+  "real_Yuki_tree_tested": false
+}

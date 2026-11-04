@@ -1,0 +1,15 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "root_tree": "c1885cc75e3273aea6f4ed4e994b762b0cdfba6e",
+  "known_original_markdown_paths": 176,
+  "full_original_markdown": 90,
+  "new_full_original_markdown": 4,
+  "carried_forward_full_original_markdown": 86,
+  "partial_original_markdown": 1,
+  "known_not_read_in_full_or_in_part": 85,
+  "external_markdown_full_carried_forward": 1,
+  "all_ledger_rows": 216,
+  "whole_repository_markdown": null,
+  "whole_repository_semantic_review": false,
+  "new_product_tests_executed": false
+}

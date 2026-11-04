@@ -1,0 +1,19 @@
+{
+  "normal": "PASS",
+  "corruptions_rejected": 12,
+  "rejections": {
+    "缺失前置": "missing prerequisite",
+    "重複卡號": "CORE-001 anchor/heading mismatch",
+    "跨倉 owner 錯": "EXT-002 anchor/heading mismatch",
+    "依賴循環": "('nodes are in a cycle', ['CORE-001', 'CORE-002', 'CORE-001'])",
+    "下游不對稱": "CORE-001 reverse edges",
+    "假借沿途原件": "CORE-010 ghost input or wrong artifact",
+    "對應產物被改名": "CORE-031 ghost input or wrong artifact",
+    "同卡無測試指令": "CORE-001 runner",
+    "矩陣錯波": "CORE-001 wave",
+    "新增不存在錨點": "Yuki-Rust重寫總任務書-v3.2.md missing anchor #anchor-no-such-thing",
+    "錯誤版本連結": "stale link",
+    "錯置B0排除條件": "CORE-044 release gate attack"
+  },
+  "product_tests_run": false
+}

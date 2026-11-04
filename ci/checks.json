@@ -1,0 +1,15 @@
+{
+  "format_version": 1,
+  "python": "3.12",
+  "dependencies": [],
+  "seed": 329,
+  "clock": "2026-11-04T00:00:00Z",
+  "cards": {
+    "CORE-001": {
+      "case": "tests/cases/CORE-001.py",
+      "artifact": "harness-selftest.json",
+      "timeout_seconds": 60,
+      "capabilities": ["offline-python-replay", "loopback-http-recorder"]
+    }
+  }
+}

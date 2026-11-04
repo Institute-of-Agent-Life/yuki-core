@@ -1,0 +1,300 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "product_tests_executed_in_this_pass": false,
+  "whole_repository_review": false,
+  "subtrees": {
+    "docs/plugin-development/": {
+      "git_tree": "1ea6f2a03a5a19922e7f824101390bd014eed9f3",
+      "files": 43,
+      "full_read_ledger": 43
+    },
+    "docs/emoji-system/": {
+      "git_tree": "a7a439d322896ae1ba0e3b7ac8e015a9c845349a",
+      "files": 2,
+      "full_read_ledger": 2
+    },
+    "docs/speech/": {
+      "git_tree": "551db205783b4f1342a0eb3f1dc3b3b4d20cf50c",
+      "files": 1,
+      "full_read_ledger": 1
+    },
+    "docs/deployment/": {
+      "git_tree": "983753a3ffe1742ac3d01e791bf8b8facbe5f61f",
+      "files": 3,
+      "full_read_ledger": 3
+    },
+    "docs/refactor/": {
+      "git_tree": "ef32ea8f204741f85f259d110881d400e29ee1af",
+      "files": 2,
+      "full_read_ledger": 2
+    }
+  },
+  "upstream_ci": {
+    "unit": {
+      "archive_sha256": "a62edfcca7c2e8bbcbbcd1886b90d9f2207c8f83575c86d448923c8888473a17",
+      "members": 287,
+      "junit_cases": 3609,
+      "skipped": 5,
+      "failures": 0,
+      "errors": 0,
+      "passed_without_skip": 3604,
+      "case_artifacts": 25
+    },
+    "headed": {
+      "archive_sha256": "c8f8c924f43fb32629fe00feb5a3824344dd7ec38f793641b32c55bb5f95ae69",
+      "members": 1,
+      "junit_cases": 57,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "passed_without_skip": 57,
+      "case_artifacts": 0
+    },
+    "native": {
+      "archive_sha256": "c1fcaf4bcefa4b26d4f5245110d42f8bc2e7c6ac37bce69e8c2e83c50acb6cf6",
+      "members": 14,
+      "junit_cases": 102,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "passed_without_skip": 102,
+      "case_artifacts": 8
+    }
+  },
+  "real_source_locations": {
+    "social/emoji_intents.py:admit": [
+      {
+        "member": "yuki/social/emoji_intents.py",
+        "function": "admit",
+        "lines": [
+          200,
+          255
+        ],
+        "source_sha256": "7ecc918df015c23f856010d9777be1e2fda9a731ce06a0b83e11a64a03549b29",
+        "span_sha256": "c90d49bd532563c4c25a4d0a59d95e4d48b796107a9b67d68aa0f20441d8cd0d",
+        "permalink_at_behavior_baseline": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/social/emoji_intents.py#L200-L255"
+      }
+    ],
+    "plugin_host/notification_manifest.py:manifest_from_request": [
+      {
+        "member": "yuki/plugin_host/notification_manifest.py",
+        "function": "manifest_from_request",
+        "lines": [
+          86,
+          109
+        ],
+        "source_sha256": "a63bebed2a83800c0d9ee45754b171c6f30af4d359c33ad91a1a24ef441316d5",
+        "span_sha256": "7abd27253a2d7787327ca4a2d737bd4e1d3dd8126184714fb9b6871e43334537",
+        "permalink_at_behavior_baseline": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/plugin_host/notification_manifest.py#L86-L109"
+      }
+    ],
+    "plugin_host/configuration_service.py:save": [
+      {
+        "member": "yuki/plugin_host/configuration_service.py",
+        "function": "save",
+        "lines": [
+          158,
+          211
+        ],
+        "source_sha256": "67906aab7d7508227c8b6ca73aa8f56fed29bc0814151fd7fcf5198d682e5c2f",
+        "span_sha256": "5c95c08992c9187bf43d10cef20a7d00f2e0e9889678ba56ec144eca31c06da1",
+        "permalink_at_behavior_baseline": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/plugin_host/configuration_service.py#L158-L211"
+      }
+    ],
+    "plugin_host/direct_command_router.py:match": [
+      {
+        "member": "yuki/plugin_host/direct_command_router.py",
+        "function": "match",
+        "lines": [
+          54,
+          67
+        ],
+        "source_sha256": "e664f8fb4f5fc4700ef7c891bdce17bb58973563ea822a6b6ac9f48990afeedf",
+        "span_sha256": "4e74e3986890f6ad42af9c54715d1fa2b549f05fb70ba6c4580d252eb7d37fb3",
+        "permalink_at_behavior_baseline": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/plugin_host/direct_command_router.py#L54-L67"
+      }
+    ],
+    "http_client.py:request": [
+      {
+        "member": "yuki/plugin_host/http_client.py",
+        "function": "request",
+        "lines": [
+          75,
+          192
+        ],
+        "source_sha256": "60d351135c6135d296270015de7de4e5609f4f735a1114ca0c760aab0c35441f",
+        "span_sha256": "123a759f5d3956edc6ad9f05d4c036f26fb06878e7e23356a494c30aad86459c",
+        "permalink_at_behavior_baseline": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/plugin_host/http_client.py#L75-L192"
+      },
+      {
+        "member": "yuki/plugin_host/http_client.py",
+        "function": "request",
+        "lines": [
+          270,
+          295
+        ],
+        "source_sha256": "60d351135c6135d296270015de7de4e5609f4f735a1114ca0c760aab0c35441f",
+        "span_sha256": "d49c8ebe67f2d7eb6fc28fad8097d710caafa27438d125f1f22894d4a6436609",
+        "permalink_at_behavior_baseline": "https://github.com/YuanYeYouTao/Yuki/blob/329ca7c487414d2f54ddd98ff4727446ed2446cd/src/yuki/plugin_host/http_client.py#L270-L295"
+      }
+    ]
+  },
+  "complete_docs_root_upgrade_guides": {
+    "direct_docs_tree": "24c855d73fba9e43ed79f2b91a97b23e60611b46",
+    "files": 12,
+    "paths": [
+      "upgrade-3.8.0.md",
+      "upgrade-3.8.1.md",
+      "upgrade-3.8.2.md",
+      "upgrade-3.8.3.md",
+      "upgrade-3.8.4.md",
+      "upgrade-3.9.0.md",
+      "upgrade-4.0.0.en.md",
+      "upgrade-4.0.0.md",
+      "upgrade-code-deletion-20261023.en.md",
+      "upgrade-code-deletion-20261023.md",
+      "upgrade-message-identity-20261028.md",
+      "upgrade-model-config-20261031.md"
+    ]
+  },
+  "known_identical_git_blobs": {},
+  "known_markdown_status": {
+    "前版已讀全文": 22,
+    "部分正文": 1,
+    "路徑已識別；未通讀": 56,
+    "底稿引據；前版未通讀": 29,
+    "本輪核心補核全文": 4,
+    "本次續讀全文": 63,
+    "前版已讀、本次再核全文": 1
+  },
+  "total_known_markdown": 176,
+  "compact_example": {
+    "original_member": "compact/00ba4263580d92a672dcbab8d35ecd161e3a4b0d9f6535da24d44039bc6c59a6/attempt-7g3abcwu/evidence.json",
+    "nodeid": "tests/unit/test_work_current_compact_recovery.py::test_current_compact_keeps_unobserved_original_receipt_for_next_main[paired-unknown]",
+    "original_call_id": "original-unobserved-call",
+    "byte_equal_original_result_in_next_normal_request": true,
+    "original_dispatches_in_fixture": 1,
+    "known_result_status": "succeeded",
+    "fixture_source_revision": "9138a528872bb9775b9ac05ddb38b5c1de6d7df2",
+    "note": "unknown refers to this test variant, not proof that the dispatched operation had an unknown effect"
+  },
+  "named_original_passing_tests": {
+    "test_unmatched_group_voice_does_not_buy_asr_or_enqueue_memory": "tests.unit.test_auto_reply_merge",
+    "test_wait_source_generation_change_during_asr_does_not_publish": "tests.unit.test_auto_reply_merge",
+    "test_failed_rollback_keeps_owner_until_physical_close_even_under_repeated_cancel": "tests.unit.test_database_writer",
+    "test_unconfirmed_physical_close_stops_admission_without_masking_original": "tests.unit.test_database_writer",
+    "test_emoji_only_admission_preserves_unknown_commit_and_original_intent": "tests.unit.test_social_illustration_recovery"
+  },
+  "upstream_native_isolation": {
+    "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "worker_sha256": "6aeb38bfa10fb78ef299c84edb31152300787817fef784cbb3859a7e311a7a7b",
+    "launcher_sha256": "87153c3875ed82b1adf4f87da67841985bd047cc69aa67a543588c7123377a5a",
+    "verdict": "passed",
+    "namespaces": [
+      "ipc",
+      "mnt",
+      "net",
+      "pid",
+      "user",
+      "uts"
+    ],
+    "enforcement": "yuki-bot-codemode//launcher//&yuki-bot-codemode//launcher//worker (enforce)",
+    "procfs_exposed": false
+  },
+  "r2_cases": {
+    "R01": [
+      "CORE-005",
+      "artifacts/CORE-005/01/owner-probes.json"
+    ],
+    "R02": [
+      "CORE-023",
+      "artifacts/CORE-023/01/compact-exec-next-wire.json"
+    ],
+    "R03": [
+      "CORE-032",
+      "artifacts/CORE-032/01/host-delegation.json"
+    ],
+    "R04": [
+      "CORE-037",
+      "artifacts/CORE-037/01/control-grants.json"
+    ],
+    "R05": [
+      "CORE-058",
+      "artifacts/CORE-058/01/notification-publication.json"
+    ],
+    "R06": [
+      "EXT-027",
+      "artifacts/EXT-027/01/subscription-deliveries.json"
+    ],
+    "R07": [
+      "EXT-028",
+      "artifacts/EXT-028/01/fetch-source.json"
+    ],
+    "R08": [
+      "EXT-030",
+      "artifacts/EXT-030/01/asr-source.json"
+    ],
+    "R09": [
+      "EXT-032",
+      "artifacts/EXT-032/01/sticker-effects.json"
+    ],
+    "R10": [
+      "EXT-039",
+      "artifacts/EXT-039/01/admin-session.json"
+    ],
+    "R11": [
+      "EXT-047",
+      "artifacts/EXT-047/01/external-consumer-ledger.json"
+    ],
+    "R12": [
+      "CORE-013",
+      "artifacts/CORE-013/01/social-parts.json"
+    ],
+    "R13": [
+      "CORE-038",
+      "artifacts/CORE-038/01/media-handle-bridge.json"
+    ],
+    "R14": [
+      "CORE-018",
+      "artifacts/CORE-018/01/schedule-occurrences.json"
+    ],
+    "R15": [
+      "CORE-017",
+      "artifacts/CORE-017/01/wait-match.json"
+    ],
+    "R16": [
+      "CORE-026",
+      "artifacts/CORE-026/01/fact-evidence-acl.json"
+    ],
+    "R17": [
+      "CORE-012",
+      "artifacts/CORE-012/01/main-wire.json"
+    ],
+    "R18": [
+      "EXT-037",
+      "artifacts/EXT-037/01/trace-erasure.json"
+    ],
+    "R19": [
+      "CORE-015",
+      "artifacts/CORE-015/01/tool-result-pages.json"
+    ],
+    "R20": [
+      "EXT-014",
+      "artifacts/EXT-014/01/computer-byte-cursors.json"
+    ],
+    "R21": [
+      "CORE-043",
+      "artifacts/CORE-043/01/handoff-rehearsal.json"
+    ],
+    "R22": [
+      "EXT-044",
+      "artifacts/EXT-044/01/desktop-package-matrix.json"
+    ],
+    "R23": [
+      "CORE-046",
+      "artifacts/CORE-046/01/tco-report.json"
+    ]
+  },
+  "coverage_rows_with_valid_task_ids": 216,
+  "status": "PASS"
+}

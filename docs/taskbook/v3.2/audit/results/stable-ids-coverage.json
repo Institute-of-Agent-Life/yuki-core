@@ -1,0 +1,88 @@
+{
+  "immediate_input_zip_sha256": "8e73bdf30fdf12ce56d0ae3aa1b96cc1015f078afb666cd92251fdf9754fc1a3",
+  "immediate_input_task_count": 126,
+  "original_v31_zip_sha256": "13686f69ab61ad6b83609054f41a3e385d334fa93554c4c2819386ef5b4de471",
+  "original_v31_card_count": 119,
+  "current_card_count": 126,
+  "lost_ids_from_v32": [],
+  "lost_ids_from_v31": [],
+  "new_since_v32": [
+    "CORE-058"
+  ],
+  "new_since_v31": [
+    "CORE-055",
+    "CORE-056",
+    "CORE-057",
+    "CORE-058",
+    "EXT-068",
+    "EXT-069",
+    "EXT-070"
+  ],
+  "coverage_rows_with_valid_task_ids": 216,
+  "evidence_containers": [
+    "upstream-connector.zip",
+    "upstream-headed.zip",
+    "upstream-integration.zip",
+    "upstream-native.zip",
+    "upstream-unit.zip",
+    "upstream-wheel.zip"
+  ],
+  "verified_complete_subtrees": {
+    "docs/plugin-development/": {
+      "git_tree": "1ea6f2a03a5a19922e7f824101390bd014eed9f3",
+      "files": 43,
+      "full_read_ledger": 43
+    },
+    "docs/emoji-system/": {
+      "git_tree": "a7a439d322896ae1ba0e3b7ac8e015a9c845349a",
+      "files": 2,
+      "full_read_ledger": 2
+    },
+    "docs/speech/": {
+      "git_tree": "551db205783b4f1342a0eb3f1dc3b3b4d20cf50c",
+      "files": 1,
+      "full_read_ledger": 1
+    },
+    "docs/deployment/": {
+      "git_tree": "983753a3ffe1742ac3d01e791bf8b8facbe5f61f",
+      "files": 3,
+      "full_read_ledger": 3
+    },
+    "docs/refactor/": {
+      "git_tree": "ef32ea8f204741f85f259d110881d400e29ee1af",
+      "files": 2,
+      "full_read_ledger": 2
+    }
+  },
+  "verified_complete_immediate_docs_upgrade_guides": {
+    "direct_docs_tree": "24c855d73fba9e43ed79f2b91a97b23e60611b46",
+    "files": 12,
+    "paths": [
+      "upgrade-3.8.0.md",
+      "upgrade-3.8.1.md",
+      "upgrade-3.8.2.md",
+      "upgrade-3.8.3.md",
+      "upgrade-3.8.4.md",
+      "upgrade-3.9.0.md",
+      "upgrade-4.0.0.en.md",
+      "upgrade-4.0.0.md",
+      "upgrade-code-deletion-20261023.en.md",
+      "upgrade-code-deletion-20261023.md",
+      "upgrade-message-identity-20261028.md",
+      "upgrade-model-config-20261031.md"
+    ]
+  },
+  "whole_source_inventory_verified": false,
+  "new_since_continuation": [],
+  "lost_ids_from_continuation": [],
+  "new_core_review_edges": [
+    "EXT-016 -> EXT-018"
+  ],
+  "new_core_review_inherited_inputs": [
+    "CORE-013:social-parts.json -> CORE-016",
+    "EXT-016:client-resync.json -> EXT-052"
+  ],
+  "removed_core_review_edges": [
+    "EXT-016 -> EXT-052"
+  ]
+}

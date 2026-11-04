@@ -1,0 +1,17 @@
+{
+  "tasks": 126,
+  "core": 58,
+  "extensions": 68,
+  "direct_edges": 274,
+  "cross_edges": 64,
+  "inherited_named_inputs": 87,
+  "waves": 24,
+  "B0_wave": 16,
+  "B0_ancestors": 27,
+  "capability_rows": 126,
+  "adversarial_gate_rows": 11,
+  "local_file_anchor_links": 1773,
+  "external_link_occurrences_not_network_tested": 424,
+  "product_tests_run": false,
+  "status": "PASS"
+}

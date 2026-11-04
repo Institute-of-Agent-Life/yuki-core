@@ -1,0 +1,270 @@
+{
+  "checked_public_then_normal": {
+    "call": "compact-real-send",
+    "original_parts": 6,
+    "steps": [
+      "normal",
+      "public_compact",
+      "normal"
+    ],
+    "evidence_path": "compact/2ac550f3da5337f39567d215a71fdf5f1b5d2107eadf7165dd1ac72c329c9fc7/attempt-rkay110c/evidence.json"
+  },
+  "CI_junit": [
+    {
+      "tests": "1185",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "1"
+    }
+  ],
+  "offline_config_fixture": {
+    "partial": {
+      "ok": false,
+      "revision": 4287562964656826,
+      "migrated": [
+        "embedding",
+        "vision",
+        "asr",
+        "search"
+      ],
+      "migrated_profiles": [
+        "main.legacy-agent"
+      ],
+      "apply_mode": "restart",
+      "consumed_env_fields": [],
+      "partial": true,
+      "error_category": "legacy_changed"
+    },
+    "retry": {
+      "ok": true,
+      "revision": 4287562964656826,
+      "migrated": [],
+      "migrated_profiles": [],
+      "apply_mode": "restart",
+      "consumed_env_fields": [],
+      "retired_overrides": 1
+    },
+    "user_edit_preserved": true
+  },
+  "offline_usage_fixture": {
+    "invocations": 6,
+    "successes": 5,
+    "failures": 1,
+    "prompt_tokens": 1010,
+    "completion_tokens": 87,
+    "total_tokens": 1044,
+    "cached_prompt_tokens": 77,
+    "cache_creation_input_tokens": 22,
+    "cache_creation_5m_input_tokens": 3,
+    "cache_creation_1h_input_tokens": 7,
+    "unknown_usage": 3,
+    "average_latency_seconds": 2.0,
+    "coverage": {
+      "prompt_tokens": 5,
+      "completion_tokens": 5,
+      "total_tokens": 4,
+      "cached_prompt_tokens": 5,
+      "cache_creation_input_tokens": 2,
+      "cache_creation_5m_input_tokens": 1,
+      "cache_creation_1h_input_tokens": 1
+    },
+    "cache_read": {
+      "reported_calls": 4,
+      "prompt_tokens": 110,
+      "cached_prompt_tokens": 47,
+      "ratio": 0.42727272727272725
+    }
+  },
+  "ci_sha": "9138a528872bb9775b9ac05ddb38b5c1de6d7df2",
+  "archive_hashes": {
+    "integration": "44ee180125e155fb7de2e2d06c4d59c4be3b62e514b11d71e9a4aebc23cb1189",
+    "wheel": "f8938d72c16806b9475cecdda727bc43965900a8df85d67ba1a05fb8e358dae6",
+    "connector": "979a2d14fb1886ead0e4db57b405b077f653b5aeb3c23f5cf8fa1d1bb7ab8ef9"
+  },
+  "integration_members": {
+    "compact": 295,
+    "connector-address": 11,
+    "integration.xml": 1,
+    "model-connections": 36,
+    "model-legacy": 20,
+    "model-usage": 12,
+    "provider-presets": 1,
+    "search-connection-mode": 20,
+    "tool-result-delivery": 51
+  },
+  "compact_cases": [
+    {
+      "case": "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-read_then_send]",
+      "sequence": [
+        "normal",
+        "public_compact",
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_delivery_e2e.py::test_manual_public_planning_failure_never_falls_back_to_private_execution",
+      "sequence": [
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_delivery_e2e.py::test_ordinary_compact_keeps_its_goal_beside_real_waiting_work",
+      "sequence": [
+        "normal",
+        "normal",
+        "normal",
+        "public_compact",
+        "normal",
+        "execution_compact",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[known-finish]",
+      "sequence": [
+        "normal",
+        "public_compact",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-batch]",
+      "sequence": [
+        "normal",
+        "public_compact",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_hard_capacity_preserves_paid_checkpoint_and_only_compacts_uncovered_source[uncovered_observed_prefix]",
+      "sequence": [
+        null,
+        null,
+        null
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_hard_capacity_preserves_paid_checkpoint_and_only_compacts_uncovered_source[checkpoint_cannot_fit]",
+      "sequence": [
+        null
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_ordinary_user_only_material_can_compact_without_claiming_tool_authority[plain-user]",
+      "sequence": [
+        null,
+        null
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_cold_host_portable_receipt_is_protected_during_hard_preparation[two-cold-host-in-initial-before-fresh-user]",
+      "sequence": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-p_refused]",
+      "sequence": [
+        "normal",
+        "normal",
+        "execution_compact",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_native_execution_compact_can_hand_over_to_newly_legal_public_compact",
+      "sequence": [
+        "normal",
+        "E",
+        "P",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-finish]",
+      "sequence": [
+        "normal",
+        "public_compact",
+        "normal"
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_ordinary_user_only_material_can_compact_without_claiming_tool_authority[user-supplied-kind]",
+      "sequence": [
+        null,
+        null
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_hard_capacity_preserves_paid_checkpoint_and_only_compacts_uncovered_source[uncovered_observed_user_prefix]",
+      "sequence": [
+        null,
+        null,
+        null
+      ],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_cold_host_portable_receipt_is_protected_during_hard_preparation[oversized-host-alone]",
+      "sequence": [],
+      "snapshot_count": 2
+    },
+    {
+      "case": "tests/integration/test_compact_hard_capacity.py::test_hard_capacity_preserves_paid_checkpoint_and_only_compacts_uncovered_source[checkpoint_blocks_remaining_source]",
+      "sequence": [
+        null
+      ],
+      "snapshot_count": 2
+    }
+  ],
+  "distinct_source_snapshots": {
+    "tests/integration/test_compact_delivery_e2e.py": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d",
+    "tests/support/compact_delivery_evidence.py": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6",
+    "tests/integration/test_compact_hard_capacity.py": "4bea6f23f508a20a352bbaa8b7c452f3d408fbdc06253be426a632a15a74c7d7"
+  },
+  "package_only_loc": {
+    "connector runtime": {
+      "files": 16,
+      "lines": 5693
+    },
+    "connector scripts": {
+      "files": 3,
+      "lines": 336
+    },
+    "connector tests": {
+      "files": 20,
+      "lines": 5930
+    },
+    "host runtime": {
+      "files": 679,
+      "lines": 179375
+    },
+    "plugin SDK": {
+      "files": 18,
+      "lines": 2147
+    }
+  },
+  "whole_repo_loc": null,
+  "whole_repo_doc_count": null,
+  "product_e2e_this_audit": false
+}
