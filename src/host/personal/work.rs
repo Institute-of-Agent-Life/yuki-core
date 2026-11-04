@@ -146,11 +146,13 @@ pub async fn project(conn: &mut SqliteConnection, who: &Principal, id: &str) -> 
     let updates: i64 = r.get("updated");
     let tools:i64=sqlx::query_scalar("SELECT count(*) FROM operations o JOIN work_runs r ON r.execution=o.namespace WHERE r.work=?").bind(id).fetch_one(&mut *conn).await?;
     let source = json!({"conversation_id":r.get::<&str,_>("entry"),"kind":if r.get::<&str,_>("scope")=="group"{"space"}else{"private"},"platform":r.get::<Option<String>,_>("platform"),"binding_id":r.get::<Option<String>,_>("actor_stage"),"space_id":r.get::<Option<String>,_>("space"),"display_name":r.get::<String,_>("display_name")});
-    let deliveries=sqlx::query("SELECT o.entry,o.echo_event,o.body FROM social_outbound o JOIN work_runs run ON run.execution=o.namespace WHERE run.work=? AND o.echo_event IS NOT NULL AND NOT o.recalled AND o.body!='{}' AND NOT EXISTS(SELECT 1 FROM invalidated_sources f WHERE f.source=o.echo_event OR f.source IN(SELECT event FROM main_dependencies WHERE execution=o.namespace)) ORDER BY o.id").bind(id).fetch_all(&mut *conn).await?;
+    let deliveries=sqlx::query("SELECT o.entry,o.event,o.body FROM personal_live_deliveries o JOIN work_runs run ON run.execution=o.namespace WHERE run.work=? ORDER BY o.id").bind(id).fetch_all(&mut *conn).await?;
     let mut results = Vec::new();
-    let question:Option<i64>=sqlx::query_scalar("SELECT o.echo_event FROM work_user_questions q JOIN social_outbound o ON o.id=q.outbound WHERE q.work=? AND o.echo_event IS NOT NULL").bind(id).fetch_optional(&mut *conn).await?;
+    let question:Option<i64>=sqlx::query_scalar("SELECT o.event FROM work_user_questions q JOIN personal_live_deliveries o ON o.id=q.outbound WHERE q.work=?").bind(id).fetch_optional(&mut *conn).await?;
     for row in deliveries {
-        results.push(json!({"conversation_id":row.get::<&str,_>("entry"),"event_id":row.get::<i64,_>("echo_event"),"text":crate::history::outbound_text(row.get("body"))?,"artifacts":[]}));
+        let event = row.get::<i64, _>("event");
+        let artifacts = super::artifacts::parts(conn, event).await?;
+        results.push(json!({"conversation_id":row.get::<&str,_>("entry"),"event_id":event,"text":crate::history::outbound_text(row.get("body"))?,"artifacts":artifacts}));
     }
     let waiting = question
         .and_then(|event| results.iter().find(|item| item["event_id"] == event))

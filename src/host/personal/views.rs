@@ -7,7 +7,7 @@ use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::{Value, json};
 use sqlx::{Row, SqliteConnection};
 async fn entry(conn: &mut SqliteConnection, who: &Principal, id: &str) -> Result<Value> {
-    let row=sqlx::query("SELECT e.id,e.actor_stage,a.platform,p.name,e.closed_at,coalesce(w.generation,1) AS generation,coalesce((SELECT max(id) FROM events WHERE entry_id=e.id AND json_extract(envelope,'$.kind')='message'),0) AS latest FROM entries e JOIN assignments s ON s.id=e.actor_stage JOIN accounts a ON a.id=s.account_id JOIN persons p ON p.id=s.original_person AND p.enabled LEFT JOIN main_windows w ON w.conversation=e.id WHERE e.id=? AND e.scope='private' AND coalesce(p.current_root,p.id)=? AND s.status='active' AND e.closed_at IS NULL").bind(id).bind(&who.root).fetch_optional(conn).await?.ok_or("not_found")?;
+    let row=sqlx::query("SELECT e.id,e.actor_stage,a.platform,p.name,e.closed_at,coalesce(w.generation,1) AS generation,coalesce((SELECT max(v.id) FROM events v LEFT JOIN personal_live_deliveries d ON d.event=v.id WHERE v.entry_id=e.id AND (d.id IS NOT NULL OR json_extract(v.envelope,'$.kind')='message') AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=v.id)),0) AS latest FROM entries e JOIN assignments s ON s.id=e.actor_stage JOIN accounts a ON a.id=s.account_id JOIN persons p ON p.id=s.original_person AND p.enabled LEFT JOIN main_windows w ON w.conversation=e.id WHERE e.id=? AND e.scope='private' AND coalesce(p.current_root,p.id)=? AND s.status='active' AND e.closed_at IS NULL").bind(id).bind(&who.root).fetch_optional(conn).await?.ok_or("not_found")?;
     Ok(
         json!({"conversation_id":row.get::<&str,_>("id"),"binding_id":row.get::<&str,_>("actor_stage"),"platform":row.get::<&str,_>("platform"),"display_name":row.get::<&str,_>("name"),"status":"active","generation":row.get::<i64,_>("generation"),"revision":row.get::<i64,_>("generation"),"latest_event_id":row.get::<i64,_>("latest")}),
     )
@@ -93,7 +93,7 @@ pub async fn events(
     if !(1..=100).contains(&limit) || after < 0 {
         return Err("invalid_page_size".into());
     }
-    let mut rows=sqlx::query("SELECT e.*,p.name FROM events e LEFT JOIN persons p ON p.id=e.raw_actor WHERE e.entry_id=?1 AND e.id>?2 AND (?3 IS NULL OR e.id<?3) AND json_extract(e.envelope,'$.kind')='message' AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=e.id) ORDER BY CASE WHEN ?3 IS NULL THEN e.id ELSE -e.id END LIMIT ?4").bind(id).bind(after).bind(before).bind(limit+1).fetch_all(&mut *conn).await?;
+    let mut rows=sqlx::query("SELECT e.*,p.name,d.body AS outbound_body,r.work AS outbound_work FROM events e LEFT JOIN persons p ON p.id=e.raw_actor LEFT JOIN personal_live_deliveries d ON d.event=e.id LEFT JOIN work_runs r ON r.execution=d.namespace WHERE e.entry_id=?1 AND e.id>?2 AND (?3 IS NULL OR e.id<?3) AND (d.id IS NOT NULL OR json_extract(e.envelope,'$.kind')='message') AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=e.id) ORDER BY CASE WHEN ?3 IS NULL THEN e.id ELSE -e.id END LIMIT ?4").bind(id).bind(after).bind(before).bind(limit+1).fetch_all(&mut *conn).await?;
     let more = rows.len() > limit as usize;
     rows.truncate(limit as usize);
     if before.is_some() {
@@ -102,14 +102,25 @@ pub async fn events(
     let mut items = Vec::new();
     for r in rows {
         let event: i64 = r.get("id");
-        let text = crate::runtime::main::event_text(r.get("envelope"))?;
+        let outbound = r.get::<Option<String>, _>("outbound_body");
+        let text = match &outbound {
+            Some(body) => crate::history::outbound_text(body)?,
+            None => crate::runtime::main::event_text(r.get("envelope"))?,
+        };
+        let work_ids: Vec<String> = r
+            .get::<Option<String>, _>("outbound_work")
+            .into_iter()
+            .collect();
         let ts = |ms: i64| {
             chrono::DateTime::from_timestamp_millis(ms)
                 .ok_or("invalid event clock")
                 .map(|v| v.to_rfc3339())
         };
         let observed = ts(r.get("observed_at"))?;
-        let attachments:Vec<_>=crate::media::display(conn,event).await?.into_iter().map(|a|json!({"attachment_index":a["attachment_index"],"segment_index":a["segment_index"],"kind":a["type"]})).collect();
+        let mut attachments:Vec<_>=crate::media::display(conn,event).await?.into_iter().map(|a|json!({"attachment_index":a["attachment_index"],"segment_index":a["segment_index"],"kind":a["type"]})).collect();
+        if outbound.is_some() {
+            attachments.extend(super::artifacts::parts(conn, event).await?);
+        }
         let transcripts: Vec<(i64, String)> = sqlx::query_as(
             "SELECT segment,text FROM history_transcripts WHERE source=? ORDER BY segment",
         )
@@ -117,7 +128,7 @@ pub async fn events(
         .fetch_all(&mut *conn)
         .await?;
         let asr:Vec<_>=transcripts.iter().map(|(segment,text)|json!({"segment_index":segment,"text":text,"source":"transcript"})).collect();
-        items.push(json!({"id":event,"event_id":event,"conversation_id":id,"event_kind":"message","origin":view["platform"],"direction":"incoming","text":text,"content":text,"binding_id":view["binding_id"],"platform":view["platform"],"author_kind":if r.get::<Option<String>,_>("raw_actor").is_some(){"person"}else{"bot"},"author_person_id":r.get::<Option<String>,_>("raw_actor"),"sender_display_name":r.get::<Option<String>,_>("name"),"attachments":attachments,"asr":asr,"observed_at":observed,"created_at":observed,"occurred_at":r.get::<Option<i64>,_>("occurred_at").map(ts).transpose()?,"work_ids":[]}));
+        items.push(json!({"id":event,"event_id":event,"conversation_id":id,"event_kind":"message","origin":view["platform"],"direction":if outbound.is_some(){"outbound"}else{"inbound"},"text":text,"content":text,"binding_id":view["binding_id"],"platform":view["platform"],"author_kind":if r.get::<Option<String>,_>("raw_actor").is_some(){"person"}else{"yuki"},"author_person_id":r.get::<Option<String>,_>("raw_actor"),"sender_display_name":r.get::<Option<String>,_>("name"),"attachments":attachments,"asr":asr,"observed_at":observed,"created_at":observed,"occurred_at":r.get::<Option<i64>,_>("occurred_at").map(ts).transpose()?,"work_ids":work_ids}));
     }
     Ok(
         json!({"items":items,"revision":view["revision"],"generation":view["generation"],"latest_event_id":view["latest_event_id"],"next_after":items.last().and_then(|x|x["event_id"].as_i64()).unwrap_or(after),"next_before":items.first().and_then(|x|x["event_id"].as_i64()),"has_more":more}),

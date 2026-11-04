@@ -109,3 +109,5 @@ CORE-033 候選已驗證，尚未發布。來源 `994aee20ced762d4132186144e718d
 | Linux arm64 | `artifacts/CORE-033/handoff-994aee20ced7/linux-arm64/candidate/yuki-personal-preview-994aee20ced7-linux-arm64.zip` | `91da3ff307e1f908e82ee00472c41d1c74ce9d2da998001e17ecaed483f8ce8c` |
 
 握手 revision 1、Host revision 2、個人方法組 revision 1。個人 schema SHA-256 `061b40a245ff7a75bc747684760d7964cae5fa7f685dab855ff96a5458682827`，組合 Host schema `9feab6196953ef66a04a745b801b2bf528564cfc0d9d0ff545a81e522624f42e`。Rust `1.0.0-alpha.3`、Python `1.0.0a3`。
+
+CORE-033 已補上 Client9 原檔目錄、依 `artifact_id + version` 下載及 Work 結果引用。Mac 與 HJW 各 256 項通過，來源 `6701c44804cfebf01bff4a98463265a538fcfba6c00ce8a52abb6b0d8d53cc38`，原件在 `artifacts/CORE-033/{mac-download-05,windows-download-01}/personal-handoff.json`。同一 Work 經兩台設備、換執行及冷啟動後仍交付原始位元；另一個 Work、錯版、未派發、未收到 ACK 與 forget 後的請求均拒絕。17 張相鄰卡的回歸見各卡 `personal-download-regression-01/`。前列 `994aee20ced7` 候選未包含這兩個下載路由，更新包另以新來源識別。

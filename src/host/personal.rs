@@ -1,3 +1,4 @@
+mod artifacts;
 mod credentials;
 mod domains;
 mod http;

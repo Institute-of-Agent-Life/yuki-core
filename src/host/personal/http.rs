@@ -372,6 +372,78 @@ async fn meta(State(store): State<Store>) -> Response {
         true,
     )
 }
+#[derive(Deserialize)]
+struct ArtifactList {
+    cursor: Option<String>,
+    limit: Option<usize>,
+    kind: Option<String>,
+}
+async fn artifacts(
+    State(s): State<Store>,
+    h: HeaderMap,
+    Query(q): Query<ArtifactList>,
+) -> Response {
+    reply(
+        async {
+            let mut tx = s.readers().begin().await?;
+            let who = credentials::authenticate(&mut tx, &bearer(&h)?, Purpose::Chat).await?;
+            super::artifacts::list(
+                &mut tx,
+                &who,
+                q.cursor.as_deref(),
+                q.limit.unwrap_or(50),
+                q.kind.as_deref().unwrap_or("all"),
+            )
+            .await
+        }
+        .await,
+        true,
+    )
+}
+#[derive(Deserialize)]
+struct Version {
+    version: String,
+}
+async fn download(
+    State(s): State<Store>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+    Query(q): Query<Version>,
+) -> Response {
+    let result = async {
+        let mut tx = s.readers().begin().await?;
+        let who = credentials::authenticate(&mut tx, &bearer(&h)?, Purpose::Chat).await?;
+        super::artifacts::download(&mut tx, &who, &id, &q.version).await
+    }
+    .await;
+    match result {
+        Err(e) => reply(Err(e), true),
+        Ok((name, data)) => {
+            let mut encoded = String::new();
+            for b in name.bytes() {
+                if b.is_ascii_alphanumeric() || b"-._~".contains(&b) {
+                    encoded.push(b as char);
+                } else {
+                    use std::fmt::Write;
+                    write!(encoded, "%{b:02X}").expect("write to String");
+                }
+            }
+            (
+                [
+                    ("content-type", "application/octet-stream".to_string()),
+                    ("etag", format!("\"{}\"", q.version)),
+                    ("x-yuki-sha256", q.version),
+                    (
+                        "content-disposition",
+                        format!("attachment; filename*=UTF-8''{encoded}"),
+                    ),
+                ],
+                data,
+            )
+                .into_response()
+        }
+    }
+}
 pub fn router(store: Store) -> Router {
     Router::new()
         .route("/client/v1/meta", get(meta))
@@ -388,6 +460,8 @@ pub fn router(store: Store) -> Router {
             "/client/v1/automations/{id}/actions/{action}",
             post(schedule),
         )
+        .route("/client/v1/artifacts", get(artifacts))
+        .route("/client/v1/artifacts/{id}", get(download))
         .route("/client/v1/me", get(me))
         .route("/client/v1/home", get(home))
         .route("/client/v1/conversations/{id}/events", get(events))
