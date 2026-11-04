@@ -7,13 +7,18 @@ static NEXT: AtomicU64 = AtomicU64::new(0);
 struct Temp(std::path::PathBuf);
 impl Temp {
     fn new() -> Self {
-        let path = std::env::temp_dir().join(format!(
-            "yuki-rust-writer-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::SeqCst)
-        ));
-        std::fs::create_dir(&path).unwrap();
-        Self(path)
+        loop {
+            let path = std::env::temp_dir().join(format!(
+                "yuki-rust-writer-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::SeqCst)
+            ));
+            match std::fs::create_dir(&path) {
+                Ok(()) => return Self(path),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(e) => panic!("create private writer test directory: {e}"),
+            }
+        }
     }
 }
 impl Drop for Temp {
