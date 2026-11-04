@@ -77,3 +77,18 @@ The stdio handshake preview ships an independently installable Rust crate,
 Python wheel, JSON Schema, method index and portable conformance peer. Build
 and compare it with `python ci/check.py CORE-031 --out artifacts/CORE-031/local`.
 See the [handshake contract](protocol/plugin/README.md).
+
+Schema 6 binds each model activation to its execution and frozen profile
+contract. The root reserves one request slot and the input estimate plus
+the output allowance in the transaction admitting a logical request.
+Reservations remain conservative across physical retries, cancellation and
+Work attachment. Actual usage and its field-level coverage are reported
+separately from those estimates. A missing charge stays unknown.
+
+The `operator model` boundary persists the original request bytes, grants a
+single physical dispatch, saves the returned body and ordered tool intents
+before pairing them, and recovers the original receipt on restart. A fresh
+owner treats dispatched attempts without a response as unknown. Only an
+explicit one-retry policy with a documented unbilled pre-model rejection can
+grant another attempt on the same logical request. Cancellation or an unknown
+attempt cannot create that permission.

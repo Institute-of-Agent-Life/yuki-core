@@ -13,6 +13,10 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Model {
+        #[command(subcommand)]
+        command: crate::model::attempt::Action,
+    },
     Effect {
         #[command(subcommand)]
         command: crate::runtime::effects::Action,
@@ -48,6 +52,9 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Model {
+        command: crate::model::attempt::Action,
+    },
     Effect {
         command: crate::runtime::effects::Action,
     },
@@ -107,6 +114,7 @@ async fn handle(
         Request::Ingress { command } => crate::ingress::admit::invoke(&store, command).await,
         Request::Qq { command } => qq.operator(command).await,
         Request::Effect { command } => crate::runtime::effects::invoke(&store, command).await,
+        Request::Model { command } => crate::model::attempt::invoke(&store, command).await,
         Request::GetLabel => store.label().await,
         Request::SetLabel { value } => store.write(Mutation::SetLabel(value)).await,
         Request::DatabaseInfo => store.database_info().await,
@@ -150,6 +158,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Ingress { command } => Request::Ingress { command },
         Action::Qq { command } => Request::Qq { command },
         Action::Effect { command } => Request::Effect { command },
+        Action::Model { command } => Request::Model { command },
         Action::GetLabel => Request::GetLabel,
         Action::SetLabel { value } => Request::SetLabel { value },
         Action::DatabaseInfo => Request::DatabaseInfo,

@@ -111,7 +111,7 @@ pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
 
 /// One SQLite snapshot covers permission and result retrieval. Dispatch also requires the
 /// original route and both original assignment stages to still be live.
-async fn authorize(
+pub(crate) async fn authorize(
     conn: &mut SqliteConnection,
     execution: &str,
     actor: &str,
@@ -119,7 +119,7 @@ async fn authorize(
 ) -> Result<String> {
     let row=sqlx::query("SELECT p.id AS original,(p.enabled AND root.enabled AND requester.enabled AND
         coalesce(requester.current_root,requester.id)=root.id) AS readable,
-        (route.closed_at IS NULL AND a.status='active' AND b.status='active') AS routable
+        (x.cancelled=0 AND route.closed_at IS NULL AND a.status='active' AND b.status='active') AS routable
         FROM executions x JOIN events e ON e.id=x.source JOIN entries route ON route.id=e.entry_id
         JOIN persons p ON p.id=x.original_actor JOIN persons root ON root.id=coalesce(p.current_root,p.id)
         JOIN persons requester ON requester.id=? JOIN assignments a ON a.id=e.actor_stage
@@ -134,7 +134,11 @@ async fn authorize(
     Ok(original)
 }
 
-async fn receipt(conn: &mut SqliteConnection, execution: &str, id: &str) -> Result<Value> {
+pub(crate) async fn receipt(
+    conn: &mut SqliteConnection,
+    execution: &str,
+    id: &str,
+) -> Result<Value> {
     let row = sqlx::query(
         "SELECT state,result,parent,ordinal FROM operations WHERE namespace=? AND operation_id=?",
     )
