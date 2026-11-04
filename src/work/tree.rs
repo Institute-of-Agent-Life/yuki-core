@@ -31,7 +31,7 @@ pub async fn scope(
         child,
     })
 }
-fn tick() -> Result<i64> {
+pub(super) fn tick() -> Result<i64> {
     Ok(i64::try_from(
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?

@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: [windows-latest, macos-15-intel, ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 45
     env:
       CARGO_HOME: ${{ github.workspace }}/.cache/cargo
     steps:
@@ -81,6 +81,8 @@ jobs:
         run: python ci/check.py CORE-016 --out artifacts/CORE-016/ci
       - name: Verify fact visibility independently of private evidence and correction receipts
         run: python ci/check.py CORE-026 --out artifacts/CORE-026/ci
+      - name: Replay timed, conversation and child wait boundaries
+        run: python ci/check.py CORE-017 --out artifacts/CORE-017/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -1,4 +1,5 @@
 mod domain;
+pub(crate) use domain::human_text as event_text;
 mod step;
 mod transport;
 use crate::{
@@ -175,11 +176,15 @@ pub enum Change {
     Operator(Action),
     Human(i64, i64),
     Defer(i64, i64),
+    Wait(String, i64),
     Prepare(String, String),
     Hold(String, String),
 }
 pub async fn apply(conn: &mut SqliteConnection, cfg: &Config, action: &Change) -> Result<Value> {
     match action {
+        Change::Wait(id, now) => Ok(serde_json::json!(
+            crate::work::wait::reconcile(conn, id, *now).await?
+        )),
         Change::Operator(cmd) => domain::operator(conn, cfg, cmd).await,
         Change::Human(event, now) => {
             domain::admit_human(conn, cfg, *event, *now).await?;
@@ -286,11 +291,20 @@ impl Runner {
 
     async fn tick(&mut self) -> Result<()> {
         let timestamp = now()?;
+        let waits:Vec<String>=sqlx::query_scalar("SELECT w.id FROM work_waits w JOIN work_nodes n ON n.id=w.work WHERE w.state='armed' AND n.goal IS NOT NULL AND NOT EXISTS(SELECT 1 FROM work_suspensions WHERE work=w.work) ORDER BY w.rowid").fetch_all(self.store.readers()).await?;
+        for wait in waits {
+            let mut read = self.store.readers().begin().await?;
+            let ready = crate::work::wait::ready(&mut read, &wait, timestamp).await?;
+            drop(read);
+            if ready {
+                let _ = write(&self.store, &self.cfg, Change::Wait(wait, timestamp)).await;
+            }
+        }
         let events:Vec<i64>=sqlx::query_scalar("SELECT s.event_id FROM accepted_sources s JOIN events e ON e.id=s.event_id JOIN entries d ON d.id=e.entry_id
             JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active'
             JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
             WHERE p.enabled AND r.enabled AND d.closed_at IS NULL AND NOT EXISTS(SELECT 1 FROM main_inputs WHERE event=s.event_id)
-            AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
+            AND NOT EXISTS(SELECT 1 FROM work_explicit_answers WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_wait_routed WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
             AND NOT EXISTS(SELECT 1 FROM executions x WHERE x.source=s.event_id AND (x.state!='pending' OR x.cancelled))
             AND NOT EXISTS(SELECT 1 FROM main_admission_delays WHERE event=s.event_id AND retry_after>?) ORDER BY s.event_id LIMIT 64").bind(timestamp).fetch_all(self.store.readers()).await?;
         for event in events {
@@ -317,8 +331,8 @@ impl Runner {
             }
         }
         let rows=sqlx::query("SELECT x.id,l.lane FROM executions x JOIN main_turns t ON t.execution=x.id JOIN main_work_lanes l ON l.execution=x.id WHERE x.state IN ('pending','running')
-          AND NOT x.cancelled AND t.ready_after<=? AND NOT EXISTS(SELECT 1 FROM main_turns prior JOIN executions p ON p.id=prior.execution JOIN main_work_lanes pl ON pl.execution=p.id
-          WHERE pl.lane=l.lane AND prior.rowid<t.rowid AND p.state IN ('pending','running') AND NOT p.cancelled) ORDER BY t.rowid LIMIT 32")
+          AND NOT x.cancelled AND NOT EXISTS(SELECT 1 FROM work_suspensions suspended WHERE suspended.work=x.work_id) AND t.ready_after<=? AND NOT EXISTS(SELECT 1 FROM main_turns prior JOIN executions p ON p.id=prior.execution JOIN main_work_lanes pl ON pl.execution=p.id
+          WHERE pl.lane=l.lane AND prior.rowid<t.rowid AND p.state IN ('pending','running') AND NOT p.cancelled AND NOT EXISTS(SELECT 1 FROM work_suspensions paused WHERE paused.work=p.work_id)) ORDER BY t.rowid LIMIT 32")
           .bind(timestamp).fetch_all(self.store.readers()).await?;
         for row in rows {
             let exec: String = row.try_get("id")?;
