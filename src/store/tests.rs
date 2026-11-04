@@ -220,3 +220,24 @@ async fn root_commit_hints_exclude_savepoint_release_and_rollback() {
     assert_eq!(store.label().await.unwrap()["value"], "committed");
     store.shutdown().await.unwrap();
 }
+
+pub(super) async fn ingress_barrier(phase: &str) {
+    if std::env::var("YUKI_INGRESS_TEST_PHASE").as_deref() == Ok(phase) {
+        std::fs::write(std::env::var_os("YUKI_INGRESS_TEST_MARKER").unwrap(), phase).unwrap();
+        tokio::time::sleep(Duration::from_secs(30)).await;
+        panic!("parent failed to terminate child at {phase} commit");
+    }
+}
+
+#[tokio::test]
+#[ignore = "launched and killed in both phases by the CORE-008 case"]
+async fn ingress_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_INGRESS_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let store = Store::open(&data).await.unwrap();
+    let frame = serde_json::from_str(&std::env::var("YUKI_INGRESS_TEST_FRAME").unwrap()).unwrap();
+    crate::ingress::admit::record(&store, frame, true)
+        .await
+        .unwrap();
+    panic!("an ACK was returned before the parent killed the child");
+}

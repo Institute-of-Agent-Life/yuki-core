@@ -55,6 +55,13 @@
       "timeout_seconds": 90,
       "rust": true,
       "capabilities": ["dated-assignment", "scoped-entry", "original-private-history"]
+    },
+    "CORE-008": {
+      "case": "tests/cases/CORE-008.py",
+      "artifact": "ingress-barriers.json",
+      "timeout_seconds": 150,
+      "rust": true,
+      "capabilities": ["recorded-ingress", "durable-admission", "unique-execution"]
     }
   }
 }

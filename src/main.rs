@@ -1,5 +1,6 @@
 mod config;
 mod identity;
+mod ingress;
 mod operator;
 mod store;
 

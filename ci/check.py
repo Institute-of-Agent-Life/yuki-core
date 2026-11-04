@@ -77,7 +77,7 @@ def main():
             stages = [
                 ("rust-format", ["cargo", "fmt", "--all", "--", "--check"]),
                 ("rust-clippy", ["cargo", "clippy", "--locked", "--offline", "--all-targets", "--", "-D", "warnings"]),
-                ("rust-writer-tests", ["cargo", "test", "--locked", "--offline", "--bin", "yuki-core", "--", "--nocapture"]),
+                ("rust-writer-tests", ["cargo", "test", "--locked", "--offline", "--bin", "yuki-core", "--message-format=json", "--", "--nocapture"]),
                 ("rust-build", ["cargo", "build", "--locked", "--offline", "--bin", "yuki-core"]),
             ]
             for name, stage in stages:
@@ -92,6 +92,12 @@ def main():
                                 "r01_unknown_close_stops_new_writers_while_reader_works",
                                 "root_commit_hints_exclude_savepoint_release_and_rollback"]
                     output = process.stdout.decode("utf-8", errors="replace")
+                    for line in output.splitlines():
+                        if not line.startswith('{"reason":"compiler-artifact"'):
+                            continue
+                        item = json.loads(line)
+                        if item.get("executable") and item["profile"]["test"] and item["target"]["name"] == "yuki-core":
+                            (out / "rust-test-executable.txt").write_text(item["executable"], encoding="utf-8")
                     manifest["rust_cases"] = {case: "test store::tests::" + case + " ... ok" in output
                                               for case in required}
                     if not all(manifest["rust_cases"].values()):
