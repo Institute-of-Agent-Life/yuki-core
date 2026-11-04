@@ -59,6 +59,8 @@ jobs:
         run: python ci/check.py CORE-010 --out artifacts/CORE-010/ci
       - name: Install the handshake distributions and test bidirectional stdio peers
         run: python ci/check.py CORE-031 --out artifacts/CORE-031/ci
+      - name: Race logical reservations and recover physical model attempts
+        run: python ci/check.py CORE-011 --out artifacts/CORE-011/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

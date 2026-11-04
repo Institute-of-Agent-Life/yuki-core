@@ -82,6 +82,13 @@
       "artifact": "sdk-crosswire.json",
       "timeout_seconds": 300,
       "capabilities": ["handshake-preview", "python-sdk", "rust-sdk", "stdio-conformance-peer"]
+    },
+    "CORE-011": {
+      "case": "tests/cases/CORE-011.py",
+      "artifact": "attempts-and-budget.json",
+      "timeout_seconds": 120,
+      "rust": true,
+      "capabilities": ["logical-root-reservation", "physical-attempt-accounting", "paid-response-recovery"]
     }
   }
 }

@@ -2,6 +2,7 @@ mod config;
 mod gateway;
 mod identity;
 mod ingress;
+mod model;
 mod operator;
 mod runtime;
 mod store;

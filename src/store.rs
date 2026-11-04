@@ -56,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Model(Box<crate::model::attempt::Action>),
     Effect(crate::runtime::effects::Action),
     ObserveQqAccount(String, String),
     Ingress(Box<crate::ingress::admit::Admission>),
@@ -147,6 +148,9 @@ impl Driver for SqliteDriver {
             }
             Mutation::Effect(action) => {
                 return crate::runtime::effects::apply(self.connection(), action).await;
+            }
+            Mutation::Model(action) => {
+                return crate::model::attempt::apply(self.connection(), action).await;
             }
             Mutation::SetLabel(value) => value.as_str(),
             #[cfg(test)]
@@ -240,10 +244,9 @@ impl Store {
             return Err("database missing; use init/migrate".into());
         }
         bootstrap(data).await?;
-        Ok(Self::start(
-            SqliteDriver::open(data).await?,
-            read_pool(data).await?,
-        ))
+        let mut driver = SqliteDriver::open(data).await?;
+        crate::model::attempt::recover_unanswered(driver.connection()).await?;
+        Ok(Self::start(driver, read_pool(data).await?))
     }
     fn start(mut driver: impl Driver, readers: SqlitePool) -> Self {
         let (commands, mut queue) = mpsc::channel(64);
