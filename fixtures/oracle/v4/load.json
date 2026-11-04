@@ -1,0 +1,123 @@
+{
+  "concurrency": 1,
+  "elapsed_seconds": 203.20563600002788,
+  "exit_code": 0,
+  "junit": {
+    "cases": [
+      {
+        "classname": "",
+        "name": "test_queued_inputs",
+        "time": "167.684"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[0]",
+        "time": "1.682"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[1]",
+        "time": "1.675"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[2]",
+        "time": "1.761"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[3]",
+        "time": "1.726"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[4]",
+        "time": "1.760"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[5]",
+        "time": "1.727"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[6]",
+        "time": "1.805"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[7]",
+        "time": "1.719"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[8]",
+        "time": "1.691"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[9]",
+        "time": "1.678"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[10]",
+        "time": "1.784"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[11]",
+        "time": "1.699"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[12]",
+        "time": "1.743"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[13]",
+        "time": "1.717"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[14]",
+        "time": "1.731"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[15]",
+        "time": "1.733"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[16]",
+        "time": "1.669"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[17]",
+        "time": "1.681"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[18]",
+        "time": "1.730"
+      },
+      {
+        "classname": "",
+        "name": "test_long_work[19]",
+        "time": "1.680"
+      }
+    ],
+    "original_sha256": "1048af4248942e283d583c086fd72149f5a059bfffd7922a239f0761f5be9354"
+  },
+  "line": "A",
+  "model": "v4 FakeLLMProvider",
+  "paid_calls": 0,
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "process_cpu_seconds": 185.445007,
+  "seed": 329,
+  "smoke": false,
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd"
+}

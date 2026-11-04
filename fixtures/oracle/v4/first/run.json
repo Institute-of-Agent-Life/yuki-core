@@ -1,0 +1,98 @@
+{
+  "compile_options": [
+    "ATOMIC_INTRINSICS=1",
+    "COMPILER=clang-14.0.6",
+    "DEFAULT_AUTOVACUUM",
+    "DEFAULT_CACHE_SIZE=-2000",
+    "DEFAULT_FILE_FORMAT=4",
+    "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+    "DEFAULT_MMAP_SIZE=0",
+    "DEFAULT_PAGE_SIZE=4096",
+    "DEFAULT_PCACHE_INITSZ=20",
+    "DEFAULT_RECURSIVE_TRIGGERS",
+    "DEFAULT_SECTOR_SIZE=4096",
+    "DEFAULT_SYNCHRONOUS=2",
+    "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+    "DEFAULT_WAL_SYNCHRONOUS=2",
+    "DEFAULT_WORKER_THREADS=0",
+    "DIRECT_OVERFLOW_READ",
+    "ENABLE_COLUMN_METADATA",
+    "ENABLE_DBSTAT_VTAB",
+    "ENABLE_FTS3",
+    "ENABLE_FTS3_TOKENIZER",
+    "ENABLE_FTS4",
+    "ENABLE_FTS5",
+    "ENABLE_GEOPOLY",
+    "ENABLE_MATH_FUNCTIONS",
+    "ENABLE_RTREE",
+    "ENABLE_UNLOCK_NOTIFY",
+    "MALLOC_SOFT_LIMIT=1024",
+    "MAX_ATTACHED=10",
+    "MAX_COLUMN=2000",
+    "MAX_COMPOUND_SELECT=500",
+    "MAX_DEFAULT_PAGE_SIZE=8192",
+    "MAX_EXPR_DEPTH=10000",
+    "MAX_FUNCTION_ARG=127",
+    "MAX_LENGTH=1000000000",
+    "MAX_LIKE_PATTERN_LENGTH=50000",
+    "MAX_MMAP_SIZE=0x7fff0000",
+    "MAX_PAGE_COUNT=0xfffffffe",
+    "MAX_PAGE_SIZE=65536",
+    "MAX_SQL_LENGTH=1000000000",
+    "MAX_TRIGGER_DEPTH=1000",
+    "MAX_VARIABLE_NUMBER=250000",
+    "MAX_VDBE_OP=250000000",
+    "MAX_WORKER_THREADS=8",
+    "MUTEX_PTHREADS",
+    "SECURE_DELETE",
+    "SYSTEM_MALLOC",
+    "TEMP_STORE=1",
+    "THREADSAFE=1"
+  ],
+  "junit": {
+    "cases": [
+      {
+        "classname": "tests.integration.test_compact_delivery_e2e",
+        "name": "test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-batch]",
+        "time": "0.851"
+      },
+      {
+        "classname": "tests.integration.test_compact_hard_capacity",
+        "name": "test_native_execution_compact_can_hand_over_to_newly_legal_public_compact",
+        "time": "0.297"
+      },
+      {
+        "classname": "tests.integration.test_native_social_delivery",
+        "name": "test_qq_confirmed_file_is_not_reuploaded_when_caption_fails[timeout]",
+        "time": "0.079"
+      },
+      {
+        "classname": "tests.integration.test_client_continuation",
+        "name": "test_original_work_continues_across_devices_tools_and_two_cold_runtimes[qq]",
+        "time": "1.788"
+      },
+      {
+        "classname": "packages.yuki-agent-connector.tests.test_journal_connector",
+        "name": "test_pipeline_sends_backlog_before_ack_and_replays_only_unacked_sequence",
+        "time": "0.019"
+      }
+    ],
+    "original_sha256": "6deb30ec3dc9ca6a1a853f54ea0af665db7599004f25e7acfea1638aac75a746"
+  },
+  "nodeids": {
+    "app_work": "tests/integration/test_client_continuation.py::test_original_work_continues_across_devices_tools_and_two_cold_runtimes[qq]",
+    "next_main": "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-batch]",
+    "partial": "tests/integration/test_native_social_delivery.py::test_qq_confirmed_file_is_not_reuploaded_when_caption_fails[timeout]",
+    "signature": "tests/integration/test_compact_hard_capacity.py::test_native_execution_compact_can_hand_over_to_newly_legal_public_compact",
+    "wire4": "packages/yuki-agent-connector/tests/test_journal_connector.py::test_pipeline_sends_backlog_before_ack_and_replays_only_unacked_sequence"
+  },
+  "python": "3.12.7",
+  "raw_sha256": "1f542daf916234e863199b62dff3ec4afb265f020d31f37e9fbaffa84d3d1634",
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "sqlite": "3.45.3",
+  "status": "verified",
+  "tree": "c1885cc75e3273aea6f4ed4e994b762b0cdfba6e",
+  "uv_lock_sha256": "d5c3aa41335d2ad701b7309ff36e8e84ecd47319266ce996d2db1bc1f24b1897",
+  "vec1": "version 0.8 (NEON, multi-threaded)",
+  "vec1_sha256": "106f708739738ec8bace8d853d3f336e5532c11e7180824dab13c756eeb5d4cc"
+}
