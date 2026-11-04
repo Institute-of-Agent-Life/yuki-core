@@ -1,0 +1,16 @@
+{
+  "oracle": "v4-original.json",
+  "scope": "offline Messages compatibility, source policies fixed separately from provider availability",
+  "reference": [
+    "https://platform.claude.com/docs/en/build-with-claude/thinking-tool-workflows",
+    "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+  ],
+  "normal_sequence": ["pay original once", "signed blocks, get and put", "pair actual ordered receipts by tool_use_id", "replay byte-equivalent block values", "one final private text"],
+  "fault_sequences": [
+    "logical named or required with thinking on projects to auto; wrong, absent or repeated emit_result keeps actual usage without default repair",
+    "pause_turn retains the original server_tool_use; follow-up uses a new logical reservation in the same root",
+    "server result error pairs only to its server id, never invokes local tools",
+    "incomplete or duplicate local tool call preserves original attempt without dispatch",
+    "failed or unknown local receipt yields is_error with original ID"
+  ]
+}

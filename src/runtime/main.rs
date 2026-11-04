@@ -28,6 +28,10 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_effort: Option<String>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub messages_thinking: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_budget: Option<i64>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub native_web_search: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
@@ -57,6 +61,17 @@ impl Config {
         )
     }
     pub fn validate(&self) -> Result<()> {
+        if (self.messages_thinking || self.thinking_budget.is_some())
+            && !self.protocol.is_messages()
+        {
+            return Err("Messages thinking profile requires Messages protocol".into());
+        }
+        if self
+            .thinking_budget
+            .is_some_and(|n| n < 1024 || n >= self.max_output || self.reasoning_effort.is_some())
+        {
+            return Err("Messages manual budget must fit below max tokens and cannot specify adaptive effort".into());
+        }
         if self
             .result_page_budget
             .is_some_and(|b| !(512..=32000).contains(&b))
