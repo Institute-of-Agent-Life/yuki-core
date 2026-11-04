@@ -25,7 +25,11 @@ class Recorder:
                     "api_key": "x-api-key" in self.headers,
                     "bearer": "Authorization" in self.headers,
                 })
+                if "x-goog-api-key" in self.headers:
+                    recorder.header_shapes[-1]["google_key"] = True
+                status = 200
                 if self.path == "/binding":
+                    status = binding_status
                     call = json.loads(raw)
                     recorder.deliveries.append(call)
                     body, missing = (
@@ -38,13 +42,15 @@ class Recorder:
                 else:
                     answer = queue.Queue()
                     recorder.wires.put((self.path, raw, answer))
-                    body, missing = answer.get(timeout=25)
+                    result = answer.get(timeout=25)
+                    body, missing = result[:2]
+                    if len(result)==3: status=result[2]
                 raw = (
                     body
                     if isinstance(body, bytes)
                     else json.dumps(body, ensure_ascii=False).encode()
                 )
-                self.send_response(binding_status if self.path == "/binding" else 200)
+                self.send_response(status)
                 self.send_header(
                     "Content-Type",
                     "text/event-stream"
