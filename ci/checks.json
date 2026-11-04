@@ -23,6 +23,12 @@
       "timeout_seconds": 90,
       "capabilities": ["read-only-v4-inventory", "wal-snapshot", "owner-file-closure"]
     },
+    "CORE-004": {
+      "case": "tests/cases/CORE-004.py",
+      "artifact": "qq-key-decision.json",
+      "timeout_seconds": 30,
+      "capabilities": ["qq-deployment-key-decision", "single-designated-ingress"]
+    },
     "CORE-005": {
       "case": "tests/cases/CORE-005.py",
       "artifact": "owner-probes.json",

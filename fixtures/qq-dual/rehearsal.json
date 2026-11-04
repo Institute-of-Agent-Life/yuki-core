@@ -1,0 +1,167 @@
+{
+  "capture_image_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "kind": "synthetic",
+  "observations": [
+    {
+      "occurrence": "first",
+      "packet": {
+        "group_id": "space-1",
+        "message": [
+          {
+            "data": {
+              "qq": "bot-B"
+            },
+            "type": "at"
+          },
+          {
+            "data": {
+              "text": "same synthetic words"
+            },
+            "type": "text"
+          }
+        ],
+        "message_id": 11,
+        "message_seq": 101,
+        "message_type": "group",
+        "post_type": "message",
+        "self_id": "bot-A",
+        "time": 1700000000,
+        "topic_id": "topic-1",
+        "user_id": "member-X"
+      },
+      "session": "A1"
+    },
+    {
+      "occurrence": "second",
+      "packet": {
+        "group_id": "space-1",
+        "message": [
+          {
+            "data": {
+              "qq": "bot-B"
+            },
+            "type": "at"
+          },
+          {
+            "data": {
+              "text": "same synthetic words"
+            },
+            "type": "text"
+          }
+        ],
+        "message_id": 12,
+        "message_seq": 102,
+        "message_type": "group",
+        "post_type": "message",
+        "self_id": "bot-A",
+        "time": 1700000000,
+        "topic_id": "topic-1",
+        "user_id": "member-X"
+      },
+      "session": "A1"
+    },
+    {
+      "occurrence": "second",
+      "packet": {
+        "group_id": "space-1",
+        "message": [
+          {
+            "data": {
+              "qq": "bot-B"
+            },
+            "type": "at"
+          },
+          {
+            "data": {
+              "text": "same synthetic words"
+            },
+            "type": "text"
+          }
+        ],
+        "message_id": 52,
+        "message_seq": 102,
+        "message_type": "group",
+        "post_type": "message",
+        "self_id": "bot-B",
+        "time": 1700000000,
+        "topic_id": "topic-1",
+        "user_id": "member-X"
+      },
+      "session": "B1"
+    },
+    {
+      "occurrence": "first",
+      "packet": {
+        "group_id": "space-1",
+        "message": [
+          {
+            "data": {
+              "qq": "bot-B"
+            },
+            "type": "at"
+          },
+          {
+            "data": {
+              "text": "same synthetic words"
+            },
+            "type": "text"
+          }
+        ],
+        "message_id": 51,
+        "message_seq": 101,
+        "message_type": "group",
+        "post_type": "message",
+        "self_id": "bot-B",
+        "time": 1700000000,
+        "topic_id": "topic-1",
+        "user_id": "member-X"
+      },
+      "session": "B1"
+    },
+    {
+      "occurrence": "first",
+      "packet": {
+        "group_id": "space-1",
+        "message": [
+          {
+            "data": {
+              "qq": "bot-B"
+            },
+            "type": "at"
+          },
+          {
+            "data": {
+              "text": "same synthetic words"
+            },
+            "type": "text"
+          }
+        ],
+        "message_id": 11,
+        "message_seq": 101,
+        "message_type": "group",
+        "post_type": "message",
+        "self_id": "bot-A",
+        "time": 1700000000,
+        "topic_id": "topic-1",
+        "user_id": "member-X"
+      },
+      "session": "A2"
+    },
+    {
+      "packet": {
+        "group_id": "space-1",
+        "message": [],
+        "message_id": 62,
+        "message_seq": 103,
+        "message_type": "group",
+        "post_type": "message_sent",
+        "self_id": "bot-B",
+        "time": 1700000001,
+        "user_id": "bot-B"
+      },
+      "session": "B1"
+    }
+  ],
+  "sequence_field": "message_seq",
+  "target_image_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+}

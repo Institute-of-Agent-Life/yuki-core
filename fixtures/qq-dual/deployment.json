@@ -1,0 +1,7 @@
+{
+  "capture_image_digest": null,
+  "kind": "deployment_inventory",
+  "observation": "Windows QQ process present; no paired, deidentified adapter capture or target image digest supplied.",
+  "observations": [],
+  "target_image_digest": null
+}
