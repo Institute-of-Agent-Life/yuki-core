@@ -95,3 +95,5 @@ CORE-022 已接入 wait 分支 `03a52e5` 的搜尋整合。Compact 與搜尋回�
 聯絡／對話目錄已與 main 的 Work `0261764` 整合。原生宣告同時保留兩組入口，Mac CORE-014 與 CORE-016 回歸通過，見 `artifacts/CORE-014/work-main-integration-01/`、`artifacts/CORE-016/contacts-main-integration-01/`。PR #41 等最新三平台 CI。
 
 CORE-014 聯絡人分支已整合 main `3867548` 的等待、Compact 與 facts。CORE-014、022、026 分別通過 `compact-main-integration-01/`、`contacts-main-integration-01/`、`contacts-main-integration-01/`。原聯絡人工具與 facts 宣告均保留，PR #41 等此整合版本 CI。
+
+PR #41 整合來源 `2eba72c` 的 Linux CI 在 CORE-024 的 Claude 宣告 fixture 等不到 HTTP。沿用已在排程分支驗過的 400,000 輸入額度，使新增工具 schema 能進入宣告檢查；原額度耗盡反例維持並通過。Mac CORE-024 `contacts-declaration-budget-01/` 全部通過。原 CI ZIP SHA-256 `e0a39748bda9960361e363b2dd66616d092ddd6eea5db2397a9655b5272994d4` 保留於本地診斷。
