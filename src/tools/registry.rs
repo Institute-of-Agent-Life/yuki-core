@@ -65,6 +65,9 @@ pub fn builtin(name: &str) -> Option<Tool> {
     if let Some(t) = crate::history::query::contacts::declaration(name) {
         return Some(t);
     }
+    if name == "web_search" {
+        return Some(crate::model::search::declaration());
+    }
     let target = json!({"type":"string","minLength":1});
     let (description, schema, parallel_read, cacheable, code_direct) = match name {
         "get" => (
@@ -290,6 +293,9 @@ pub async fn pinned(
             });
             tools.push(tool);
         }
+    }
+    if cfg.bridge_search {
+        tools.push(crate::model::search::declaration());
     }
     let manifest = Manifest::freeze(tools)?;
     let rev = manifest.revision()?;
