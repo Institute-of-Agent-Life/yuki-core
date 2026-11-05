@@ -40,7 +40,7 @@ def cuts(ctx, sdk):
                 _,q=owner.wire(model)
                 reply(q,calls=[call("accept","task_control",{"action":"accept","goal":"original VM recovery"})])
                 _,q=owner.wire(model)
-                reply(q,calls=[call("compose","code_a",{"steps":[{"name":"send","arguments":{"text":"same original arguments"}} for _ in range(2)]})])
+                reply(q,calls=[call("compose","code_a",{"steps":[{"name":"send","arguments":{"text":"same original arguments"},"feed_index":0,"after_feed":0} for _ in range(2)]})])
                 death.result()
             prior=owner.rows("SELECT ordinal,operation,feed_index,engine_call_id,snapshot,fed_snapshot FROM code_children ORDER BY ordinal")
             ctx.equal("original first child persisted at "+phase,len(prior),1)
@@ -108,7 +108,7 @@ def run(ctx):
             _,q = owner.wire(model)
             reply(q,calls=[call('accept','task_control',{'action':'accept','goal':'original Code Work'})])
             _,q = owner.wire(model)
-            steps = [{'name':'send','arguments':{'text':'same original arguments'}} for _ in range(2)]
+            steps = [{'name':'send','arguments':{'text':'same original arguments'},'feed_index':0,'after_feed':0} for _ in range(2)]
             reply(q,calls=[call('compose','code_a',{'steps':steps})])
             body,q = owner.wire(model)
             ctx.write('code-first-next-wire.json',body)
@@ -119,6 +119,8 @@ def run(ctx):
             children = owner.rows('SELECT ordinal,operation,feed_index,engine_call_id,fed_snapshot FROM code_children ORDER BY ordinal')
             ctx.equal('same arguments have two original business children',len(children),2)
             ctx.check('child keys differ by ordinal',children[0][1]!=children[1][1])
+            ctx.equal('same program feed retains distinct native calls',[(c[2],c[3]) for c in children],[(0,'engine-0'),(0,'engine-1')])
+            ctx.equal('same-feed acknowledgements preserve native feed index',owner.rows('SELECT fed_feed_index FROM code_children ORDER BY ordinal'),[(0,),(0,)])
             ctx.equal('two real physical effects',len(model.deliveries),2)
             ctx.equal('original root charges children and excludes parent',owner.rows('SELECT used_calls FROM root_tool_budgets'),[(2,)])
             ctx.equal('code parent and lifecycle are zero charged',owner.rows("SELECT charged FROM tool_charges c JOIN operations o ON o.namespace=c.execution AND o.operation_id=c.operation WHERE o.target IN('task_control','code_a') ORDER BY c.rowid"),[(0,),(0,)])
