@@ -105,6 +105,8 @@ jobs:
         run: python ci/check.py CORE-033 --out artifacts/CORE-033/ci
       - name: Verify Person source closure, cold cleanup and retained costs
         run: python ci/check.py CORE-030 --out artifacts/CORE-030/ci
+      - name: Verify native search proof, budget and cache on physical HTTP
+        run: python ci/check.py CORE-024 --out artifacts/CORE-024/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
