@@ -33,6 +33,8 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           cargo fetch --locked
           cargo fetch --locked --manifest-path sdk/rust/Cargo.toml
+      - name: Recover isolated plugin sessions with original paid receipts
+        run: python ci/check.py CORE-051 --out artifacts/CORE-051/ci
       - name: Verify scoped maintenance and original paid review results
         run: python ci/check.py CORE-035 --out artifacts/CORE-035/ci
       - name: Verify original human promotion and scene-bound SELF feedback

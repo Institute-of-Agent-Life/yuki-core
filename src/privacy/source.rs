@@ -21,7 +21,7 @@ pub async fn execution_erased(
     {
         return Ok(true);
     }
-    Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=?)")
+    Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=?1) OR EXISTS(SELECT 1 FROM plugin_session_redactions WHERE execution=?1)")
       .bind(exec).fetch_one(conn).await?)
 }
 async fn check(conn: &mut SqliteConnection, owner: &str, source: i64) -> Result<()> {
@@ -119,7 +119,7 @@ pub async fn late_attempt(
     usage: &str,
 ) -> Result<Option<Value>> {
     let row=sqlx::query("SELECT t.state,t.status_code,t.usage_json,
-        EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.source OR source IN(SELECT event FROM main_dependencies WHERE execution=e.id)) AS revoked FROM model_attempts t
+        EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.source OR source IN(SELECT event FROM main_dependencies WHERE execution=e.id)) OR EXISTS(SELECT 1 FROM plugin_session_redactions WHERE execution=e.id) AS revoked FROM model_attempts t
         JOIN model_requests r ON r.id=t.logical JOIN activations a ON a.id=r.activation
         JOIN executions e ON e.id=a.execution WHERE t.id=?").bind(attempt).fetch_one(&mut *conn).await?;
     if !row.try_get::<bool, _>("revoked")? {
@@ -161,6 +161,7 @@ pub async fn late_attempt(
 }
 
 pub async fn scrub(conn: &mut SqliteConnection, event: i64) -> Result<()> {
+    crate::host::plugin_sessions::scrub_inactive(conn).await?;
     crate::social::send::erase(conn, event).await?;
     crate::history::query::scrub(conn, event).await?;
     sqlx::query("UPDATE events SET envelope='{}',mentions='[]' WHERE id=?")

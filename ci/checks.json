@@ -5,6 +5,13 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-051": {
+      "case": "tests/cases/CORE-051.py",
+      "artifact": "isolated-session-replay.json",
+      "timeout_seconds": 420,
+      "rust": true,
+      "capabilities": ["isolated-plugin-sessions", "original-paid-session-recovery", "session-source-erasure"]
+    },
     "CORE-035": {
       "case": "tests/cases/CORE-035.py",
       "artifact": "maintenance-grants.json",

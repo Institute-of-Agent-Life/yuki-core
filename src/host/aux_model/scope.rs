@@ -7,14 +7,14 @@ use crate::{
 use serde_json::Value;
 use sqlx::{Row, SqliteConnection};
 
-pub(super) struct Origin {
+pub(in crate::host) struct Origin {
     pub original: String,
-    pub entry: String,
+    pub entry: Option<String>,
     pub parent: Option<String>,
     pub event: Option<i64>,
 }
 
-pub(super) async fn route(
+pub(in crate::host) async fn route(
     db: &mut SqliteConnection,
     plugin: &str,
     name: &str,
@@ -36,7 +36,37 @@ pub(super) async fn route(
     Ok((row.get("revision"), route))
 }
 
-pub(super) async fn resolve(
+pub(in crate::host) async fn resolve(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    generation: &str,
+    input: &Value,
+    route_name: &str,
+    route: &Route,
+    new_request: bool,
+) -> Result<Origin> {
+    if let Some(turn) = input["session"].as_str() {
+        if !route.origins.contains("session") {
+            return Err("route excludes isolated sessions".into());
+        }
+        return super::super::plugin_sessions::resolve_origin(
+            db, plugin, generation, turn, route_name,
+        )
+        .await;
+    }
+    resolve_non_session(
+        db,
+        plugin,
+        generation,
+        input,
+        route_name,
+        route,
+        new_request,
+    )
+    .await
+}
+
+pub(in crate::host) async fn resolve_non_session(
     db: &mut SqliteConnection,
     plugin: &str,
     generation: &str,
@@ -110,7 +140,7 @@ pub(super) async fn resolve(
     }
     Ok(Origin {
         original: input.to_string(),
-        entry,
+        entry: Some(entry),
         parent,
         event,
     })

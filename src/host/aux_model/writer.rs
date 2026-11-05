@@ -78,6 +78,10 @@ async fn request(
         messages.push(json!({"role":"system","content":content}));
     }
     messages.push(json!({"role":"user","content":input}));
+    if let Some(turn) = params["origin"]["session"].as_str() {
+        messages = super::super::plugin_sessions::model_input(db, plugin, generation, turn, params)
+            .await?;
+    }
     let profile = &route.profile;
     let mut layout = json!({"model":profile.model,"max_tokens":profile.max_output,"stream":false,"messages":messages});
     chat::configure(&mut layout, task.as_ref(), vec![]);
@@ -99,6 +103,9 @@ async fn request(
     }
     let raw = body.to_string();
     let exec = scope::execution(db, plugin, &origin, &route).await?;
+    if let Some(turn) = params["origin"]["session"].as_str() {
+        super::super::plugin_sessions::bind_execution(db, plugin, turn, &exec).await?;
+    }
     for reference in params["sources"].as_array().into_iter().flatten() {
         let event = reference.as_i64().ok_or("invalid declared source")?;
         let allowed: bool = sqlx::query_scalar(
@@ -339,6 +346,9 @@ async fn result(
     .await?;
     let id = text(params, "request")?;
     let row = load(db, plugin, id).await?;
+    if page && serde_json::from_str::<Value>(row.get("origin"))?["session"].is_string() {
+        return Err("isolated transcript content requires its original session scope".into());
+    }
     let erased = source::execution_erased(db, row.get("execution"), None).await?;
     let route = if erased {
         None
@@ -422,16 +432,36 @@ pub(in crate::host) async fn structured_receipt(
     generation: &str,
     id: &str,
 ) -> Result<Value> {
+    decoded_receipt(db, plugin, generation, id, true).await
+}
+pub(in crate::host) async fn visible_receipt(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    generation: &str,
+    id: &str,
+) -> Result<Value> {
+    decoded_receipt(db, plugin, generation, id, false).await
+}
+async fn decoded_receipt(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    generation: &str,
+    id: &str,
+    structured: bool,
+) -> Result<Value> {
     super::super::domain::active(db, plugin, generation, "llm.result").await?;
     let row = load(db, plugin, id).await?;
     if source::execution_erased(db, row.get("execution"), None).await? {
         return Err("original paid sources erased".into());
     }
     let route = authorized_route(db, &row, plugin, generation, false).await?;
-    let task: chat::Task = serde_json::from_str(
-        row.get::<Option<&str>, _>("task")
-            .ok_or("structured paid result required")?,
-    )?;
+    let task: Option<chat::Task> = row
+        .get::<Option<&str>, _>("task")
+        .map(serde_json::from_str)
+        .transpose()?;
+    if structured && task.is_none() {
+        return Err("structured paid result required".into());
+    }
     let response:String=sqlx::query_scalar("SELECT response FROM model_attempts WHERE logical=? AND state IN('response','paired') ORDER BY ordinal DESC LIMIT 1")
         .bind(row.get::<&str,_>("logical")).fetch_one(&mut *db).await?;
     let request: String = sqlx::query_scalar("SELECT request_json FROM model_requests WHERE id=?")
@@ -440,11 +470,16 @@ pub(in crate::host) async fn structured_receipt(
         .await?;
     let decoded = route.profile.protocol.decode(
         &response,
-        Some(&task),
+        task.as_ref(),
         &route.profile,
         &serde_json::from_str(&request)?,
     )?;
+    let result = if serde_json::from_str::<Value>(row.get("origin"))?["session"].is_string() {
+        json!(super::super::plugin_sessions::visible_text(&decoded.result))
+    } else {
+        decoded.result
+    };
     Ok(
-        json!({"result":decoded.result,"execution":row.get::<String,_>("execution"),"logical":row.get::<String,_>("logical"),"route":row.get::<String,_>("route"),"purpose":row.get::<String,_>("purpose")}),
+        json!({"result":result,"execution":row.get::<String,_>("execution"),"logical":row.get::<String,_>("logical"),"route":row.get::<String,_>("route"),"purpose":row.get::<String,_>("purpose")}),
     )
 }

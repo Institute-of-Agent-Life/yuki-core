@@ -59,6 +59,7 @@ pub async fn apply(db: &mut SqliteConnection, key: &str, person: &str) -> Result
         .bind(mark)
         .execute(&mut *db)
         .await?;
+    crate::host::plugin_sessions::scrub_inactive(db).await?;
     status(db, key).await
 }
 pub(super) async fn capture(

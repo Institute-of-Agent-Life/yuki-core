@@ -8,6 +8,7 @@ pub(crate) mod maintenance;
 mod media;
 pub(crate) mod participation;
 pub(crate) mod personal;
+pub(crate) mod plugin_sessions;
 mod process;
 mod send;
 use crate::{
@@ -29,6 +30,7 @@ pub enum Change {
     AuxModel(Box<aux_model::Change>),
     Participation(Box<participation::Change>),
     Maintenance(Box<maintenance::Change>),
+    PluginSession(Box<plugin_sessions::Change>),
     Configure(Vec<Install>),
     Start(String, bool),
     Online(String, String),

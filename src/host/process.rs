@@ -311,6 +311,8 @@ pub async fn launch(
                     callbacks.spawn(async move{
                         let r=if matches!(method.as_str(),"llm.complete"|"llm.result") {
                             super::aux_model::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
+                        } else if method.starts_with("session.") {
+                            super::plugin_sessions::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else if method.starts_with("maintenance.") {
                             super::maintenance::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else if method.starts_with("participation.") {

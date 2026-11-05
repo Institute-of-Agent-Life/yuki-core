@@ -247,3 +247,9 @@ CORE-028 已知 usage 擦除補修隨此工作樹驗過，獨立修正已推向�
 | Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/linux-arm64/candidate/yuki-maintenance-preview-0cdd9dffe07c-linux-arm64.zip` | `04c13a21ea2d42a84d11b285d93c46dafa98f20270bf3b285dcd2d48afb8011c` |
 | macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/macos-arm64/yuki-maintenance-preview-0cdd9dffe07c-darwin-arm64.zip` | `3060058a12b5b10efc9fc78f1dd5d6ddcd8fe820dd72f353885c8248f067079c` |
 | Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/windows-validation/handoff/yuki-maintenance-preview-0cdd9dffe07c-windows-x86_64.zip` | `e2b964e87a30d5c230fbb0805a9de973cb91160b6e8b52606b363ca0fd77a152` |
+
+## CORE-051 隔離插件會話
+
+`codex/core-051-sessions` 已實作八個 Session RPC、遷移 34、雙 SDK alpha.9／a9，接入共同邏輯請求與物理 attempt 帳本。原插件 namespace、Person／群組範圍、已付重啟恢復、持久／暫存生命週期、來源分頁、擦除與晚返使用量均有實際 Host 路徑。
+
+Mac `recovery-overlap-mac-01/` 通過 730 項，來源樹 `b1e1bd809386e297e3e77807a90aa6d866117cac89e15a8f8fd9add9e05aa674`。17 張相鄰卡回歸已通過，見 `artifacts/CORE-051/regression-summary-02.json`。先前遷移漏掉兩種既有 origin，現已保留七種並以已有執行與費用資料升級驗證。Windows 第二輪重啟測試失敗的原證據保留於 `windows-02/`。第三輪 `windows-03/` 同一來源通過 730 項。重播可先得到原 `prepared` 回條，測試沿原鍵等待持久結果；各 cut 的中間狀態另存 `session-cut-receipt-*.json`。Mac `recovery-overlap-mac-02/` 再加入確定性同鍵併發，735 項通過，來源樹 `3d249134c993533596bca6135503fd0c82d58855dcf58d016d7e97fc34528b96`。接著以乾淨提交完成三平台同源候選。真 EXT-047 消費及 CORE-054 舊會話導入另列後續。

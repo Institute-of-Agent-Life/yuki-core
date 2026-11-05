@@ -35,8 +35,9 @@ def invoke(method, params):
     with lock:
         sequence += 1
         key = sequence
+        frame = rpc.request(key, method, params)
         response = pending[key] = queue.Queue()
-        send(rpc.request(key, method, params))
+        send(frame)
     return response.get(timeout=40)
 
 
@@ -74,6 +75,8 @@ def inbox():
 threading.Thread(target=inbox, daemon=True).start()
 while raw := read_frame(sys.stdin.buffer):
     frame = json.loads(raw)
+    with lock:
+        rpc.receive(frame)
     if "method" not in frame:
         pending.pop(frame["id"]).put(frame)
     elif frame["method"] == "observer.event":

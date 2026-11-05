@@ -1,4 +1,4 @@
-mod scope;
+pub(in crate::host) mod scope;
 mod transport;
 mod writer;
 
@@ -27,8 +27,8 @@ impl Route {
             || self
                 .origins
                 .iter()
-                .any(|o| !matches!(o.as_str(), "event" | "call" | "maintenance"))
-            || self.entries.is_empty()
+                .any(|o| !matches!(o.as_str(), "event" | "call" | "maintenance" | "session"))
+            || (self.entries.is_empty() && self.origins.iter().any(|origin| origin != "session"))
             || self.entries.iter().any(String::is_empty)
             || self
                 .media
@@ -66,8 +66,8 @@ pub enum Change {
     },
 }
 
-pub(super) use writer::structured_receipt;
 pub(super) use writer::{apply, configure};
+pub(super) use writer::{structured_receipt, visible_receipt};
 
 pub(super) async fn callback(
     store: &Store,
