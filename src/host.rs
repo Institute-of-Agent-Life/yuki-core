@@ -5,6 +5,7 @@ pub(crate) mod composition;
 pub(crate) mod domain;
 mod grants;
 mod media;
+pub(crate) mod participation;
 pub(crate) mod personal;
 mod process;
 mod send;
@@ -25,6 +26,7 @@ use tokio::sync::Mutex;
 
 pub enum Change {
     AuxModel(Box<aux_model::Change>),
+    Participation(Box<participation::Change>),
     Configure(Vec<Install>),
     Start(String, bool),
     Online(String, String),

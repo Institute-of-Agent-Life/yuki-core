@@ -161,6 +161,9 @@ struct Peer {
 impl Hub {
     pub async fn new(store: Store, config: Option<Config>, data: &Path) -> Result<Self> {
         let Some(config) = config else {
+            store
+                .write(crate::store::Mutation::ParticipationQq(vec![], vec![]))
+                .await?;
             return Ok(Self(None));
         };
         if config.reply.max_qq_message_chars == 0 || config.reply.hard_max_messages == 0 {
@@ -190,6 +193,22 @@ impl Hub {
             .as_ref()
             .map(|s| Shared::load(s, data))
             .transpose()?;
+        let receivers = bots.values().map(|bot| bot.spec.stage.clone()).collect();
+        let groups = config
+            .groups
+            .iter()
+            .map(|(group, policy)| {
+                (
+                    config.namespace.clone(),
+                    group.clone(),
+                    bots[&config.designated_ingress].spec.stage.clone(),
+                    !matches!(policy, GroupPolicy::Paused),
+                )
+            })
+            .collect();
+        store
+            .write(crate::store::Mutation::ParticipationQq(receivers, groups))
+            .await?;
         for (group, policy) in &config.groups {
             if matches!(policy, GroupPolicy::Paused) {
                 store

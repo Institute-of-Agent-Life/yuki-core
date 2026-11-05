@@ -13,12 +13,22 @@ impl Hub {
     ) -> Result<Option<Value>> {
         let mut tx = store.readers().begin().await?;
         effects::authorize(&mut tx, exec, actor, true).await?;
+        let self_scene = super::participation::self_binding(&mut tx, exec).await?;
+        let self_entry = self_scene.as_ref().map(|(_, entry, _)| entry.as_str());
+        let self_stage = self_scene.as_ref().map(|(_, _, stage)| stage.as_str());
         let route=sqlx::query("SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,e.entry_id,e.bot_stage,d.scope,d.space,d.topic,a.native AS sender,b.native AS bot,o.payload
             FROM executions x JOIN events e ON e.id=x.source JOIN entries d ON d.id=e.entry_id JOIN accounts a ON a.id=e.account_id
             JOIN assignments s ON s.id=e.bot_stage JOIN accounts b ON b.id=s.account_id
             JOIN host_installations i ON i.platform=b.platform AND i.namespace=b.namespace AND i.bot_stage=e.bot_stage
-            JOIN operations o ON o.namespace=x.id AND o.operation_id=? AND o.target='send' WHERE x.id=?")
-            .bind(operation).bind(exec).fetch_optional(&mut *tx).await?;
+            JOIN operations o ON o.namespace=x.id AND o.operation_id=? AND o.target='send' WHERE x.id=?2
+            UNION ALL
+            SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,d.id,s.id,d.scope,d.space,d.topic,'' AS sender,b.native AS bot,o.payload
+            FROM entries d JOIN assignments s ON s.id=?4 JOIN accounts b ON b.id=s.account_id
+            JOIN host_installations i ON i.platform=b.platform AND i.namespace=b.namespace AND i.bot_stage=s.id
+            JOIN operations o ON o.namespace=?2 AND o.operation_id=?1 AND o.target='send'
+            JOIN main_turns t ON t.execution=?2 JOIN main_windows w ON w.conversation=d.id AND w.generation=t.window
+            WHERE d.id=?3 AND d.closed_at IS NULL")
+            .bind(operation).bind(exec).bind(self_entry).bind(self_stage).fetch_optional(&mut *tx).await?;
         let Some(row) = route else { return Ok(None) };
         let parent = effects::receipt(&mut tx, exec, operation).await?;
         if matches!(

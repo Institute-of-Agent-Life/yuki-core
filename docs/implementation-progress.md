@@ -211,3 +211,11 @@ Windows 首次封裝遇暫存執行檔清理 WinError 32，同一固定來源與
 | Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/linux-arm64/candidate/yuki-aux-model-preview-952954d86166-linux-arm64.zip` | `800bff7da32c81bb7173c9411c6edd898c32a2934dbf496a491dbca5d04023ee` |
 | macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/macos-arm64/yuki-aux-model-preview-952954d86166-darwin-arm64.zip` | `a4b05689a35b4fec34fea2657c187507611e71e6d079f75ab629ddcff55e7fb8` |
 | Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/windows-validation/handoff-retry-02/yuki-aux-model-preview-952954d86166-windows-x86_64.zip` | `ec0088c957caf21ca11b344cb69db539e22085f4aa8520c56feb19b272f29fe4` |
+
+## CORE-036 群聊參與核心
+
+`codex/core-036-participation` 完成原 event 提升、原場景 SELF、窄來源頁與實際 send／quiet 反饋。規則與兩次邀請競爭仍只有一個接納，提升可續原 Work；SELF 使用自己的 origin、root 與明確接收 Bot。QQ 啟動配置、當前安裝和原來源在派發前重核。外部網關共用原發送帳本，分段未知保留既有確認，冷啟不重發。
+
+Mac `mac-06` 與 HJW `windows-01` 各通過 128 項，來源樹 `0c5c2a018ddf9356b274a196e453c477e3517a5f43bcdb2b659f1cf5676c1838`。兩端的 `promotion-vs-self.json` 包含原 Work、來源、SELF 身份與物理發送回條。11 張相鄰卡均通過，彙總為 `artifacts/CORE-036/regression-summary-01.json`。候選 schema 1、SDK alpha.7，真 EXT-025 消費待回傳。先前失敗 fixture／gateway 綁定案例保留於 `mac-01`、`mac-03`、`mac-04`。
+
+兩端已驗開發封裝屬未提交工作樹來源。下一步從本卡乾淨提交重新封裝三平台候選。CORE-035 已建立正常與故障時序，將接續維護授權與審閱寫入。CORE-050 的來源補核另通過 CORE-011、016、030、052 四卡 `aux-sources-regression-01/`。

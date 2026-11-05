@@ -11,6 +11,8 @@ use yuki_plugin_sdk::{Binding, Declaration};
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Install {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub participation: Option<super::participation::Policy>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub aux_routes: BTreeMap<String, super::aux_model::Route>,
     pub id: String,
@@ -47,6 +49,7 @@ pub fn methods() -> &'static Value {
             include_str!("../../protocol/plugin/media/methods.json"),
             include_str!("../../protocol/plugin/composition/methods.json"),
             include_str!("../../protocol/plugin/aux-model/methods.json"),
+            include_str!("../../protocol/plugin/participation/methods.json"),
         ] {
             let group: Value = serde_json::from_str(schema).expect("host extension IDL");
             for (name, method) in group["methods"].as_object().expect("extension methods") {
@@ -71,6 +74,9 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if let Some(policy) = &self.participation {
+            policy.validate(self)?;
+        }
         for (name, route) in &self.aux_routes {
             if !identifier(name)
                 || !["llm.complete", "llm.result", "forget.owner"]
@@ -157,6 +163,9 @@ impl Install {
     }
     pub fn revision(&self) -> Result<String> {
         let mut identity = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if let Some(policy) = &self.participation {
+            identity["participation"] = serde_json::to_value(policy)?;
+        }
         if !self.aux_routes.is_empty() {
             identity["aux_routes"] = serde_json::to_value(&self.aux_routes)?;
         }
@@ -228,6 +237,7 @@ mod tests {
     #[test]
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
+            participation: None,
             erasure_args: None,
             aux_routes: BTreeMap::new(),
             composition: None,

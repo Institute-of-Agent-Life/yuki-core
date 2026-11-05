@@ -5,6 +5,13 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-036": {
+      "case": "tests/cases/CORE-036.py",
+      "artifact": "promotion-vs-self.json",
+      "timeout_seconds": 360,
+      "rust": true,
+      "capabilities": ["original-human-promotion", "scene-bound-self", "original-send-feedback"]
+    },
     "CORE-034": {
       "case": "tests/cases/CORE-034.py",
       "artifact": "nested-boundary.json",

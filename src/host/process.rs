@@ -311,6 +311,8 @@ pub async fn launch(
                     callbacks.spawn(async move{
                         let r=if matches!(method.as_str(),"llm.complete"|"llm.result") {
                             super::aux_model::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
+                        } else if method.starts_with("participation.") {
+                            super::participation::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else if super::composition::handles(&method) {
                             super::composition::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else {write(&s,Change::Callback(l.plugin.clone(),l.generation.clone(),method,msg["params"].clone())).await};

@@ -71,7 +71,13 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
         }
     }
     if r.method.starts_with("gateway.") {
-        let own:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i JOIN executions x ON x.id=? JOIN events e ON e.id=x.source AND e.bot_stage=i.bot_stage WHERE i.plugin=? AND x.original_actor=e.raw_actor)").bind(&r.execution).bind(id).fetch_one(conn).await?;
+        let mut own:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i JOIN executions x ON x.id=? JOIN events e ON e.id=x.source AND e.bot_stage=i.bot_stage WHERE i.plugin=? AND x.original_actor=e.raw_actor)").bind(&r.execution).bind(id).fetch_one(&mut *conn).await?;
+        if let Some((_, entry, receiver)) =
+            super::participation::self_binding(conn, &r.execution).await?
+        {
+            own = r.args["route"]["entry"]==entry && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i JOIN assignments s ON s.id=i.bot_stage JOIN accounts a ON a.id=s.account_id WHERE i.plugin=? AND i.bot_stage=? AND a.native=?)")
+                .bind(id).bind(receiver).bind(r.args["route"]["bot"].as_str()).fetch_one(&mut *conn).await?;
+        }
         if !own {
             return Err("gateway delivery requires original gateway source and route".into());
         }
@@ -321,8 +327,18 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 if let Some(version) = args["media"]["artifact_id"].as_str() {
                     sqlx::query("INSERT OR IGNORE INTO social_part_versions SELECT ?1,?2,v.id FROM media_versions v JOIN host_media_selected sel ON sel.version=v.id AND sel.digest=v.digest WHERE sel.handle=?3 AND v.id=?4").bind(&exec).bind(row.get::<String,_>("operation")).bind(handle).bind(version).execute(&mut *conn).await?;
                 }
-                sqlx::query("INSERT INTO social_outbound(stage,entry,locator,namespace,child,original_actor,body,observed_at) SELECT e.bot_stage,e.entry_id,?,x.id,?,e.raw_actor,?,CAST(unixepoch('subsec')*1000 AS INTEGER) FROM executions x JOIN events e ON e.id=x.source WHERE x.id=? AND e.entry_id=?")
+                if let Some((origin, scene, stage)) =
+                    super::participation::self_binding(conn, &exec).await?
+                {
+                    if scene != entry {
+                        return Err("SELF delivery scene changed".into());
+                    }
+                    sqlx::query("INSERT INTO social_outbound(stage,entry,locator,namespace,child,original_actor,body,observed_at) VALUES(?,?,?,?,?,?,?,CAST(unixepoch('subsec')*1000 AS INTEGER))")
+                        .bind(stage).bind(entry).bind(body["locator"].as_str()).bind(&exec).bind(row.try_get::<String,_>("operation")?).bind(origin).bind(args["part"].to_string()).execute(&mut *conn).await?;
+                } else {
+                    sqlx::query("INSERT INTO social_outbound(stage,entry,locator,namespace,child,original_actor,body,observed_at) SELECT e.bot_stage,e.entry_id,?,x.id,?,e.raw_actor,?,CAST(unixepoch('subsec')*1000 AS INTEGER) FROM executions x JOIN events e ON e.id=x.source WHERE x.id=? AND e.entry_id=?")
                     .bind(body["locator"].as_str()).bind(row.try_get::<String,_>("operation")?).bind(args["part"].to_string()).bind(row.try_get::<String,_>("execution")?).bind(entry).execute(&mut *conn).await?;
+                }
             }
             sqlx::query("UPDATE host_calls SET state=?,result=? WHERE handle=?")
                 .bind(state)

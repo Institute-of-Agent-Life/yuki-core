@@ -90,7 +90,8 @@ pub(super) async fn resolve(
              AND a.status='active' AND b.status='active'
              AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
              AND (NOT ?2 OR EXISTS(SELECT 1 FROM host_observations
-                 WHERE plugin=?3 AND generation=?4 AND event=e.id))",
+                 WHERE plugin=?3 AND generation=?4 AND event=e.id)
+                 OR EXISTS(SELECT 1 FROM source_holds WHERE owner=?3 AND source=e.id))",
         ).bind(event).bind(new_request).bind(plugin).bind(generation)
             .fetch_one(&mut *db).await?;
         (entry, None, Some(event))

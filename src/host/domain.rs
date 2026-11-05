@@ -54,6 +54,7 @@ async fn configure(conn: &mut SqliteConnection, installs: &[Install]) -> Result<
     sqlx::query("UPDATE host_installations SET enabled=0 WHERE plugin NOT IN(SELECT value FROM json_each(?))").bind(serde_json::to_string(&names)?).execute(&mut *conn).await?;
     for install in installs {
         super::aux_model::configure(conn, install).await?;
+        super::participation::configure(conn, install).await?;
         super::composition::configure(conn, install).await?;
         sqlx::query("INSERT INTO host_installations(plugin,namespace,platform,bot_stage,revision,grants,tools,enabled) VALUES(?,?,?,?,?,?,?,1)
           ON CONFLICT(plugin) DO UPDATE SET namespace=excluded.namespace,platform=excluded.platform,bot_stage=excluded.bot_stage,revision=excluded.revision,grants=excluded.grants,tools=excluded.tools")
@@ -347,6 +348,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             }
             Ok(result)
         }
+        Change::Participation(change) => super::participation::apply(conn, change).await,
         Change::AuxModel(change) => super::aux_model::apply(conn, change).await,
         Change::Call(call) => super::calls::apply(conn, call).await,
         Change::Composition(change) => super::composition::apply(conn, change).await,

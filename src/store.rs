@@ -57,6 +57,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    ParticipationQq(Vec<String>, Vec<(String, String, String, bool)>),
     ToolBudget(String, String, String),
     Personal(Box<crate::host::personal::Request>),
     Host(Box<crate::host::Change>),
@@ -137,6 +138,30 @@ impl Driver for SqliteDriver {
     }
     async fn apply(&mut self, action: &Mutation) -> Result<Value> {
         let label = match action {
+            Mutation::ParticipationQq(receivers, groups) => {
+                sqlx::query("DELETE FROM participation_qq_receivers")
+                    .execute(self.connection())
+                    .await?;
+                sqlx::query("DELETE FROM participation_qq_groups")
+                    .execute(self.connection())
+                    .await?;
+                for stage in receivers {
+                    sqlx::query("INSERT INTO participation_qq_receivers VALUES(?)")
+                        .bind(stage)
+                        .execute(self.connection())
+                        .await?;
+                }
+                for (namespace, group, stage, enabled) in groups {
+                    sqlx::query("INSERT INTO participation_qq_groups VALUES(?,?,?,?)")
+                        .bind(namespace)
+                        .bind(group)
+                        .bind(stage)
+                        .bind(enabled)
+                        .execute(self.connection())
+                        .await?;
+                }
+                return Ok(Value::Null);
+            }
             Mutation::ToolBudget(exec, actor, op) => {
                 return crate::tools::budget::charge(self.connection(), exec, actor, op).await;
             }
