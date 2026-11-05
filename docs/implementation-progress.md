@@ -293,7 +293,7 @@ CORE-051 的 macOS PR 工作 `127228529052` 同樣被 45 分鐘 job 上限截斷
 PR #47 `fa1fddb` 的 Linux CORE-027 冷恢復案例提早送出 ingress：extraction_policy.enabled 在 operator IPC 綁定前就已提交。失敗 ZIP SHA-256 `84c71110f7e19aad2b614abfd64afe0e35562f748eb11974ac860f4e914700da`，診斷 `artifacts/CORE-051/ci-failure-fa1fddb.json`。fixture 改等同一子程序的正常 ready JSON，不重送命令、不延長 timeout；Mac CORE-027 `session-owner-readiness-01/` 通過，提交後重驗 CI。
 
 
-## CORE-048 模型設定本地驗證通過
+## CORE-048 本地完成，PR #49 等待 CI 與前置合併
 
 分支 `codex/core-048-profiles`，工作目錄 `.cache/worktrees/profile-config`，基底 `e913c81`。前置 CORE-024、033 已有本地驗證。新增精確依賴 `toml_edit =0.23.7`；v3 TOML／原 Admin DTO 保未知欄位、註釋、旁檔密鑰和聯合 revision。
 
@@ -308,6 +308,17 @@ PR #47 `fa1fddb` 的 Linux CORE-027 冷恢復案例提早送出 ingress：extrac
 
 Windows 首次實際 rename 發現 Win32 錯誤 87，已用同一根 handle 的原生 NtSetInformationFile 修正並在 HJW 重驗；證據 `windows-rename-probe-01/`、`windows-rename-02/`。固定 SHA 隔離舊版 oracle 的 operator／v3 profile 測試 17 項、退役 route 1 項通過；原 ZIP 未修改。全部測試均無付費模型呼叫。
 
-實作提交 `d33ae32` 已推送並建立 [PR #49](https://github.com/Institute-of-Agent-Life/yuki-core/pull/49)，接入 sessions `002a10d` 的完整歷史後，從乾淨 commit 再驗並打包三平台候選，記錄來源、schema／SDK、雜湊與交接路徑；其 CI 通過後才合併。既有 `development-package-01/` 是 dirty source 開發包，SHA-256 `17f97901360adbf8a445f01ad30709bd1f0ffab8609de629426ab59a5bfbf229`，不可作正式交接版本。
+實作提交 `d33ae32`、整合提交 `b30eec4d31c316e6307281ef0cef8ca02594bf38` 已推送，[PR #49](https://github.com/Institute-of-Agent-Life/yuki-core/pull/49) 以 sessions 為前置，等最新 head 的三平台 CI，僅合併 main。
+
+乾淨提交 `b30eec4d31c316e6307281ef0cef8ca02594bf38`／來源樹 `73e4e2402f39b49aa4cfd0391f122aef1f4222f0bb2626c8b5cd59af36c72d2a` 的三平台候選已驗。Host schema 2、Profile schema 3、Python SDK `1.0.0a9`／Rust SDK `1.0.0-alpha.9`；實含三個 Admin 模型入口、六個 task route、獨立搜尋與重啟 embedding。Mac／Windows／Linux 分別通過 625/621/645 項；候選都從乾淨 PATH 啟動，ZIP 成員逐項 SHA-256 核對通過。所有候選仍為 unpublished-development-candidate；真實 EXT-049 消費證據尚缺。
+
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-048/handoff-b30eec4/linux-arm64/candidate/yuki-profile-preview-b30eec4d31c3-linux-arm64.zip`，SHA-256 `eedb6a027d6b16caed8ec89135e5b22ebc374149ea028b208547800394e210bc`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-048/handoff-b30eec4/macos-arm64/candidate/yuki-profile-preview-b30eec4d31c3-darwin-arm64.zip`，SHA-256 `90085f29f823f6056d521713718831c8d4ff221a757bc0204a5651b802651649`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-048/handoff-b30eec4/windows-x86_64/handoff/yuki-profile-preview-b30eec4d31c3-windows-x86_64.zip`，SHA-256 `1eec0bbfedb81e6bc4a47c1e5fabe9d2737faffe152b8a4e836f26cc63d9502e`。
+
+完整交接索引為 `artifacts/CORE-048/handoff-b30eec4/verified-candidates.json`。較早 `development-package-01/` 的 dirty source ZIP 僅保留作開發證據。
+
 
 CI 修正沿用已驗 `002a10d` 的 CORE-027 owner ready 回條，以及 `0f723ad` 的原檔案有界讀取；不重送 mutation、不改原 timeout 或接受條件。下一個已就緒核心任務是 CORE-037；真實 EXT-049 消費回條尚待對方，79 個固定 capability 宣告不等於全部管理方法已實作，候選不標為已發布。
+
+CORE-037 已在 `codex/core-037-control`／`.cache/worktrees/control` 開始實作，先驗固定 Admin 角色及 SOUL 合同、原付費鏈和中斷保存；尚未完成或提交。CORE-014 原歷史 API 在隔離舊版取得 14 個實際查詢回條，`/Users/huangjiawei/.cache/yuki-core/original-history-oracle-01/original-history.json`，SHA-256 `75c6e389ddb5bfebab6ace552a14f882f7f612c69cf712b626cf936d8aaea6d0`；原歷史適配仍進行中。
