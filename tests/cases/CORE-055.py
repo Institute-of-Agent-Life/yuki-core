@@ -13,7 +13,7 @@ from threading import Thread
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
-from zoneinfo import ZoneInfo
+from tests.harness.timezones import ZoneInfo
 from tests.harness.compact import Owner
 from tests.peers.chat.recorder import Recorder
 

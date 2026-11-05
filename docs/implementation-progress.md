@@ -490,3 +490,7 @@ PR #52 待 #51 進 main 後按最新 head 六項 CI 合併。缺 EXT-049 對當�
 先保留缺入口失敗 `original-wire-red-02/`，正常及故障檢查於 `artifacts/CORE-014/original-wire-mac-07/` 667 項通過；CORE-015、033、058 相鄰回歸均通過 `history-wire-regression-01/`。固定 SHA `329ca7c487414d2f54ddd98ff4727446ed2446cd` 隔離 oracle 的 14 個原查詢案例 SHA-256 `75c6e389ddb5bfebab6ace552a14f882f7f612c69cf712b626cf936d8aaea6d0`；大型分頁 201+29、原 provider call ID、通知 publisher、遺忘刪除結果正文均有回條。另兩次補充 fixture 因未設定 QQ 路由及用人類 erase 刪 plugin 事件被正確拒絕，失敗回條保留。
 
 Windows／Linux 原生候選待本提交快照驗證；先前 dirty Mac 包僅打包自測，非交接發布。真擴展消費及 CORE-040 全量 wire 等價尚待；本補充不宣稱所有原 DTO 值已逐位相等。下一步依序產候選，繼續 CORE-057 離線模型設定移轉與 CORE-040。
+
+CORE-037／030 CI 修復：Windows Python 缺少系統 tzdb，現以附來源版本、SHA-256 與授權的 IANA 2023c 固定 TZif 作獨立日曆測試輸入；不更動 Rust 時區計算。CORE-030 清除案例在改動 executable 宣告後，先驗證未審批不可執行，再由真 operator 按原 revision 批准，保留刪除後 ACK 前崩潰情境。Mac、Linux ARM64、HJW Windows 各自通過 CORE-030 120 項、CORE-037 977 項；回條位於 artifacts/CORE-030/approved-cleanup-{mac,windows}-01/、artifacts/CORE-037/pinned-calendar-{mac,windows}-01/ 與 artifacts/CORE-037/ci-recovery-linux-01/。源樹 e7d3d4982ab0679daead7202453e3f9a4801c74e17ed84027317425ead6870e2，PR #51 推新 head 後重新等六項 CI。
+
+CORE-055 整合 CORE-037 CI 修復 `98816c2`，用相同固定 IANA fixture 驗 DST；schema 回條改讀實際 SQLite reader，避免後續可加遷移仍報 41。`artifacts/CORE-055/pinned-calendar-mac-01/` 138 項通過，原候選來源不變；PR #52 重驗最新 head。
