@@ -605,3 +605,13 @@ PR #59 已推，待 #58 與最新 head 六項 CI 才合併；候選未發布。�
 CORE-015 原模型視圖補核：`codex/core-015-original-tool-views` 恢復 lookup_tools／time_get_current／update_short_state 的原宣告，原 Code 固定集合只投影本倉實有能力。模型 lookup 恢復多詞 Unicode casefold 搜尋（含 Python 額外空白）、240 字元摘要、原 data／revision／authorization 與失敗回條；既有 Host code.lookup 合同不變。Mac `artifacts/CORE-015/original-tool-views-mac-02/` 127 項與原 oracle 50 組通過；原 Python 四用例通過，五張相鄰卡全部通過 `tool-views-adjacent-01/`。新增 direct 模式排除 execute_code 的 Rust 回歸；待乾淨 commit 三平台候選。
 
 尚待獨立補核：不合 paid schema 的模型 call 目前令解碼層 held，需逐項失敗回條並保留同批獨立操作；此卡的未知查詢名稱已逐項拒絕。原 memory_change、send／workspace 參數仍待本倉相容補核，未以替代 schema 宣稱 CORE-040 全切片等價。
+
+CORE-015 原工具視圖乾淨候選完成：來源 `cf14cc6d45b7eaa80c6fa6f0c24284549b5de300`，tree `ce49fdff740d79ca1121fb17138b3d51e48d35c792570ddb90a8fa7c5b632535`；Mac ARM64、Linux ARM64、HJW Windows x86_64 各 127 項通過，獨立 SDK 安裝及乾淨 PATH 啟動通過。Host 2、握手 1、reader 43、Rust SDK `1.0.0-alpha.11`／Python `1.0.0a11`。驗證工具 `read_tool_artifact`、`lookup_tools`、`time_get_current`、`update_short_state`，保留 image-json-refusal；未驗原生圖片 Artifact。
+
+交接索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/views-handoff-final-01/verified-candidates.json`，SHA-256 `302ade325eed2927def6135cb9ba3047e150d48f6d20971b6a0b5bd939053170`；逐成員清單、大小、雜湊與來源 manifest 綁定已核。
+
+- Mac ZIP `bc5f4970a73519ce01cff331b78b289f75f579ca54ac1e0500522bb494fa80f7`。
+- Linux ZIP `7adaa9d04c7279c9ff4ce5f49701f4281cf5a4502ef77819f506afe7f1bc1930`。
+- Windows ZIP `229e20965816b85bf89ac52a5ddb61617718de26b1a3d0bc60ffdf11972367df`，實機根目錄 `D:\yuki-core-validation-20261104\CORE-015-ce49fdff740d-983d16db`。
+
+PR #60 等 #59 及最新 head 六項 CI；候選尚未發布。正在下一個 `codex/core-015-call-isolation` 分支修復同批 schema 錯誤 held；尚未驗完，不把該行為算入此候選。

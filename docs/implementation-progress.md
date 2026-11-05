@@ -17,7 +17,8 @@
 | CORE-014、015 補核 | #53 `77c85c4`、#56 `bc551a0` | 原歷史查詢、Artifact 模型合同已驗；Code peer 整合回歸 387 項通過。 |
 | CORE-013 補核 | #57 `bf121e5`、#58 `47fae2a` | 原群目錄與撤回；撤回來源 `266e9aa` 三平台各 252 項通過。 |
 | CORE-037 權限目錄 | #59 `a638fab`，`codex/core-037-permission-directory` | 247 個原 descriptor、16 組結果；Mac／Linux／HJW Windows 乾淨候選各 1052 項通過，索引見下表。 |
-| CORE-015 工具視圖 | `codex/core-015-original-tool-views`，`4067662` | 原宣告、Code 核心可見性、lookup 多詞搜尋與回條補核；50 組 Rust 對拍、127 項真 Main 整合及五張相鄰回歸通過，準備乾淨候選。 |
+| CORE-015 工具視圖 | PR #60 `cf14cc6`，`codex/core-015-original-tool-views` | 原宣告、Code 核心可見性、lookup 多詞搜尋與回條補核；50 組原對拍；三平台乾淨候選各 127 項，五張相鄰回歸通過。 |
+| CORE-015 逐項拒絕 | `codex/core-015-call-isolation`，未提交 | 六種協議的逐項失敗、同批合法效果、零派發／業務扣額及冷啟動已初驗；重複 ID 仍 held，完整回歸進行中。 |
 | CORE-040 | #55 `400c9b8`，部分完成 | 12 次冷暖 A/B/C 各 1200 輸入已逐筆核效果；完整工具／DTO／Compact 等價與受控資源比較未完成，不判 Rust 勝出。 |
 
 每個 PR 均等其前置合併與最新 head 的 push／PR × Windows／Linux／Mac 六項檢查全通過才合併。待合併分支以 PR 的 head ref 為準；本地 worktree 在 `.cache/worktrees/`。不直接提交 main。
@@ -30,7 +31,7 @@
 |---|---|---|---|
 | CORE-013 | `266e9aa23e13` | [recall-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/recall-handoff-final-01/verified-candidates.json) | `d7b86f0244ca8064e13e67cd78ad96256d9879bd35444bd4b68a2add1e73ebe2` |
 | CORE-014 | `43b67d35d996` | [handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-014/handoff-final-01/verified-candidates.json) | `c8d373992ec7e286337a4d79deb2caec81e79ee8fca5c22a3cd1f1330edc7c4c` |
-| CORE-015 | `c61f45c6e831` | [handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/handoff-final-01/verified-candidates.json) | `da8b01c6762e7555622d63503c10822f2bd6deb7e977a802af75e43ed9cad67a` |
+| CORE-015 | `cf14cc6d45b7` | [views-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/views-handoff-final-01/verified-candidates.json) | `302ade325eed2927def6135cb9ba3047e150d48f6d20971b6a0b5bd939053170` |
 | CORE-037 | `a638fab4066b` | [permissions-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-037/permissions-handoff-final-01/verified-candidates.json) | `e485af6cee3c586469e5665a3eef61b2496bce238ebd47d48934578f1b5d8ca3` |
 | CORE-055 | `214197a1a8d3` | [handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-055/handoff-final-01/verified-candidates.json) | `cda5ff398b353784f013fef7d39e7b72d1d9a219a834c18846db8672a53b26f5` |
 | CORE-057 | `4dfb1c026a7f` | [handoff-final-02](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-057/handoff-final-02/verified-candidates.json) | `6a1c274e4002cd0b96b43870a80c5a478af997143f0df31ab81fe2cf09bab2b7` |
@@ -44,4 +45,4 @@ CORE-037 權限目錄候選根目錄：`/Volumes/huawei/項目實戰/yuki-core/a
 - 真擴展消費：EXT-023 需對已修的原 feed ACK 再測；EXT-022／037／038／039／049 需消費最新管理、權限與用量候選。未取得回條，不凍結穩定協議。
 - 外部能力：EXT-004／006 附件授權與 fetch、EXT-031 vision slot/version/bytes、EXT-020 gVisor/execd/PTY 旋轉、EXT-011 Work 外設備撤權、EXT-015 agent_target/附件/SSE、SnowLuma 映像 digest 與雙向包仍待真實方法、版本或證據。
 - 安裝與切換：CORE-043 等 EXT-041 與核心分發／移轉輸入；044 等 EXT-067 B0 實測；045 等 EXT-043 已發布 tuple 與 044；046 等 EXT-044／045 安裝證據；047、053、054 依各前置。CORE-041／042 等 CORE-040 等價切片判斷；不把未滿足前置的卡標完成。
-- 下一個可獨立工作：完成 CORE-015 工具視圖三平台驗證與候選，再補模型批內 schema 錯誤逐項續跑及原 memory_change、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
+- 下一個可獨立工作：完成 CORE-015 模型批內 schema 錯誤逐項續跑的回歸及三平台候選，再補原 memory_change、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
