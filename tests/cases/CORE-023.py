@@ -5,7 +5,7 @@ import os
 from contextlib import closing
 from tests.peers.onebot.peer import Peer
 from concurrent.futures import ThreadPoolExecutor
-from tests.harness.compact import Owner, call, reply, sha
+from tests.harness.compact import Owner, call, reply, sha, approx
 from tests.harness.crash import kill_writer
 from tests.peers.chat.recorder import Recorder
 
@@ -401,20 +401,23 @@ def actual_partial(ctx):
 
 def faults(ctx):
     records = {}
+    hard_capacity = 64_000
     for kind in ("unknown", "reset", "erased", "hard"):
         o = Owner(ctx, "private-" + kind, 18)
         with Recorder() as http:
             o.config(
                 http,
                 "compact_soft_tokens=1\n"
-                + ("max_input_tokens=20000\n" if kind == "hard" else ""),
+                + (f"max_input_tokens={hard_capacity}\n" if kind == "hard" else ""),
             )
             with o.svc.running():
                 event = o.human("source-" + kind)
-                _, q = o.wire(http)
+                original, q = o.wire(http)
+                if kind == "hard":
+                    ctx.check("hard-cut fixture admits the full original declaration",approx(original) < hard_capacity)
                 args = {
                     "target": "needed unobserved result "
-                    + ("重" * 14_000 if kind == "hard" else "private")
+                    + ("重" * hard_capacity if kind == "hard" else "private")
                 }
                 reply(q, calls=[call("source-call", "get", args)])
                 if kind == "hard":
@@ -437,7 +440,8 @@ def faults(ctx):
                         o.rows("SELECT count(*) FROM exec_compacts"),
                         [(0,)],
                     )
-                    records[kind] = "model_request_capacity"
+                    ctx.equal("hard failure retains exactly the first real purchase",o.rows("SELECT count(*) FROM model_attempts"),[(1,)])
+                    records[kind] = {"diagnostic":"model_request_capacity","initial_input_units":approx(original),"hard_capacity":hard_capacity,"required_call_argument_characters":len(args["target"]),"physical_attempts":1}
                     continue
                 private, q = o.wire(http)
                 ctx.check(
