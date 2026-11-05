@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def clean_environment():
-    allowed = {"PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT", "TEMP", "TMP",
+    allowed = {"PATH", "SYSTEMROOT", "WINDIR", "PROGRAMDATA", "COMSPEC", "PATHEXT", "TEMP", "TMP",
                "HOME", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "LANG", "LC_ALL",
                "CARGO_HOME", "RUSTUP_HOME", "CC", "AR", "INCLUDE", "LIB", "LIBPATH", "YUKI_MINGW_BIN"}
     result = {key: value for key, value in os.environ.items() if key.upper() in allowed}
@@ -80,6 +80,8 @@ def main():
                 ("rust-writer-tests", ["cargo", "test", "--locked", "--offline", "--bin", "yuki-core", "--message-format=json", "--", "--nocapture"]),
                 ("rust-build", ["cargo", "build", "--locked", "--offline", "--bin", "yuki-core"]),
             ]
+            if spec.get("release"):
+                stages.append(("rust-release", ["cargo", "build", "--release", "--locked", "--offline", "--bin", "yuki-core"]))
             for name, stage in stages:
                 process = subprocess.run(stage, cwd=ROOT, env=environment,
                                          capture_output=True, timeout=600)
