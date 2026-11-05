@@ -301,7 +301,7 @@ impl Runner {
             JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active'
             JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
             WHERE p.enabled AND r.enabled AND d.closed_at IS NULL AND NOT EXISTS(SELECT 1 FROM main_inputs WHERE event=s.event_id)
-            AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
+            AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
             AND NOT EXISTS(SELECT 1 FROM executions x WHERE x.source=s.event_id AND (x.state!='pending' OR x.cancelled))
             AND NOT EXISTS(SELECT 1 FROM main_admission_delays WHERE event=s.event_id AND retry_after>?) ORDER BY s.event_id LIMIT 64").bind(timestamp).fetch_all(self.store.readers()).await?;
         for event in events {

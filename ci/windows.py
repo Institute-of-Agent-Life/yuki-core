@@ -25,12 +25,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("card")
     parser.add_argument("--host", default="hjw")
+    parser.add_argument("--host-candidate",action="store_true",help="also package the exact verified clean CORE-032 host")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--fault", choices=["swap", "empty"])
     args = parser.parse_args()
     out = args.out.resolve()
     if out.exists():
         parser.exit(2, "output exists; choose a new attempt\n")
+    if args.host_candidate and args.card!="CORE-032":parser.exit(2,"host candidate requires CORE-032\n")
     source = source_identity(ROOT)
     run_id = args.card + "-" + source["tree_sha256"][:12] + "-" + uuid.uuid4().hex[:8]
     cache = ROOT / ".cache/windows" / run_id
@@ -72,6 +74,10 @@ if profile.get('mingw_bin'):
     env['YUKI_MINGW_BIN']=profile['mingw_bin']
     env['PATH']=profile['mingw_bin']+os.pathsep+env['PATH']
 r=subprocess.run(command,cwd=root,env=env)
+if r.returncode==0 and {args.host_candidate!r}:
+    pack=[sys.executable,'ci/host_candidate.py','--manifest','artifacts/run/manifest.json','--out','artifacts/run/handoff']
+    if {source['dirty']!r}: pack.append('--development')
+    subprocess.run(pack,cwd=root,env=env,check=True)
 with zipfile.ZipFile(Path.home()/{(run_id+'-artifacts.zip')!r},'w',zipfile.ZIP_DEFLATED) as z:
     for file in sorted((root/'artifacts/run').rglob('*')):
         if file.is_file(): z.write(file,file.relative_to(root/'artifacts/run'))

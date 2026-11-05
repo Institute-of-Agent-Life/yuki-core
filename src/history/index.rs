@@ -31,6 +31,9 @@ fn inbound(raw: &str) -> Result<String> {
 }
 fn outbound(raw: &str) -> Result<String> {
     let body: Value = serde_json::from_str(raw)?;
+    if let Some(text) = body["text"].as_str() {
+        return Ok(text.to_owned());
+    }
     let mut text = String::new();
     for seg in body["message"].as_array().into_iter().flatten() {
         match seg["type"].as_str() {

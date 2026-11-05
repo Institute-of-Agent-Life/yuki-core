@@ -67,6 +67,11 @@ pub fn compile(out: &Path) {
     if std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
         build.flag("/utf-8").flag("/EHsc");
     }
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows")
+        && std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu")
+    {
+        build.cpp_link_stdlib_static(true);
+    }
     build.compile("yuki_opencc_1_4_2");
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux") {
         println!("cargo:rustc-link-lib=dl");

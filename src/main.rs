@@ -2,6 +2,7 @@ mod config;
 mod context;
 mod gateway;
 mod history;
+mod host;
 mod identity;
 mod ingress;
 mod model;
@@ -105,6 +106,7 @@ async fn execute(args: Args) -> Result<()> {
             store.main = config.main.map(Arc::new);
             store.search = model::search::start(config.search)?;
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
+            host::Hub::start(&mut store, config.plugins, &owner.data, qq.clone()).await?;
             let stop = Arc::new(Notify::new());
             let control = match operator::listen(
                 &owner.data,
@@ -141,6 +143,9 @@ async fn execute(args: Args) -> Result<()> {
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
                 qq.shutdown();
             }).await;
+            if let Some(host) = &store.host {
+                host.stop().await;
+            }
             history.abort();
             let _ = history.await;
             if let Some(runner) = runner {

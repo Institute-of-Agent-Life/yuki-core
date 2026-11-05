@@ -153,6 +153,8 @@ def generate():
             "\n".join(py) + "\n"
         ).encode(),
         ROOT / "sdk/python/yuki_plugin_sdk/handshake.schema.json": raw,
+        ROOT / "sdk/python/yuki_plugin_sdk/host-preview.json": (ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes(),
+        ROOT / "sdk/rust/src/host-preview.json": (ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes(),
         ROOT / "protocol/plugin/method-index.json": (
             json.dumps(index, sort_keys=True, indent=2) + "\n"
         ).encode(),

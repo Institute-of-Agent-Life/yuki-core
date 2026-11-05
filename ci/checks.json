@@ -77,6 +77,13 @@
       "rust": true,
       "capabilities": ["immutable-effect-results", "exclusive-dispatch", "original-operation-recovery"]
     },
+    "CORE-032": {
+      "case": "tests/cases/CORE-032.py",
+      "artifact": "host-delegation.json",
+      "timeout_seconds": 300,
+      "rust": true,
+      "capabilities": ["scoped-bidirectional-host","durable-gateway-parts","offline-command-routing","instance-bound-metadata","original-forget-ack"]
+    },
     "CORE-031": {
       "case": "tests/cases/CORE-031.py",
       "artifact": "sdk-crosswire.json",

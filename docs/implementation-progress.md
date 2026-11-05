@@ -27,8 +27,9 @@
 | CORE-019 | 三平台 CI 通過，已合併 0687bb6 | `codex/core-019-responses` | `artifacts/CORE-019/{mac-03,windows-02}/responses-dialect.json`。[PR #19](https://github.com/Institute-of-Agent-Life/yuki-core/pull/19)，head `d15c942`。兩端各 154 項斷言；舊版兩個 adapter 的真 HTTP 回條與現行文件聲明分開，三種方言的 Rust 測試均用 loopback。 |
 | CORE-014 | 三平台 CI 通過，已合併 ff3644a | `codex/core-014-history` | `artifacts/CORE-014/{mac-06,windows-02}/literal-search-gold.json`，兩端各 96 項斷言。固定舊版字面 gram、簡繁、ASR 邊界、舊庫升級、刪除後翻頁與模型下一次請求的原來源均有回條。`artifacts/CORE-014/linux-container-03/linux-history.json` 是 linux/arm64 斷網非 root 實測。提交 `40e008b`，[PR #20](https://github.com/Institute-of-Agent-Life/yuki-core/pull/20)。CORE-008、011、012、013、019、052 回歸通過。初次遠端打包查出 SDK 的 NOTICE 未同步；同步後 CORE-031 42 項通過，`linux-context-04/manifest.json` 記錄以本倉入口另一次構建的 Linux 映像。 |
 | CORE-015 | 三平台 CI 通過，已合併 5c3b494 | `codex/core-015-tools` | `artifacts/CORE-015/{mac-04,windows-02}/{frozen-views,read-barriers,tool-result-pages}.json`，兩端各 105 項斷言。另以具名 Rust 測試驗證兩讀同時進入、隱藏 schema 改版、午夜、短槽到期及解碼後撤權。CORE-005、010、011、012、013、014、019、031、052 回歸均通過。 |
-| CORE-020 | Windows、Mac 實機通過，待 CI | `codex/core-020-messages` | `artifacts/CORE-020/{mac-02,windows-02}/{messages-wire,messages-choice-pause}.json`，兩端各 163 項斷言。固定舊版四次 HTTP 對拍覆蓋 thinking 開關與具名／必選；Rust 驗過簽名原序、失敗工具原 ID、伺服器工具錯誤，以及 pause_turn 用盡根額度。CORE-011、012、014、019 回歸通過。 |
-| CORE-021 | Windows、Mac 實機通過，待 CI | `codex/core-021-gemini` | `artifacts/CORE-021/{mac-02,windows-02}/{gemini-wire,gemini-parts}.json`，各 100 項斷言。舊版兩次真 HTTP 錄製包含有／無原生 ID 的平行回條。Rust 驗過簽名位置、原生搜尋失敗、來源引用、媒體、拒絕混用及傳輸中斷；CORE-011、012、019、020 回歸通過。 |
+| CORE-020 | 三平台 CI 通過，已合併 00e1f9f | `codex/core-020-messages` | `artifacts/CORE-020/{mac-02,windows-02}/{messages-wire,messages-choice-pause}.json`，兩端各 163 項斷言。固定舊版四次 HTTP 對拍覆蓋 thinking 開關與具名／必選；Rust 驗過簽名原序、失敗工具原 ID、伺服器工具錯誤，以及 pause_turn 用盡根額度。CORE-011、012、014、019 回歸通過。 |
+| CORE-032 | Mac／HJW Windows 各通過 65 項斷言 | `codex/core-032-host` | `artifacts/CORE-032/{mac-08,windows-04}/host-delegation.json`。獨立安裝的 Rust、Python SDK 回呼同一宿主。涵蓋分段失答、離線命令與冷啟、撤權、觀察背壓、刪除回條。握手 v1、Host 業務 schema v2、Rust 1.0.0-alpha.2、Python 1.0.0a2。 |
+| CORE-021 | 三平台 CI 通過，已合併 7fd1002 | `codex/core-021-gemini` | `artifacts/CORE-021/{mac-02,windows-02}/{gemini-wire,gemini-parts}.json`，各 100 項斷言。舊版兩次真 HTTP 錄製包含有／無原生 ID 的平行回條。Rust 驗過簽名位置、原生搜尋失敗、來源引用、媒體、拒絕混用及傳輸中斷；CORE-011、012、019、020 回歸通過。 |
 
 **擴展交接。** EXT-007、EXT-019 可讀 CORE-002 執行產物
 `v4-oracle-candidate.zip`；本地路徑 `artifacts/CORE-002/handoff-89f15db/v4-oracle-candidate.zip`，
@@ -48,7 +49,16 @@ golden 和獨立 stdio peer。原包於 GitHub 預發布，重新下載的 ZIP �
 CORE-032 可開始使用本地已驗的 CORE-015、031、052。真正 Telegram、web-fetch 插件仍待同一版宿主候選。CORE-020 已合併 `00e1f9f`，見 [PR #21](https://github.com/Institute-of-Agent-Life/yuki-core/pull/21)，來源 `a009770`。歷史搜尋的 DJ 校準尚缺目標語料。
 缺目標 SnowLuma 映像 digest 和去識別雙端封包；部署預設採指定 ingress。
 
+**CORE-032 開發候選，尚未發布。** 來源 `199dff095be0bc87c9713beaa0419400cb424a7c` 已推 [PR #24](https://github.com/Institute-of-Agent-Life/yuki-core/pull/24)。握手 revision 1，業務 revision 2，業務 schema SHA-256 `4822f19fb937eba524e475b35c0753a713587f48feee87ae6bd7b53ccab06cba`。雙 SDK、宿主執行檔及方法清單均在包內。兩端各通過 65 項及隔離 PATH 啟動，逐成員雜湊已複驗。
+- HJW Windows x86_64：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/handoff-199dff095be0/windows-validation/handoff/yuki-host-preview-199dff095be0-windows-x86_64.zip`，SHA-256 `d3ef0f3ce8a7dedd175b6aa3392a22c744504cf6bea70eadc22d5408642e634c`。
+- Mac arm64：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/handoff-199dff095be0/macos-arm64/yuki-host-preview-199dff095be0-darwin-arm64.zip`，SHA-256 `07592cb449433512dcaf55306bfddbc8a6b3f93d025f15d7f51da59e844a5e9d`。
+
 CORE-012 提示詞補核在 `codex/core-012-prompt-order`。原版 HTTP 錄製顯示角色身份、SOUL、執行程式的先後順序。修正後 Mac 與 HJW Windows 各通過 163 項，見 `artifacts/CORE-012/{prefix-mac-01,prefix-windows-01}/main-wire.json`。CORE-014 已合併 [PR #20](https://github.com/Institute-of-Agent-Life/yuki-core/pull/20)。
 
+CORE-012 提示詞補核 [PR #25](https://github.com/Institute-of-Agent-Life/yuki-core/pull/25) 的 head `1eb7be0` 通過六項檢查，已合併 `791e686`。
 CORE-024 在 `codex/core-024-search` 實作獨立原生搜索。Responses、Messages 及 Gemini 都用實際 loopback HTTP 驗證來源；一般 Main 透過自己的工具宣告派發，原聊天未送入獨立連線。冷重啟仍可命中完整且未過期的原收據，改 connection、Profile、金鑰域或憑據會重新派發。日期不明、孤立來源和未完成回應分開處理，原邏輯的未知嘗試重啟後維持一次。方法和來源證據在 `artifacts/CORE-024/{mac-07,windows-01}/search-proof-cache.json`；固定舊版橋接 24 項測試在 `artifacts/CORE-024/v4-oracle-01/junit.xml`。EXT-029 尚需以它的真實 Tavily owner 消費核心合同。
 兩機各 377 項斷言，驗證來源 `de95a208c5a3464a46e50105baf3801f00f32cd86e2c2072b8350974a8243d80`；10 張相鄰卡的回歸位於各卡的 `native-search-regression-01/`。
+
+CORE-024 的 PR #38 已通過三平台 push／PR 六項檢查，於 main 合併 `905e968c5a04187944bf8f0ff4a3667652221731`。CORE-032 整合此版 main，同時保留原生搜尋與插件工具的凍結宣告；相關卡將以整合後來源重驗。
+
+CORE-032 與 main 搜尋整合後，Mac CORE-032 的 `search-main-integration-01` 65 項、CORE-024 的 `host-main-integration-01` 377 項，以及 CORE-015 的 `search-host-integration-01` 均通過。原插件宣告與搜尋宣告一同經凍結／重名檢查。
