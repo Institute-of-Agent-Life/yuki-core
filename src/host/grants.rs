@@ -29,10 +29,23 @@ pub struct Install {
 pub fn methods() -> &'static Value {
     static IDL: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
     IDL.get_or_init(|| {
-        serde_json::from_str(include_str!(
+        let mut base: Value = serde_json::from_str(include_str!(
             "../../protocol/plugin/gateway/host-preview.json"
         ))
-        .expect("vendored host IDL")
+        .expect("gateway IDL");
+        let personal: Value =
+            serde_json::from_str(include_str!("../../protocol/plugin/personal/methods.json"))
+                .expect("personal IDL");
+        for (name, method) in personal["methods"].as_object().expect("personal methods") {
+            assert!(
+                base["methods"]
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(name.clone(), method.clone())
+                    .is_none()
+            );
+        }
+        base
     })
 }
 fn identifier(s: &str) -> bool {
