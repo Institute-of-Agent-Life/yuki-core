@@ -7,12 +7,12 @@ from tests.harness.compact import Owner, call, reply
 from tests.peers.chat.recorder import Recorder
 
 
-def response(owner, model, event, steps):
+def response(owner, model, event, steps, timeout=12):
     _, q = owner.wire(model)
     reply(q, calls=[call('accept', 'task_control', {'action':'accept', 'goal':'original composition'})])
     _, q = owner.wire(model)
     reply(q, calls=[call('compose', 'code_a', {'steps':steps})])
-    body, q = owner.wire(model)
+    body, q = owner.wire(model, timeout=timeout)
     result = json.loads(next(m['content'] for m in body['messages'] if m.get('tool_call_id')=='compose'))
     reply(q, 'done')
     owner.finished(event)
@@ -305,7 +305,8 @@ def long_program(ctx,sdk,install):
         install(ctx,o,folder,sdk,model,limit=40)
         with o.svc.running():
             event=o.human('continue an actual long original program')
-            result=response(o,model,event,[{'name':'time_get_current','arguments':{}} for _ in range(32)])
+            # The installed Code watchdog permits 30 seconds for this multi-boundary call.
+            result=response(o,model,event,[{'name':'time_get_current','arguments':{}} for _ in range(32)],timeout=35)
             ctx.equal('long program settles through ordinary Main',result['state'],'confirmed')
             ctx.equal('32 original VM feed points retained',o.rows('SELECT count(*),sum(fed_snapshot IS NOT NULL) FROM code_children'),[(32,32)])
             ctx.equal('32 child reservations and zero parent reservation',o.rows('SELECT used_calls FROM root_tool_budgets'),[(32,)])

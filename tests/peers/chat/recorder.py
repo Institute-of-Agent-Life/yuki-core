@@ -83,7 +83,7 @@ class Recorder:
     def url(self):
         return "http://127.0.0.1:" + str(self.server.server_port) + self.path
 
-    def receive(self):
-        path, raw, q = self.wires.get(timeout=12)
+    def receive(self, timeout=12):
+        path, raw, q = self.wires.get(timeout=timeout)
         assert path == self.path
         return raw.decode(), q

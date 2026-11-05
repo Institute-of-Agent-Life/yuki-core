@@ -136,9 +136,9 @@ class Owner:
             )
         )
 
-    def wire(self, http):
+    def wire(self, http, timeout=12):
         try:
-            raw, q = http.receive()
+            raw, q = http.receive(timeout=timeout)
             return json.loads(raw), q
         except Exception:
             self.ctx.write(

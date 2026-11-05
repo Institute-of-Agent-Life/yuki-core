@@ -140,3 +140,5 @@ CORE-024 在 `codex/core-024-search` 實作獨立原生搜索。Responses、Mess
 兩機各 377 項斷言，驗證來源 `de95a208c5a3464a46e50105baf3801f00f32cd86e2c2072b8350974a8243d80`；10 張相鄰卡的回歸位於各卡的 `native-search-regression-01/`。
 
 CORE-034 實作 `40d0d43` 已推 [PR #43](https://github.com/Institute-of-Agent-Life/yuki-core/pull/43)。接入 main `905e968` 後，Code 的 381 項及原生搜尋、Work 分段、媒體、forget、工具 registry 回歸通過 `artifacts/CORE-034/code-search-integration-01/` 與其餘五卡的 `code-search-integration-02/`。搜尋離線 fixture 已明選 lexical-only。CORE-050 已開始原路由及付費身份實作，119 項正常／冷啟斷言通過，撤權與媒體邊界仍在驗證。
+
+CORE-034 乾淨來源 `285240c` 的 Linux 候選已通過。Mac 在同時編譯多倉時，32 步 Code 仍為 running，而錄製器沿用 12 秒等待先行逾時。該情境改按已配置的 30 秒 Code watchdog 等待 35 秒，完成及原回執斷言保留；`artifacts/CORE-034/mac-12/` 的 381 項通過。原失敗回條保存在 `handoff-285240cb716d/macos-validation/`。
