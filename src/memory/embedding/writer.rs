@@ -253,7 +253,7 @@ pub async fn settle(
     let (raw, values) = match http {
         Outcome::Ok(raw) => {
             let value: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
-            let usage=json!({"input_tokens":value["usage"]["prompt_tokens"].as_u64().or(value["usage"]["total_tokens"].as_u64())}).to_string();
+            let usage=json!({"input":value["usage"]["prompt_tokens"].as_u64().or(value["usage"]["total_tokens"].as_u64())}).to_string();
             let receipt = attempt::apply(
                 conn,
                 &attempt::Action::Response {

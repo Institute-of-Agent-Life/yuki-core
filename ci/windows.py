@@ -26,10 +26,13 @@ def main():
     parser.add_argument("card")
     parser.add_argument("--host", default="hjw")
     parser.add_argument("--host-candidate",action="store_true",help="also package the exact verified host or personal candidate")
+    parser.add_argument("--release-candidate", action="store_true", help="package a clean verified CORE-039 release on HJW")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--fault", choices=["swap", "empty"])
     args = parser.parse_args()
     out = args.out.resolve()
+    if args.release_candidate and (args.card != "CORE-039" or args.host_candidate):
+        parser.error("release packaging requires CORE-039")
     if out.exists():
         parser.exit(2, "output exists; choose a new attempt\n")
     if args.host_candidate and args.card not in {"CORE-032","CORE-033","CORE-034","CORE-038","CORE-050"}:parser.exit(2,"host candidate requires CORE-032, CORE-033, CORE-034, CORE-038 or CORE-050\n")
@@ -78,6 +81,8 @@ if r.returncode==0 and {args.host_candidate!r}:
     pack=[sys.executable,'ci/host_candidate.py','--manifest','artifacts/run/manifest.json','--out','artifacts/run/handoff']
     if {source['dirty']!r}: pack.append('--development')
     subprocess.run(pack,cwd=root,env=env,check=True)
+if r.returncode==0 and {args.release_candidate!r}:
+    subprocess.run([sys.executable,'ci/candidate_job.py','native','--manifest','artifacts/run/manifest.json','--out','artifacts/run/release-host'],cwd=root,env=env,check=True)
 with zipfile.ZipFile(Path.home()/{(run_id+'-artifacts.zip')!r},'w',zipfile.ZIP_DEFLATED) as z:
     for file in sorted((root/'artifacts/run').rglob('*')):
         if file.is_file(): z.write(file,file.relative_to(root/'artifacts/run'))
