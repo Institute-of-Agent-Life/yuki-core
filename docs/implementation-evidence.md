@@ -643,3 +643,14 @@ Windows 實機目錄 `D:\yuki-core-validation-20261104\CORE-015-28d8bd4ff10f-139
 失敗保留：mac-01 編譯找出 maintenance preview 未覆蓋新增 Restore，現已沿既有來源 proof 管線驗證；mac-02 第 186 項後碰到測試單輪 8 次模型額度，拆成兩個真實入站輪次以覆蓋無原讀取的恢復，產品額度未放寬。mac-03 與相關卡均通過。原版 SQLAlchemy 表循環警告保留於 oracle log，7 項執行成功。
 
 遠端狀態：GitHub 於本輪對 CORE-015 文件提交 `47468b8` 的兩次 push 及本提交 push 回 `fatal error in commit_refs_rules`；尚未把這些本地新提交當作已推送。已觀察的 PR #61 遠端仍是 `969fb62`。保留原分支，先完成候選與排查，再重試。
+
+
+## CORE-026 恢復三平台候選
+
+來源 `d107b186066b887456fdfdffc76a3d462f18c7f9`、tree `1296fbc52a761ab72f3672d754a9a82fca8d86f14538745784dd20a163c5486c`；Windows、Linux、Mac 各 226 項。逐 ZIP 成員、大小、SHA-256、manifest、獨立 SDK 安裝及乾淨 PATH 啟動均已驗。索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/restore-handoff-final-01/verified-candidates.json`，SHA-256 `9778d445446d3b69d9118e2860441da220dc7f071c05142320029419d377f298`。Host 2／handshake 1／reader 43／Rust SDK alpha.11、Python a11；僅本人事實 create、correct、invalidate、restore 與 read_memory，尚未發布。
+
+- macos：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/restore-handoff-final-01/macos-validation/candidate/yuki-memory-preview-d107b186066b-darwin-arm64.zip`；SHA-256 `9285a071001e2ab57be1462638dfccaaf9a4dfb991157e601d661841d16759f6`。
+- linux：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/restore-handoff-final-01/linux-validation/candidate/yuki-memory-preview-d107b186066b-linux-arm64.zip`；SHA-256 `ee77eacbf3180485d43e53ab047212c57f00b13b6830093d5a5cf867d1e3c334`。
+- windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/restore-handoff-final-01/windows-validation/handoff/yuki-memory-preview-d107b186066b-windows-x86_64.zip`；SHA-256 `e987462da475dbdb5ec1face297057ff552f57dd45fb6cf013993e97f7f124b4`。
+
+Windows 原執行目錄 `D:\yuki-core-validation-20261104\CORE-026-1296fbc52a76-d3e08b21`。GitHub push 的 commit_refs_rules 暫時失敗後，同分支重試成功，PR #62 已建立。CORE-023 舊 fixture 容量失敗已以 `2fb542d` 修正並併入 #57～#62；最新來源仍需六項 CI 全過。候選的能力驗證範圍不擴充為整倉通過。
