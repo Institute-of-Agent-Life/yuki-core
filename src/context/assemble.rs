@@ -13,15 +13,14 @@ pub fn body(
     declarations: Vec<Value>,
 ) -> Value {
     let name = &profile.name;
-    // Direct-mode program and SOUL follow the pinned v4 prompting contract.
-    let mut prefix = format!(
-        "{}\n\n【角色身份】\n当前角色的名称是 {name}。",
-        include_str!("main-program.txt")
-    );
+    // The original compiler emits the character contribution before the direct-mode program.
+    let mut prefix = format!("【角色身份】\n当前角色的名称是 {name}。");
     if !soul.trim().is_empty() {
         prefix.push_str("\n\n【SOUL】\n");
         prefix.push_str(&soul.replace("{{name}}", name));
     }
+    prefix.push_str("\n\n");
+    prefix.push_str(include_str!("main-program.txt"));
     let mut messages = vec![json!({"role":"system","content":prefix})];
     messages.extend(history);
     if !input.context.is_empty() {
