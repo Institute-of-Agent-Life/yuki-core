@@ -253,3 +253,19 @@ CORE-028 已知 usage 擦除補修隨此工作樹驗過，獨立修正已推向�
 `codex/core-051-sessions` 已實作八個 Session RPC、遷移 34、雙 SDK alpha.9／a9，接入共同邏輯請求與物理 attempt 帳本。原插件 namespace、Person／群組範圍、已付重啟恢復、持久／暫存生命週期、來源分頁、擦除與晚返使用量均有實際 Host 路徑。
 
 Mac `recovery-overlap-mac-01/` 通過 730 項，來源樹 `b1e1bd809386e297e3e77807a90aa6d866117cac89e15a8f8fd9add9e05aa674`。17 張相鄰卡回歸已通過，見 `artifacts/CORE-051/regression-summary-02.json`。先前遷移漏掉兩種既有 origin，現已保留七種並以已有執行與費用資料升級驗證。Windows 第二輪重啟測試失敗的原證據保留於 `windows-02/`。第三輪 `windows-03/` 同一來源通過 730 項。重播可先得到原 `prepared` 回條，測試沿原鍵等待持久結果；各 cut 的中間狀態另存 `session-cut-receipt-*.json`。Mac `recovery-overlap-mac-02/` 再加入確定性同鍵併發，735 項通過，來源樹 `3d249134c993533596bca6135503fd0c82d58855dcf58d016d7e97fc34528b96`。接著以乾淨提交完成三平台同源候選。真 EXT-047 消費及 CORE-054 舊會話導入另列後續。
+
+## CORE-034 原生 feed 確認補修
+
+真 EXT-023 回條 `core034-consumer-01/native-feed-ack.json`（SHA-256 `6b8fc8a5029880d68d7c15285de33a36e57d05003b58779740b9eae303060f11`）證實 Monty 同一 feed 可有兩個相繼呼叫。核心確認現在接受相同 feed，仍核原 child／engine call、checkpoint、snapshot 與已知回執，拒絕倒退和改寫重播。
+
+Mac 與 HJW Windows 各 383 項通過，來源樹 `bf43b16e03c308a6cf43c6526664eec511a32d81810cf35ecfb0b90b8ee68f8f`，具名產物在 `artifacts/CORE-034/native-feed-ack-{mac,windows}-01/{nested-boundary,vm-recovery-cuts}.json`。四個 kill cut 均以同 feed 的兩個不同 call 驗證。CORE-011、016、032、052 回歸 460 項通過，彙總 `artifacts/CORE-034/feed-ack-regression-summary-01.json`。此補修將由乾淨提交重新封裝候選，真插件重跑結果待回傳。
+
+### CORE-034 相同 feed 補修候選
+
+來源 `f74ecdd86b732d0fb34fa12f0ca9defa377db6b8`，來源樹 `cc219a06edc93e62d87a960bbd54893d7ff9e31c7a9cc2a0a52327c63fd0f208`，三平台各 383 項與獨立 PATH 啟動通過。SDK alpha.5／a5、composition 1、Host 2。逐成員雜湊均已核驗，回條 `artifacts/CORE-034/handoff-f74ecdd86b73/handoff-verification.json`。真 EXT-023／024 須使用此補修版重跑原 feed 0／call 0→1；候選尚未發布。
+
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/linux-arm64/candidate/yuki-code-preview-f74ecdd86b73-linux-arm64.zip`，SHA-256 `7a2a68e2e2be6009962948b2015b266ab613f233790111765f345163b6e05da2`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/macos-arm64/yuki-code-preview-f74ecdd86b73-darwin-arm64.zip`，SHA-256 `4f65192f02e234e7c2146f8eebb3c472e3656b41fabeac89dde7d05c4a7a99b1`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/windows-validation/handoff/yuki-code-preview-f74ecdd86b73-windows-x86_64.zip`，SHA-256 `4d073b6f15f5d10c0c8594064c568555671e90c49394f7da64ff1d9568b7ec2e`。
+
+CORE-051 實作 `b176a7e` 已推 [PR #47](https://github.com/Institute-of-Agent-Life/yuki-core/pull/47)。現已整合 CORE-034 `befb666` 的原生 feed 確認補修及三平台交接記錄。整合後 CORE-034、051、050 分別通過 `sessions-feed-integration-01/`、`native-feed-integration-01/`、`sessions-feed-integration-01/`，接著製作同時含兩項能力的三平台乾淨候選。
