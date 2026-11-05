@@ -6,11 +6,36 @@ import os
 import platform
 import subprocess
 import tempfile
+import time
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from source import digest, source_identity
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def cleanup_workspace(cleanup, timeout=5):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            cleanup()
+            return
+        except PermissionError as error:
+            # A just-exited Windows executable can remain locked briefly.
+            # This only retries removing our workspace, never the executed command.
+            if getattr(error, "winerror", None) != 32 or time.monotonic() >= deadline:
+                raise
+            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
+
+
+@contextmanager
+def portable_workspace():
+    workspace = tempfile.TemporaryDirectory(prefix="yuki-host-candidate-")
+    try:
+        yield workspace.name
+    finally:
+        cleanup_workspace(workspace.cleanup)
 
 
 def tested_contents(receipt, profile, personal=False, card=None):
@@ -138,7 +163,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         if digest(content) != item["sha256"]:
             raise ValueError("SDK digest mismatch")
         files["sdk/" + n] = content
-    with tempfile.TemporaryDirectory(prefix="yuki-host-candidate-") as sandbox:
+    with portable_workspace() as sandbox:
         # The verified binary must also start after transfer without the original compiler or its PATH.
         exe = Path(sandbox) / binary.name
         exe.write_bytes(raw)

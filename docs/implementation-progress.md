@@ -334,3 +334,8 @@ CORE-034 同步媒體 `7cd4e42` 及 Work 分段 `e357ab6`。祖先整合保留 m
 CORE-050 接入 Code `6615b29`，包含 main 分發、清除、檢索、媒體及 Work 分段的已驗整合。Mac CORE-050、039 均通過 `artifacts/CORE-050/code-distribution-main-01/`、`artifacts/CORE-039/aux-code-distribution-main-01/`。共用候選打包器保留 auxiliary schema／SDK 能力與 debug／release 二進位選擇。PR #44 按新 head 重驗六項 CI，原候選仍按原來源標記。
 
 CORE-036 整合輔助模型 `3de48dc` 與 main 分發鏈。Mac CORE-036、039 通過 `artifacts/CORE-036/aux-distribution-main-01/`、`artifacts/CORE-039/participation-aux-distribution-main-01/`。組合候選打包器保留 participation 方法與各卡驗證來源，PR #45 按新 head 重驗三平台。
+PR #43 Windows CI `42080468945` 的 CORE-039 在原命令通過後，清理臨時執行檔時遇到 WinError 32；失敗 ZIP `.cache/code-ci-13440917770.zip`，SHA-256 `4ca3d7b740a9a3c141ed87c4c2132f6c688d50dea830a08fbb424b893b15630f`。候選器僅對自建目錄的 sharing violation 最多重試五秒，持續鎖定及其他權限錯誤仍失敗，不重跑原命令。Mac CORE-039 `code-windows-cleanup-01/` 通過，HJW `code-windows-cleanup-native-01/` 正在驗證；最新提交六項 CI 完成前不合併。
+
+CORE-050 同步 Code 的 Windows 臨時執行檔清理修正 `4448a06`。Mac CORE-039 `aux-windows-cleanup-01/` 通過；上游同份修正在 HJW 通過 `artifacts/CORE-039/code-windows-cleanup-native-01/`，該回條來源為 `6615b29` 工作樹 `4936d7b65e47d4579b9380b6436c6491d89425eaaebf0e7927df66dd9fc6671e`，不是新發布候選。PR #44 以新 head 重新檢查。
+
+CORE-036 同步輔助模型 `c26e6c4` 與已驗 Windows 清理修正，Mac CORE-039 `participation-windows-cleanup-01/` 通過；實作未改參與授權或 SELF 額度。PR #45 以整合 head 重新驗證最新三平台 CI。
