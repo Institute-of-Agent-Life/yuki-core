@@ -8,10 +8,10 @@ import subprocess
 from contextlib import contextmanager
 
 class Service:
-    def __init__(self, ctx, data):
+    def __init__(self, ctx, data, profile="debug"):
         self.ctx = ctx
         self.data = data
-        self.binary = ctx.root / "target/debug" / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
+        self.binary = ctx.root / "target" / profile / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
         self.argv = [str(self.binary), "--data", str(data)]
 
     def command(self, *args, accepted=True):
