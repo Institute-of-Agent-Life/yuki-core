@@ -573,3 +573,5 @@ CORE-013 原撤回模型工具補核（`codex/core-013-recall-wire`）：`recall
 Mac `artifacts/CORE-013/recall-wire-mac-04/` 252 項與 Rust 測試通過，舊版五個原用例通過（`original-recall-oracle-01/02`），成功回條逐欄核對；writer commit 後真殺程序並冷啟動，三次物理撤回與四個已提交原鍵分開記錄。`recall-adjacent-01/` CORE-005／010／030 通過。CORE-034 發現測試 peer 仍送 Artifact 舊 version／字串 path；按原公開 schema 修正後，本分支 `artifacts/CORE-013/recall-code-regression-02/` 387 項通過，兩次業務扣額與 Artifact 子讀零扣額未變。
 
 失敗保留：mac-01 測試雙 bot 共用憑證被啟動校驗拒絕；mac-02 把模型 call_id 誤當效果 operation_id，已經由原 intent 映射查核晚回；mac-03 成功後補完整結果對拍及包內證據，mac-04 通過。development-package 僅打包自測；待乾淨 commit 形成三平台未發布候選。未知／失敗 error_category 使用核心分類，不宣稱與舊 Python 例外類名完全相同。下一個核心補核是 `get_my_capabilities` 原主體權限目錄，穩定擴展消費及 CORE-040 全切片等價仍待補。
+
+CORE-015／034 整合補核：Code 測試 peer 仍使用 Artifact 舊 version／字串 path，被現行公開模型 schema 拒絕。改為原 operation=get 與相對 logical_root 的陣列 path；仍核兩次業務扣額、Artifact 子讀零扣額、真派發／回執及原 128 字元。`artifacts/CORE-034/original-artifact-wire-mac-02/` 387 項通過。首次 mac-01 誤把既有核心效果外層當成 Python envelope，已修正斷言路徑並保留失敗；不改產品授權或放寬 schema。
