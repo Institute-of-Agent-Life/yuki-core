@@ -24,7 +24,8 @@ def run(ctx):
     old = Service(ctx, ctx.working / "v10")
     previous_schema(ctx, old.data, 10)
     with closing(sqlite3.connect(old.data / "core.sqlite")) as db:
-        db.executescript("""
+        db.executescript(
+            """
           PRAGMA foreign_keys=ON;
           INSERT INTO persons(id) VALUES('00000000-0000-4000-8000-000000000088');
           INSERT INTO accounts VALUES('a','qq','legacy','1'),('b','qq','legacy','2');
@@ -33,7 +34,8 @@ def run(ctx):
           INSERT INTO events(id,source_scope,source_key,entry_id,account_id,raw_actor,actor_stage,bot_stage,observed_at,envelope,mentions) VALUES(5,'scope','old','legacy-private','a','00000000-0000-4000-8000-000000000088','human','self',1,'{"kind":"message","text":"舊版臺灣資料","segments":[]}','[]');
           INSERT INTO accepted_sources VALUES(5);
           INSERT INTO executions(id,source,original_actor,state) VALUES('legacy-run',5,'00000000-0000-4000-8000-000000000088','completed');
-        """)
+        """
+        )
     old.command("migrate")
     with old.running():
         migrated = old.command(
@@ -241,7 +243,9 @@ def run(ctx):
         around = query({"kind": "around", "anchor": hit["items"][0]["id"], "limit": 5})
         ctx.equal(
             "around the original operation is identical to its first result anchor",
-            query({"kind": "around", "anchor_operation": "search-original", "limit": 5}),
+            query(
+                {"kind": "around", "anchor_operation": "search-original", "limit": 5}
+            ),
             around,
         )
         ctx.check(
@@ -435,6 +439,10 @@ def run(ctx):
                         db.execute("SELECT request_json FROM model_requests").fetchall()
                     ),
                 )
+    from tests.harness.contacts import run as contacts
+
+    contact_result = contacts(ctx)
+    ctx.write("original-contact-directory.json", contact_result)
     return {
         "migrated": migrated,
         "match": hit,
@@ -450,6 +458,7 @@ def run(ctx):
         "cursor_after_deletion": later,
         "around": around,
         "original_replay": replay,
+        "original_contacts": contact_result,
         "directory": dirs,
         "method": "v4 NFKC/casefold, OpenCC t2s, 1/2/3-gram candidates with exact per-field verification",
     }
