@@ -292,3 +292,5 @@ CORE-038 已整合個人入口 `d576aee` 及 main `692e323` 的分發入口。Ma
 CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自動合併重複的 provider 欄位，保留原工具宣告入口。Mac CORE-016、014、039 全部通過 `artifacts/CORE-016/dist-main-segments-03/`、`artifacts/CORE-014/dist-segments-integration-02/`、`artifacts/CORE-039/work-segments-main-integration-02/`。PR #42 以整合後 head 等 CI。
 
 CORE-034 同步媒體 `7cd4e42` 及 Work 分段 `e357ab6`。祖先整合保留 memory 配置驗證；Work 分段自動合併造成聯絡人註冊遺漏，已恢復並由 CORE-014／015 `code-segment-main-01/` 驗證。最新修正 head 通過 CI 前不合併。
+
+PR #43 Windows CI `42080468945` 的 CORE-039 在原命令通過後，清理臨時執行檔時遇到 WinError 32；失敗 ZIP `.cache/code-ci-13440917770.zip`，SHA-256 `4ca3d7b740a9a3c141ed87c4c2132f6c688d50dea830a08fbb424b893b15630f`。候選器僅對自建目錄的 sharing violation 最多重試五秒，持續鎖定及其他權限錯誤仍失敗，不重跑原命令。Mac CORE-039 `code-windows-cleanup-01/` 通過，HJW `code-windows-cleanup-native-01/` 正在驗證；最新提交六項 CI 完成前不合併。
