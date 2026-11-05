@@ -3,7 +3,7 @@ pub(crate) use domain::{human_text as event_text, window};
 pub(crate) mod segment;
 mod step;
 pub(crate) use step::hold as hold_original;
-mod transport;
+pub(crate) mod transport;
 use crate::{
     Result,
     store::{Mutation, Store},
@@ -41,6 +41,8 @@ pub struct Config {
     pub native_web_search: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub vision_input: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub bridge_search: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]

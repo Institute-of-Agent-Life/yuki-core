@@ -73,6 +73,7 @@ pub enum Mutation {
     SeedPausedGroup(String, String, String),
     RecoverGroup(Box<crate::ingress::group_recovery::Recovery>),
     Privacy(crate::privacy::Action),
+    Search(Box<crate::model::search::Change>),
     Model(Box<crate::model::attempt::Action>),
     Effect(crate::runtime::effects::Action),
     ObserveQqAccount(String, String),
@@ -204,6 +205,7 @@ impl Driver for SqliteDriver {
             Mutation::Privacy(action) => {
                 return crate::privacy::apply(self.connection(), action).await;
             }
+            Mutation::Search(c) => return crate::model::search::apply(self.connection(), c).await,
             Mutation::Model(action) => {
                 return crate::model::attempt::apply(self.connection(), action).await;
             }
@@ -283,6 +285,7 @@ enum Command {
 pub struct Store {
     pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
+    pub search: Option<Arc<crate::model::search::Engine>>,
     pub main: Option<Arc<crate::runtime::main::Config>>,
     pub work_segments: crate::runtime::main::segment::Config,
     commands: mpsc::Sender<Command>,
@@ -367,6 +370,7 @@ impl Store {
         });
         Self {
             media: None,
+            search: None,
             main: None,
             work_segments: Default::default(),
             host: None,

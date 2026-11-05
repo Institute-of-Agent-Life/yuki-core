@@ -1,0 +1,16 @@
+{
+  "constrained_prompt": "请使用已声明的原生网页搜索查找以下问题的公开来源。只依据实际搜索到的来源回答；不要编造 URL、来源或发布日期。日期无法核实时请说明。\n{\"query\": \"茶具\", \"topic\": \"news\", \"time_range\": \"week\", \"max_results\": 2}",
+  "dated_partial": true,
+  "all_physical_calls": 3,
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "user": "请使用已声明的原生网页搜索查找以下问题的公开来源。只依据实际搜索到的来源回答；不要编造 URL、来源或发布日期。日期无法核实时请说明。\n{\"query\": \"茶具\", \"topic\": \"general\", \"max_results\": 2}",
+  "local_functions": 0,
+  "complete_physical_calls": 1,
+  "original_urls": [
+    "https://example.com/original"
+  ],
+  "cache_urls": [
+    "https://example.com/original"
+  ],
+  "partial": false
+}
