@@ -100,6 +100,7 @@ pub enum Mutation {
 }
 
 trait Driver: Send + 'static {
+    fn info(&mut self) -> impl Future<Output = Result<Value>> + Send;
     fn begin(&mut self) -> impl Future<Output = Result<()>> + Send;
     fn apply(&mut self, action: &Mutation) -> impl Future<Output = Result<Value>> + Send;
     fn commit(&mut self) -> impl Future<Output = Result<()>> + Send;
@@ -138,6 +139,35 @@ impl SqliteDriver {
     }
 }
 impl Driver for SqliteDriver {
+    async fn info(&mut self) -> Result<Value> {
+        let version: String = sqlx::query_scalar("SELECT sqlite_version()")
+            .fetch_one(&mut *self.connection())
+            .await?;
+        let compile_options: Vec<String> = sqlx::query_scalar("PRAGMA compile_options")
+            .fetch_all(&mut *self.connection())
+            .await?;
+        let foreign_keys: i64 = sqlx::query_scalar("PRAGMA foreign_keys")
+            .fetch_one(&mut *self.connection())
+            .await?;
+        let journal_mode: String = sqlx::query_scalar("PRAGMA journal_mode")
+            .fetch_one(&mut *self.connection())
+            .await?;
+        let schema_version: Option<i64> =
+            sqlx::query_scalar("SELECT MAX(version) FROM _sqlx_migrations")
+                .fetch_one(&mut *self.connection())
+                .await?;
+        let synchronous: i64 = sqlx::query_scalar("PRAGMA synchronous")
+            .fetch_one(self.connection())
+            .await?;
+        let busy_timeout: i64 = sqlx::query_scalar("PRAGMA busy_timeout")
+            .fetch_one(self.connection())
+            .await?;
+        Ok(
+            json!({"sqlite_version":version,"compile_options":compile_options,"foreign_keys":foreign_keys,
+            "journal_mode":journal_mode,"synchronous":synchronous,"busy_timeout_ms":busy_timeout,"observed_connection":"writer","schema_version":schema_version,"minimum_reader":schema_version}),
+        )
+    }
+
     async fn begin(&mut self) -> Result<()> {
         sqlx::query("BEGIN IMMEDIATE")
             .execute(self.connection())
@@ -339,6 +369,7 @@ struct Signals {
 }
 
 enum Command {
+    Inspect(oneshot::Sender<Result<Value>>),
     Write(Mutation, oneshot::Sender<Result<Value>>),
     Shutdown(oneshot::Sender<Result<()>>),
 }
@@ -392,6 +423,11 @@ impl Store {
         tokio::spawn(async move {
             while let Some(command) = queue.recv().await {
                 match command {
+                    Command::Inspect(reply) => {
+                        if !reply.is_closed() {
+                            let _ = reply.send(driver.info().await);
+                        }
+                    }
                     Command::Shutdown(reply) => {
                         state.accepting.store(false, Ordering::SeqCst);
                         let _ = reply.send(driver.close().await);
@@ -484,26 +520,12 @@ impl Store {
         }
     }
     pub async fn database_info(&self) -> Result<Value> {
-        let version: String = sqlx::query_scalar("SELECT sqlite_version()")
-            .fetch_one(&self.readers)
-            .await?;
-        let compile_options: Vec<String> = sqlx::query_scalar("PRAGMA compile_options")
-            .fetch_all(&self.readers)
-            .await?;
-        let foreign_keys: i64 = sqlx::query_scalar("PRAGMA foreign_keys")
-            .fetch_one(&self.readers)
-            .await?;
-        let journal_mode: String = sqlx::query_scalar("PRAGMA journal_mode")
-            .fetch_one(&self.readers)
-            .await?;
-        let schema_version: Option<i64> =
-            sqlx::query_scalar("SELECT MAX(version) FROM _sqlx_migrations")
-                .fetch_one(&self.readers)
-                .await?;
-        Ok(
-            json!({"sqlite_version":version,"compile_options":compile_options,"foreign_keys":foreign_keys,
-            "journal_mode":journal_mode,"schema_version":schema_version,"minimum_reader":schema_version}),
-        )
+        let (reply, result) = oneshot::channel();
+        self.commands
+            .send(Command::Inspect(reply))
+            .await
+            .map_err(|_| "writer stopped")?;
+        result.await?
     }
     pub async fn shutdown(&self) -> Result<()> {
         let (reply, result) = oneshot::channel();

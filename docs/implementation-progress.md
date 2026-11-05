@@ -512,3 +512,5 @@ CORE-014 三平台交接已驗：來源 `43b67d35d996ab6185507931a77e189677e9a1d
 已推 PR #53；等待 #52 及最新 head 三平台 push／PR 六項 CI，通過後合併 main。
 
 CORE-057 跨平台封裝補正：Linux `handoff-final-01/linux-validation-02/` 查出 provenance 誤收 ExFAT 的 AppleDouble `._` 中繼資料；移除非來源成員後，仍逐一驗 20 份原 CI JSON 與 defaults 的 SHA-256。`provenance-mac-01/` 通過，先前 Mac 212 項包含 21 項中繼資料檢查，修正後為 192 項（新增來源集合檢查）。原失敗及舊候選保留，未列入交接；將從本提交重做三平台候選。
+
+CORE-005／040 量測補核：`database-info` 改從原 SQLite writer 佇列查詢，公開實際 synchronous、busy_timeout_ms 及 observed_connection，避免用 reader 的 PRAGMA 當 writer 設定。`artifacts/CORE-005/writer-info-mac-01/` 通過。CORE-040 最新 Rust release 的 `c-current-1200-02/` 逐筆 1200 輸入／1200 送達相符，20 組長 Work 正在跑；工具集合與提示差異仍在核對，未完成投資裁決。先前 C attempt 01 因未顯式選 lexical-only 啟動失敗，保留原紀錄。

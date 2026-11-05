@@ -53,6 +53,10 @@ struct FaultDriver {
     fail_close: bool,
 }
 impl Driver for FaultDriver {
+    async fn info(&mut self) -> Result<Value> {
+        Err("fault driver has no SQLite connection".into())
+    }
+
     async fn begin(&mut self) -> Result<()> {
         self.inner.begin().await
     }
