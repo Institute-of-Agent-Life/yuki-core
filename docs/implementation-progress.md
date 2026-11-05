@@ -451,19 +451,18 @@ CORE-051 整合維護 `402a9aa` 與 main 分發鏈。Mac CORE-051 `maintenance-d
 
 CORE-048 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-048 `sessions-distribution-main-02/`、CORE-039 `profiles-sessions-distribution-main-02/` 通過。候選器保留模型設定 metadata、四協議與獨立 Search／Embedding 的原能力記錄；PR #49 按整合後 head 等六項 CI。前一份 `sessions-distribution-main-01/` 在錯誤的 CORE-049 工作樹執行而缺卡入口，已撤銷該處本輪 merge，未修改 CORE-049。
 CORE-058 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-058 `sessions-distribution-main-01/`、CORE-039 `notifications-sessions-distribution-main-01/` 通過。候選共用打包保留通知合同、SDK 版本及驗證來源，PR #48 按整合後 head 重驗六項 CI。
-## CORE-037：整合驗證中
+## CORE-037：實作與三平台候選已驗，PR #51 待 CI
 
-分支 `codex/core-037-control-integration`，基底 `c47ab6a`，整合通知 `f5f961b`；本地實作與 Mac 驗證已完成，最終三平台候選仍待核。Rust 共用控制服務已接 CLI、Admin HTTP 與兩種 SDK 的原 invocation，包含角色／SOUL、Person／Binding／Presence、Work、模型設定與單次探測、插件批准／啟停／發現／設定／觀察、trace、usage 和原 outbox 安全重排。握手 1、Host 2、control methods 1、reader 41，SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`。
+分支 `codex/core-037-control-integration`，實作提交 `1e7b89362b6f806aa11eed841b28071b22151e7e`，已推 [PR #51](https://github.com/Institute-of-Agent-Life/yuki-core/pull/51)。整合 CORE-048 與 CORE-058，Rust 共用控制服務涵蓋角色／SOUL、Person／Binding／Presence、Work、模型設定與單次探測、插件批准／啟停／發現／設定／觀察、trace、usage、原 outbox 安全重排及確定失敗回條。原 paid continuation 與未知效果不取得新重試權。
 
-正常／故障時序及具名回條在 `tests/cases/CORE-037.py` 與 `tests/harness/control_*.py`：同 revision 競爭、原人／能力撤回、付費續接保原內容、SOUL prepare／rename 與 discovery 寫入後實際 kill、冷啟恢復、原失敗 request ID 重放。未知效果不可重試；安全 outbox 重排沿原 publication／effect／根額度。接納後確定失敗回滾部分寫入並保存原失敗；格式錯誤在接納前拒絕。
+Mac ARM64、HJW Windows x86_64、Linux ARM64 在同一乾淨來源樹 `f58b344f4da4d4bf36c5a7a2dc20a67f6d752a373e8d362f3891d562a3bd22bf` 各通過 977 項。兩種實際安裝 SDK 執行 Host 管理呼叫；故障包含 SOUL／discovery 寫入後真 kill、CAS、撤權、冷啟、成功／失敗原回條及 UUID 大小寫重放。CORE-048 663 項、CORE-058 326 項與相鄰整合回歸亦通過。
 
-最新 Mac `artifacts/CORE-037/failed-command-receipts-03/` 975 項、CORE-048 `control-failure-receipts-03/` 663 項通過，來源樹 `60cf93efd114eef3004876e97b3e19a2eeea77bed383a62af7aefaaa2d8b8e22`。CORE-014／016／017／032／033／035／039／048／052 先前整合回歸均通過 `control-integrated-regression-01/`，CORE-058 通過 `control-outbox-regression-02/`。先前失敗產物保留；DTO 未接納與業務失敗回條分開驗證。
+**候選未發布。** 交接索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-037/handoff-final-01/verified-candidates.json`，SHA-256 `8519f27ea2c10a9f692ac6b34e47e8a92bf3751b871b07dcaf02f9597e5b946b`；內含絕對路徑、來源提交、逐成員驗證、實含能力與各平台回條。握手 1、Host 2、control 1、reader 41，Rust SDK `1.0.0-alpha.11`／Python `1.0.0a11`。
 
-較早同樹 `5cbc8a75c2a2` 的 Mac／HJW Windows／Linux 各通過 942 項；開發候選僅供追溯，**未含最新失敗回條修正、未發布**：
-- Mac `artifacts/CORE-037/control-candidate-mac-01/candidate/yuki-control-preview-c47ab6a75e23-darwin-arm64.zip`，SHA-256 `4728cae128c9a8044b59f287629eabe8433c51cccc021cc1ee0a71e145495c71`。
-- Linux `artifacts/CORE-037/control-candidate-linux-01/candidate/yuki-control-preview-c47ab6a75e23-linux-arm64.zip`，SHA-256 `c0258cd887254506bdfec92a4a99439237f3861f4a5e0657243778279acb37ed`。
-- Windows `artifacts/CORE-037/control-candidate-windows-01/handoff/yuki-control-preview-c47ab6a75e23-windows-x86_64.zip`，SHA-256 `a92f420a0f5f2c2cc81c29d62672f9d9c3d91d2b8423b6a3747100a1026a95a8`。
+| 平台 | ZIP SHA-256 |
+|---|---|
+| Mac ARM64 | `37945f2a6abda16c54fd024271471a0adaa78343b093fae3fac7313867ee9e9c` |
+| Linux ARM64 | `673662bd73e0a89418c8aeb2740a00c34c491ea3da56c735b0bb7f6540f5b625` |
+| HJW Windows x86_64 | `cfad9951aa18cb1e0a9677b8d6e042d84dafdc6e6b13ba95feb4ab943fd9a4e6` |
 
-UUID 大小寫同一 request 補核通過 `CORE-037/failed-command-receipts-04/` 977 項與 `CORE-048/control-request-alias-01/` 663 項；通知回歸 `CORE-058/control-failure-receipts-01/` 326 項通過。最終乾淨來源三平台驗證與包雜湊會記於 `artifacts/CORE-037/handoff-final-01/verified-candidates.json`。
-
-下一步：乾淨來源三平台候選 → 推送／PR → 最新六項 CI 通過後合併。候選將綁定乾淨來源提交。真 EXT-022／037／038／039／049 消費證據仍缺，穩定協議未凍結；其後可獨立推進 CORE-055 usage 欄位覆蓋與 CORE-014 原歷史工具、CORE-040 原 wire 等價對拍。
+PR #51 等 #48／#49 進 main 後，按最新 head 的三平台 push／PR 六項 CI 合併。真 EXT-022／037／038／039／049 消費證據仍缺，穩定協議未凍結。下一個可獨立任務 CORE-055 已開始；CORE-014 原歷史工具與 CORE-040 原 wire 等價對拍仍待補齊。
