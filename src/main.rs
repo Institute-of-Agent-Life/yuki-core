@@ -104,6 +104,7 @@ async fn execute(args: Args) -> Result<()> {
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let mut store = store::Store::open(&owner.data).await?;
             store.main = config.main.map(Arc::new);
+            store.search = model::search::start(config.search)?;
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
             host::Hub::start(&mut store, config.plugins, &owner.data, qq.clone()).await?;
             let stop = Arc::new(Notify::new());
