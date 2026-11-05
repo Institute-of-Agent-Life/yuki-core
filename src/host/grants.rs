@@ -2,12 +2,17 @@ use crate::{Result, tools::registry::Tool};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeSet, path::PathBuf};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::PathBuf,
+};
 use yuki_plugin_sdk::{Binding, Declaration};
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Install {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub aux_routes: BTreeMap<String, super::aux_model::Route>,
     pub id: String,
     pub namespace: String,
     pub program: PathBuf,
@@ -50,6 +55,18 @@ pub fn methods() -> &'static Value {
                 );
             }
         }
+        let auxiliary: Value =
+            serde_json::from_str(include_str!("../../protocol/plugin/aux-model/methods.json"))
+                .expect("auxiliary model IDL");
+        for (name, method) in auxiliary["methods"].as_object().expect("auxiliary methods") {
+            assert!(
+                base["methods"]
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(name.clone(), method.clone())
+                    .is_none()
+            );
+        }
         base
     })
 }
@@ -62,6 +79,18 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        for (name, route) in &self.aux_routes {
+            if !identifier(name)
+                || !["llm.complete", "llm.result", "forget.owner"]
+                    .into_iter()
+                    .all(|g| self.grants.contains(g))
+            {
+                return Err(
+                    "auxiliary routes require explicit model and source-owner grants".into(),
+                );
+            }
+            route.validate()?;
+        }
         if !identifier(&self.id) || !identifier(&self.namespace) || !self.program.is_absolute() {
             return Err("invalid plugin identity or executable".into());
         }
@@ -132,11 +161,13 @@ impl Install {
         Ok(())
     }
     pub fn revision(&self) -> Result<String> {
+        let mut identity = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if !self.aux_routes.is_empty() {
+            identity["aux_routes"] = serde_json::to_value(&self.aux_routes)?;
+        }
         Ok(format!(
             "{:x}",
-            Sha256::digest(serde_json::to_vec(
-                &json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants})
-            )?)
+            Sha256::digest(serde_json::to_vec(&identity)?)
         ))
     }
     pub fn binding(&self) -> Result<Binding> {
@@ -200,6 +231,7 @@ mod tests {
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
             erasure_args: None,
+            aux_routes: BTreeMap::new(),
             id: "p".into(),
             namespace: "qq.native".into(),
             program: std::env::current_exe().unwrap(),

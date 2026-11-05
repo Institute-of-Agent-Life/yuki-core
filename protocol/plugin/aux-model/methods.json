@@ -1,0 +1,254 @@
+{
+  "status": "candidate",
+  "revision": 1,
+  "methods": {
+    "llm.complete": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "llm.complete",
+      "params": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "handle": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "handle"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "event": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "call_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "route": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "context": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "maxLength": 16000
+            }
+          },
+          "task": {
+            "type": "object"
+          },
+          "selected_media": {
+            "type": "boolean"
+          },
+          "media": {
+            "type": "object",
+            "properties": {
+              "artifact_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            },
+            "required": [
+              "artifact_id",
+              "version"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "origin",
+          "call_id",
+          "route",
+          "purpose",
+          "text"
+        ],
+        "additionalProperties": false,
+        "not": {
+          "required": [
+            "media",
+            "selected_media"
+          ],
+          "properties": {
+            "selected_media": {
+              "const": true
+            }
+          }
+        }
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "logical": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "state": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "usage": {},
+          "erased": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request",
+          "logical",
+          "state",
+          "root",
+          "usage",
+          "erased"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "llm.result": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "llm.result",
+      "params": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12288
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "receipt": {
+            "type": "object",
+            "properties": {
+              "request": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "logical": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "state": {
+                "type": "string"
+              },
+              "root": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "usage": {},
+              "erased": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "request",
+              "logical",
+              "state",
+              "root",
+              "usage",
+              "erased"
+            ],
+            "additionalProperties": false
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "next_offset": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "bytes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "receipt",
+          "sha256",
+          "size",
+          "offset",
+          "next_offset",
+          "bytes"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -28,6 +28,8 @@ async fn close(conn: &mut SqliteConnection, id: &str, generation: &str) -> Resul
     sqlx::query("UPDATE host_calls SET state=CASE WHEN state='queued' THEN 'not_dispatched' ELSE 'unknown' END
         WHERE plugin=? AND generation=? AND state IN ('queued','dispatched')").bind(id).bind(generation).execute(&mut *conn).await?;
     sqlx::query("UPDATE operations SET state='unknown',result='null' WHERE (namespace,operation_id) IN(SELECT execution,operation FROM host_calls WHERE plugin=? AND generation=? AND state='unknown') AND state='dispatched'").bind(id).bind(generation).execute(&mut *conn).await?;
+    sqlx::query("UPDATE model_attempts SET state='unknown',ever_unknown=1 WHERE state='dispatched' AND logical IN(SELECT logical FROM host_aux_requests WHERE plugin=? AND dispatched_generation=?)")
+        .bind(id).bind(generation).execute(&mut *conn).await?;
     sqlx::query("UPDATE host_command_events SET state=CASE WHEN EXISTS(SELECT 1 FROM host_calls c WHERE c.execution=host_command_events.execution AND c.method='command.invoke' AND c.state='unknown') THEN 'unknown' ELSE 'unavailable' END WHERE plugin=? AND generation=? AND state='queued'").bind(id).bind(generation).execute(conn).await?;
     Ok(())
 }
@@ -51,6 +53,7 @@ async fn configure(conn: &mut SqliteConnection, installs: &[Install]) -> Result<
     let names: Vec<_> = installs.iter().map(|i| &i.id).collect();
     sqlx::query("UPDATE host_installations SET enabled=0 WHERE plugin NOT IN(SELECT value FROM json_each(?))").bind(serde_json::to_string(&names)?).execute(&mut *conn).await?;
     for install in installs {
+        super::aux_model::configure(conn, install).await?;
         sqlx::query("INSERT INTO host_installations(plugin,namespace,platform,bot_stage,revision,grants,tools,enabled) VALUES(?,?,?,?,?,?,?,1)
           ON CONFLICT(plugin) DO UPDATE SET namespace=excluded.namespace,platform=excluded.platform,bot_stage=excluded.bot_stage,revision=excluded.revision,grants=excluded.grants,tools=excluded.tools")
           .bind(&install.id).bind(&install.namespace).bind(&install.platform).bind(&install.bot_stage).bind(install.revision()?).bind(serde_json::to_string(&install.grants)?).bind(serde_json::to_string(&install.tools)?).execute(&mut *conn).await?;
@@ -343,6 +346,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             }
             Ok(result)
         }
+        Change::AuxModel(change) => super::aux_model::apply(conn, change).await,
         Change::Call(call) => super::calls::apply(conn, call).await,
     }
 }

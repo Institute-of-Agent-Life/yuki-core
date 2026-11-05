@@ -1,3 +1,4 @@
+mod aux_model;
 pub(crate) mod calls;
 mod commands;
 pub(crate) mod domain;
@@ -22,6 +23,7 @@ use std::{
 use tokio::sync::Mutex;
 
 pub enum Change {
+    AuxModel(Box<aux_model::Change>),
     Configure(Vec<Install>),
     Start(String, bool),
     Online(String, String),

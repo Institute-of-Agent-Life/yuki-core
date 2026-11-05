@@ -17,7 +17,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-pub(crate) use tools::{append_image, declaration, perform};
+pub(crate) use tools::{append_image, declaration, native_image as append_native_image, perform};
 
 #[derive(Default, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -183,7 +183,9 @@ fn decode(encoded: &str) -> Result<Snapshot> {
     Snapshot::new(STANDARD.decode(encoded)?)
 }
 pub(crate) fn mime(snapshot: &Snapshot) -> &'static str {
-    let b = &snapshot.data;
+    mime_bytes(&snapshot.data)
+}
+pub(crate) fn mime_bytes(b: &[u8]) -> &'static str {
     if b.starts_with(b"\x89PNG\r\n\x1a\n") {
         "image/png"
     } else if b.starts_with(&[0xff, 0xd8, 0xff]) {
@@ -192,6 +194,8 @@ pub(crate) fn mime(snapshot: &Snapshot) -> &'static str {
         "image/gif"
     } else if b.starts_with(b"RIFF") && b.get(8..12) == Some(b"WEBP") {
         "image/webp"
+    } else if b.starts_with(b"RIFF") && b.get(8..12) == Some(b"WAVE") {
+        "audio/wav"
     } else if std::str::from_utf8(b).is_ok() && !b.contains(&0) {
         "text/plain"
     } else {

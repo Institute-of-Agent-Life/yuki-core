@@ -291,7 +291,7 @@ fn append_one(cfg: &Profile, body: &mut Value, row: sqlx::sqlite::SqliteRow) -> 
     let encoded = STANDARD.encode(row.get::<Vec<u8>, _>("bytes"));
     native_image(cfg.protocol, body, &content_type, &encoded)
 }
-fn native_image(p: Protocol, body: &mut Value, mime: &str, encoded: &str) -> Result<()> {
+pub(crate) fn native_image(p: Protocol, body: &mut Value, mime: &str, encoded: &str) -> Result<()> {
     let uri = format!("data:{mime};base64,{encoded}");
     let (key, part) = if p.is_chat() {
         (

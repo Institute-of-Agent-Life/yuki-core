@@ -225,6 +225,13 @@
       "timeout_seconds": 150,
       "rust": true,
       "capabilities": ["source-publication-fence", "durable-owner-erasure"]
+    },
+    "CORE-050": {
+      "case": "tests/cases/CORE-050.py",
+      "artifact": "aux-attempts.json",
+      "timeout_seconds": 360,
+      "rust": true,
+      "capabilities": ["scoped-auxiliary-model", "original-model-attempts"]
     }
   }
 }
