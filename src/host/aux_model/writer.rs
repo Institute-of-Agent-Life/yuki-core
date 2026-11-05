@@ -90,6 +90,26 @@ async fn request(
     }
     let raw = body.to_string();
     let exec = scope::execution(db, plugin, &origin, &route).await?;
+    for reference in params["sources"].as_array().into_iter().flatten() {
+        let event = reference.as_i64().ok_or("invalid declared source")?;
+        let allowed: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM events e JOIN persons p ON p.id=e.raw_actor
+             JOIN persons root ON root.id=coalesce(p.current_root,p.id)
+             WHERE e.id=?1 AND p.enabled AND root.enabled
+             AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
+             AND (e.id=?5 OR (e.entry_id=?2 AND EXISTS(SELECT 1 FROM source_holds WHERE owner=?3 AND source=e.id))
+                 OR e.id IN(SELECT source FROM executions WHERE id=?4 UNION SELECT event FROM main_dependencies WHERE execution=?4)))",
+        ).bind(event).bind(&origin.entry).bind(plugin).bind(&origin.parent)
+            .bind(origin.event).fetch_one(&mut *db).await?;
+        if !allowed {
+            return Err("declared auxiliary source outside original retained scope".into());
+        }
+        sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
+            .bind(&exec)
+            .bind(event)
+            .execute(&mut *db)
+            .await?;
+    }
     let id = new_id(db).await?;
     let logical = format!("plugin-aux:{id}");
     execution::activate(db, &exec, &logical, &profile.contract()).await?;

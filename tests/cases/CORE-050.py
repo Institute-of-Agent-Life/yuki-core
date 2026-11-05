@@ -91,7 +91,7 @@ class Peer:
         return self.receive(self.submit(method, params), ok)
 
 
-def event(owner, source):
+def event(owner, source, text="original review event"):
     return owner.op(
         "ingress",
         "record",
@@ -103,7 +103,7 @@ def event(owner, source):
                 "kind": "message",
                 "observed": 20,
                 "occurred": 20,
-                "segments": [{"type": "text", "text": "original review event"}],
+                "segments": [{"type": "text", "text": text}],
             }
         ),
     )["event"]
@@ -357,7 +357,15 @@ def cuts(ctx, sdk):
 
 def failures(ctx, sdk):
     proofs = []
-    for kind in ("unknown", "quota", "revoked", "erased", "no-route", "withdraw"):
+    for kind in (
+        "unknown",
+        "quota",
+        "revoked",
+        "erased",
+        "no-route",
+        "withdraw",
+        "context",
+    ):
         owner = Owner(ctx, "aux-" + kind, 29)
         with owner.svc.running():
             entry = owner.op(
@@ -391,8 +399,57 @@ def failures(ctx, sdk):
                     )
                     proofs.append({"case": kind, "requests": 0})
                     continue
+                erased_source = src
+                if kind == "context":
+                    context_text = "retained extra source canary"
+                    erased_source = event(owner, "context-source", context_text)
+                    p["sources"] = [erased_source]
+                    p["context"] = [context_text]
+                    peer.call("llm.complete", p, False)
+                    owner.op(
+                        "privacy", "acquire", "aux", "prior-context-read", erased_source
+                    )
+                    foreign = owner.op(
+                        "ingress",
+                        "record",
+                        json.dumps(
+                            {
+                                "source": "foreign-context",
+                                "account": owner.user["account"],
+                                "bot_stage": owner.bot["assignment"],
+                                "space": "outside-aux-entry",
+                                "kind": "message",
+                                "observed": 21,
+                                "occurred": 21,
+                                "segments": [
+                                    {"type": "text", "text": "outside approved entry"}
+                                ],
+                            }
+                        ),
+                    )["event"]
+                    owner.op("privacy", "acquire", "aux", "other-entry-read", foreign)
+                    peer.call(
+                        "llm.complete",
+                        {
+                            **p,
+                            "call_id": "foreign-context-denied",
+                            "sources": [foreign],
+                        },
+                        False,
+                    )
+                    ctx.equal(
+                        "unretained and foreign context reserve no request",
+                        owner.rows("SELECT count(*) FROM model_requests"),
+                        [(0,)],
+                    )
                 key = peer.submit("llm.complete", p)
                 _, q = upstream.receive()
+                if kind == "context":
+                    ctx.equal(
+                        "declared context joins actual model dependencies",
+                        set(owner.rows("SELECT event FROM main_dependencies")),
+                        {(src,), (erased_source,)},
+                    )
                 if kind == "withdraw":
                     owner.op("host", "enable", "aux", "false")
                     owner.until(
@@ -411,18 +468,20 @@ def failures(ctx, sdk):
                         owner.rows("SELECT execution FROM host_aux_origins")[0][0],
                     )
                     reply(q, "known paid response after cancellation")
-                elif kind == "erased":
+                elif kind in ("erased", "context"):
                     owner.op(
                         "privacy",
                         "erase",
                         "erase-aux-source",
                         owner.actor,
-                        json.dumps([src]),
+                        json.dumps([erased_source]),
                     )
                     reply(q, "late private auxiliary canary")
                 else:
                     reply(q, "first paid response")
-                done = peer.receive(key, ok=None if kind == "erased" else True)
+                done = peer.receive(
+                    key, ok=None if kind in ("erased", "context") else True
+                )
                 if kind == "withdraw":
                     ctx.equal(
                         "plugin closure marks the dispatched attempt unknown",
@@ -477,7 +536,7 @@ def failures(ctx, sdk):
                         owner.rows("SELECT reserved_requests FROM root_budgets"),
                         [(1,)],
                     )
-                elif kind == "erased":
+                elif kind in ("erased", "context"):
                     ctx.check(
                         "erasure returns only denial or erased receipt",
                         "error" in done or done.get("erased") is True,
@@ -501,12 +560,28 @@ def failures(ctx, sdk):
                             )
                         ),
                     )
+                if kind == "context":
+                    ctx.equal(
+                        "primary source survives extra-context erasure",
+                        owner.rows(
+                            "SELECT count(*) FROM invalidated_sources WHERE source=?",
+                            src,
+                        ),
+                        [(0,)],
+                    )
                 ctx.check(
                     "failure path issues no replacement HTTP", upstream.wires.empty()
                 )
                 proofs.append(
                     {
                         "case": kind,
+                        "primary_source": src,
+                        "erased_source": erased_source
+                        if kind in ("erased", "context")
+                        else None,
+                        "dependencies": owner.rows(
+                            "SELECT execution,event FROM main_dependencies ORDER BY execution,event"
+                        ),
                         "attempts": owner.rows(
                             "SELECT id,logical,state,ever_unknown FROM model_attempts"
                         ),

@@ -90,6 +90,15 @@
               "version"
             ],
             "additionalProperties": false
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxItems": 64,
+            "uniqueItems": true
           }
         },
         "required": [
