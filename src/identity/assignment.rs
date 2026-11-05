@@ -35,6 +35,10 @@ pub enum Action {
         #[arg(long)]
         person: Option<String>,
     },
+    End {
+        stage: String,
+        at: i64,
+    },
     Resolve {
         account: String,
         observed: i64,
@@ -112,6 +116,23 @@ async fn insert(
 
 pub async fn apply(conn: &mut SqliteConnection, action: &Action) -> Result<Value> {
     match action {
+        Action::End { stage, at } => {
+            let status: String = sqlx::query_scalar("SELECT status FROM assignments WHERE id=?")
+                .bind(stage)
+                .fetch_one(&mut *conn)
+                .await?;
+            if status != "ended" {
+                sqlx::query_scalar::<_,String>("UPDATE assignments SET ended_at=?,status='ended' WHERE id=? AND ?>(SELECT max(at) FROM assignment_states WHERE stage=assignments.id) RETURNING id")
+                    .bind(at).bind(stage).bind(at).fetch_one(&mut *conn).await?;
+                sqlx::query("INSERT INTO assignment_states(stage,at,status) VALUES(?,?,'ended')")
+                    .bind(stage)
+                    .bind(at)
+                    .execute(&mut *conn)
+                    .await?;
+                sqlx::query("UPDATE entries SET closed_at=? WHERE closed_at IS NULL AND (actor_stage=? OR bot_stage=?)").bind(at).bind(stage).bind(stage).execute(conn).await?;
+            }
+            Ok(json!({"assignment":stage,"status":"ended"}))
+        }
         Action::Open {
             platform,
             namespace,

@@ -17,6 +17,8 @@ pub async fn prepare(
 ) -> Result<Value> {
     crate::model::profile_store::runtime::pin(conn, exec, cfg).await?;
     let actor = execution::eligible(conn, exec).await?;
+    let original_soul = crate::operator::domain::original_soul(conn, exec, soul).await?;
+    let soul = original_soul.as_str();
     let turn=sqlx::query("SELECT t.material,t.conversation,t.window,t.rowid,t.origin,x.state FROM main_turns t JOIN executions x ON x.id=t.execution WHERE x.id=?")
         .bind(exec).fetch_one(&mut *conn).await?;
     if !matches!(

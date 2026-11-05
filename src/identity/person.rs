@@ -43,6 +43,7 @@ pub enum Action {
 }
 
 pub enum Change {
+    Rename(String, String),
     Create(String, String),
     Merge(String, String),
     Enable(String, bool),
@@ -109,6 +110,17 @@ async fn root(conn: &mut SqliteConnection, id: &str) -> Result<String> {
 
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
     match change {
+        Change::Rename(id, name) => {
+            let name = name.trim();
+            if name.chars().count() > 128 {
+                return Err("person name exceeds 128 characters".into());
+            }
+            sqlx::query("INSERT OR IGNORE INTO person_names SELECT id,name FROM persons WHERE id=? AND name<>'' AND name<>?")
+                .bind(id).bind(name).execute(&mut *conn).await?;
+            let revision: i64 = sqlx::query_scalar("UPDATE persons SET name=?,revision=revision+(name<>?) WHERE id=? RETURNING revision")
+                .bind(name).bind(name).bind(id).fetch_one(conn).await?;
+            Ok(json!({"original":id,"name":name,"revision":revision}))
+        }
         Change::Create(id, name) => {
             if name.chars().count() > 128 {
                 return Err("person name exceeds 128 characters".into());

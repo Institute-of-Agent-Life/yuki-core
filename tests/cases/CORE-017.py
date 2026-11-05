@@ -263,6 +263,11 @@ def run(ctx):
                 ),
             )
             woke, q = wire()
+            if "already here before registration" not in str(woke["messages"]):
+                ctx.write("wait-registration-diagnostic.json", {"wire":woke,"earlier":earlier,
+                    "executions":rows("SELECT id,source,state,work_id FROM executions"),
+                    "inputs":rows("SELECT * FROM main_inputs"),"waits":rows("SELECT * FROM work_waits"),
+                    "mail":rows("SELECT * FROM work_mail"),"routed":rows("SELECT * FROM work_wait_routed")})
             ctx.check(
                 "pre-settlement input delivered to original Work",
                 "already here before registration" in str(woke["messages"]),

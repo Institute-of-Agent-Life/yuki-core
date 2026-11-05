@@ -35,7 +35,7 @@ def main():
         parser.error("release packaging requires CORE-039")
     if out.exists():
         parser.exit(2, "output exists; choose a new attempt\n")
-    if args.host_candidate and args.card not in {"CORE-032","CORE-033","CORE-034","CORE-038","CORE-050","CORE-036","CORE-035","CORE-051","CORE-048"}:parser.exit(2,"host candidate requires CORE-032, CORE-033, CORE-034, CORE-038, CORE-050, CORE-036, CORE-035, CORE-051 or CORE-048\n")
+    if args.host_candidate and args.card not in {"CORE-032","CORE-033","CORE-034","CORE-038","CORE-050","CORE-036","CORE-035","CORE-051","CORE-048","CORE-058","CORE-037"}:parser.exit(2,"host candidate requires CORE-032, CORE-033, CORE-034, CORE-038, CORE-050, CORE-036, CORE-035, CORE-051, CORE-048, CORE-058 or CORE-037\n")
     source = source_identity(ROOT)
     run_id = args.card + "-" + source["tree_sha256"][:12] + "-" + uuid.uuid4().hex[:8]
     cache = ROOT / ".cache/windows" / run_id

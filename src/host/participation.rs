@@ -101,7 +101,7 @@ pub(super) async fn apply(db: &mut SqliteConnection, change: &Change) -> Result<
 }
 pub(crate) use proposals::{authorize, self_binding, self_group_route};
 
-async fn qq_route(
+pub(in crate::host) async fn qq_route(
     db: &mut SqliteConnection,
     namespace: &str,
     group: &str,

@@ -247,6 +247,16 @@ fn compile_profile(
     keys: &BTreeMap<String, String>,
     id: &str,
 ) -> Result<Config> {
+    compile_connection(service, catalog, keys, id, true)
+}
+
+pub(super) fn compile_connection(
+    service: &Service,
+    catalog: &Catalog,
+    keys: &BTreeMap<String, String>,
+    id: &str,
+    retain_credentials: bool,
+) -> Result<Config> {
     let mut profile = resolve(&catalog.public["profiles"][id])?;
     let mut cfg = service.baseline.clone();
     let provider = profile["provider"]
@@ -353,11 +363,13 @@ fn compile_profile(
     }
     let credentials = Arc::new(Credentials { key, headers });
     let hash = super::digest(&serde_json::to_vec(&*credentials)?);
-    service
-        .credentials
-        .write()
-        .map_err(|_| "configuration_unavailable")?
-        .insert(hash.clone(), credentials.clone());
+    if retain_credentials {
+        service
+            .credentials
+            .write()
+            .map_err(|_| "configuration_unavailable")?
+            .insert(hash.clone(), credentials.clone());
+    }
     cfg.key_env = None;
     cfg.credentials = Some(credentials);
     cfg.profile_binding = Some(Binding {
@@ -513,15 +525,23 @@ pub(crate) fn ready(store: &Store, cfg: &mut Config) -> Result<()> {
 }
 
 pub(crate) async fn current(store: &Store) -> Result<Option<Arc<Config>>> {
-    let Some(service) = &store.profile_files else {
-        return Ok(store.main.clone());
+    let mut cfg = if let Some(service) = &store.profile_files {
+        let value: String =
+            sqlx::query_scalar("SELECT value FROM core_meta WHERE key='model-profile-current'")
+                .fetch_one(store.readers())
+                .await?;
+        let mut cfg: Config = serde_json::from_str(&value)?;
+        hydrate(service, &mut cfg)?;
+        cfg
+    } else if let Some(cfg) = &store.main {
+        (**cfg).clone()
+    } else {
+        return Ok(None);
     };
-    let value: String =
-        sqlx::query_scalar("SELECT value FROM core_meta WHERE key='model-profile-current'")
-            .fetch_one(store.readers())
-            .await?;
-    let mut cfg: Config = serde_json::from_str(&value)?;
-    hydrate(service, &mut cfg)?;
+    let mut db = store.readers().acquire().await?;
+    if let Some(name) = crate::operator::domain::current_name(&mut db).await? {
+        cfg.name = name;
+    }
     Ok(Some(Arc::new(cfg)))
 }
 

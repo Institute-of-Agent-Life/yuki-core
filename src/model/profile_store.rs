@@ -2,6 +2,7 @@ mod boot;
 mod catalog;
 mod files;
 pub(crate) mod http;
+pub(crate) mod probe;
 pub(crate) mod runtime;
 pub(crate) mod wire;
 
@@ -43,6 +44,7 @@ pub(crate) enum Request {
     Secret(Authority, Value),
     Commit(Authority, String),
     Receipt(Authority, String),
+    ProbeAuth(Authority),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -143,7 +145,7 @@ async fn store_record(db: &mut SqliteConnection, key: &str, record: &Record) -> 
 async fn prepare(
     db: &mut SqliteConnection,
     service: &Service,
-    actor: Actor,
+    actor: &Actor,
     body: &Value,
     secret: bool,
 ) -> Result<Value> {
@@ -152,7 +154,8 @@ async fn prepare(
     let mut canonical = body.clone();
     canonical["request_id"] = json!(id);
     let digest = crate::memory::scope::hash(&json!([secret, canonical]));
-    let key = key(&actor, &id);
+    let control_body = canonical.clone();
+    let key = key(actor, &id);
     if let Some(original) = read_record(db, &key).await? {
         if original.digest != digest {
             return Err("request_conflict".into());
@@ -194,8 +197,8 @@ async fn prepare(
         version: 1,
         target: service.target.clone(),
         digest,
-        actor: actor.namespace,
-        source_person: actor.source_person,
+        actor: actor.namespace.clone(),
+        source_person: actor.source_person.clone(),
         plan: Some(plan),
         configurations,
         connections,
@@ -203,6 +206,18 @@ async fn prepare(
             "audit_id":audit,"effective_state":{"status":"prepared"},"operation":null}),
     };
     store_record(db, &key, &record).await?;
+    crate::operator::domain::model_prepared(
+        db,
+        actor,
+        if secret {
+            "model.secret"
+        } else {
+            "model.apply"
+        },
+        &control_body,
+        &record.receipt,
+    )
+    .await?;
     sqlx::query("INSERT INTO core_meta(key,value) VALUES('model-profile-active-operation',?)")
         .bind(&key)
         .execute(db)
@@ -351,6 +366,7 @@ async fn commit(
         "apply_mode":if hot {"hot_reload"} else {"restart"}});
     record.plan = None;
     store_record(db, &key, &record).await?;
+    crate::operator::domain::model_settled(db, actor, id, &record.receipt).await?;
     sqlx::query("DELETE FROM core_meta WHERE key='model-profile-active-operation' AND value=?")
         .bind(key)
         .execute(db)
@@ -372,24 +388,54 @@ pub(crate) async fn apply(
         }
         Request::Prepare(authority, _)
         | Request::Secret(authority, _)
-        | Request::Commit(authority, _) => (authority, config::WRITE_MODELS),
+        | Request::Commit(authority, _)
+        | Request::ProbeAuth(authority) => (authority, config::WRITE_MODELS),
         Request::Start => unreachable!(),
     };
     let actor = config::authorize(db, service.operators.as_deref(), authority, capability).await?;
-    match request {
-        Request::Read(_) => view(db, service).await,
-        Request::Prepare(_, body) => prepare(db, service, actor, body, false).await,
-        Request::Secret(_, body) => prepare(db, service, actor, body, true).await,
-        Request::Commit(_, id) => commit(db, service, &actor, id).await,
-        Request::Receipt(_, id) => {
-            crate::host::personal::credentials::uuid(id)?;
-            Ok(read_record(db, &key(&actor, id))
-                .await?
-                .ok_or("not_found")?
-                .receipt)
+    let command = match request {
+        Request::Prepare(_, body) | Request::Secret(_, body) => {
+            let mut canonical = body.clone();
+            canonical["request_id"] = json!(request_id(body)?);
+            Some((
+                if matches!(request, Request::Secret(..)) {
+                    "model.secret"
+                } else {
+                    "model.apply"
+                },
+                canonical,
+            ))
         }
-        Request::Start => unreachable!(),
+        _ => None,
+    };
+    if let Some((method, body)) = &command
+        && let Some(old) =
+            crate::operator::domain::receipts::begin(db, &actor, method, body).await?
+    {
+        return Ok(old);
     }
+    let result = async {
+        match request {
+            Request::Read(_) => view(db, service).await,
+            Request::ProbeAuth(_) => Ok(json!({"authorized":true})),
+            Request::Prepare(_, body) => prepare(db, service, &actor, body, false).await,
+            Request::Secret(_, body) => prepare(db, service, &actor, body, true).await,
+            Request::Commit(_, id) => commit(db, service, &actor, id).await,
+            Request::Receipt(_, id) => {
+                crate::host::personal::credentials::uuid(id)?;
+                Ok(read_record(db, &key(&actor, id))
+                    .await?
+                    .ok_or("not_found")?
+                    .receipt)
+            }
+            Request::Start => unreachable!(),
+        }
+    }
+    .await;
+    if let Some((method, body)) = &command {
+        return crate::operator::domain::receipts::finish(db, &actor, method, body, result).await;
+    }
+    result
 }
 
 async fn put(db: &mut SqliteConnection, key: &str, value: &str) -> Result<()> {
@@ -608,7 +654,9 @@ pub(crate) async fn invoke(store: &Store, request: Request) -> Result<Value> {
         .profile_files
         .as_ref()
         .ok_or("configuration_unavailable")?;
-    store
-        .write(Mutation::ProfileConfig(service.clone(), Box::new(request)))
-        .await
+    crate::operator::domain::receipts::outcome(
+        store
+            .write(Mutation::ProfileConfig(service.clone(), Box::new(request)))
+            .await?,
+    )
 }

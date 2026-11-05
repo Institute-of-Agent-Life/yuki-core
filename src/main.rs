@@ -123,6 +123,17 @@ async fn execute(args: Args) -> Result<()> {
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let mut store = store::Store::open(&owner.data).await?;
             store.main = config.main.clone().map(Arc::new);
+            store.control = Some(operator::domain::Service::open(
+                &owner.data,
+                config.operator_registry_file.as_deref(),
+                config
+                    .main
+                    .as_ref()
+                    .map(|c| c.name.as_str())
+                    .unwrap_or("Yuki"),
+                &config.bot_aliases,
+            )?);
+            operator::domain::invoke(&store, operator::domain::Request::Start).await?;
             store.work_segments = config.work_segments;
             if let Some(path) = &config.model_profiles_file {
                 let baseline = store
@@ -184,10 +195,25 @@ async fn execute(args: Args) -> Result<()> {
                 .merge(qq.router())
                 .merge(host::personal::router(store.clone()))
                 .merge(model::profile_store::http::router(store.clone()));
+            let router = router.merge(operator::domain::http::router(store.clone()));
             let media = media::start(store.clone());
             let memory = memory::start(store.clone(), qq.clone());
             let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
             let history = history::start(store.clone());
+            if let Some(domain) = &store.control {
+                for name in ["work", "automation", "subagents"] {
+                    domain.worker(name, store.main.is_some(), runner.as_ref());
+                }
+                domain.worker("history", true, Some(&history));
+                domain.worker("media", true, Some(&media));
+                domain.worker("memory_delivery", true, Some(&memory));
+                domain.worker(
+                    "memory_extraction",
+                    extraction.is_some(),
+                    extraction.as_ref(),
+                );
+                domain.worker("memory_vectors", vectors.is_some(), vectors.as_ref());
+            }
             let signal = stop.clone();
             let service = axum::serve(listener, router).with_graceful_shutdown(async move {
                 #[cfg(unix)]

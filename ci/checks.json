@@ -5,12 +5,24 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-037": {"case":"tests/cases/CORE-037.py","artifact":"control-grants.json","timeout_seconds":300,"rust":true,"capabilities":["current-original-management-authority", "atomic-character-soul", "offline-plugin-configuration", "approved-plugin-lifecycle", "original-work-management", "bounded-trace-projection", "safe-original-notification-retry"]},
     "CORE-048": {
       "case": "tests/cases/CORE-048.py",
       "artifact": "profile-apply-matrix.json",
       "timeout_seconds": 360,
       "rust": true,
       "capabilities": ["original-profile-files", "scoped-model-configuration", "paid-profile-pinning", "recoverable-profile-save"]
+    },
+    "CORE-058": {
+      "case": "tests/cases/CORE-058.py",
+      "artifact": "notification-publication.json",
+      "timeout_seconds": 420,
+      "rust": true,
+      "capabilities": [
+        "original-notification-publications",
+        "scoped-notification-delivery",
+        "notification-source-erasure"
+      ]
     },
     "CORE-051": {
       "case": "tests/cases/CORE-051.py",

@@ -13,7 +13,7 @@ use credentials::Purpose;
 pub use http::router;
 pub(crate) use native::callback;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use sqlx::SqliteConnection;
 #[derive(clap::Subcommand, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, tag = "method", rename_all = "snake_case")]
@@ -50,8 +50,6 @@ pub enum Command {
     Message(Value),
     Correct(i64, Value),
     Schedule(i64, String, Value),
-    AdminRole(String, bool, String, i64),
-    Forget(String, String),
 }
 pub async fn write(store: &Store, r: Request) -> Result<Value> {
     store.write(Mutation::Personal(Box::new(r))).await
@@ -105,51 +103,6 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
                     domains::change_schedule(conn, &who, *n, action, v).await
                 }
                 Command::Message(v) => work::message(conn, &who, v).await,
-                Command::Forget(id, op) => {
-                    if !who.admin {
-                        return Err("forbidden".into());
-                    }
-                    credentials::uuid(op)?;
-                    let r = crate::privacy::forget::apply(
-                        conn,
-                        &format!("admin-forget:{}:{op}", who.owner),
-                        id,
-                    )
-                    .await?;
-                    Ok(
-                        json!({"person_id":id,"deleted":true,"peer_cleanup":r["owners_pending"],"managed_storage":r["managed_storage"]}),
-                    )
-                }
-                Command::AdminRole(id, enabled, op, revision) => {
-                    if !who.admin {
-                        return Err("forbidden".into());
-                    }
-                    credentials::uuid(op)?;
-                    let hash = credentials::fingerprint(
-                        "admin.person_superuser",
-                        id,
-                        &json!({"enabled":enabled,"expected_revision":revision}),
-                    );
-                    if let Some(r)=sqlx::query_as::<_,(String,String)>("SELECT digest,result FROM personal_receipts WHERE owner=? AND scope='admin' AND operation=?").bind(&who.owner).bind(op).fetch_optional(&mut *conn).await?{
-                        if r.0!=hash{return Err("request_conflict".into())}return Ok(serde_json::from_str(&r.1)?)
-                    }
-                    let current: i64 =
-                        sqlx::query_scalar("SELECT revision FROM persons WHERE id=?")
-                            .bind(id)
-                            .fetch_optional(&mut *conn)
-                            .await?
-                            .ok_or("not_found")?;
-                    if current != *revision {
-                        return Err("precondition_failed".into());
-                    }
-                    let result = crate::identity::person::apply(
-                        conn,
-                        &crate::identity::person::Change::Admin(id.clone(), *enabled),
-                    )
-                    .await?;
-                    sqlx::query("INSERT INTO personal_receipts VALUES(?,'admin',?,'admin.person_superuser',?,?,?,NULL)").bind(&who.owner).bind(op).bind(id).bind(hash).bind(result.to_string()).execute(conn).await?;
-                    Ok(result)
-                }
                 _ => Err("scope_unavailable".into()),
             }
         }

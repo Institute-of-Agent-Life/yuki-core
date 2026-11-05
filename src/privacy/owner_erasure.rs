@@ -29,6 +29,28 @@ pub(super) async fn erase_sources(
     sources: Vec<i64>,
     family: Option<&str>,
 ) -> Result<Value> {
+    // Authorize the caller's original roots before following stored derived references.
+    if family.is_none() {
+        for event in &sources {
+            let actual: Option<String> =
+                sqlx::query_scalar("SELECT raw_actor FROM events WHERE id=?")
+                    .bind(event)
+                    .fetch_one(&mut *conn)
+                    .await?;
+            if actual.as_deref() != Some(person) {
+                return Err("source is not owned by this original person".into());
+            }
+        }
+    }
+    let sources: Vec<i64> = sqlx::query_scalar(
+        "WITH RECURSIVE erased(id) AS(SELECT value FROM json_each(?) UNION
+         SELECT p.event FROM erased e JOIN notification_sources d ON d.source=e.id
+         JOIN notification_publications p ON p.id=d.publication)
+         SELECT id FROM erased ORDER BY id",
+    )
+    .bind(serde_json::to_string(&sources)?)
+    .fetch_all(&mut *conn)
+    .await?;
     let canonical = serde_json::to_string(&sources)?;
     if let Some(old) = sqlx::query(
         "SELECT subject,sources,watermark FROM source_erasure_requests WHERE erase_key=?",
@@ -53,13 +75,6 @@ pub(super) async fn erase_sources(
     }
     let mut obligations: BTreeMap<String, Vec<i64>> = BTreeMap::new();
     for event in &sources {
-        let actual: Option<String> = sqlx::query_scalar("SELECT raw_actor FROM events WHERE id=?")
-            .bind(event)
-            .fetch_one(&mut *conn)
-            .await?;
-        if family.is_none() && actual.as_deref() != Some(person) {
-            return Err("source is not owned by this original person".into());
-        }
         if source::is_erased(conn, *event).await? {
             continue;
         }

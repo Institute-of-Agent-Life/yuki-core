@@ -6,24 +6,52 @@ import os
 import platform
 import subprocess
 import tempfile
+import time
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from source import digest, source_identity
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def cleanup_workspace(cleanup, timeout=5):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            cleanup()
+            return
+        except PermissionError as error:
+            # A just-exited Windows executable can remain locked briefly.
+            # This only retries removing our workspace, never the executed command.
+            if getattr(error, "winerror", None) != 32 or time.monotonic() >= deadline:
+                raise
+            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
+
+
+@contextmanager
+def portable_workspace():
+    workspace = tempfile.TemporaryDirectory(prefix="yuki-host-candidate-")
+    try:
+        yield workspace.name
+    finally:
+        cleanup_workspace(workspace.cleanup)
+
+
 def tested_contents(receipt, profile, personal=False, card=None):
     card = card or ("CORE-033" if personal else "CORE-032")
     personal = card == "CORE-033"
     media = card == "CORE-038"
+    control = card == "CORE-037"
     profiles = card == "CORE-048"
+    notifications = card == "CORE-058"
     sessions = card == "CORE-051"
     maintenance = card == "CORE-035"
     participation = card == "CORE-036"
     auxiliary = card == "CORE-050"
     composition = card == "CORE-034"
     proof_name = {
+        "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
         "CORE-033": "personal-handoff.json",
         "CORE-038": "media-handle-bridge.json",
@@ -32,6 +60,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "CORE-035": "maintenance-grants.json",
         "CORE-051": "isolated-session-replay.json",
         "CORE-048": "profile-apply-matrix.json",
+        "CORE-058": "notification-publication.json",
         "CORE-034": "nested-boundary.json",
     }[card]
     proof = receipt(proof_name)
@@ -45,7 +74,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles
+        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -70,6 +99,13 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if control:
+        for path,expected in [("protocol/plugin/control/methods.json","control_schema_sha256"),("protocol/baseline-v4/admin-openapi.json","admin_openapi_sha256")]:
+            raw_contract=(ROOT/path).read_bytes()
+            if digest(raw_contract)!=data[expected]:raise ValueError("control contract differs from verified source")
+            files[path]=raw_contract
+        for path in ("protocol/admin/capabilities.json","protocol/admin/person-capabilities.json","protocol/plugin/control/README.md"):
+            files[path]=(ROOT/path).read_bytes()
     if profiles:
         for path, expected in [("protocol/baseline-v4/admin-openapi.json", "admin_openapi_sha256"),
                                ("protocol/admin/model-metadata.json", "profile_metadata_sha256")]:
@@ -80,6 +116,11 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files["config/model_profiles.example.toml"] = (ROOT / "config/model_profiles.example.toml").read_bytes()
         files["protocol/admin/capabilities.json"] = (ROOT / "protocol/admin/capabilities.json").read_bytes()
         files["docs/model-profiles.md"] = (ROOT / "docs/model-profiles.md").read_bytes()
+    if notifications:
+        methods=(ROOT/"protocol/plugin/notifications/methods.json").read_bytes()
+        if digest(methods)!=data["notification_schema_sha256"] or set(data["negotiated_notification_methods"])!=set(json.loads(methods)["methods"]):
+            raise ValueError("notification methods differ from exercised original")
+        files["protocol/notifications/methods.json"]=methods
     if sessions:
         methods=(ROOT/"protocol/plugin/sessions/methods.json").read_bytes()
         if digest(methods)!=data["session_schema_sha256"] or set(data["negotiated_session_methods"])!=set(json.loads(methods)["methods"]):
@@ -164,7 +205,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         if digest(content) != item["sha256"]:
             raise ValueError("SDK digest mismatch")
         files["sdk/" + n] = content
-    with tempfile.TemporaryDirectory(prefix="yuki-host-candidate-") as sandbox:
+    with portable_workspace() as sandbox:
         # The verified binary must also start after transfer without the original compiler or its PATH.
         exe = Path(sandbox) / binary.name
         exe.write_bytes(raw)
@@ -201,7 +242,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -219,13 +260,16 @@ def build(manifest_path, out, development=False):
 
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
+    control = m["card"] == "CORE-037"
     profiles = m["card"] == "CORE-048"
+    notifications = m["card"] == "CORE-058"
     sessions = m["card"] == "CORE-051"
     maintenance = m["card"] == "CORE-035"
     participation = m["card"] == "CORE-036"
     auxiliary = m["card"] == "CORE-050"
     composition = m["card"] == "CORE-034"
     proof_name = {
+        "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
         "CORE-033": "personal-handoff.json",
         "CORE-038": "media-handle-bridge.json",
@@ -234,6 +278,7 @@ def build(manifest_path, out, development=False):
         "CORE-035": "maintenance-grants.json",
         "CORE-051": "isolated-session-replay.json",
         "CORE-048": "profile-apply-matrix.json",
+        "CORE-058": "notification-publication.json",
         "CORE-034": "nested-boundary.json",
     }[m["card"]]
     data = json.loads(receipt(proof_name))
@@ -241,6 +286,7 @@ def build(manifest_path, out, development=False):
     target = (
         (
             {
+                "CORE-037": "yuki-control-preview-",
                 "CORE-032": "yuki-host-preview-",
                 "CORE-033": "yuki-personal-preview-",
                 "CORE-038": "yuki-media-preview-",
@@ -248,6 +294,7 @@ def build(manifest_path, out, development=False):
                 "CORE-036": "yuki-participation-preview-",
                 "CORE-035": "yuki-maintenance-preview-",
                 "CORE-051": "yuki-session-preview-",
+                "CORE-058": "yuki-notification-preview-",
                 "CORE-034": "yuki-code-preview-",
                 "CORE-048": "yuki-profile-preview-",
             }[m["card"]]
@@ -287,6 +334,15 @@ def build(manifest_path, out, development=False):
         },
         "members": members,
     }
+    if control:
+        candidate["control_schema_revision"]=1
+        candidate["control_schema_sha256"]=data["control_schema_sha256"]
+        candidate["admin_openapi_sha256"]=data["admin_openapi_sha256"]
+        candidate["database_schema_revision"]=data["database_schema_revision"]
+        candidate["validated_control_methods"]=data["validated_control_methods"]
+        candidate["validated_action_families"]=data["validated_action_families"]
+        candidate["validation"]["consumer"]="installed Python wheel and external Rust crate consumer; native Admin and OS operator"
+        candidate["validation"]["real_extension_consumers"]="pending EXT-022, EXT-037, EXT-038, EXT-039 and EXT-049"
     if profiles:
         candidate["model_profile_schema_revision"] = 3
         candidate["admin_openapi_sha256"] = data["admin_openapi_sha256"]
@@ -307,6 +363,11 @@ def build(manifest_path, out, development=False):
         candidate["media_schema_revision"] = 1
         candidate["media_schema_sha256"] = data["media_schema_sha256"]
         candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
+    if notifications:
+        candidate["notification_schema_revision"]=1
+        candidate["notification_schema_sha256"]=data["notification_schema_sha256"]
+        candidate["validated_notification_methods"]=data["negotiated_notification_methods"]
+        candidate["validation"]["real_extension_consumers"]="pending EXT-027 and EXT-047"
     if sessions:
         candidate["session_schema_revision"]=1
         candidate["session_schema_sha256"]=data["session_schema_sha256"]

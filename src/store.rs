@@ -57,6 +57,10 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Control(
+        Arc<crate::operator::domain::Service>,
+        Box<crate::operator::domain::Request>,
+    ),
     ProfileConfig(
         Arc<crate::model::profile_store::Service>,
         Box<crate::model::profile_store::Request>,
@@ -177,6 +181,9 @@ impl Driver for SqliteDriver {
             Mutation::ProfileConfig(service, request) => {
                 return crate::model::profile_store::apply(self.connection(), service, request)
                     .await;
+            }
+            Mutation::Control(service, request) => {
+                return crate::operator::domain::apply(self.connection(), service, request).await;
             }
             Mutation::Personal(change) => {
                 return crate::host::personal::apply(self.connection(), change).await;
@@ -339,6 +346,7 @@ enum Command {
 #[derive(Clone)]
 pub struct Store {
     pub(crate) profile_files: Option<Arc<crate::model::profile_store::Service>>,
+    pub(crate) control: Option<Arc<crate::operator::domain::Service>>,
     pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
     pub vectors: Option<Arc<crate::memory::embedding::Engine>>,
@@ -369,6 +377,7 @@ impl Store {
         let mut driver = SqliteDriver::open(data).await?;
         crate::model::attempt::recover_unanswered(driver.connection()).await?;
         crate::social::send::recover(driver.connection()).await?;
+        crate::work::management::recover(driver.connection()).await?;
         Ok(Self::start(driver, read_pool(data).await?))
     }
     fn start(mut driver: impl Driver, readers: SqlitePool) -> Self {
@@ -427,6 +436,7 @@ impl Store {
         });
         Self {
             profile_files: None,
+            control: None,
             vectors: None,
             media: None,
             search: None,

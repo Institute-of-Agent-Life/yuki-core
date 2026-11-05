@@ -123,6 +123,8 @@ impl Session {
         }
         let timeout = if let Some(handle) = &handle {
             sqlx::query_scalar::<_,f64>("SELECT json_extract(contract,'$.request_timeout_seconds') FROM code_parents WHERE handle=?").bind(handle).fetch_optional(store.readers()).await?.unwrap_or(12.0)
+        } else if method == "plugin.observe" {
+            5.0
         } else {
             12.0
         };
@@ -142,11 +144,26 @@ pub async fn launch(
     data: &Path,
     cleanup: bool,
 ) -> Result<(Session, oneshot::Receiver<bool>)> {
-    let generation = write(store, Change::Start(install.id.clone(), cleanup))
-        .await?
-        .as_str()
-        .ok_or("missing generation")?
-        .to_owned();
+    let generation = write(
+        store,
+        Change::Start(
+            install.id.clone(),
+            cleanup,
+            crate::memory::scope::hash(&serde_json::to_value(install)?),
+        ),
+    )
+    .await?
+    .as_str()
+    .ok_or("missing generation")?
+    .to_owned();
+    let approved: String = sqlx::query_scalar(
+        "SELECT grants FROM host_installations WHERE plugin=? AND generation=? AND enabled",
+    )
+    .bind(&install.id)
+    .bind(&generation)
+    .fetch_one(store.readers())
+    .await?;
+    let approved: std::collections::BTreeSet<String> = serde_json::from_str(&approved)?;
     let (send, mut queue) = mpsc::channel::<Message>(48);
     let (stop, mut stopping) = watch::channel(false);
     let (on_exit, closed) = watch::channel(false);
@@ -190,7 +207,8 @@ pub async fn launch(
         "YUKI_PLUGIN_START_MODE",
         if cleanup { "erasure_only" } else { "normal" },
     );
-    let binding = install.binding()?;
+    let mut binding = install.binding()?;
+    binding.grants = approved.iter().cloned().collect();
     command.env("YUKI_PLUGIN_BINDING", serde_json::to_string(&binding)?);
     let mut child = command.spawn()?;
     let stdout = child.stdout.take().ok_or("plugin stdout missing")?;
@@ -243,7 +261,6 @@ pub async fn launch(
     });
     let link = session.clone();
     let store = store.clone();
-    let install = install.clone();
     tokio::spawn(async move {
         let mut peer = Peer::new(binding).expect("validated binding");
         let mut input = BufReader::new(stdout);
@@ -272,7 +289,7 @@ pub async fn launch(
                     if accepted {
                         let revisions = reply["result"]["method_revisions"].as_array_mut().unwrap();
                         for (name, d) in grants::methods()["methods"].as_object().unwrap() {
-                            if install.grants.contains(d["grant"].as_str().unwrap())
+                            if approved.contains(d["grant"].as_str().unwrap())
                                 && (!cleanup || d["grant"] == "forget.owner")
                             {
                                 revisions.push(json!({"name":name,"revision":d["revision"]}));
@@ -311,6 +328,10 @@ pub async fn launch(
                     callbacks.spawn(async move{
                         let r=if matches!(method.as_str(),"llm.complete"|"llm.result") {
                             super::aux_model::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
+                        } else if method.starts_with("notification.") {
+                            super::notification::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
+                        } else if method.starts_with("control.") {
+                            super::control::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else if method.starts_with("session.") {
                             super::plugin_sessions::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else if method.starts_with("maintenance.") {

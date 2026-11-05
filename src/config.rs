@@ -12,6 +12,8 @@ pub struct Config {
     pub model_profiles_file: Option<PathBuf>,
     #[serde(default)]
     pub operator_registry_file: Option<PathBuf>,
+    #[serde(default)]
+    pub bot_aliases: Vec<String>,
     pub listen: std::net::SocketAddr,
     #[serde(default)]
     pub plugins: Vec<crate::host::Install>,

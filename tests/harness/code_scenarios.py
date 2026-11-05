@@ -4,6 +4,7 @@ import json
 import subprocess
 import threading
 from tests.harness.compact import Owner, call, reply
+from tests.harness.json_file import read_json
 from tests.peers.chat.recorder import Recorder
 
 
@@ -266,8 +267,18 @@ def boundaries(ctx,sdk,install):
                 path.write_text(json.dumps({'id':count,'method':method,'params':params}),encoding='utf-8')
                 path.replace(folders[plugin]/'probe.json')
                 out=folders[plugin]/('probe-'+str(count)+'.json')
-                o.until(out.is_file)
-                result=json.loads(out.read_bytes())
+                try:
+                    o.until(out.is_file)
+                    result=read_json(out)
+                except Exception:
+                    ctx.write('code-boundary-probe-failure.json',{
+                        'method':method,'params':params,
+                        'calls':o.rows('SELECT handle,plugin,state,result FROM host_calls'),
+                        'plugins':o.rows('SELECT plugin,enabled,online FROM host_installations'),
+                        'peer_faults':{name:{p.name:read_json(p) for p in folder.glob('private-*fault.json')}
+                            for name,folder in folders.items()},
+                    })
+                    raise
                 ctx.equal('bound callback '+method+(' accepted' if ok else ' denied'),'result' in result,ok)
                 observations.append({'plugin':plugin,'method':method,'accepted':ok})
                 return result.get('result')
@@ -291,6 +302,11 @@ def boundaries(ctx,sdk,install):
             body,q=o.wire(model)
             reply(q,'done')
             o.finished(event)
+            settlement=o.rows("SELECT plugin,state,result FROM host_calls WHERE method='tool.call' ORDER BY plugin")
+            ctx.write('code-boundaries-settlement.json',{'calls':settlement})
+            ctx.equal('both original boundary parents settle before retained probes',
+                [(plugin,state,json.loads(result or '{}').get('data',{}).get('status')) for plugin,state,result in settlement],
+                [('code_a','confirmed','completed'),('code_b','confirmed','completed')])
             # A paired parent only exposes retained receipts. It cannot accept another child.
             probe('code_a','tool.invoke',dict(original,ordinal=1,feed_index=1,engine_call_id='engine-1',checkpoint=2,name='send',arguments={'text':'forbidden tail'}))
             ctx.equal('paired original parent produces one actual effect',len(model.deliveries),1)

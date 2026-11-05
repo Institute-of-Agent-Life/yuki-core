@@ -161,7 +161,12 @@ pub fn usage(raw: &str) -> Value {
         ("input", &v["usage"]["prompt_tokens"]),
         ("output", &v["usage"]["completion_tokens"]),
         ("total", &v["usage"]["total_tokens"]),
-        ("cache", &v["usage"]["prompt_cache_hit_tokens"]),
+        (
+            "cache",
+            v["usage"]["prompt_tokens_details"]
+                .get("cached_tokens")
+                .unwrap_or(&v["usage"]["prompt_cache_hit_tokens"]),
+        ),
         (
             "reasoning",
             &v["usage"]["completion_tokens_details"]["reasoning_tokens"],

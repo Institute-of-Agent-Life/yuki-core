@@ -27,7 +27,12 @@ pub(super) fn validate(name: &str, value: &Value) -> Result<()> {
     let spec = json!({"components":OPENAPI["components"],
         "$ref":format!("#/components/schemas/{name}")});
     if !jsonschema::validator_for(&spec)?.is_valid(value) {
-        return Err("validation_error".into());
+        return Err(if name.ends_with("Body") {
+            "invalid_command_body"
+        } else {
+            "validation_error"
+        }
+        .into());
     }
     Ok(())
 }

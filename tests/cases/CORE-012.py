@@ -193,6 +193,11 @@ def run(ctx):
                 "SELECT request_json FROM model_requests ORDER BY rowid"
             )[0][0]
             soul.write_text("", encoding="utf-8")
+            # External file edits activate through the shared management reload;
+            # already purchased executions retain their original SOUL snapshot.
+            op("control", "write", "character.soul.reload", json.dumps({
+                "request_id": "00000000-0000-4000-8000-000000000012"
+            }))
             count = rows("SELECT count(*) FROM events")[0][0]
             for kind in ("plugin", "self", "schedule", "work", "child"):
                 ref = "fixture-" + kind

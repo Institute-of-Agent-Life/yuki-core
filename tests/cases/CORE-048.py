@@ -96,7 +96,7 @@ conversation_compaction = "retired-profile"
     for name, grants in [("writer_a", True), ("writer_b", True), ("unprivileged", False)]:
         alias = "PROFILE_OPERATOR_" + name.upper()
         tokens[alias] = "fixture-operator-token-" + name + "-0000000000000000"
-        caps = ["control.config.file.content.read", "control.config.file.mutate"] if grants else []
+        caps = ["control.config.file.content.read", "control.config.file.mutate", "control.operation.read"] if grants else []
         declarations.append(f'[[operators]]\nprincipal_id="{request_id()}"\ntoken_env="{alias}"\n'
                             f'person_id="{owner.actor}"\ncapabilities={json.dumps(caps)}\n')
     (owner.svc.data / "operators.toml").write_text("\n".join(declarations))
@@ -505,6 +505,7 @@ def run(ctx):
             ctx.check("bundle revision changed", after["revision"] != initial["revision"])
             ctx.equal("exact retry returns original durable receipt",
                       http("/admin/v1/models/apply", payload=update), saved)
+            ctx.equal("model receipt preserves UUID spelling aliases",http("/admin/v1/models/apply",payload={**update,"request_id":update["request_id"].upper()}),saved)
             conflicting = copy.deepcopy(update)
             conflicting["document"]["profiles"]["primary"]["model"] = "conflicting-replay"
             http("/admin/v1/models/apply", payload=conflicting, expected=409)
@@ -539,6 +540,17 @@ def run(ctx):
             hashes = file_hashes(owner)
             http("/admin/v1/models/apply", payload=invalid, expected=422)
             ctx.equal("rejected headers leave both files intact", file_hashes(owner), hashes)
+            http("/admin/v1/operations/"+invalid["request_id"],expected=404)
+            invalid=body(current,"unreferenced-key")
+            invalid["api_keys"]={"UNREFERENCED_FOR_FIXTURE":"fixture-unreferenced-value"}
+            http("/admin/v1/models/apply",payload=invalid,expected=422)
+            failure_receipt=http("/admin/v1/operations/"+invalid["request_id"])
+            ctx.equal("rejected model body has shared failed receipt",[failure_receipt["status"],failure_receipt["error_category"]],["failed","validation_error"])
+            http("/admin/v1/models/apply",payload=invalid,expected=422)
+            ctx.equal("model failure replay keeps its original metadata",http("/admin/v1/operations/"+invalid["request_id"]),failure_receipt)
+            repaired=body(current,"repaired")
+            repaired["request_id"]=invalid["request_id"]
+            ctx.equal("repairing a failed model operation needs a new ID",http("/admin/v1/models/apply",payload=repaired,expected=409)["problem"]["code"],"request_conflict")
             for field, value in [("person_id", owner.actor), ("scope_type", "group")]:
                 forged = body(current,"forged-scope")
                 forged[field] = value
@@ -651,6 +663,9 @@ def run(ctx):
             with crash.svc.running(environment=env):
                 pending = crash.op("profiles", "receipt", operation["request_id"])
                 ctx.equal("interrupted save retains original prepared receipt", pending["effective_state"]["status"], "prepared")
+                control_pending = crash.op("control", "read", "operation.get", json.dumps({"request_id":operation["request_id"]}))
+                ctx.equal("shared control reader keeps interrupted model save pending", control_pending["status"], "pending")
+                ctx.equal("shared control reader preserves original expected revision", control_pending["expected_revision"], view["revision"])
                 if phase == "profile-prepared-before-rename":
                     config = crash.svc.data / "model_profiles.toml"
                     original_bytes = config.read_bytes()
@@ -663,6 +678,9 @@ def run(ctx):
                     config.write_bytes(original_bytes)
                 receipt = crash.op("profiles", "apply", json.dumps(operation))
                 ctx.equal("same operation resumes its original two-file save", receipt["success"], True)
+                control_done = crash.op("control", "read", "operation.get", json.dumps({"request_id":operation["request_id"]}))
+                ctx.equal("recovered model save settles its original control operation", control_done["operation_id"], control_pending["operation_id"])
+                ctx.equal("recovered control receipt uses actual model revision", (control_done["status"], control_done["result_revision"]), ("succeeded", receipt["revision"]))
                 ctx.equal("recovered exact replay keeps original receipt",
                           crash.op("profiles", "apply", json.dumps(operation)), receipt)
                 if phase == "profile-config-renamed":

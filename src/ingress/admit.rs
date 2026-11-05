@@ -150,10 +150,13 @@ pub struct Facts {
 }
 
 async fn facts(conn: &mut SqliteConnection, f: &Frame) -> Result<Facts> {
-    let bot=sqlx::query("SELECT b.status FROM assignments b JOIN accounts receiver ON b.account_id=receiver.id
+    let bot=sqlx::query("SELECT b.status,b.ingest_eligible FROM assignments b JOIN accounts receiver ON b.account_id=receiver.id
         JOIN accounts sender ON sender.platform=receiver.platform AND sender.namespace=receiver.namespace
         WHERE b.id=? AND b.kind='self' AND sender.id=?").bind(&f.bot_stage).bind(&f.account)
         .fetch_one(&mut *conn).await?;
+    if !bot.try_get::<bool, _>("ingest_eligible")? {
+        return Err("receiving presence is not eligible for ingest".into());
+    }
     let actor = assignment::resolve(conn, &f.account, f.observed, f.occurred).await?;
     let person = actor["original"].as_str();
     let enabled: bool = sqlx::query_scalar(

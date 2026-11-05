@@ -33,6 +33,8 @@ pub async fn apply(db: &mut SqliteConnection, key: &str, person: &str) -> Result
     // Changes only name/family-owned rows and derived facts. A reused transport
     // account remains bound to its independent newer stage.
     for statement in [
+        "DELETE FROM core_meta WHERE key LIKE 'plugin-config-values:%' AND json_extract(value,'$.scope_type')='user' AND json_extract(value,'$.owner_id') IN(SELECT value FROM json_each(?1))",
+        "UPDATE core_meta SET value=json_set(value,'$.result',json('{\"erased\":true}')) WHERE key LIKE 'control-receipt:%' AND (json_extract(value,'$.source_person') IN(SELECT value FROM json_each(?1)) OR json_extract(value,'$.target_owner') IN(SELECT value FROM json_each(?1)) OR EXISTS(SELECT 1 FROM json_each(json_extract(core_meta.value,'$.target_people')) t JOIN json_each(?1) f ON t.value=f.value))",
         "UPDATE memory_facts SET status='erased' WHERE person IN(SELECT value FROM json_each(?1)) AND status!='erased'",
         "UPDATE memory_versions SET body=NULL WHERE fact IN(SELECT id FROM memory_facts WHERE person IN(SELECT value FROM json_each(?1)))",
         "UPDATE memory_evidence SET quote=NULL WHERE fact IN(SELECT id FROM memory_facts WHERE person IN(SELECT value FROM json_each(?1)))",
@@ -46,6 +48,8 @@ pub async fn apply(db: &mut SqliteConnection, key: &str, person: &str) -> Result
         "UPDATE personal_devices SET token_hash='forgotten-'||id,label='',revoked=coalesce(revoked,unixepoch()) WHERE id IN(SELECT device_id FROM device_origins WHERE original_person IN(SELECT value FROM json_each(?1)))",
         "UPDATE personal_receipts SET result='{\"erased\":true}',target=NULL WHERE owner IN(SELECT value FROM json_each(?1))",
         "UPDATE entries SET closed_at=coalesce(closed_at,unixepoch('subsec')*1000) WHERE actor_stage IN(SELECT id FROM assignments WHERE original_person IN(SELECT value FROM json_each(?1)))",
+        "UPDATE assignments SET display_name='' WHERE original_person IN(SELECT value FROM json_each(?1))",
+        "DELETE FROM person_names WHERE person IN(SELECT value FROM json_each(?1))",
         "UPDATE assignments SET status='ended',ended_at=max(unixepoch('subsec')*1000,first_observed,coalesce(started_at,first_observed)) WHERE original_person IN(SELECT value FROM json_each(?1)) AND status!='ended'",
         "UPDATE persons SET name='',admin=0,enabled=0,revision=revision+1 WHERE id IN(SELECT value FROM json_each(?1))",
     ] {

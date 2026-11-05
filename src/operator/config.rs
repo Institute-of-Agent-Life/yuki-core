@@ -15,6 +15,13 @@ static CAPABILITIES: LazyLock<BTreeSet<String>> = LazyLock::new(|| {
     serde_json::from_value(source["capabilities"].clone()).expect("fixed capability IDs")
 });
 
+static PERSON_CAPABILITIES: LazyLock<serde_json::Value> = LazyLock::new(|| {
+    serde_json::from_str(include_str!(
+        "../../protocol/admin/person-capabilities.json"
+    ))
+    .expect("fixed v4 Person capabilities")
+});
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Declaration {
@@ -125,6 +132,11 @@ pub(crate) struct Actor {
 pub(crate) enum Authority {
     Os,
     Bearer(String),
+    Invocation {
+        plugin: String,
+        generation: String,
+        handle: String,
+    },
 }
 
 /// OS authority is constructed by the protected local socket handler.
@@ -135,11 +147,25 @@ pub(crate) async fn authorize(
     authority: &Authority,
     capability: &str,
 ) -> Result<Actor> {
-    let Authority::Bearer(hash) = authority else {
-        return Ok(Actor {
-            namespace: "os-operator".into(),
-            source_person: None,
-        });
+    let hash = match authority {
+        Authority::Invocation {
+            plugin,
+            generation,
+            handle,
+        } => {
+            crate::host::domain::active(db, plugin, generation, "control.invoke").await?;
+            let (execution, owner, admin): (String,String,bool) = sqlx::query_as("SELECT c.execution,x.original_actor,r.admin FROM host_calls c JOIN executions x ON x.id=c.execution JOIN persons p ON p.id=x.original_actor AND p.enabled JOIN persons r ON r.id=coalesce(p.current_root,p.id) AND r.enabled WHERE c.handle=? AND c.plugin=? AND c.generation=? AND c.state='dispatched' AND c.method IN ('command.invoke','tool.call')")
+                .bind(handle).bind(plugin).bind(generation).fetch_optional(&mut *db).await?.ok_or("unauthenticated")?;
+            crate::runtime::effects::authorize(db, &execution, &owner, true).await?;
+            return person_access(owner, admin, capability);
+        }
+        Authority::Os => {
+            return Ok(Actor {
+                namespace: "os-operator".into(),
+                source_person: None,
+            });
+        }
+        Authority::Bearer(hash) => hash,
     };
     let matching: Vec<_> = declarations(operators)?
         .into_iter()
@@ -172,12 +198,22 @@ pub(crate) async fn authorize(
         });
     }
     let person = credentials::authenticate(db, hash, credentials::Purpose::Chat).await?;
-    // These two capabilities are present in the fixed v4 real-superuser catalog.
-    if !person.admin || !matches!(capability, READ_MODELS | WRITE_MODELS) {
+    person_actor(person, capability)
+}
+
+fn person_actor(person: credentials::Principal, capability: &str) -> Result<Actor> {
+    person_access(person.owner, person.admin, capability)
+}
+fn person_access(owner: String, admin: bool, capability: &str) -> Result<Actor> {
+    let allowed = &PERSON_CAPABILITIES[if admin { "superuser" } else { "user" }];
+    if !allowed
+        .as_array()
+        .is_some_and(|caps| caps.iter().any(|c| c == capability))
+    {
         return Err("forbidden".into());
     }
     Ok(Actor {
-        namespace: format!("person:{}", person.owner),
-        source_person: Some(person.owner),
+        namespace: format!("person:{owner}"),
+        source_person: Some(owner),
     })
 }

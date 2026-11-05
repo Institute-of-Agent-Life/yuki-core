@@ -48,6 +48,9 @@ impl Root {
     pub fn snapshot(&self, relative: &str) -> Result<Snapshot> {
         Self::read_snapshot(self.file(relative)?)
     }
+    pub fn modified(&self, relative: &str) -> Result<std::time::SystemTime> {
+        Ok(self.file(relative)?.metadata()?.modified()?)
+    }
     pub fn snapshot_optional(&self, relative: &str) -> Result<Option<Snapshot>> {
         self.optional(relative, false)
     }

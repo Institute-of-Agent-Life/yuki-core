@@ -159,6 +159,16 @@ struct Peer {
 }
 
 impl Hub {
+    pub(crate) fn connected(&self) -> bool {
+        self.0.as_ref().is_some_and(|inner| {
+            inner
+                .active
+                .lock()
+                .expect("gateway sessions")
+                .values()
+                .any(|p| !p.tx.is_closed() && !*p.cancel.borrow())
+        })
+    }
     pub async fn new(store: Store, config: Option<Config>, data: &Path) -> Result<Self> {
         let Some(config) = config else {
             store

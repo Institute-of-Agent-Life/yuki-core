@@ -18,8 +18,8 @@ fn instant(v: &Value) -> Result<i64> {
 }
 
 async fn terms(conn: &mut SqliteConnection, id: &str) -> Result<Vec<Value>> {
-    let rows=sqlx::query("SELECT ordinal,kind,target,detail,due,hit FROM work_wait_terms WHERE wait=? ORDER BY ordinal").bind(id).fetch_all(conn).await?;
-    rows.iter().map(|r|Ok(json!({"ordinal":r.try_get::<i64,_>("ordinal")?,"kind":r.try_get::<String,_>("kind")?,"target":r.try_get::<Option<String>,_>("target")?,"detail":r.try_get::<Option<String>,_>("detail")?,"due_ms":r.try_get::<Option<i64>,_>("due")?,"hit":r.try_get::<Option<String>,_>("hit")?}))).collect()
+    let rows=sqlx::query("SELECT ordinal,kind,target,detail,due,hit,external_source FROM work_wait_terms WHERE wait=? ORDER BY ordinal").bind(id).fetch_all(conn).await?;
+    rows.iter().map(|r|Ok(json!({"ordinal":r.try_get::<i64,_>("ordinal")?,"kind":r.try_get::<String,_>("kind")?,"target":r.try_get::<Option<String>,_>("target")?,"detail":r.try_get::<Option<String>,_>("detail")?,"due_ms":r.try_get::<Option<i64>,_>("due")?,"hit":r.try_get::<Option<String>,_>("hit")?,"external_source":r.try_get::<Option<String>,_>("external_source")?}))).collect()
 }
 pub async fn status(conn: &mut SqliteConnection, s: &Scope, work: &str) -> Result<Value> {
     tree::authorize(conn, s, work).await?;
@@ -69,7 +69,7 @@ pub async fn propose(
         .transpose()?;
     let (logical,since,generation):(String,i64,i64)=sqlx::query_as("SELECT i.logical,m.event,t.window FROM model_tool_intents i JOIN work_request_marks m ON m.logical=i.logical JOIN main_turns t ON t.execution=i.execution WHERE i.execution=? AND i.operation_id=?").bind(exec).bind(op).fetch_one(&mut *conn).await?;
     let id = new_id(conn).await?;
-    sqlx::query("INSERT INTO work_waits VALUES(?,?,?,?,?,?,?,?,?,?,'proposed',NULL)")
+    sqlx::query("INSERT INTO work_waits(id,work,execution,logical,operation,mode,generation,since_event,created,deadline,state,wake_execution) VALUES(?,?,?,?,?,?,?,?,?,?,'proposed',NULL)")
         .bind(&id)
         .bind(work)
         .bind(exec)
@@ -86,6 +86,16 @@ pub async fn propose(
         let kind = term["kind"]
             .as_str()
             .ok_or("wait condition kind required")?;
+        let external_source = if kind == "plugin_event" && !term["external_source"].is_null() {
+            Some(
+                term["external_source"]
+                    .as_str()
+                    .filter(|v| v.chars().count() <= 128)
+                    .ok_or("invalid plugin external-source filter")?,
+            )
+        } else {
+            None
+        };
         let (target, detail, due) = match kind {
             "time_due" => {
                 let due = match (term.get("after_seconds"), term.get("at")) {
@@ -130,16 +140,20 @@ pub async fn propose(
                     .as_str()
                     .filter(|v| !v.is_empty())
                     .ok_or("plugin event type required")?;
-                let eligible:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations WHERE plugin=? AND enabled AND EXISTS(SELECT 1 FROM json_each(grants) WHERE value='gateway.inbound'))").bind(plugin).fetch_one(&mut *conn).await?;
+                let eligible:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i WHERE i.plugin=?1 AND i.enabled AND (
+                    EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='gateway.inbound') OR
+                    EXISTS(SELECT 1 FROM host_notification_policies p JOIN notification_target_scope target ON target.plugin=p.plugin
+                      WHERE p.plugin=i.plugin AND p.revision=i.revision AND json_extract(p.body,'$.agent') AND target.entry=?2)))")
+                    .bind(plugin).bind(&s.entry).fetch_one(&mut *conn).await?;
                 if !eligible {
-                    return Err("event producer not installed with gateway grant".into());
+                    return Err("event producer not installed for this original scope".into());
                 }
                 (Some(plugin), Some(event_type), None)
             }
             _ => return Err("unsupported wait condition kind".into()),
         };
         sqlx::query(
-            "INSERT INTO work_wait_terms(wait,ordinal,kind,target,detail,due) VALUES(?,?,?,?,?,?)",
+            "INSERT INTO work_wait_terms(wait,ordinal,kind,target,detail,due,external_source) VALUES(?,?,?,?,?,?,?)",
         )
         .bind(&id)
         .bind(i64::try_from(ord)?)
@@ -147,6 +161,7 @@ pub async fn propose(
         .bind(target)
         .bind(detail)
         .bind(due)
+        .bind(external_source)
         .execute(&mut *conn)
         .await?;
     }
@@ -157,12 +172,39 @@ async fn first_event(
     conn: &mut SqliteConnection,
     wait: &str,
     plugin: Option<(&str, &str)>,
+    external_source: Option<&str>,
 ) -> Result<Option<i64>> {
     let (plugin, kind) = plugin.map_or((None, None), |(p, k)| (Some(p), Some(k)));
-    Ok(sqlx::query_scalar("SELECT e.id FROM work_waits w JOIN work_nodes n ON n.id=w.work JOIN events e ON e.entry_id=n.entry AND e.id>w.since_event JOIN accepted_sources s ON s.event_id=e.id JOIN persons p ON p.id=e.raw_actor AND p.enabled JOIN persons owner ON owner.id=n.principal AND owner.enabled JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active' JOIN entries d ON d.id=e.entry_id AND d.closed_at IS NULL WHERE w.id=? AND w.generation=coalesce((SELECT generation FROM main_windows WHERE conversation=n.entry),1)
+    let observed: Option<i64> = sqlx::query_scalar("SELECT e.id FROM work_waits w JOIN work_nodes n ON n.id=w.work JOIN events e ON e.entry_id=n.entry AND e.id>w.since_event JOIN accepted_sources s ON s.event_id=e.id JOIN persons p ON p.id=e.raw_actor AND p.enabled JOIN persons owner ON owner.id=n.principal AND owner.enabled JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active' JOIN entries d ON d.id=e.entry_id AND d.closed_at IS NULL WHERE w.id=? AND w.generation=coalesce((SELECT generation FROM main_windows WHERE conversation=n.entry),1)
      AND coalesce(p.current_root,p.id)=coalesce(owner.current_root,owner.id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
-     AND ((?2 IS NULL AND json_extract(e.envelope,'$.kind')='message') OR (?2 IS NOT NULL AND EXISTS(SELECT 1 FROM host_ingress h JOIN host_installations inst ON inst.plugin=h.plugin AND inst.enabled WHERE h.event=e.id AND h.plugin=?2 AND h.accepted AND json_extract(e.envelope,'$.kind')=?3))) ORDER BY e.id LIMIT 1")
-        .bind(wait).bind(plugin).bind(kind).fetch_optional(conn).await?)
+     AND (?4 IS NULL OR json_extract(e.envelope,'$.external_source')=?4) AND ((?2 IS NULL AND json_extract(e.envelope,'$.kind')='message') OR (?2 IS NOT NULL AND EXISTS(SELECT 1 FROM host_ingress h JOIN host_installations inst ON inst.plugin=h.plugin AND inst.enabled WHERE h.event=e.id AND h.plugin=?2 AND h.accepted AND json_extract(e.envelope,'$.kind')=?3))) ORDER BY e.id LIMIT 1")
+        .bind(wait).bind(plugin).bind(kind).bind(external_source).fetch_optional(&mut *conn).await?;
+    let Some(plugin) = plugin else {
+        return Ok(observed);
+    };
+    let notification: Option<i64> = sqlx::query_scalar(
+        "SELECT p.event FROM work_waits w JOIN work_nodes n ON n.id=w.work
+         LEFT JOIN persons owner ON owner.id=n.principal
+         LEFT JOIN persons root ON root.id=coalesce(owner.current_root,owner.id)
+         LEFT JOIN main_origins owner_origin ON owner_origin.ref=n.principal
+         JOIN notification_publications p ON p.entry=n.entry AND p.event>w.since_event
+         JOIN notification_target_scope grant ON grant.plugin=p.plugin AND grant.entry=p.entry AND grant.receiver=p.receiver
+         JOIN host_installations i ON i.plugin=p.plugin
+         JOIN host_notification_policies policy ON policy.plugin=i.plugin AND policy.revision=i.revision
+         JOIN entries e ON e.id=p.entry AND e.closed_at IS NULL
+         JOIN assignments receiver ON receiver.id=p.receiver AND receiver.status='active'
+         LEFT JOIN persons recipient ON recipient.id=p.target_person
+         WHERE w.id=?1 AND p.plugin=?2 AND p.event_type=?3 AND p.resume_waiting_work
+         AND (?4 IS NULL OR json_extract(p.manifest,'$.external_source')=?4)
+         AND p.state='published' AND json_extract(policy.body,'$.agent')
+         AND w.generation=p.window AND p.window=coalesce((SELECT generation FROM main_windows WHERE conversation=p.entry),1)
+         AND ((owner.enabled AND root.enabled AND (p.target_person IS NULL OR
+             (recipient.enabled AND coalesce(recipient.current_root,recipient.id)=root.id)))
+           OR (owner_origin.enabled AND owner_origin.conversation=n.entry))
+         AND NOT EXISTS(SELECT 1 FROM notification_sources s JOIN invalidated_sources gone ON gone.source=s.source WHERE s.publication=p.id)
+         ORDER BY p.event LIMIT 1",
+    ).bind(wait).bind(plugin).bind(kind).bind(external_source).fetch_optional(conn).await?;
+    Ok(observed.into_iter().chain(notification).min())
 }
 async fn candidate(
     conn: &mut SqliteConnection,
@@ -182,7 +224,13 @@ async fn candidate(
         }
         Some("conversation") | Some("plugin_event") => {
             let plugin = term["target"].as_str().zip(term["detail"].as_str());
-            event = first_event(conn, id, plugin).await?;
+            event = first_event(
+                conn,
+                id,
+                plugin,
+                plugin.and_then(|_| term["external_source"].as_str()),
+            )
+            .await?;
             event.map(|e| format!("event:{e}"))
         }
         _ => None,
@@ -226,8 +274,17 @@ pub async fn ready(conn: &mut SqliteConnection, id: &str, now: i64) -> Result<bo
 }
 async fn record_input(conn: &mut SqliteConnection, id: &str, work: &str, event: i64) -> Result<()> {
     let row=sqlx::query("SELECT e.envelope,w.execution FROM events e JOIN work_waits w ON w.id=? WHERE e.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)").bind(id).bind(event).fetch_one(&mut *conn).await?;
-    let frame: crate::ingress::admit::Frame = serde_json::from_str(row.try_get("envelope")?)?;
-    let body = json!({"event":event,"text":frame.text,"segments":frame.segments}).to_string();
+    let notification: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM notification_publications WHERE event=? AND state='published')")
+        .bind(event).fetch_one(&mut *conn).await?;
+    let body = if notification {
+        let frame: Value = serde_json::from_str(row.try_get("envelope")?)?;
+        json!({"event":event,"publisher":frame["publisher"],"event_type":frame["event_type"],
+            "text":frame["summary"],"segments":frame["segments"],"payload":frame["payload"]})
+        .to_string()
+    } else {
+        let frame: crate::ingress::admit::Frame = serde_json::from_str(row.try_get("envelope")?)?;
+        json!({"event":event,"text":frame.text,"segments":frame.segments}).to_string()
+    };
     let mail = mailbox::put(
         conn,
         work,
@@ -340,7 +397,12 @@ pub async fn route_event(conn: &mut SqliteConnection, event: i64) -> Result<bool
     {
         return Ok(true);
     }
-    if super::questions::route(conn, event, None).await? {
+    let accepted: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accepted_sources WHERE event_id=?)")
+            .bind(event)
+            .fetch_one(&mut *conn)
+            .await?;
+    if accepted && super::questions::route(conn, event, None).await? {
         return Ok(true);
     }
     let rows=sqlx::query("SELECT w.id,w.work,w.state FROM work_waits w JOIN work_nodes n ON n.id=w.work JOIN events e ON e.entry_id=n.entry WHERE e.id=? AND e.id>w.since_event AND w.state IN('proposed','armed') AND n.goal IS NOT NULL AND NOT EXISTS(SELECT 1 FROM work_suspensions WHERE work=n.id)").bind(event).fetch_all(&mut *conn).await?;

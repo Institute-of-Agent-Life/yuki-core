@@ -413,6 +413,9 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
     sqlx::raw_sql("INSERT INTO accepted_sources VALUES(1);
        INSERT INTO executions(id,source,original_actor,state) VALUES('run',1,'00000000-0000-4000-8000-000000000088','running')").execute(&mut *conn).await.unwrap();
     let install = Install {
+        notifications: None,
+        enabled: true,
+        configuration: None,
         sessions: None,
         maintenance: None,
         participation: None,
@@ -442,15 +445,19 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
         ordinal: None,
         args: json!({}),
     };
+    let declaration = crate::memory::scope::hash(&serde_json::to_value(&install).unwrap());
     domain::apply(conn, &Change::Configure(vec![install]))
         .await
         .unwrap();
-    let g = domain::apply(conn, &Change::Start("fixture".into(), false))
-        .await
-        .unwrap()
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let g = domain::apply(
+        conn,
+        &Change::Start("fixture".into(), false, declaration.clone()),
+    )
+    .await
+    .unwrap()
+    .as_str()
+    .unwrap()
+    .to_owned();
     domain::apply(conn, &Change::Online("fixture".into(), g.clone()))
         .await
         .unwrap();
@@ -485,12 +492,15 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
         (host.as_str(), effect.as_str()),
         ("not_dispatched", "intent")
     );
-    let new_gen = domain::apply(conn, &Change::Start("fixture".into(), false))
-        .await
-        .unwrap()
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let new_gen = domain::apply(
+        conn,
+        &Change::Start("fixture".into(), false, declaration.clone()),
+    )
+    .await
+    .unwrap()
+    .as_str()
+    .unwrap()
+    .to_owned();
     domain::apply(conn, &Change::Online("fixture".into(), new_gen))
         .await
         .unwrap();
@@ -610,4 +620,134 @@ async fn profile_crash_child() {
         .await
         .unwrap();
     panic!("parent failed to kill the original configuration operation");
+}
+
+#[tokio::test]
+#[ignore = "parent process kills this child at a real file commit boundary"]
+async fn soul_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let mut store = Store::open(&data).await.unwrap();
+    store.control = Some(crate::operator::domain::Service::open(&data, None, "Yuki", &[]).unwrap());
+    crate::operator::domain::invoke(&store, crate::operator::domain::Request::Start)
+        .await
+        .unwrap();
+    let body = serde_json::from_str(&std::env::var("YUKI_SOUL_TEST_BODY").unwrap()).unwrap();
+    crate::operator::domain::save(
+        &store,
+        crate::operator::config::Authority::Os,
+        "character.soul.save".into(),
+        body,
+    )
+    .await
+    .unwrap();
+    panic!("parent failed to terminate original SOUL save");
+}
+
+#[tokio::test]
+#[ignore = "parent kills a committed lifecycle intent before process launch"]
+async fn plugin_management_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let mut store = Store::open(&data).await.unwrap();
+    store.control = Some(crate::operator::domain::Service::open(&data, None, "Yuki", &[]).unwrap());
+    let body = serde_json::from_str(&std::env::var("YUKI_PLUGIN_TEST_BODY").unwrap()).unwrap();
+    crate::operator::domain::save(
+        &store,
+        crate::operator::config::Authority::Os,
+        "plugin.enable".into(),
+        body,
+    )
+    .await
+    .unwrap();
+    panic!("parent failed to terminate the pending lifecycle command");
+}
+
+#[tokio::test]
+#[ignore = "parent kills a committed discovery before runtime inventory refresh"]
+async fn plugin_discovery_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let mut store = Store::open(&data).await.unwrap();
+    store.control = Some(crate::operator::domain::Service::open(&data, None, "Yuki", &[]).unwrap());
+    let installs = crate::config::Config::read(&data).unwrap().plugins;
+    let body = serde_json::from_str(&std::env::var("YUKI_PLUGIN_TEST_BODY").unwrap()).unwrap();
+    crate::operator::domain::invoke(
+        &store,
+        crate::operator::domain::Request::Discover(
+            crate::operator::config::Authority::Os,
+            body,
+            installs,
+        ),
+    )
+    .await
+    .unwrap();
+    commit_barrier("plugin-discovery-committed").await;
+    panic!("parent failed to terminate the committed discovery");
+}
+
+#[tokio::test]
+async fn control_failure_rolls_back_partial_mutation_but_commits_original_receipt() {
+    use crate::operator::{config::Actor, domain::receipts};
+    let (_temp, mut driver, readers) = fixture().await;
+    let actor = Actor {
+        namespace: "operator:00000000-0000-4000-8000-000000000037".into(),
+        source_person: None,
+    };
+    let body = json!({"request_id":"00000000-0000-4000-8000-000000000038","expected_revision":1,"id":"fixture"});
+    driver.begin().await.unwrap();
+    assert!(
+        receipts::begin(driver.connection(), &actor, "person.rename", &body)
+            .await
+            .unwrap()
+            .is_none()
+    );
+    sqlx::query("INSERT INTO core_meta(key,value) VALUES('partial-control-mutation','true')")
+        .execute(driver.connection())
+        .await
+        .unwrap();
+    let output = receipts::finish(
+        driver.connection(),
+        &actor,
+        "person.rename",
+        &body,
+        Err("version_conflict".into()),
+    )
+    .await
+    .unwrap();
+    assert!(receipts::outcome(output).is_err());
+    driver.commit().await.unwrap();
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM core_meta WHERE key='partial-control-mutation'"
+        )
+        .fetch_one(&readers)
+        .await
+        .unwrap(),
+        0
+    );
+    let saved: String =
+        sqlx::query_scalar("SELECT value FROM core_meta WHERE key LIKE 'control-receipt:%'")
+            .fetch_one(&readers)
+            .await
+            .unwrap();
+    let record: Value = serde_json::from_str(&saved).unwrap();
+    assert_eq!(record["status"], "failed");
+    assert_eq!(record["error_category"], "version_conflict");
+    driver.begin().await.unwrap();
+    let replay = receipts::begin(driver.connection(), &actor, "person.rename", &body)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(receipts::outcome(replay).is_err());
+    driver.commit().await.unwrap();
+    assert_eq!(
+        sqlx::query_scalar::<_, String>(
+            "SELECT value FROM core_meta WHERE key LIKE 'control-receipt:%'"
+        )
+        .fetch_one(&readers)
+        .await
+        .unwrap(),
+        saved
+    );
 }

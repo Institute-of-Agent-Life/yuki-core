@@ -163,7 +163,6 @@ enum Read {
     Works(Option<String>, i64),
     Events(String, i64, Option<i64>, i64),
     Receipt(String),
-    Admin,
 }
 async fn read(s: &Store, h: &HeaderMap, method: Read) -> Result<Value> {
     let mut tx = s.readers().begin().await?;
@@ -182,11 +181,6 @@ async fn read(s: &Store, h: &HeaderMap, method: Read) -> Result<Value> {
             views::events(&mut tx, &who, &id, after, before, limit).await
         }
         Read::Receipt(op) => work::receipt(&mut tx, &who, &op).await,
-        Read::Admin if who.admin => {
-            drop(tx);
-            Ok(json!({"ready":s.health().await.writer_accepting}))
-        }
-        Read::Admin => Err("forbidden".into()),
     }
 }
 async fn me(State(s): State<Store>, h: HeaderMap) -> Response {
@@ -271,52 +265,6 @@ async fn message(State(s): State<Store>, h: HeaderMap, Json(v): Json<Value>) -> 
         async {
             validate("MessageBody", &v)?;
             action(&s, &h, Purpose::Chat, Command::Message(v)).await
-        }
-        .await,
-        true,
-    )
-}
-async fn admin(State(s): State<Store>, h: HeaderMap) -> Response {
-    reply(read(&s, &h, Read::Admin).await, true)
-}
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct IdentityRequest {
-    request_id: String,
-}
-async fn forget(
-    State(s): State<Store>,
-    h: HeaderMap,
-    Path(id): Path<String>,
-    Json(v): Json<IdentityRequest>,
-) -> Response {
-    reply(
-        action(&s, &h, Purpose::Chat, Command::Forget(id, v.request_id)).await,
-        true,
-    )
-}
-async fn role(
-    State(s): State<Store>,
-    h: HeaderMap,
-    Path((id, change)): Path<(String, String)>,
-    Json(v): Json<Value>,
-) -> Response {
-    reply(
-        async {
-            let enabled = match change.as_str() {
-                "grant" => true,
-                "revoke" => false,
-                _ => return Err("not_found".into()),
-            };
-            let key = v["request_id"].as_str().ok_or("invalid_request_id")?;
-            let revision = v["expected_revision"].as_i64().ok_or("validation_error")?;
-            action(
-                &s,
-                &h,
-                Purpose::Chat,
-                Command::AdminRole(id, enabled, key.into(), revision),
-            )
-            .await
         }
         .await,
         true,
@@ -487,8 +435,5 @@ pub fn router(store: Store) -> Router {
         .route("/client/v1/works/{id}/inputs", post(input))
         .route("/client/v1/works/{id}/cancel", post(cancel))
         .route("/client/v1/requests/{id}", get(receipt))
-        .route("/admin/v1/persons/{id}/forget", post(forget))
-        .route("/admin/v1/health", get(admin))
-        .route("/admin/v1/persons/{id}/superuser/{action}", post(role))
         .with_state(store)
 }

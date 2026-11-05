@@ -72,9 +72,11 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
     }
     if r.method.starts_with("gateway.") {
         let mut own:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i JOIN executions x ON x.id=? JOIN events e ON e.id=x.source AND e.bot_stage=i.bot_stage WHERE i.plugin=? AND x.original_actor=e.raw_actor)").bind(&r.execution).bind(id).fetch_one(&mut *conn).await?;
-        if let Some((_, entry, receiver)) =
-            super::participation::self_binding(conn, &r.execution).await?
-        {
+        let scene = match super::participation::self_binding(conn, &r.execution).await? {
+            Some(scene) => Some(scene),
+            None => super::notification::binding(conn, &r.execution).await?,
+        };
+        if let Some((_, entry, receiver)) = scene {
             own = r.args["route"]["entry"]==entry && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i JOIN assignments s ON s.id=i.bot_stage JOIN accounts a ON a.id=s.account_id WHERE i.plugin=? AND i.bot_stage=? AND a.native=?)")
                 .bind(id).bind(receiver).bind(r.args["route"]["bot"].as_str()).fetch_one(&mut *conn).await?;
         }
