@@ -300,6 +300,10 @@ pub fn usage(raw: &str) -> Value {
         ),
         ("reasoning", &u["output_tokens_details"]["thinking_tokens"]),
         ("output", &u["output_tokens"]),
+        (
+            "server_web_search_requests",
+            &u["server_tool_use"]["web_search_requests"],
+        ),
     ] {
         if let Some(n) = value.as_i64().filter(|v| *v >= 0) {
             known.insert(field.into(), json!(n));
