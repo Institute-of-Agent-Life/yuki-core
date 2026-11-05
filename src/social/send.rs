@@ -15,6 +15,9 @@ pub struct Route {
 }
 pub async fn route(conn: &mut SqliteConnection, exec: &str, actor: &str) -> Result<Route> {
     effects::authorize(conn, exec, actor, true).await?;
+    if let Some(route) = crate::work::schedule::due::self_group_route(conn, exec).await? {
+        return Ok(route);
+    }
     let r=sqlx::query("WITH RECURSIVE owners(id) AS(SELECT ? UNION SELECT o.parent FROM owners f JOIN executions x ON x.id=f.id JOIN main_origins o ON o.ref=x.origin WHERE o.parent IS NOT NULL)
         SELECT e.id,e.entry_id,e.bot_stage,e.actor_stage,e.envelope,e.raw_actor,entry.scope,entry.space,ac.native AS human,bot.namespace,bot.native AS receiver,
         coalesce(t.window,w.generation,1) AS generation,coalesce(w.generation,1) AS current_window

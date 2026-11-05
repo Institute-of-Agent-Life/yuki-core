@@ -2,6 +2,7 @@ mod control;
 mod mailbox;
 mod note;
 pub(crate) mod questions;
+pub mod schedule;
 pub mod signal;
 mod tree;
 pub(crate) mod wait;
@@ -70,7 +71,13 @@ pub async fn apply(conn: &mut SqliteConnection, call: &Call) -> Result<Value> {
     sqlx::query("SAVEPOINT work_action")
         .execute(&mut *conn)
         .await?;
-    let result = control::run(conn, cfg, &scope, exec, op, row.try_get("target")?, &args).await;
+    let name: &str = row.try_get("target")?;
+    let result = match name {
+        "automation_query" | "automation_manage" => {
+            schedule::action(conn, cfg, &scope, exec, name, &args).await
+        }
+        _ => control::run(conn, cfg, &scope, exec, op, name, &args).await,
+    };
     let (status, body) = match result {
         Ok(v) => ("confirmed", v),
         Err(e) => {
