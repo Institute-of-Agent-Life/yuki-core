@@ -266,3 +266,5 @@ CORE-050 已接入 CORE-034 的真 Monty 同 feed 確認補修 `befb666`。Mac C
 CORE-036 已接入 CORE-050 `94ee5c3` 的同 feed 修正。CORE-034、036 分別通過 `participation-feed-integration-01/`，保留原 SELF 與真人授權邊界。PR #45 以整合後 head 重驗三平台 CI。
 
 CORE-035 已整合 CORE-036 `adaa111` 的同 feed 確認修正，CORE-034 與 CORE-035 的 `maintenance-feed-integration-01/` 通過。PR #46 按整合後 head 重驗三平台 CI。
+
+CORE-035 最新 head `d772ed2` 的 macOS PR 工作 `127225319602` 在多個案例通過後被 45 分鐘整體 job 上限截斷。GitHub annotation 明確記錄超時，診斷為 `artifacts/CORE-035/macos-ci-timeout-01.json`。整體 job 窗口改為 90 分鐘，全部案例、斷言和各卡 timeout 保留，推送後按最新 head 重驗三平台。
