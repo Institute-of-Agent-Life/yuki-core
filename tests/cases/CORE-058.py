@@ -273,6 +273,9 @@ def administrator_grants(ctx, sdk, aux):
             peer.call("notification.grant_target", {**grant,"target":second_target}, False)
             second = peer.call("notification.grant_target", {**grant,"key":"other-topic","target":second_target})
             pending = peer.call("notification.publish", params)
+            owner.until(lambda:owner.rows("SELECT state FROM notification_deliveries WHERE publication=?",pending["notification_id"])==[("failed",)])
+            ctx.equal("offline receiver is a settled predispatch refusal",owner.rows("SELECT error_category FROM notification_outbox_control WHERE publication=?",pending["notification_id"]),[("bot_unavailable",)])
+            ctx.equal("offline refusal has not created a physical social attempt",owner.rows("SELECT count(*) FROM social_plans"),[(0,)])
             revoke = {"handle":handle,"key":"revoke-original","target":target}
             ctx.equal("real administrator revokes the original target", peer.call("notification.revoke_target", revoke), True)
             peer.call("notification.read", {"notification_id":pending["notification_id"]}, False)
@@ -280,15 +283,16 @@ def administrator_grants(ctx, sdk, aux):
             ctx.equal("old grant acknowledgement remains historical", peer.call("notification.grant_target", grant), first)
             ctx.equal("replaying a grant does not undo a later revoke",
                       owner.rows("SELECT enabled,revision FROM notification_target_grants WHERE entry=?",entry), [(0,2)])
-            other = peer.call("notification.publish", {**params,"event_key":"other-topic","target":second_target})
             qq = QQ(owner.svc.address, "100", "offline-grants")
             try:
+                owner.until(lambda:owner.op("qq","status","100")["online"])
+                other = peer.call("notification.publish", {**params,"event_key":"other-topic","target":second_target})
                 actual = receive(ctx, qq, "send_private_msg", 5830)
                 owner.until(lambda:owner.rows("SELECT state FROM notification_deliveries WHERE publication=?",other["notification_id"])==[("confirmed",)])
-                ctx.equal("revoked pending delivery stays undispatched while another target succeeds",
+                ctx.equal("revoked predispatch refusal stays unsent while another target succeeds",
                           owner.rows("SELECT count(*) FROM social_outbound"), [(1,)])
                 ctx.equal("status exposes actual scoped durable delivery states",
-                          peer.call("notification.status", {}), {"outbox_pending":1,"outbox_confirmed":1})
+                          peer.call("notification.status", {}), {"outbox_failed":1,"outbox_confirmed":1})
             finally:
                 qq.close()
             (folder / ("finish-" + handle + ".json")).write_text(json.dumps({"ok":True,"data":{"grants":[first,second]}}))

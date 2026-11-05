@@ -1,6 +1,7 @@
 """Exercise installed auxiliary routes through the Rust host and physical HTTP."""
 
 import base64
+import uuid
 import hashlib
 import json
 import subprocess
@@ -1079,6 +1080,11 @@ def changed_profile(ctx, sdk):
             )
         )
         with owner.svc.running():
+            state=owner.op('control','read','plugin.get','{"plugin_id":"aux"}')
+            ctx.equal('changed auxiliary route requires original operator approval',state['status'],'discovered')
+            ctx.equal('unapproved replacement profile cannot dispatch retained request',owner.rows('SELECT count(*) FROM model_attempts'),[(0,)])
+            owner.op('control','write','plugin.approve',json.dumps({'plugin_id':'aux','request_id':str(uuid.uuid4()),'expected_revision':state['revision']}))
+            owner.op('host','enable','aux','true')
             peer.receive(key, False)
             ctx.equal(
                 "changed Profile retains original request",
