@@ -169,3 +169,5 @@ CORE-027 已整合 main 的分發提交 `9a0b14a`。Mac CORE-039、027、032 全
 CORE-027 六組 CI 通過並合併 main `3d7d12c`；CORE-025 接入此來源與分發入口。Mac CORE-025、039 通過 `artifacts/CORE-025/dist-main-integration-01/`、`artifacts/CORE-039/media-dist-integration-01/`。PR #34 改以 main 為基底，等待整合後 head 的三平台 CI 再合併。
 
 CORE-028 已整合 main `692e323`。向量驗證 `artifacts/CORE-028/media-main-integration-01/` 通過；分發初次在 Host Rust 續接等待失敗，加入狀態診斷後該段通過，隨後顯示離線安裝案例未明選 lexical-only。案例補明配置，CORE-039 `artifacts/CORE-039/vectors-main-integration-03/` 全部通過。前兩份失敗回條保留，PR #35 以整合後 head 重驗三平台 CI。
+
+PR #35 的 `a5a9b35` 在 Linux／Windows CI 顯示新聯絡人 fixture 啟動時缺 Embedding 配置。保留原 CI ZIP `.cache/vector-ci-13434438838.zip`，SHA-256 `3c48f5a28cce9d5b6e8a5931db42e5d2ed5826945ab78c31b9d4a8799b00d5dd`；離線目錄案例明選 lexical-only 後，Mac CORE-014 `artifacts/CORE-014/vector-contacts-memory-mode-01/` 通過。原 hybrid 必填規則及 CORE-028 的故障案例保留。
