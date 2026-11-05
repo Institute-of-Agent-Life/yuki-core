@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import sys
+import uuid
 
 from tests.harness.compact import Owner, reply, call
 from tests.peers.chat.recorder import Recorder
@@ -41,6 +42,16 @@ def request(entry, space, key, **extra):
         "payload": {"item": "original", "revision": 1}, "text": "Original notification text",
         **extra,
     }
+
+
+def connected(owner, token):
+    peer = QQ(owner.svc.address, "100", token)
+    try:
+        owner.until(lambda: owner.op("qq", "status", "100")["online"])
+        return peer
+    except BaseException:
+        peer.close()
+        raise
 
 
 def receive(ctx, peer, action, locator):
@@ -92,7 +103,7 @@ def run(ctx):
         with owner.svc.running(environment=environment):
             for folder in folders.values():
                 owner.until((folder / "ready.json").exists)
-            qq = QQ(owner.svc.address, "100", "offline-notification")
+            qq = connected(owner, "offline-notification")
             try:
                 original = request(entry, space, "same-external-key")
                 first = a.call("notification.publish", original)
@@ -283,7 +294,7 @@ def administrator_grants(ctx, sdk, aux):
             ctx.equal("old grant acknowledgement remains historical", peer.call("notification.grant_target", grant), first)
             ctx.equal("replaying a grant does not undo a later revoke",
                       owner.rows("SELECT enabled,revision FROM notification_target_grants WHERE entry=?",entry), [(0,2)])
-            qq = QQ(owner.svc.address, "100", "offline-grants")
+            qq = connected(owner, "offline-grants")
             try:
                 owner.until(lambda:owner.op("qq","status","100")["online"])
                 other = peer.call("notification.publish", {**params,"event_key":"other-topic","target":second_target})
@@ -340,9 +351,25 @@ def commit_recovery(ctx, sdk, aux):
     before = owner.rows("SELECT id,event,delivery_execution FROM notification_publications")
     ctx.equal("publication and delivery intent survive missing plugin acknowledgement", len(before), 1)
     with owner.svc.running(environment=environment):
-        qq = QQ(owner.svc.address, "100", "offline-cut")
+        # Recovery starts before the receiver reconnects. Make the predispatch
+        # refusal deterministic, then explicitly resume the same original intent.
+        owner.until(lambda: owner.rows("SELECT state FROM notification_deliveries") == [("failed",)])
+        ctx.equal("cold recovery has no physical attempt while receiver is offline",
+                  owner.rows("SELECT count(*) FROM social_outbound"), [(0,)])
+        outbox_id = owner.rows("SELECT id FROM notification_outbox_control")[0][0]
+        refused = owner.op("control", "read", "plugin.outbox.get", json.dumps({"id":str(outbox_id)}))
+        ctx.equal("recovered offline intent retains a known predispatch refusal",
+                  refused["error_category"], "bot_unavailable")
+        original_operations = owner.rows("SELECT namespace,operation_id FROM operations WHERE parent IS NULL ORDER BY namespace,operation_id")
+        qq = connected(owner, "offline-cut")
         try:
             result = peer.call("notification.publish", params)
+            ctx.equal("publisher replay does not requeue a settled offline refusal",
+                      result["deliveries"][0]["state"], "failed")
+            resumed = owner.op("control", "write", "plugin.outbox.retry", json.dumps({
+                "id":str(outbox_id), "request_id":str(uuid.uuid4()),
+                "expected_revision":refused["revision"],
+            }))
             actual = receive(ctx, qq, "send_private_msg", 5810)
             owner.until(lambda: owner.rows("SELECT publication FROM notification_deliveries WHERE state='confirmed'"))
             replay = peer.call("notification.publish", params)
@@ -353,7 +380,9 @@ def commit_recovery(ctx, sdk, aux):
             ctx.equal("publication recovery buys no model", owner.rows("SELECT count(*) FROM model_requests"), [(0,)])
             ctx.equal("replayed plugin acknowledges the original durable publication",
                       [result["notification_id"],replay["notification_id"]], [before[0][0],before[0][0]])
-            return {"original":before,"receipt":replay,"physical":actual}
+            ctx.equal("explicit recovery reuses original operation identities",
+                      owner.rows("SELECT namespace,operation_id FROM operations WHERE parent IS NULL ORDER BY namespace,operation_id"), original_operations)
+            return {"original":before,"receipt":replay,"physical":actual,"refusal":refused,"resumed":resumed}
         finally:
             qq.close()
 
@@ -364,7 +393,7 @@ def unknown_delivery(ctx, sdk, aux):
     environment = {**os.environ, "YUKI_NOTIFICATION_QQ":"offline-unknown"}
     with owner.svc.running(environment=environment):
         owner.until((folder / "ready.json").exists)
-        qq = QQ(owner.svc.address, "100", "offline-unknown")
+        qq = connected(owner, "offline-unknown")
         original = peer.call("notification.publish", params)
         while True:
             wire = qq.receive()
@@ -377,7 +406,7 @@ def unknown_delivery(ctx, sdk, aux):
         result = peer.call("notification.publish", params)
         ctx.equal("lost physical acknowledgement remains unknown", result["deliveries"][0]["state"], "unknown")
     with owner.svc.running(environment=environment):
-        qq = QQ(owner.svc.address, "100", "offline-unknown")
+        qq = connected(owner, "offline-unknown")
         try:
             restored = peer.call("notification.publish", params)
             ctx.equal("restart retains unknown original receipt", restored["notification_id"], original["notification_id"])
@@ -496,7 +525,7 @@ def media_order_and_expiry(ctx, sdk, aux):
             _, q = owner.wire(http)
             reply(q, "images retained")
             owner.finished(human)
-            qq = QQ(owner.svc.address, "100", "offline-media")
+            qq = connected(owner, "offline-media")
             try:
                 original = {**params,"media_handles":versions}
                 published = peer.call("notification.publish", original)
