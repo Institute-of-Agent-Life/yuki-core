@@ -83,6 +83,9 @@ def contract_change(ctx,sdk):
         config=o.svc.data/'yuki.toml'
         config.write_text(config.read_text().replace('engine_sha256="'+'1'*64+'"','engine_sha256="'+'4'*64+'"'),encoding='utf-8')
         with o.svc.running():
+            state=o.op('control','read','plugin.get','{"plugin_id":"code_a"}')
+            ctx.equal('changed Code runtime remains discovered until approval',state['status'],'discovered')
+            ctx.equal('unapproved Code runtime stays disabled',o.rows("SELECT enabled,online FROM host_installations WHERE plugin='code_a'"),[(0,0)])
             o.until(lambda:o.rows("SELECT id FROM executions WHERE source=? AND state='held'",event))
             ctx.equal('incompatible runtime has an explicit original diagnostic',o.rows('SELECT diagnostic FROM main_turns'),[('code_original_runtime_unavailable',)])
             ctx.equal('changed runtime preserves original checkpoint',o.rows('SELECT handle,operation,snapshot FROM code_parents'),before)

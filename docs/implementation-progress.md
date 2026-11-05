@@ -476,3 +476,5 @@ CORE-058 冷恢復補正（codex/core-037-control-integration）：Windows 原�
 CORE-048／039 CI 編譯診斷：PR #49 的兩個 Mac Intel run（42085724620、42085715264）均在 release 冷編譯 600 秒截止，尚未執行發布驗證案例。回移 CORE-037 已使用的編譯階段處理：只有 release build 使用 1200 秒編譯預算，超時仍失敗並保存部分編譯輸出和 stage 回條；其他編譯及所有功能、故障、啟動與分發驗收時間不變。原失敗保留。此處不因其他平台通過而跳過 Mac，需最新 head 三平台六項 CI 全通過才合併。
 
 本地 Mac `artifacts/CORE-039/profile-compiler-mac-01/` 81 項分發驗證通過，source tree `a8a009014eb8f64a246d94279914c8611a5904f9443a60ae5e203837a94dc57f`；原功能驗收完整執行。
+
+CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。
