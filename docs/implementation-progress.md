@@ -279,3 +279,10 @@ CORE-051 實作 `b176a7e` 已推 [PR #47](https://github.com/Institute-of-Agent-
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/windows-validation/handoff/yuki-session-preview-9db8b3f073e3-windows-x86_64.zip`，SHA-256 `1e0d5856740899539c9f4adac2b4c6ce6d01aff6d7697597203d37f2d87d7f56`。
 
 下一個已就緒核心任務是 CORE-058，工作分支 `codex/core-058-notifications`，已從本候選建立正常與故障時序。CORE-048、CORE-014 原歷史適配及 CORE-040 完整長 Work 對拍仍有本倉工作。
+CORE-050 已接入 CORE-034 的真 Monty 同 feed 確認補修 `befb666`。Mac CORE-034 的 383 項與 CORE-050 的 561 項通過，證據分別位於 `artifacts/CORE-{034,050}/aux-feed-integration-01/`。PR #44 以整合後 head 等待三平台 CI。
+
+CORE-036 已接入 CORE-050 `94ee5c3` 的同 feed 修正。CORE-034、036 分別通過 `participation-feed-integration-01/`，保留原 SELF 與真人授權邊界。PR #45 以整合後 head 重驗三平台 CI。
+
+CORE-035 已整合 CORE-036 `adaa111` 的同 feed 確認修正，CORE-034 與 CORE-035 的 `maintenance-feed-integration-01/` 通過。PR #46 按整合後 head 重驗三平台 CI。
+
+CORE-051 已接入維護分支 `d772ed2` 的合併歷史，實作檔案與已驗版本相同，僅更新進度記錄。PR #47 等此最新 head 的 CI。
