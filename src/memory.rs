@@ -6,7 +6,7 @@ pub mod facts;
 pub(crate) mod index;
 mod rank;
 pub(crate) mod retrieve;
-mod scope;
+pub(crate) mod scope;
 pub(crate) mod search_tool;
 pub mod tools;
 use crate::{

@@ -156,7 +156,7 @@ async fn inspect(
             .ok_or("version id required")?
             .into()
     };
-    let row=sqlx::query("SELECT v.digest,v.mime,v.filename,b.bytes FROM media_versions v JOIN media_objects b ON b.digest=v.digest WHERE v.id=? AND v.execution=?").bind(&id).bind(exec).fetch_one(store.readers()).await?;
+    let row=sqlx::query("SELECT v.digest,v.mime,v.filename,b.bytes FROM media_versions v JOIN media_objects b ON b.digest=v.digest JOIN media_version_readers r ON r.version=v.id WHERE v.id=? AND r.reader=?").bind(&id).bind(exec).fetch_one(store.readers()).await?;
     let data = Snapshot::new(row.get("bytes"))?;
     let mut out = material(&data, row.get("mime"), cfg.vision_input);
     out["artifact_id"] = json!(id);
@@ -253,9 +253,15 @@ pub(super) async fn finish(
                     .execute(&mut *conn)
                     .await?;
             }
-        } else if value["state"] == "native_image" {
-            sqlx::query("INSERT OR IGNORE INTO media_version_reads SELECT ?,?,id FROM media_versions WHERE id=? AND execution=? AND digest=?")
-                .bind(exec).bind(op).bind(p["artifact_id"].as_str()).bind(exec).bind(p["digest"].as_str()).execute(&mut *conn).await?;
+        } else {
+            let version = p["artifact_id"]
+                .as_str()
+                .ok_or("original version required")?;
+            super::bind_version_sources(conn, exec, version).await?;
+            if value["state"] == "native_image" {
+                sqlx::query_scalar::<_,String>("INSERT INTO media_version_reads SELECT ?,?,id FROM media_versions WHERE id=? AND digest=? RETURNING version")
+                    .bind(exec).bind(op).bind(version).bind(p["digest"].as_str()).fetch_one(&mut *conn).await?;
+            }
         }
     }
     sqlx::query("UPDATE operations SET state=?,result=? WHERE namespace=? AND operation_id=? AND state='intent'").bind(if success{"confirmed"}else{"failed"}).bind(value.to_string()).bind(exec).bind(op).execute(conn).await?;

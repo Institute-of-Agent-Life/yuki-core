@@ -1,0 +1,5 @@
+{
+ "H25":["pair chat and connector for the same original person","reject both cross-purpose tokens, connector pairing creates no conversation","ordinary chat cannot use admin, a current superuser can, neither uses private operator IPC","revoked device and revoked role are separate checks"],
+ "private_work":["two chat devices of one entry replay the same UUID; conflicting body or kind fails","atomically record private action, Work mailbox and receipt","failure after mailbox rolls back all three; no extra App turn, root or public text","late terminal input stays private and cannot revive the Work"],
+ "native":["authenticated entry alone exchanges a scoped proof, never plugin-supplied owner","one-use proof is bound to installation and generation; reconnect invalidates old handles","source operation and native event key in the same writer transaction; duplicate and conflicting callbacks, owner mismatch, revoke and restart"]
+}

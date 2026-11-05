@@ -123,7 +123,16 @@ async fn prepare(
         sqlx::query("INSERT INTO operations(namespace,operation_id,action,target,payload,parent,ordinal,state) VALUES(?,?,'external',?,?,?,?,'intent')")
             .bind(exec).bind(&child).bind(&p.action).bind(p.params.to_string()).bind(id).bind(i as i64).execute(&mut *conn).await?;
         sqlx::query("INSERT INTO social_parts(namespace,operation_id,ordinal,child,wire_action,params,state) VALUES(?,?,?,?,?,?,'prepared')")
-            .bind(exec).bind(id).bind(i as i64).bind(child).bind(&p.action).bind(p.params.to_string()).execute(&mut *conn).await?;
+            .bind(exec).bind(id).bind(i as i64).bind(&child).bind(&p.action).bind(p.params.to_string()).execute(&mut *conn).await?;
+        if let Some(version) = &p.version {
+            crate::media::bind_version_sources(conn, exec, version).await?;
+            sqlx::query("INSERT INTO social_part_versions VALUES(?,?,?)")
+                .bind(exec)
+                .bind(&child)
+                .bind(version)
+                .execute(&mut *conn)
+                .await?;
+        }
     }
     let selected:Option<(String,String)>=sqlx::query_as("SELECT s.owner,s.digest FROM social_image_selection s JOIN source_owners o ON o.id=s.owner AND o.enabled WHERE s.singleton=1").fetch_optional(&mut *conn).await?;
     if msg.emoji.is_some() && selected.is_none() && parts.is_empty() {
@@ -192,7 +201,15 @@ pub async fn next(
             return Err("original frozen social route changed".into());
         }
     } else {
-        prepare(conn, exec, id, actor, &route, limits).await?;
+        if let Err(error) = prepare(conn, exec, id, actor, &route, limits).await {
+            if !error.is::<content::UnavailableVersion>() {
+                return Err(error);
+            }
+            // The immutable attachment is rejected during planning, before any
+            // child is created or dispatched. Return a paired, terminal refusal.
+            sqlx::query("UPDATE operations SET state='failed',result=? WHERE namespace=? AND operation_id=? AND state='intent'").bind(json!({"error":"attachment_version_unavailable"}).to_string()).bind(exec).bind(id).execute(&mut *conn).await?;
+            return Ok(json!({"receipt":effects::receipt(conn,exec,id).await?}));
+        }
     }
     let part=sqlx::query("SELECT ordinal,child,wire_action,params FROM social_parts WHERE namespace=? AND operation_id=? AND state='prepared' ORDER BY ordinal LIMIT 1")
         .bind(exec).bind(id).fetch_optional(&mut *conn).await?;

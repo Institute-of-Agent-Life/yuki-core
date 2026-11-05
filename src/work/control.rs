@@ -37,7 +37,7 @@ async fn list(
     )
 }
 
-async fn stop(
+pub(super) async fn stop(
     conn: &mut SqliteConnection,
     s: &Scope,
     id: &str,

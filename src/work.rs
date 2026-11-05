@@ -1,6 +1,7 @@
 mod control;
 mod mailbox;
 mod note;
+pub(crate) mod personal;
 pub(crate) mod questions;
 pub mod schedule;
 pub mod signal;
