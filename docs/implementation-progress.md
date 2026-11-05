@@ -31,6 +31,7 @@
 | CORE-032 | 三平台 CI 通過，已合併 `30a5ea7` | `codex/core-032-host` | `artifacts/CORE-032/{mac-08,windows-04}/host-delegation.json`。獨立安裝的 Rust、Python SDK 回呼同一宿主。涵蓋分段失答、離線命令與冷啟、撤權、觀察背壓、刪除回條。握手 v1、Host 業務 schema v2、Rust 1.0.0-alpha.2、Python 1.0.0a2。 |
 | CORE-021 | 三平台 CI 通過，已合併 7fd1002 | `codex/core-021-gemini` | `artifacts/CORE-021/{mac-02,windows-02}/{gemini-wire,gemini-parts}.json`，各 100 項斷言。舊版兩次真 HTTP 錄製包含有／無原生 ID 的平行回條。Rust 驗過簽名位置、原生搜尋失敗、來源引用、媒體、拒絕混用及傳輸中斷；CORE-011、012、019、020 回歸通過。 |
 | CORE-039 | Mac ARM64、HJW Windows x86_64、Linux ARM64 各通過 81 項，Linux 最小 OCI 亦通過 | `codex/core-039-dist` | `artifacts/CORE-039/{mac-04,windows-03,linux-arm64-03}/candidate-manifest.json` 和 `oci-dev-02/oci-candidate.json`。release 執行檔、兩 SDK、IDL、fixture、Cargo 依賴與授權按來源簽名。空目錄啟動，錯來源、錯架構、錯金鑰、錯 fixture、路徑逸出、連結及額外檔案均拒絕。 |
+| CORE-016 | Mac 與 HJW Windows 各通過 56 項 | `codex/core-016-work` | `artifacts/CORE-016/{mac-06,windows-03}/{work-tree,settlement-tail,work-action-matrix}.json`。H04 在真收件後殺程序，重啟補原回條，維持一次送達、兩次模型請求。H10 核對中立前景、派生 worker 與跨樹權限。另驗私有問答、同批取消與遲到回條、空 final 及 unknown 後的新業務輸入。11 張相鄰卡回歸通過，見各卡 `work-regression-01/`。 |
 
 **擴展交接。** EXT-007、EXT-019 可讀 CORE-002 執行產物
 `v4-oracle-candidate.zip`；本地路徑 `artifacts/CORE-002/handoff-89f15db/v4-oracle-candidate.zip`，
@@ -47,7 +48,7 @@ Rust SDK 1.0.0-alpha.1、Python SDK 1.0.0a1、schema revision 1。兩個乾淨�
 各檔雜湊及驗證在同目錄的 candidate.json 和 sdk-verification.json。僅提供 initialize、方法索引、
 golden 和獨立 stdio peer。原包於 GitHub 預發布，重新下載的 ZIP 與回條均通過校驗。見[固定發布頁](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/handshake-preview-dd694a0db605)、[ZIP](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/handshake-preview-dd694a0db605/yuki-handshake-preview.zip)、[發布回條](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/handshake-preview-dd694a0db605/release-receipt.json)。擴展 `87bc88d` 的 Windows 預覽回條 `artifacts/EXT-002/preview-03/handshake-preview.json` SHA-256 `e34b86d7919a97524c4c737e0402bdeb6ef8575060e5551dcd0ce9c5d0b47f3b`，manifest `368556e4872e697a865983cc4a2fa0a051dfa572ba542a2cd4610433b6170469`。擴展 `2b961bd` 已用發布 URL 在 Windows 重新下載、驗 digest 與安裝。正式 `artifacts/EXT-002/01/published-sdk.json` SHA-256 `5c5d944f126b2866760e7684b7d5f0a8b512fb0bb54b20ee503bc6fb57daf6c4`，manifest `5c1137b8cf5a0a5d91243d33a0826da218f521cf72b870756e9875f46b5e22b8`，兩者 PASS。已合併為 `969a059`。見[擴展 PR #10](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/10)。
 
-CORE-032 可開始使用本地已驗的 CORE-015、031、052。真正 Telegram、web-fetch 插件仍待同一版宿主候選。CORE-020 已合併 `00e1f9f`，見 [PR #21](https://github.com/Institute-of-Agent-Life/yuki-core/pull/21)，來源 `a009770`。歷史搜尋的 DJ 校準尚缺目標語料。
+CORE-017 可從已驗 CORE-016 開始。CORE-032 正等正式 Telegram、web-fetch 的相同版本回條；EXT-047 尚缺具名、已核准的 QQ 原生動作。CORE-020 已合併 `00e1f9f`，見 [PR #21](https://github.com/Institute-of-Agent-Life/yuki-core/pull/21)。歷史搜尋的 DJ 校準尚缺目標語料。
 缺目標 SnowLuma 映像 digest 和去識別雙端封包；部署預設採指定 ingress。
 
 **CORE-032 開發候選，尚未發布。** 來源 `199dff095be0bc87c9713beaa0419400cb424a7c` 已推 [PR #24](https://github.com/Institute-of-Agent-Life/yuki-core/pull/24)。握手 revision 1，業務 revision 2，業務 schema SHA-256 `4822f19fb937eba524e475b35c0753a713587f48feee87ae6bd7b53ccab06cba`。雙 SDK、宿主執行檔及方法清單均在包內。兩端各通過 65 項及隔離 PATH 啟動，逐成員雜湊已複驗。
@@ -75,5 +76,8 @@ CORE-024 的 PR #38 已通過三平台 push／PR 六項檢查，於 main 合併 
 CORE-032 與 main 搜尋整合後，Mac CORE-032 的 `search-main-integration-01` 65 項、CORE-024 的 `host-main-integration-01` 377 項，以及 CORE-015 的 `search-host-integration-01` 均通過。原插件宣告與搜尋宣告一同經凍結／重名檢查。
 
 CORE-039 已接入 Host `24d40cc` 及 main 的原生搜尋。原生分發與搜尋回歸通過，產物為 `artifacts/CORE-039/search-host-integration-01/`、`artifacts/CORE-024/dist-host-integration-01/`。PR #28 等最新三平台 CI 後進 main。原先候選包仍對應其固定來源 SHA。
+CORE-016 已接入 Host `24d40cc` 及 main 的原生搜尋。Work 與搜尋回歸通過，產物為 `artifacts/CORE-016/search-host-integration-01/`、`artifacts/CORE-024/work-host-integration-01/`。PR #26 等最新三平台 CI 後進 main。
 
 已接入 main `30a5ea7` 的 Host 合併提交。實作樹與上一輪驗證相同，PR 已轉向 main 並重新執行 CI。
+
+CORE-039 已接入 main 的 Work `0261764`。Mac 分發與 Work 回歸分別通過，產物為 `artifacts/CORE-039/work-main-integration-01/`、`artifacts/CORE-016/dist-main-integration-01/`。PR #28 以此次整合的最新提交重新等待三平台 CI。

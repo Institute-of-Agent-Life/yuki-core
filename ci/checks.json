@@ -105,6 +105,13 @@
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
     },
+    "CORE-016": {
+      "case": "tests/cases/CORE-016.py",
+      "artifact": "work-tree.json",
+      "timeout_seconds": 240,
+      "rust": true,
+      "capabilities": ["durable-work-tree","private-work-inbox","ordered-work-settlement"]
+    },
     "CORE-015": {
       "case": "tests/cases/CORE-015.py",
       "artifact": "tool-result-pages.json",
