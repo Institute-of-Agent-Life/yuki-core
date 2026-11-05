@@ -1,0 +1,180 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "execution_instruction": "[Host 上下文压缩要求]\n本次只整理当前激活的私有执行进展，不执行工具、不发消息。不要复述前面的公共聊天历史或本轮运行资料。目标只认本次输入及明确接纳的当前 Work，不从公共群史、工作目录或引用中猜测原任务。保留当前目标、追加要求、有效约束、已经确认的结果、失败与未知状态、必要发现、文件/资料句柄、原来源引用和下一步。不得把未完成事项写成已完成，不要求额外汇报或所有子任务成功。仅返回可供本轮继续的文字检查点。",
+  "portable": {
+    "kind": "work_unobserved_tool_round",
+    "content": "original",
+    "calls": [
+      {
+        "call_id": "call-old",
+        "effect_key": "operation-old",
+        "tool": "send",
+        "arguments": "{\"text\":\"test\"}",
+        "result": "{\"state\":\"unknown\"}"
+      }
+    ],
+    "instruction": "These are original recorded tool results awaiting observation. Continue from these results; do not replay the original calls."
+  },
+  "original_cases": {
+    "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-read_then_send]": {
+      "sha256": "0922c4082eded2078f4a518a547a297e31d13822978ce98ca09185ff1b7dc26f",
+      "requests": 5,
+      "wire_count": 5,
+      "call_id": "compact-real-send",
+      "effect_key": null,
+      "hard_capacity": "unknown",
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_delivery_e2e.py",
+          "snapshot": "sources/tests/integration/test_compact_delivery_e2e.py",
+          "sha256": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    },
+    "tests/integration/test_compact_delivery_e2e.py::test_manual_public_planning_failure_never_falls_back_to_private_execution": {
+      "sha256": "e181a077553f75c337925d1c9cefae4e9c56b734c29e2df1ba948bdfdb802788",
+      "requests": 3,
+      "wire_count": 3,
+      "call_id": null,
+      "effect_key": null,
+      "hard_capacity": null,
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_delivery_e2e.py",
+          "snapshot": "sources/tests/integration/test_compact_delivery_e2e.py",
+          "sha256": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    },
+    "tests/integration/test_compact_delivery_e2e.py::test_ordinary_compact_keeps_its_goal_beside_real_waiting_work": {
+      "sha256": "72fb84d0d0675d00de4de2e8dfd206ab3a9a83de83feb5d2908d1e932c9b3009",
+      "requests": 7,
+      "wire_count": 7,
+      "call_id": null,
+      "effect_key": null,
+      "hard_capacity": null,
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_delivery_e2e.py",
+          "snapshot": "sources/tests/integration/test_compact_delivery_e2e.py",
+          "sha256": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    },
+    "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[known-finish]": {
+      "sha256": "1d9c41c76f26c15fe2efede5bc673bff14fb14c6c57dc1de08efc95d890a0282",
+      "requests": 3,
+      "wire_count": 3,
+      "call_id": "compact-real-send",
+      "effect_key": null,
+      "hard_capacity": "known",
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_delivery_e2e.py",
+          "snapshot": "sources/tests/integration/test_compact_delivery_e2e.py",
+          "sha256": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    },
+    "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-batch]": {
+      "sha256": "6ed8ca5801a5c90a8b8fabe4fc4afa81da383234eafadddb4f9ab450530d7bd2",
+      "requests": 3,
+      "wire_count": 3,
+      "call_id": "compact-real-send",
+      "effect_key": null,
+      "hard_capacity": "unknown",
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_delivery_e2e.py",
+          "snapshot": "sources/tests/integration/test_compact_delivery_e2e.py",
+          "sha256": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    },
+    "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-p_refused]": {
+      "sha256": "7aaf7ac9a0211e2c44fe82f162f211fe3c94e69e41969d56dd2598e74ca3440d",
+      "requests": 4,
+      "wire_count": 4,
+      "call_id": "compact-real-send",
+      "effect_key": null,
+      "hard_capacity": "unknown",
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_delivery_e2e.py",
+          "snapshot": "sources/tests/integration/test_compact_delivery_e2e.py",
+          "sha256": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    },
+    "tests/integration/test_compact_hard_capacity.py::test_native_execution_compact_can_hand_over_to_newly_legal_public_compact": {
+      "sha256": "0d7650aba973cd6c57e14c2697a634a9dfe302f9f4240cd789ee347ba4b64c27",
+      "requests": 4,
+      "wire_count": 4,
+      "call_id": null,
+      "effect_key": "1f7f0796b6a8439ca13849de763b9ac0:1:native-original-read",
+      "hard_capacity": null,
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_hard_capacity.py",
+          "snapshot": "sources/tests/integration/test_compact_hard_capacity.py",
+          "sha256": "4bea6f23f508a20a352bbaa8b7c452f3d408fbdc06253be426a632a15a74c7d7"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    },
+    "tests/integration/test_compact_delivery_e2e.py::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-finish]": {
+      "sha256": "d382023abfef9a5db5f628cdfc6e9aba96a2e32f1ba26df280eee8ff00413fc0",
+      "requests": 3,
+      "wire_count": 3,
+      "call_id": "compact-real-send",
+      "effect_key": null,
+      "hard_capacity": "unknown",
+      "source_files": [
+        {
+          "path": "tests/integration/test_compact_delivery_e2e.py",
+          "snapshot": "sources/tests/integration/test_compact_delivery_e2e.py",
+          "sha256": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d"
+        },
+        {
+          "path": "tests/support/compact_delivery_evidence.py",
+          "snapshot": "sources/tests/support/compact_delivery_evidence.py",
+          "sha256": "07e438332e374f7ae8257be566f9b378a0ebc7f4368d74e4ca37538f75ef26d6"
+        }
+      ]
+    }
+  }
+}

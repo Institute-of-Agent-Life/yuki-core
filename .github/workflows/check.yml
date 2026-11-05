@@ -91,6 +91,8 @@ jobs:
         run: python ci/check.py CORE-022 --out artifacts/CORE-022/ci
       - name: Verify scheduled occurrences and original ownership
         run: python ci/check.py CORE-018 --out artifacts/CORE-018/ci
+      - name: Verify private compaction and original observation rounds
+        run: python ci/check.py CORE-023 --out artifacts/CORE-023/ci
       - name: Verify native search proof, budget and cache on physical HTTP
         run: python ci/check.py CORE-024 --out artifacts/CORE-024/ci
       - name: Retain evidence on success or failure

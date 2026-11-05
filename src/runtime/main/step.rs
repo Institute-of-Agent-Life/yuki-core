@@ -28,6 +28,9 @@ pub async fn prepare(
     {
         return Ok(next);
     }
+    if let Some(next) = crate::context::compact_exec::recover(conn, cfg, exec, &actor).await? {
+        return Ok(next);
+    }
     if crate::context::compact_public::history::stale(conn, exec).await? {
         return hold(conn, exec, "public_source_changed").await;
     }
@@ -55,11 +58,15 @@ pub async fn prepare(
     let zone = cfg.timezone.as_deref().unwrap_or("Asia/Shanghai");
     if !fresh.is_empty() {
         material.text = crate::context::event::trigger(conn, &fresh, zone).await?;
+        sqlx::query("INSERT OR IGNORE INTO exec_public_tails(execution,first_event,last_event,message) VALUES(?,?,?,?)")
+            .bind(exec).bind(fresh[0]).bind(fresh[fresh.len()-1]).bind(&material.text).execute(&mut *conn).await?;
     }
     let mut index = 0;
+    let mut original_logical = None;
     let mut body;
     if let Some(row) = prior {
         let logical: String = row.try_get("id")?;
+        original_logical = Some(logical.clone());
         let state: Option<String> = row.try_get("state")?;
         if state.is_none() {
             return Ok(json!({"logical":logical,"actor":actor,"task":material.structured}));
@@ -187,12 +194,41 @@ pub async fn prepare(
     if cfg.protocol.is_messages() {
         crate::model::messages::cache_last(&mut body)?;
     }
-    match crate::context::compact_public::job::consider(
+    if let Some(logical) = original_logical.as_deref() {
+        crate::context::compact_exec::adopt(conn, cfg, exec, logical, &mut body).await?;
+    }
+    loop {
+        match crate::context::compact_public::job::consider(
+            conn,
+            cfg,
+            exec,
+            &actor,
+            &mut body,
+            material.structured.is_some(),
+        )
+        .await
+        {
+            Ok(Some(next)) => return Ok(next),
+            Ok(None) => {}
+            Err(e) if e.to_string() == "model_request_capacity" => {}
+            Err(e) => return Err(e),
+        }
+        // A stored E may have been purchased after P changed the initial native
+        // prefix. Reapply it to that exact prefix, then check if retiring the
+        // private chain made another original public route legal.
+        if let Some(logical) = original_logical.as_deref()
+            && crate::context::compact_exec::adopt(conn, cfg, exec, logical, &mut body).await?
+        {
+            continue;
+        }
+        break;
+    }
+    match crate::context::compact_exec::consider(
         conn,
         cfg,
         exec,
         &actor,
-        &mut body,
+        &body,
         material.structured.is_some(),
     )
     .await
