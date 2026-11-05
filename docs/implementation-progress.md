@@ -236,4 +236,14 @@ Mac `mac-06` 與 HJW `windows-01` 各通過 128 項，來源樹 `0c5c2a018ddf935
 
 Mac `artifacts/CORE-035/tool-map-mac-06/maintenance-grants.json` 通過 303 項，來源樹 `02e537febf439d9e4f39754f421120d8334d2cc032d8847c1d297f2f2fb8e401`。實機 HJW Windows `windows-01` 同來源亦通過 303 項。CORE-007、011、016、026、027、028、029、030、033、036、050、052 十二卡 `maintenance-regression-01/` 全部通過。前幾輪 fixture、合同分支與 SDK 版本不一致的失敗回條保留。
 
-CORE-028 已知 usage 擦除補修隨此工作樹驗過，獨立修正已推向量 PR #35。真 EXT-033、034、035、036、048 的候選消費證據仍待交接。此卡本地驗證已通過，下一步由乾淨提交製作三平台未發布候選，再接 CORE-051 隔離插件會話。
+CORE-028 已知 usage 擦除補修隨此工作樹驗過，獨立修正已推向量 PR #35。真 EXT-033、034、035、036、048 的候選消費證據仍待交接。實作 `0cdd9dffe07c` 已推 PR #46。CORE-051 已在獨立 `codex/core-051-sessions` 分支開始正常／故障時序與隔離資料模型，持續接續 Rust 實作。
+
+## CORE-035 未發布候選包
+
+來源 `0cdd9dffe07c18949990492fd2a9944919c455d3`，來源樹 `991bafb2f70c4571da5ae956be9cc903adc00d237670961ab23d99a456e9f1c5`。Mac、HJW Windows、Linux ARM64 各 303 項及乾淨 PATH 啟動通過。maintenance schema 1、Host 2、握手 1、Rust SDK `1.0.0-alpha.8`、Python `1.0.0a8`。十二個實含方法、全部 ZIP 成員與雜湊已核對，證據為交接目錄 `handoff-verification.json`。PR #46 等最新 CI 與前置合併，真擴展消費仍待回傳。
+
+| 平台 | 可交接路徑 | SHA-256 |
+|---|---|---|
+| Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/linux-arm64/candidate/yuki-maintenance-preview-0cdd9dffe07c-linux-arm64.zip` | `04c13a21ea2d42a84d11b285d93c46dafa98f20270bf3b285dcd2d48afb8011c` |
+| macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/macos-arm64/yuki-maintenance-preview-0cdd9dffe07c-darwin-arm64.zip` | `3060058a12b5b10efc9fc78f1dd5d6ddcd8fe820dd72f353885c8248f067079c` |
+| Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/windows-validation/handoff/yuki-maintenance-preview-0cdd9dffe07c-windows-x86_64.zip` | `e2b964e87a30d5c230fbb0805a9de973cb91160b6e8b52606b363ca0fd77a152` |
