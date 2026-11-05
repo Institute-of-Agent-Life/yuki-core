@@ -142,3 +142,13 @@ CORE-024 在 `codex/core-024-search` 實作獨立原生搜索。Responses、Mess
 CORE-034 實作 `40d0d43` 已推 [PR #43](https://github.com/Institute-of-Agent-Life/yuki-core/pull/43)。接入 main `905e968` 後，Code 的 381 項及原生搜尋、Work 分段、媒體、forget、工具 registry 回歸通過 `artifacts/CORE-034/code-search-integration-01/` 與其餘五卡的 `code-search-integration-02/`。搜尋離線 fixture 已明選 lexical-only。CORE-050 已開始原路由及付費身份實作，119 項正常／冷啟斷言通過，撤權與媒體邊界仍在驗證。
 
 CORE-034 乾淨來源 `285240c` 的 Linux 候選已通過。Mac 在同時編譯多倉時，32 步 Code 仍為 running，而錄製器沿用 12 秒等待先行逾時。該情境改按已配置的 30 秒 Code watchdog 等待 35 秒，完成及原回執斷言保留；`artifacts/CORE-034/mac-12/` 的 381 項通過。原失敗回條保存在 `handoff-285240cb716d/macos-validation/`。
+
+## CORE-034 未發布候選包
+
+來源 `f3f3723aa5322c6a2a20e8cb3b04d845cd7773cc`，三機來源樹 `15239d4a9f4f1fc17ddf992d46e8f5bb293dfcbe96a97d5447e2a7e7e22214f8`。Mac、HJW Windows、Linux arm64 各通過 381 項與獨立目錄啟動。握手 1、Host 2、composition 1、Rust SDK `1.0.0-alpha.5`、Python `1.0.0a5`。八個方法包含目錄／schema、原子 invoke、原結果 resume、snapshot put/get、code.resume、code.sources。原件與成員雜湊核驗位於 `artifacts/CORE-034/handoff-f3f3723aa532/handoff-verification.json`。EXT-023／024 可消費本地候選，穩定凍結仍待真 VM 消費回條。
+
+| 平台 | 路徑 | SHA-256 |
+|---|---|---|
+| macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f3f3723aa532/macos-arm64/yuki-code-preview-f3f3723aa532-darwin-arm64.zip` | `a404610ee179994885f136417d195d7b13b55ee09fd43e3581bf1e648957e355` |
+| Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f3f3723aa532/windows-validation/handoff/yuki-code-preview-f3f3723aa532-windows-x86_64.zip` | `fc5f6f1cb8ddd2fe4c62b335705699b6fb8e181993b0a57fa920fe0798e67d04` |
+| Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f3f3723aa532/linux-arm64/candidate/yuki-code-preview-f3f3723aa532-linux-arm64.zip` | `2e0704581efe0b0133c15e8e7700e4d4d40806a4e752d4b715790919257254db` |
