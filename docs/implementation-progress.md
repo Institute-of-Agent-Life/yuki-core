@@ -289,3 +289,15 @@ CORE-051 實作 `b176a7e` 已推 [PR #47](https://github.com/Institute-of-Agent-
 CORE-007、010、011、013、016、017、025、030、032、034、036、038、050、051、052 的 `notification-regression-01/` 共 2,948 項全部通過，彙總 `artifacts/CORE-058/regression-summary-01.json`。候選尚待乾淨提交與三平台封裝，真 EXT-027／047 消費待回傳。下一個已就緒任務為 CORE-048，工作分支 `codex/core-048-profiles` 位於 `.cache/worktrees/profile-config`。
 
 CORE-014 聯絡人補核 PR #41 已合併 main `0ded0dd`。CORE-023 PR #32 最新 push／PR 六項 CI 通過後合併 `e01cd30`，核驗回條 `artifacts/CORE-023/main-merge-b0dab43835c2.json`。CORE-034 feed 修正已接入 CORE-050 並以 `94ee5c3` 推送，CORE-034／050 的 `aux-feed-integration-01/` 均通過。
+
+### CORE-058 未發布候選包
+
+來源 `cb02f74ea48b85c6b6932423b93e6332b97f2871`，來源樹 `fa1d772ed399ac5e2f98cb7649cced89dee4822f8745c881eb955ea1ba49199c`。Mac、HJW Windows、Linux arm64 各 318 項與獨立 PATH 啟動通過。notifications 1、Host 2、握手 1、SDK alpha.10／a10，六個通知方法均已驗。各 ZIP 的 13／16 個成員均逐項核 SHA-256，回條 `artifacts/CORE-058/handoff-cb02f74ea48b/handoff-verification.json`。真 EXT-027／047 可只讀消費這組候選並回傳方法與實收證據。候選尚未發布，PR #48 等最新 CI 及前置進入 main。
+
+| 平台 | 只讀交接路徑 | SHA-256 |
+|---|---|---|
+| macos-arm64 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-058/handoff-cb02f74ea48b/macos-arm64/yuki-notification-preview-cb02f74ea48b-darwin-arm64.zip` | `eb4794b29db562b5fc12cde284474d61bf17ac9cba608d3f1ecd5c7dfed48f77` |
+| linux-arm64 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-058/handoff-cb02f74ea48b/linux-arm64/candidate/yuki-notification-preview-cb02f74ea48b-linux-arm64.zip` | `34739495bb1bd35555a3016c1d01b8c49d9c1e335461329fbaf2a1c4ff226828` |
+| windows-x86_64 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-058/handoff-cb02f74ea48b/windows-validation/handoff/yuki-notification-preview-cb02f74ea48b-windows-x86_64.zip` | `dea4b90f5008e466f6385ceea1d0833574dcf10a5a079f8ac639b7a4be4c542c` |
+
+CORE-034 的真 Monty 修正版重跑尚待消費端提供可執行環境。此 SSH 身份 `hjw\hilbert` 執行既有 WSL 清單命令回「拒绝访问」，紀錄 `artifacts/CORE-034/native-consumer-wsl-access-01.json`，原 Runtime 未變更。核心三平台補修候選已齊備，其驗證不受此消費重跑阻塞。
