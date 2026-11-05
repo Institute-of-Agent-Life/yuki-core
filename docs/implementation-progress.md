@@ -575,3 +575,13 @@ Mac `artifacts/CORE-013/recall-wire-mac-04/` 252 項與 Rust 測試通過，舊�
 失敗保留：mac-01 測試雙 bot 共用憑證被啟動校驗拒絕；mac-02 把模型 call_id 誤當效果 operation_id，已經由原 intent 映射查核晚回；mac-03 成功後補完整結果對拍及包內證據，mac-04 通過。development-package 僅打包自測；待乾淨 commit 形成三平台未發布候選。未知／失敗 error_category 使用核心分類，不宣稱與舊 Python 例外類名完全相同。下一個核心補核是 `get_my_capabilities` 原主體權限目錄，穩定擴展消費及 CORE-040 全切片等價仍待補。
 
 CORE-015／034 整合補核：Code 測試 peer 仍使用 Artifact 舊 version／字串 path，被現行公開模型 schema 拒絕。改為原 operation=get 與相對 logical_root 的陣列 path；仍核兩次業務扣額、Artifact 子讀零扣額、真派發／回執及原 128 字元。`artifacts/CORE-034/original-artifact-wire-mac-02/` 387 項通過。首次 mac-01 誤把既有核心效果外層當成 Python envelope，已修正斷言路徑並保留失敗；不改產品授權或放寬 schema。
+
+CORE-013 撤回三平台乾淨候選已驗：來源 `266e9aa23e13990c156c6ed0bf8df3b985d6d810`，tree `8322f0c5be6285c8a62a64a1acbc91beeedfec7935cc8d99881c1348526a72eb`。Mac ARM64／Linux ARM64／HJW Windows x86_64 各 252 項、獨立 SDK 安裝及乾淨 PATH 啟動通過；Reader 43、Host 2、握手 1、Rust SDK `1.0.0-alpha.11`／Python `1.0.0a11`。同一包實驗證 `get_group_members` 與 `recall_own_message`，保留原 bot、未知、晚回及實際 writer 崩潰回條。
+
+未發布交接索引：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/recall-handoff-final-01/verified-candidates.json`，SHA-256 `d7b86f0244ca8064e13e67cd78ad96256d9879bd35444bd4b68a2add1e73ebe2`，含逐成員驗證與三平台 manifest。
+
+- Mac ZIP `f34dceb76bbf32f1af856b094fc70a17a3b1ec9261ce8c1ec183e31c44ae6178`。
+- Linux ZIP `aa2c2b76e0d550333ebe0456fb41fc6e1f5901d7e2f07d2a5d3274c602195d80`。
+- Windows ZIP `b72683a71ba2a8260f801bc6d85fd535dc871e3dd2ee366fff06b6222b569877`。
+
+實作 `3dafd7a` 已推 PR #58，等 #57 及最新 head 六項 CI 再合併 main。候選未發布，未宣稱真擴展穩定驗收或 CORE-040 全切片等價。下一項 CORE-037 原主體權限目錄已在 `codex/core-037-permission-directory` 實作，Mac 整合初驗 1052 項通過，相鄰回歸及乾淨候選仍在進行。
