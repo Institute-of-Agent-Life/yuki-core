@@ -37,6 +37,7 @@
 | CORE-022 | macOS 與 HJW Windows 各通過 214 項，待 CI | `codex/core-022-compact` | `artifacts/CORE-022/{mac-07,windows-02}/{compact-public-next-wire,native-public-wires,compact-public-faults}.json`。送後跨 96k，只換公開前綴；保留原工具配對與未覆蓋尾。實際強殺後重用原已付回應；刪除、重置或撤管理權後舊 P 無法發布。三種原生協議均驗下一筆實際請求與 opaque 重放。 |
 | CORE-018 | macOS、HJW Windows 實機已驗，待 CI | `codex/core-018-schedule` | `artifacts/CORE-018/{mac-03,windows-01}/schedule-occurrences.json`。H08 強殺接納後的 writer，重啟以原 goal 與原 QQ 私聊收件端完成；兩次到期有獨立根執行，重掃不重購。SELF 經指定群接收階段實際送達。R14 驗編輯、暫停、漏過多次到期、已完成次數，以及轉移後拒送。五種原規則、另加 cron 與舊時鐘對拍。18 張相鄰卡回歸通過。 |
 | CORE-023 | Mac、HJW Windows 各通過 223 項，待 CI | `codex/core-023-private` | `artifacts/CORE-023/{mac-06,windows-01}/{compact-exec-next-wire,partial-native-next,native-E-P-next,next-normal-unknown}.json`。同一批在配對後與 E 回應落庫後各強殺一次，下一普通請求仍有原參數及效果鍵。原生 QQ 部分送達保留三段狀態、已送 locator 與出站 ID。另驗 E→P 換鏈、P 拒絕轉 E、來源失效、不可容納及 Work 喚醒。固定舊版 `v4-oracle-01/junit.xml` 的 21 項通過。 |
+| CORE-025 | Mac 與 HJW Windows 各通過 83 項，待 CI | `codex/core-025-media` | `artifacts/CORE-025/{mac-03,windows-02}/media-versions.json`、`paid-image-wire.json`、`paid-messages-image.json`。原 QQ 段與引用、不可變交付、替換路徑、Windows junction、硬連結、忘記在途來源、TTL、無視覺能力均已實測。Mac 22 張卡回歸通過，見各卡 `media-regression-02/`。 |
 | CORE-027 | HJW Windows、Mac 各通過 172 項，待 CI | `codex/core-027-extract` | `artifacts/CORE-027/{mac-04,windows-01}/{extraction-batches,extraction-wire}.json`。按原事件數、字數、等待年齡選批；上下文只消歧。真實前景執行先行，提取使用專屬 schema。原文／ASR、三種事實分域、同 key、零結果、強殺與寫庫故障均驗過。未保存回應、SELF 偽造、來源刪除都不能推進水位。 |
 
 **擴展交接。** EXT-007、EXT-019 可讀 CORE-002 執行產物
@@ -93,9 +94,23 @@ CORE-018 實作 `49a3099` 已推 [PR #31](https://github.com/Institute-of-Agent-
 CORE-021 的 [PR #23](https://github.com/Institute-of-Agent-Life/yuki-core/pull/23) head `23fc3b2` 三平台六項檢查通過，已合併 `7fd1002`。CORE-030 還需要排程保存與其他卡輸入，按其原前置核對。
 
 CORE-023 實作 `755db0e`，[PR #32](https://github.com/Institute-of-Agent-Life/yuki-core/pull/32)。CORE-030 現已取得等待、排程及 E 的本地核心執行器。
+
+
+**擴展對拍。** HJW 的以下回條以擴展倉固定提交重新下載並核對 SHA-256；前三項使用 CORE-032 來源 `199dff095be0`。SDK 與宿主均來自候選包。
+
+| 消費者 | 固定回條 | SHA-256 |
+|---|---|---|
+| EXT-003 Telegram 遊標與重放 | [telegram-offset.json](https://github.com/Institute-of-Agent-Life/yuki-extensions/blob/03cabaa6f53db966888e3bf4d62a2113436482ec/artifacts/EXT-003/candidate-03/telegram-offset.json) | `a81f960527f3d5e959fef3003af13a8539f4174c9d35af91d1b5855e833f9338` |
+| EXT-028 web-fetch 來源及工具分頁 | [fetch-source.json](https://github.com/Institute-of-Agent-Life/yuki-extensions/blob/f8aac847ba3c6807b7ff2574fc80ff4f6f98ad30/artifacts/EXT-028/candidate-05/fetch-source.json) | `e1f5569fd35045fadd0729b0222e229eef21bcbf798fb821ac086fbc539691d9` |
+| EXT-005 飛書持久 ACK | [lark-frames.json](https://github.com/Institute-of-Agent-Life/yuki-extensions/blob/a9851426968903270e2f0c1ff87b704714f25d65/artifacts/EXT-005/candidate-01/lark-frames.json) | `55fb682c455fc5f43349d87d9c7c6c3c760d2136579d8c6e92738ae754dce9a3` |
+| EXT-040 離線簽名安裝、啟動與選配 web-fetch；來源 `093716ad01c0` | [setup-install.json](https://github.com/Institute-of-Agent-Life/yuki-extensions/blob/df09742e211a08288172fc18b234b104e5334ab5/artifacts/EXT-040/candidate-06/setup-install.json) | `ec6d75176646ddcebae6a22792f4e0a95c22669ffd6e146dd17dd219cc75fbd8` |
+
+CORE-025 提供 CORE-033、038 所需的本地版本合同。CORE-028 已開始測試原 embedding 的文件與查詢請求。穩定面仍待 EXT-067 公開包與方法級證據。
 CORE-028 可消費已提交的事實版本；CORE-040 的舊版 A、B 各通過 20 組雙設備／兩次冷啟動的長 Work，每組六筆實際模型 HTTP 請求。原始回條在 `artifacts/CORE-040/{A,B}-long-20-01/`。C 的同一劇本仍需要 CORE-025 及 CORE-033。
 
 CORE-027 實作 `b755907`，已推 [PR #33](https://github.com/Institute-of-Agent-Life/yuki-core/pull/33)。
+
+CORE-025 實作 `d40d4f5`，見 [PR #34](https://github.com/Institute-of-Agent-Life/yuki-core/pull/34)。在同一份測試來源上，HJW 另跑 CORE-013，見 `artifacts/CORE-013/media-windows-02/social-parts.json`。
 CORE-017 實作 `8a41277`，[PR #29](https://github.com/Institute-of-Agent-Life/yuki-core/pull/29)，HJW 與 Mac 均通過 106 項。
 CORE-012 提示詞補核 [PR #25](https://github.com/Institute-of-Agent-Life/yuki-core/pull/25) 的 head `1eb7be0` 通過六項檢查，已合併 `791e686`。
 CORE-024 在 `codex/core-024-search` 實作獨立原生搜索。Responses、Messages 及 Gemini 都用實際 loopback HTTP 驗證來源；一般 Main 透過自己的工具宣告派發，原聊天未送入獨立連線。冷重啟仍可命中完整且未過期的原收據，改 connection、Profile、金鑰域或憑據會重新派發。日期不明、孤立來源和未完成回應分開處理，原邏輯的未知嘗試重啟後維持一次。方法和來源證據在 `artifacts/CORE-024/{mac-07,windows-01}/search-proof-cache.json`；固定舊版橋接 24 項測試在 `artifacts/CORE-024/v4-oracle-01/junit.xml`。EXT-029 尚需以它的真實 Tavily owner 消費核心合同。
@@ -119,6 +134,8 @@ CORE-018 已接入 Compact `5d24062` 的搜尋整合。排程通過 `artifacts/C
 CORE-023 已接入排程 `72a93ae` 的搜尋整合。私人整理與搜尋回歸通過 `artifacts/CORE-{023,024}/private-search-integration-01/`。PR #32 等最新三平台 CI。
 
 CORE-027 已接入私人整理 `18b4099` 的搜尋整合。提取與搜尋回歸通過 `artifacts/CORE-{027,024}/extract-search-integration-01/`。PR #33 等最新三平台 CI。
+
+CORE-025 已接入提取 `dd3d4ff` 的搜尋整合。媒體與搜尋回歸通過 `artifacts/CORE-{025,024}/media-search-integration-01/`。PR #34 等最新三平台 CI。
 已接入 main `30a5ea7` 的 Host 合併提交。實作樹與上一輪驗證相同，PR 已轉向 main 並重新執行 CI。
 
 CORE-039 已接入 main 的 Work `0261764`。Mac 分發與 Work 回歸分別通過，產物為 `artifacts/CORE-039/work-main-integration-01/`、`artifacts/CORE-016/dist-main-integration-01/`。PR #28 以此次整合的最新提交重新等待三平台 CI。
@@ -135,6 +152,10 @@ PR #41 整合來源 `2eba72c` 的 Linux CI 在 CORE-024 的 Claude 宣告 fixtur
 CORE-027 已整合 main 的聯絡人／會話目錄 `0ded0dd`。提取與目錄回歸通過 `artifacts/CORE-027/contacts-main-integration-01/`、`artifacts/CORE-014/extract-contacts-integration-01/`。PR #33 轉向 main，按整合後 head 重驗三平台 CI。
 
 CORE-023 的最新六項 CI 通過後已合併 main `e01cd30`。CORE-027 接入此提交僅產生進度記錄差異，沿用上述相同實作樹的整合驗證。
+
+CORE-025 已接入提取 `9d1c64b` 的 main 與原聯絡人目錄。媒體、目錄、工具 registry 三卡分別通過 `artifacts/CORE-025/contacts-main-integration-01/`、`artifacts/CORE-{014,015}/media-contacts-integration-01/`。兩組原工具宣告一同保留，PR #34 等整合後 head 的三平台 CI。
 CORE-039 已整合 main 的聯絡人／會話目錄 `0ded0dd`。分發與目錄回歸通過 `artifacts/CORE-039/contacts-main-integration-01/`、`artifacts/CORE-014/dist-contacts-integration-01/`。PR #28 按此整合 head 等最新三平台檢查。
 
 CORE-027 已整合 main 的分發提交 `9a0b14a`。Mac CORE-039、027、032 全部通過，產物分別為 `artifacts/CORE-039/extract-dist-integration-01/`、`artifacts/CORE-027/dist-main-integration-01/`、`artifacts/CORE-032/extract-dist-integration-01/`。PR #33 按此整合版本重新等待三平台 CI。
+
+CORE-027 六組 CI 通過並合併 main `3d7d12c`；CORE-025 接入此來源與分發入口。Mac CORE-025、039 通過 `artifacts/CORE-025/dist-main-integration-01/`、`artifacts/CORE-039/media-dist-integration-01/`。PR #34 改以 main 為基底，等待整合後 head 的三平台 CI 再合併。

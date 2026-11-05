@@ -101,6 +101,10 @@ pub async fn line(conn: &mut SqliteConnection, id: i64, zone: &str) -> Result<St
     if !mentions.is_empty() {
         fields.push(format!("提及:{}", mentions.join(",")));
     }
+    let attachments = crate::media::display(conn, id).await?;
+    if !attachments.is_empty() {
+        fields.push(format!("附件:{}", serde_json::to_string(&attachments)?));
+    }
     let clock = match row.try_get::<Option<i64>, _>("occurred_at")? {
         Some(ms) => DateTime::<Utc>::from_timestamp_millis(ms)
             .ok_or("event time outside supported range")?

@@ -85,7 +85,12 @@ pub struct Round {
     pub portable: Vec<Value>,
     pub calls: bool,
 }
-pub async fn history(conn: &mut SqliteConnection, exec: &str, p: Protocol) -> Result<Vec<Round>> {
+pub async fn history(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    cfg: &crate::runtime::main::Config,
+) -> Result<Vec<Round>> {
+    let p = cfg.protocol;
     let records=sqlx::query("SELECT r.id,r.request_json,a.response FROM model_requests r JOIN model_attempts a ON a.logical=r.id WHERE r.activation=? AND a.state IN('response','paired') AND a.response IS NOT NULL ORDER BY r.ordinal")
         .bind(format!("main:{exec}")).fetch_all(&mut *conn).await?;
     let mut result = Vec::new();
@@ -112,6 +117,10 @@ pub async fn history(conn: &mut SqliteConnection, exec: &str, p: Protocol) -> Re
             let args = native_args.unwrap_or_else(|| row.get::<String, _>("payload"));
             p.output(&mut body, id, &receipt)?;
             calls.push(json!({"call_id":id,"effect_key":row.get::<String,_>("operation_id"),"tool":name,"arguments":args,"result":receipt}));
+        }
+        for row in &intents {
+            crate::media::append_image(conn, cfg, exec, row.try_get("operation_id")?, &mut body)
+                .await?;
         }
         let paid_parts = parts(p, &body)?;
         let pieces = paid_parts

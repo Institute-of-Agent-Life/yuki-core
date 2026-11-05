@@ -19,6 +19,8 @@ pub struct Config {
     pub search: Option<crate::model::search::Config>,
     #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
+    #[serde(default)]
+    pub media: crate::media::Config,
 }
 
 impl Config {

@@ -217,6 +217,15 @@ pub(crate) fn start(cfg: &crate::runtime::main::Config, body: &Value) -> Count {
 pub(crate) fn part_cost(p: Protocol, unit: &Value) -> Count {
     if p.is_messages() {
         let block = &unit["block"];
+        if block["type"] == "image"
+            && block["source"]["type"] == "base64"
+            && block["source"]["data"].is_string()
+        {
+            let mut count =
+                Count::item(&json!({"role":unit["role"],"content":{"image":"[prepared media]"}}));
+            count.value.media = 4096;
+            return count;
+        }
         return Count::item(
             &json!({"role":unit["role"],"content":if block["type"]=="text"{&block["text"]}else{block}}),
         );
@@ -234,15 +243,18 @@ pub(crate) fn part_cost(p: Protocol, unit: &Value) -> Count {
                 }
             }
         }
-    } else if p.is_chat()
+    } else if normalized["role"] == "user"
         && let Some(parts) = normalized["content"].as_array_mut()
     {
         for part in parts {
-            if part["type"] == "image_url"
-                && part["image_url"]["url"]
-                    .as_str()
-                    .is_some_and(|u| u.starts_with("data:"))
-            {
+            let uri = if p.is_chat() && part["type"] == "image_url" {
+                part["image_url"]["url"].as_str()
+            } else if !p.is_chat() && part["type"] == "input_image" {
+                part["image_url"].as_str()
+            } else {
+                None
+            };
+            if uri.is_some_and(|u| u.starts_with("data:")) {
                 *part = json!({"data_url":"[prepared media]"});
                 media += 4096;
             }
@@ -311,6 +323,33 @@ mod tests {
     use super::*;
     use crate::runtime::main::Config;
 
+    #[test]
+    fn responses_and_messages_charge_binary_only_in_native_image_blocks() {
+        for p in [Protocol::OpenaiResponses, Protocol::AnthropicMessages] {
+            let unit = |data: &str| {
+                if p.is_messages() {
+                    json!({"role":"user","block":{"type":"image","source":{"type":"base64","data":data}}})
+                } else {
+                    json!({"role":"user","content":[{"type":"input_image","image_url":format!("data:image/png;base64,{data}")}]})
+                }
+            };
+            let short = part_cost(p, &unit("eA=="));
+            let long = part_cost(p, &unit(&"A".repeat(8000)));
+            assert_eq!(short.tokens(), long.tokens());
+            assert_eq!(short.value.media, 4096);
+            let nested = |data: &str| {
+                if p.is_messages() {
+                    json!({"role":"assistant","block":{"type":"tool_use","input":unit(data)}})
+                } else {
+                    json!({"type":"function_call", "arguments":unit(data).to_string()})
+                }
+            };
+            assert!(
+                part_cost(p, &nested(&"A".repeat(8000))).tokens()
+                    > part_cost(p, &nested("x")).tokens() + 2000
+            );
+        }
+    }
     #[test]
     fn inline_media_charged_at_original_part_only() {
         let cfg: Config = serde_json::from_value(json!({"protocol":"gemini","model":"fixture","endpoint":"http://127.0.0.1","name":"Yuki","merge_ms":0,"max_input_units":200000,"max_output":128,"root_slots":5})).unwrap();
