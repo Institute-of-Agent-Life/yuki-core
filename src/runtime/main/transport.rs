@@ -122,6 +122,9 @@ impl Dispatch {
             {
                 crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
             }
+            "web_search" if cfg.bridge_search => {
+                crate::model::search::tool(&store, &exec, &actor, &id, &t.payload).await?
+            }
             "history_query" => {
                 if let Err(error) =
                     crate::history::query::run(&store, &exec, &actor, &t.payload, Some(&id)).await
