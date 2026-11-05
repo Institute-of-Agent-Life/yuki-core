@@ -466,3 +466,5 @@ Mac ARM64、HJW Windows x86_64、Linux ARM64 在同一乾淨來源樹 `f58b344f4
 | HJW Windows x86_64 | `cfad9951aa18cb1e0a9677b8d6e042d84dafdc6e6b13ba95feb4ab943fd9a4e6` |
 
 PR #51 等 #48／#49 進 main 後，按最新 head 的三平台 push／PR 六項 CI 合併。真 EXT-022／037／038／039／049 消費證據仍缺，穩定協議未凍結。下一個可獨立任務 CORE-055 已開始；CORE-014 原歷史工具與 CORE-040 原 wire 等價對拍仍待補齊。
+
+CORE-037／030 CI 修復：Windows Python 缺少系統 tzdb，現以附來源版本、SHA-256 與授權的 IANA 2023c 固定 TZif 作獨立日曆測試輸入；不更動 Rust 時區計算。CORE-030 清除案例在改動 executable 宣告後，先驗證未審批不可執行，再由真 operator 按原 revision 批准，保留刪除後 ACK 前崩潰情境。Mac、Linux ARM64、HJW Windows 各自通過 CORE-030 120 項、CORE-037 977 項；回條位於 artifacts/CORE-030/approved-cleanup-{mac,windows}-01/、artifacts/CORE-037/pinned-calendar-{mac,windows}-01/ 與 artifacts/CORE-037/ci-recovery-linux-01/。源樹 e7d3d4982ab0679daead7202453e3f9a4801c74e17ed84027317425ead6870e2，PR #51 推新 head 後重新等六項 CI。

@@ -7,7 +7,7 @@ import os
 import threading
 import uuid
 from urllib.parse import urlencode, urlsplit
-from zoneinfo import ZoneInfo
+from tests.harness.timezones import ZoneInfo
 from tests.harness.compact import Owner
 from tests.peers.chat.recorder import Recorder
 
