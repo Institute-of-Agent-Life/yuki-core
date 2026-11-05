@@ -510,3 +510,5 @@ CORE-014 三平台交接已驗：來源 `43b67d35d996ab6185507931a77e189677e9a1d
 - windows ZIP SHA-256 `18d65b272e547002ac980dc516f84c08ce9cdd2e9e83c185b58066dd99c30d7c`。
 
 已推 PR #53；等待 #52 及最新 head 三平台 push／PR 六項 CI，通過後合併 main。
+
+CORE-057 跨平台封裝補正：Linux `handoff-final-01/linux-validation-02/` 查出 provenance 誤收 ExFAT 的 AppleDouble `._` 中繼資料；移除非來源成員後，仍逐一驗 20 份原 CI JSON 與 defaults 的 SHA-256。`provenance-mac-01/` 通過，先前 Mac 212 項包含 21 項中繼資料檢查，修正後為 192 項（新增來源集合檢查）。原失敗及舊候選保留，未列入交接；將從本提交重做三平台候選。

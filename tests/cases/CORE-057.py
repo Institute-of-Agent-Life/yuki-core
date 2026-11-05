@@ -16,6 +16,7 @@ def run(ctx):
     binary=ctx.root/'target/debug'/('yuki-core.exe' if os.name=='nt' else 'yuki-core')
     fixtures=ctx.root/'tests/fixtures/import/model-v4'
     provenance=json.loads((fixtures/'provenance.json').read_text())
+    ctx.equal('retained source inputs contain only the 20 CI cases and defaults',len(provenance['members'])==21 and all(not name.startswith('._') for name in provenance['members']),True)
     for name,digest in provenance['members'].items():ctx.equal('retained legacy input '+name,sha((fixtures/name).read_bytes()),digest)
     root=ctx.working/'model-import';root.mkdir()
     def make(name,env=None,overrides=(),extra='',dotenv=''):
