@@ -101,6 +101,8 @@ struct Tool {
     action: effects::Operation,
     target: String,
     payload: Value,
+    #[serde(default)]
+    rejected: Option<super::tool_rejection::Rejection>,
 }
 
 /// A new exclusive owner cannot know whether the previous HTTP write reached a provider.
@@ -340,6 +342,7 @@ async fn response(
                 && seen.insert(t.call_id.clone())
                 && !t.target.is_empty()
                 && t.target.trim() == t.target
+                && (t.rejected.is_none() || matches!(t.action, effects::Operation::External))
         })
     });
     let exec: String = row.try_get("execution")?;
@@ -368,6 +371,11 @@ async fn response(
                 },
             )
             .await?;
+            if let Some(error) = tool.rejected {
+                sqlx::query("UPDATE operations SET state='failed',result=? WHERE namespace=? AND operation_id=? AND state='intent'")
+                    .bind(json!({"error":error,"executed":false,"dispatched":false}).to_string())
+                    .bind(&exec).bind(&id).execute(&mut *conn).await?;
+            }
             sqlx::query("INSERT INTO model_tool_intents(logical,ordinal,call_id,execution,operation_id) VALUES(?,?,?,?,?)")
                 .bind(&logical).bind(index as i64).bind(tool.call_id).bind(&exec).bind(id).execute(&mut *conn).await?;
         }

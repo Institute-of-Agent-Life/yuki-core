@@ -615,3 +615,9 @@ CORE-015 原工具視圖乾淨候選完成：來源 `cf14cc6d45b7eaa80c6fa6f0c24
 - Windows ZIP `229e20965816b85bf89ac52a5ddb61617718de26b1a3d0bc60ffdf11972367df`，實機根目錄 `D:\yuki-core-validation-20261104\CORE-015-ce49fdff740d-983d16db`。
 
 PR #60 等 #59 及最新 head 六項 CI；候選尚未發布。正在下一個 `codex/core-015-call-isolation` 分支修復同批 schema 錯誤 held；尚未驗完，不把該行為算入此候選。
+
+CORE-015 H12 逐項拒絕補核在 `codex/core-015-call-isolation`。可信 decoder 逐項核原 paid 宣告、schema 與 choice；writer 與原 response 同交易保存 rejected failed 操作，再依原 call_id／順序配對。Chat、OpenAI Responses、DeepSeek Responses／legacy、Messages、Gemini 的合法讀寫及單一實體送達可繼續；錯誤項不派發、不扣業務額度，原 raw body 不改寫。重啟保留回條，不新增模型購買；重複 ID 六協議均 held、零部分效果。結構化 emit_result 繼續按自身 paid schema／choice 處理。
+
+`artifacts/CORE-015/call-isolation-mac-04/` 363 項通過；`call-isolation-adjacent-02/CORE-019` 及 `call-isolation-adjacent-03/{CORE-020,CORE-021,CORE-012,CORE-011,CORE-010,CORE-030,CORE-034}` 全過。原 oracle 四用例通過於 `original-call-rejections-oracle-01/`。內部 intent 多一個有型別的 rejected 欄位，操作仍使用原 failed 狀態；Host 2、reader 43、SDK alpha.11／a11 不變。development-package 只作打包自測，待乾淨提交產三平台未發布候選。
+
+失敗留證：red-01 的自建 target symlink 被來源規則拒絕，已只移除該自建連結，改獨立編譯；red-02 實測原整批 response_held。mac-01 五協議通過後，Gemini fixture 因未指定原 model 路徑啟動失敗；修正 fixture 後六協議及重複 ID 反例通過。adjacent-01 打包器清單少一個右括號，已修正並保留 packaging-failure.txt。adjacent-02 發現 Messages 把普通 choice 套到結構化 emit_result；按實際 paid 結構化宣告分開後，adjacent-03 全過。未以跳過檢查換取通過，原未知派發仍不自動重試。

@@ -428,6 +428,8 @@ def run(ctx):
     ctx.write("read-barriers.json", {"cases": {"H12": barriers}})
     ctx.write("frozen-views.json", {"cases": {"H09": views}})
     ctx.write('original-tool-views.json',{'original_source_commit':original_views['source_commit'],'oracle_sha256':hashlib.sha256((ctx.root/'fixtures/tool-results/v4-tool-views.json').read_bytes()).hexdigest(),'golden_cases':len(original_views['cases']),'native_views':views,'host_code_lookup_unchanged':True})
+    from tests.harness.tool_call_isolation import run as isolated_calls
+    ctx.write('tool-call-isolation.json',isolated_calls(ctx))
     built=subprocess.run([sys.executable,str(ctx.root/"ci/publish-contract.py"),"build","--out",str(ctx.output/"sdk-distributions"),"--verify-work",str(ctx.working/"artifact-sdk")],capture_output=True,text=True,timeout=120)
     ctx.write("artifact-sdk-build.json",{"exit_code":built.returncode,"stderr":built.stderr})
     ctx.equal("artifact candidate has independently verified SDK packages",built.returncode,0)

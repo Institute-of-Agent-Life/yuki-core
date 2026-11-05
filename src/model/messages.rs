@@ -222,26 +222,33 @@ pub fn decode(v: &Value, task: Option<&Task>, cfg: &Config, paid: &Value) -> Res
                 let name = block["name"].as_str().ok_or("missing tool_use name")?;
                 let declaration = declared
                     .iter()
-                    .find(|d| d["name"] == name && d["input_schema"].is_object())
-                    .ok_or("tool outside paid declaration")?;
-                if paid["tool_choice"]["type"] == "none"
-                    || !jsonschema::validator_for(&declaration["input_schema"])?
-                        .is_valid(&block["input"])
-                {
-                    return Err("invalid paid tool arguments".into());
-                }
+                    .find(|d| d["name"] == name && d["input_schema"].is_object());
+                let choice = cfg.tool_choice.as_deref().unwrap_or("auto");
+                let allowed = paid["tool_choice"]["type"] != "none"
+                    && paid["tool_choice"]["name"]
+                        .as_str()
+                        .is_none_or(|selected| selected == name)
+                    && (task.is_some() || matches!(choice, "auto" | "required") || choice == name);
+                let error = super::tool_rejection::validate(
+                    declaration.map(|d| &d["input_schema"]),
+                    &block["input"],
+                    allowed,
+                )?;
                 if let Some(task) = task {
-                    if task.mode != Mode::FunctionTool || name != "emit_result" || emitted.is_some()
+                    if error.is_some()
+                        || task.mode != Mode::FunctionTool
+                        || name != "emit_result"
+                        || emitted.is_some()
                     {
                         return Err("invalid structured Messages tool".into());
                     }
                     emitted = Some(block["input"].clone());
                 } else {
-                    let choice = cfg.tool_choice.as_deref().unwrap_or("auto");
-                    if !matches!(choice, "auto" | "required") && choice != name {
-                        return Err("wrong logical Messages choice".into());
+                    let mut intent = chat::intent(id, name, block["input"].clone())?;
+                    if let Some(error) = error {
+                        super::tool_rejection::mark(&mut intent, error);
                     }
-                    intents.push(chat::intent(id, name, block["input"].clone())?);
+                    intents.push(intent);
                 }
             }
             _ => return Err("unsupported or incomplete Messages block".into()),

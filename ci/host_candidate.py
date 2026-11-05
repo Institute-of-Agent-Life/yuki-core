@@ -124,6 +124,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/v4-recall.json']=original
         files['docs/recall-compat.md']=(ROOT/'docs/recall-compat.md').read_bytes()
     if artifact:
+        isolated=receipt('tool-call-isolation.json')
+        original_rejections=(ROOT/'fixtures/tool-results/v4-call-rejections.json').read_bytes()
+        if digest(original_rejections)!=json.loads(isolated)['oracle_sha256']:raise ValueError('call rejection oracle differs from exercised source')
+        files['evidence/tool-call-isolation.json']=isolated
+        files['docs/tool-call-isolation.md']=(ROOT/'docs/tool-call-isolation.md').read_bytes()
+        files['evidence/v4-call-rejections.json']=original_rejections
         views=receipt('original-tool-views.json')
         original=(ROOT/'fixtures/tool-results/v4-tool-views.json').read_bytes()
         if digest(original)!=json.loads(views)['oracle_sha256']:raise ValueError('tool views differ from verified original')
@@ -421,6 +427,7 @@ def build(manifest_path, out, development=False):
         candidate["artifact_declaration_sha256"]=data["artifact_declaration_sha256"]
         candidate["validated_core_tools"]=["read_tool_artifact","lookup_tools","time_get_current","update_short_state"]
         candidate["tool_views_oracle_sha256"]=json.loads(receipt("original-tool-views.json"))["oracle_sha256"]
+        candidate["validated_call_isolation_protocols"]=[p["protocol"] for p in json.loads(receipt("tool-call-isolation.json"))["protocols"]]
         candidate["validated_artifact_operations"]=data["validated_operations"]
         candidate["validation"]["consumer"]="physical Main tool continuation and fixed original JSON/text page fixtures; SDK packages independently installed"
         candidate["validation"]["real_extension_consumers"]=False

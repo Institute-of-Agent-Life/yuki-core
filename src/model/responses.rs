@@ -149,8 +149,9 @@ pub fn decode(raw: &str, task: Option<&Task>, cfg: &Config) -> Result<Turn> {
                     .filter(|id| !id.is_empty() && seen.insert(*id))
                     .ok_or("missing or duplicate Responses call_id")?;
                 let name = item["name"].as_str().ok_or("missing function name")?;
-                let args: Value =
-                    serde_json::from_str(item["arguments"].as_str().ok_or("missing arguments")?)?;
+                let args = super::tool_rejection::arguments(
+                    item["arguments"].as_str().ok_or("missing arguments")?,
+                );
                 if let Some(task) = task {
                     if task.mode != Mode::FunctionTool
                         || name != "emit_result"
@@ -161,10 +162,14 @@ pub fn decode(raw: &str, task: Option<&Task>, cfg: &Config) -> Result<Turn> {
                     structured = Some(args);
                 } else {
                     let choice = cfg.tool_choice.as_deref().unwrap_or("auto");
+                    let mut intent = chat::intent(id, name, args)?;
                     if !matches!(choice, "auto" | "required") && choice != name {
-                        return Err("function outside selected choice".into());
+                        super::tool_rejection::mark(
+                            &mut intent,
+                            super::tool_rejection::Rejection::ToolChoiceMismatch,
+                        );
                     }
-                    intents.push(chat::intent(id, name, args)?);
+                    intents.push(intent);
                 }
             }
             _ => return Err("unsupported output item".into()),

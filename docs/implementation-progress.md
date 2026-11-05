@@ -18,7 +18,7 @@
 | CORE-013 補核 | #57 `bf121e5`、#58 `47fae2a` | 原群目錄與撤回；撤回來源 `266e9aa` 三平台各 252 項通過。 |
 | CORE-037 權限目錄 | #59 `a638fab`，`codex/core-037-permission-directory` | 247 個原 descriptor、16 組結果；Mac／Linux／HJW Windows 乾淨候選各 1052 項通過，索引見下表。 |
 | CORE-015 工具視圖 | PR #60 `cf14cc6`，`codex/core-015-original-tool-views` | 原宣告、Code 核心可見性、lookup 多詞搜尋與回條補核；50 組原對拍；三平台乾淨候選各 127 項，五張相鄰回歸通過。 |
-| CORE-015 逐項拒絕 | `codex/core-015-call-isolation`，未提交 | 六種協議的逐項失敗、同批合法效果、零派發／業務扣額及冷啟動已初驗；重複 ID 仍 held，完整回歸進行中。 |
+| CORE-015 逐項拒絕 | `codex/core-015-call-isolation` | 六協議 363 項及八張相關卡通過；錯誤項零派發／業務扣額，重複 ID 仍 held，準備乾淨三平台候選。 |
 | CORE-040 | #55 `400c9b8`，部分完成 | 12 次冷暖 A/B/C 各 1200 輸入已逐筆核效果；完整工具／DTO／Compact 等價與受控資源比較未完成，不判 Rust 勝出。 |
 
 每個 PR 均等其前置合併與最新 head 的 push／PR × Windows／Linux／Mac 六項檢查全通過才合併。待合併分支以 PR 的 head ref 為準；本地 worktree 在 `.cache/worktrees/`。不直接提交 main。

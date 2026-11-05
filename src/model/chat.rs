@@ -60,7 +60,12 @@ pub fn intent(id: &str, name: &str, arguments: Value) -> Result<Value> {
     if let Some(tool) = crate::tools::registry::builtin(name)
         && !jsonschema::validator_for(&tool.schema)?.is_valid(&arguments)
     {
-        return Err("invalid tool arguments".into());
+        return Ok(super::tool_rejection::intent(
+            id,
+            name,
+            arguments,
+            super::tool_rejection::Rejection::InvalidToolArguments,
+        ));
     }
     let (action, target) = if matches!(name, "get" | "put") {
         (name, arguments["target"].as_str().unwrap())
@@ -120,11 +125,11 @@ pub fn decode(raw: &str, task: Option<&Task>) -> Result<Turn> {
         let name = call["function"]["name"]
             .as_str()
             .ok_or("missing function name")?;
-        let arguments: Value = serde_json::from_str(
+        let arguments = super::tool_rejection::arguments(
             call["function"]["arguments"]
                 .as_str()
                 .ok_or("invalid function arguments")?,
-        )?;
+        );
         if let Some(task) = task {
             if task.mode != Mode::FunctionTool
                 || name != "emit_result"
