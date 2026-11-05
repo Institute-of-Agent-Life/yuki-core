@@ -2,6 +2,7 @@ mod boot;
 mod catalog;
 mod files;
 pub(crate) mod http;
+pub(crate) mod legacy;
 pub(crate) mod probe;
 pub(crate) mod runtime;
 pub(crate) mod wire;

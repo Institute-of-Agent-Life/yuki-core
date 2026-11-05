@@ -1,0 +1,45 @@
+{
+  "result": {
+    "ok": true,
+    "revision": 3346173103449309,
+    "migrated": [
+      "embedding",
+      "vision",
+      "asr",
+      "search"
+    ],
+    "migrated_profiles": [],
+    "apply_mode": "restart",
+    "consumed_env_fields": [],
+    "retired_overrides": 0
+  },
+  "source_fields": [],
+  "selected": {
+    "id": "main",
+    "provider": "fake",
+    "protocol": "chat_completions",
+    "base_url": "https://test.invalid/v1",
+    "api_key_env": "",
+    "model": "fake-model",
+    "timeout_seconds": 60.0,
+    "max_retries": 1,
+    "default_temperature": 0.21,
+    "default_max_output_tokens": 301,
+    "max_output_tokens_limit": null,
+    "max_input_tokens": null,
+    "context_window_tokens": null,
+    "thinking_enabled": false,
+    "reasoning_effort": "medium",
+    "structured_output_mode": "function_tool",
+    "search_mode": null,
+    "search_connection": null,
+    "capabilities": [
+      "reasoning",
+      "structured_output",
+      "tools"
+    ],
+    "wire_options": null,
+    "headers": {}
+  },
+  "upstream_requests": []
+}

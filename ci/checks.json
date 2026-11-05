@@ -5,6 +5,7 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-057": {"case":"tests/cases/CORE-057.py","artifact":"offline-config-reconciliation.json","timeout_seconds":240,"rust":true,"capabilities":["offline-original-model-bundles","versioned-legacy-retirement"]},
     "CORE-055": {"case":"tests/cases/CORE-055.py","artifact":"usage-field-coverage.json","timeout_seconds":180,"rust":true,"capabilities":["original-attempt-usage-coverage","same-attempt-cache-denominator","retained-only-usage"]},
     "CORE-037": {"case":"tests/cases/CORE-037.py","artifact":"control-grants.json","timeout_seconds":300,"rust":true,"capabilities":["current-original-management-authority", "atomic-character-soul", "offline-plugin-configuration", "approved-plugin-lifecycle", "original-work-management", "bounded-trace-projection", "safe-original-notification-retry"]},
     "CORE-048": {

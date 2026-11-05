@@ -1,0 +1,31 @@
+{
+  "first": {
+    "ok": true,
+    "revision": 446385905694952,
+    "migrated": [
+      "embedding",
+      "vision",
+      "asr",
+      "search"
+    ],
+    "migrated_profiles": [
+      "main.legacy-agent"
+    ],
+    "apply_mode": "restart",
+    "consumed_env_fields": [
+      "LLM_MAX_OUTPUT_TOKENS"
+    ],
+    "retired_overrides": 1
+  },
+  "repeated": {
+    "ok": true,
+    "revision": 1006809778710715,
+    "migrated": [],
+    "migrated_profiles": [],
+    "apply_mode": "restart",
+    "consumed_env_fields": [],
+    "retired_overrides": 0
+  },
+  "later_profile_output_tokens": 888,
+  "bundle_unchanged_on_repeat": true
+}

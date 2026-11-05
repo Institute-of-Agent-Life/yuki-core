@@ -482,3 +482,11 @@ PR #51 等 #48／#49 進 main 後，按最新 head 的三平台 push／PR 六項
 | HJW Windows x86_64 | `83e473a6ddb750b5b5de7e1febddffdeecec1bc0d4e344be8848c6f10c9cf1f8` |
 
 PR #52 待 #51 進 main 後按最新 head 六項 CI 合併。缺 EXT-049 對當版候選的實際管理 HTTP 消費，穩定協議未凍結。初次 `coverage-red-01/` 為 Mac 系統碟滿、`-02/` 為 fixture ordinal 衝突，失敗產物保留。下一個可執行工作為 CORE-014 原歷史查詢 wire，供 CORE-040 原腳本等價對拍使用。
+
+## CORE-057：Rust 離線模型設定移轉
+
+分支 `codex/core-057-model-import`。新增 `import-models --inspect`、原 revision 的 apply 與 `--resume`。停寫副本以原 Application OS lock 互斥，固定 schema 0156、實際 TOML／sidecar／環境檔與 WAL 雜湊；依原來源優先序保存 null／false、停用 Search 與完整 ASR 憑證對。逐用途比較實際輸出 TOML 的有效參數，僅真差異分流共享 Profile，保留私有 headers、未知 operator 欄位及原檔權限。來源檔案不變；只在新 bundle 讀回確認後按原行 ID／鍵／scope／version／值雜湊做 SQL 原子清退。
+
+先保留缺入口 `import-red-01/`；`artifacts/CORE-057/import-mac-05/` 功能檢查與 dirty 開發包的乾淨 PATH 啟動通過。固定 SHA 329ca7c 的隔離 oracle 22 項通過於 `/Users/huangjiawei/.cache/yuki-core/model-config-oracle-01/`；另驗原 CI 9138a528 的 20 份 model-legacy 證據。真 kill 覆蓋寫檔後／SQL commit 後，另驗非空分群拒絕、修改版本／目的檔拒絕、SQL 後筆失敗整筆回滾、舊 Application 鎖及 WAL-only 參數。首輪功能全過但缺 native SQLite build 回條，已補實際匯入連線查詢；未將該輪標為完成。
+
+Windows／Linux 與乾淨來源候選待整合驗證；先前 dirty 包不作發布交接。此卡未啟動 owner／gateway／plugin／provider，不修改任意 .env，不修改舊倉。下一個可執行工作為 CORE-040；CORE-043 仍需 EXT-041 的實際安裝交接輸入。

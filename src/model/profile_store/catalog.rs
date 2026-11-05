@@ -61,7 +61,7 @@ fn shape(mut schema: &Value) -> &Value {
     }
 }
 
-fn public_fields(raw: &Value, definition: &Value) -> Value {
+pub(super) fn public_fields(raw: &Value, definition: &Value) -> Value {
     let definition = shape(definition);
     if let Some(object) = raw.as_object() {
         let mut result = Map::new();

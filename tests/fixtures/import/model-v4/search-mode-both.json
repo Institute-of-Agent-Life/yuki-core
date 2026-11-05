@@ -1,0 +1,18 @@
+{
+  "result": {
+    "ok": true,
+    "revision": 3208414089273576,
+    "migrated": [
+      "embedding",
+      "vision",
+      "asr",
+      "search"
+    ],
+    "migrated_profiles": [],
+    "apply_mode": "restart",
+    "consumed_env_fields": [],
+    "retired_overrides": 0
+  },
+  "mode": "both",
+  "upstream_requests": []
+}

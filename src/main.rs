@@ -40,6 +40,7 @@ enum Action {
         memory_mode: memory::embedding::Mode,
     },
     Migrate,
+    ImportModels(model::profile_store::legacy::Options),
     Doctor,
     Run,
     Operator {
@@ -97,6 +98,13 @@ async fn execute(args: Args) -> Result<()> {
                 "{}",
                 json!({"status":"initialized","schema_version":version})
             );
+        }
+        Action::ImportModels(options) => {
+            let result = model::profile_store::legacy::run(&data, options).await?;
+            println!("{}", result);
+            if result["ok"] != true {
+                std::process::exit(1);
+            }
         }
         Action::Migrate => {
             config::Config::read(&data)?;
