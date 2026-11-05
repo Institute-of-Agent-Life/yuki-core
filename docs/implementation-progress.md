@@ -416,3 +416,7 @@ CORE-035 整合參與邊界 `2290520` 與 main 分發鏈。Mac CORE-035、039 �
 CORE-051 整合維護 `402a9aa` 與 main 分發鏈。Mac CORE-051 `maintenance-distribution-main-01/`、CORE-039 `sessions-maintenance-distribution-main-02/` 通過。第一次 CORE-039 的 Rust 工具結果缺少 data，原因尚未定位，失敗回條保留；補上失敗時完整結果與原執行狀態診斷後，release Host 另連續三次 65 項斷言通過於 `artifacts/CORE-032/sessions-release-diagnostic-{01,02,03}/`。未將重跑通過當成根因修復，PR #47 仍依最新 head 六項 CI 驗證。
 
 CORE-048 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-048 `sessions-distribution-main-02/`、CORE-039 `profiles-sessions-distribution-main-02/` 通過。候選器保留模型設定 metadata、四協議與獨立 Search／Embedding 的原能力記錄；PR #49 按整合後 head 等六項 CI。前一份 `sessions-distribution-main-01/` 在錯誤的 CORE-049 工作樹執行而缺卡入口，已撤銷該處本輪 merge，未修改 CORE-049。
+
+CORE-048／039 CI 編譯診斷：PR #49 的兩個 Mac Intel run（42085724620、42085715264）均在 release 冷編譯 600 秒截止，尚未執行發布驗證案例。回移 CORE-037 已使用的編譯階段處理：只有 release build 使用 1200 秒編譯預算，超時仍失敗並保存部分編譯輸出和 stage 回條；其他編譯及所有功能、故障、啟動與分發驗收時間不變。原失敗保留。此處不因其他平台通過而跳過 Mac，需最新 head 三平台六項 CI 全通過才合併。
+
+本地 Mac `artifacts/CORE-039/profile-compiler-mac-01/` 81 項分發驗證通過，source tree `a8a009014eb8f64a246d94279914c8611a5904f9443a60ae5e203837a94dc57f`；原功能驗收完整執行。
