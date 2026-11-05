@@ -113,6 +113,14 @@
       "case":"tests/cases/CORE-033.py","artifact":"personal-handoff.json","timeout_seconds":360,"rust":true,
       "capabilities":["purpose-bound-device-auth","private-work-input-receipts","generation-bound-native-notify"]
     },
+    "CORE-039": {
+      "case": "tests/cases/CORE-039.py",
+      "artifact": "candidate-manifest.json",
+      "timeout_seconds": 420,
+      "rust": true,
+      "release": true,
+      "capabilities": ["signed-native-release","pinned-sdk-fixtures","minimal-linux-oci"]
+    },
     "CORE-032": {
       "case": "tests/cases/CORE-032.py",
       "artifact": "host-delegation.json",

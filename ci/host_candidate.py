@@ -13,33 +13,14 @@ from source import digest, source_identity
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def build(manifest_path, out, development=False):
-    base = manifest_path.parent
-    m = json.loads(manifest_path.read_bytes())
-    source = source_identity(ROOT)
-    if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035"}
-        or m["status"] != "verified"
-        or m["exit_code"] != 0
-        or not m["assertions"]
-        or not all(a["passed"] for a in m["assertions"])
-    ):
-        raise ValueError("passing host capability manifest required")
-    if m["source"] != source or (source["dirty"] and not development):
-        raise ValueError("candidate needs matching source identity and clean commit")
-
-    def receipt(name):
-        raw = (base / name).read_bytes()
-        if digest(raw) != m["artifacts"].get(name):
-            raise ValueError("unverified member " + name)
-        return raw
-
-    personal = m["card"] == "CORE-033"
-    media = m["card"] == "CORE-038"
-    maintenance = m["card"] == "CORE-035"
-    participation = m["card"] == "CORE-036"
-    auxiliary = m["card"] == "CORE-050"
-    composition = m["card"] == "CORE-034"
+def tested_contents(receipt, profile, personal=False, card=None):
+    card = card or ("CORE-033" if personal else "CORE-032")
+    personal = card == "CORE-033"
+    media = card == "CORE-038"
+    maintenance = card == "CORE-035"
+    participation = card == "CORE-036"
+    auxiliary = card == "CORE-050"
+    composition = card == "CORE-034"
     proof_name = {
         "CORE-032": "host-delegation.json",
         "CORE-033": "personal-handoff.json",
@@ -48,12 +29,12 @@ def build(manifest_path, out, development=False):
         "CORE-036": "promotion-vs-self.json",
         "CORE-035": "maintenance-grants.json",
         "CORE-034": "nested-boundary.json",
-    }[m["card"]]
+    }[card]
     proof = receipt(proof_name)
     data = json.loads(proof)
     sdk = json.loads(receipt("sdk-distributions/candidate.json"))
     binary = (
-        ROOT / "target/debug" / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
+        ROOT / "target" / profile / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
     )
     raw = binary.read_bytes()
     if digest(raw) != data["binary_sha256"]:
@@ -193,6 +174,47 @@ def build(manifest_path, out, development=False):
                     + result.stderr.decode(errors="replace")[:200]
                 )
             json.loads(result.stdout)
+    return files, os_name, arch, host, sdk, idl
+
+
+def build(manifest_path, out, development=False):
+    base = manifest_path.parent
+    m = json.loads(manifest_path.read_bytes())
+    source = source_identity(ROOT)
+    if (
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035"}
+        or m["status"] != "verified"
+        or m["exit_code"] != 0
+        or not m["assertions"]
+        or not all(a["passed"] for a in m["assertions"])
+    ):
+        raise ValueError("passing host capability manifest required")
+    if m["source"] != source or (source["dirty"] and not development):
+        raise ValueError("candidate needs matching source identity and clean commit")
+
+    def receipt(name):
+        raw = (base / name).read_bytes()
+        if digest(raw) != m["artifacts"].get(name):
+            raise ValueError("unverified member " + name)
+        return raw
+
+    personal = m["card"] == "CORE-033"
+    media = m["card"] == "CORE-038"
+    maintenance = m["card"] == "CORE-035"
+    participation = m["card"] == "CORE-036"
+    auxiliary = m["card"] == "CORE-050"
+    composition = m["card"] == "CORE-034"
+    proof_name = {
+        "CORE-032": "host-delegation.json",
+        "CORE-033": "personal-handoff.json",
+        "CORE-038": "media-handle-bridge.json",
+        "CORE-050": "aux-attempts.json",
+        "CORE-036": "promotion-vs-self.json",
+        "CORE-035": "maintenance-grants.json",
+        "CORE-034": "nested-boundary.json",
+    }[m["card"]]
+    data = json.loads(receipt(proof_name))
+    files, os_name, arch, host, sdk, idl = tested_contents(receipt, "debug", card=m["card"])
     target = (
         (
             {
