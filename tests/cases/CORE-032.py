@@ -15,8 +15,8 @@ from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer as OneBot
 
 
-def run(ctx):
-    svc = Service(ctx, ctx.working / "owner")
+def run(ctx, profile="debug"):
+    svc = Service(ctx, ctx.working / "owner", profile)
     previous_schema(ctx, svc.data, 12)
     (svc.data / "SOUL.md").write_bytes((ctx.root / "character/SOUL.md").read_bytes())
     ctx.check(

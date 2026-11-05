@@ -77,6 +77,14 @@
       "rust": true,
       "capabilities": ["immutable-effect-results", "exclusive-dispatch", "original-operation-recovery"]
     },
+    "CORE-039": {
+      "case": "tests/cases/CORE-039.py",
+      "artifact": "candidate-manifest.json",
+      "timeout_seconds": 420,
+      "rust": true,
+      "release": true,
+      "capabilities": ["signed-native-release","pinned-sdk-fixtures","minimal-linux-oci"]
+    },
     "CORE-032": {
       "case": "tests/cases/CORE-032.py",
       "artifact": "host-delegation.json",
