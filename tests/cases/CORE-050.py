@@ -5,6 +5,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from tests.harness.json_file import read_json
 import time
 import io
 import wave
@@ -80,7 +81,7 @@ class Peer:
     def receive(self, key, ok=True):
         p = self.folder / ("reply-job-" + key + ".json")
         self.owner.until(p.exists)
-        result = json.loads(p.read_bytes())
+        result = read_json(p)
         if ok is not None:
             if ("result" in result) != ok:
                 self.owner.ctx.write("aux-rpc-failure-" + key + ".json", result)
@@ -1007,7 +1008,15 @@ def media_input(ctx, sdk):
                             }
                         )
                     )
-                    result = operation.result()
+                    try:
+                        result = operation.result()
+                    except Exception:
+                        ctx.write("aux-media-failure-" + kind + ".json", {
+                            "calls":owner.rows("SELECT handle,method,state,result FROM host_calls"),
+                            "operations":owner.rows("SELECT operation_id,state,result FROM operations"),
+                            "finish_present":(folder / ("finish-" + handle + ".json")).exists(),
+                        })
+                        raise
                     ctx.equal(
                         "original selected processing succeeds " + kind,
                         result["state"],

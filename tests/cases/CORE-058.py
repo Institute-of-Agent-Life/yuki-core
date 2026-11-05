@@ -56,6 +56,7 @@ def receive(ctx, peer, action, locator):
 
 
 def run(ctx):
+    fixture_file_receipts(ctx)
     spec = importlib.util.spec_from_file_location("notification_aux", ctx.root / "tests/cases/CORE-050.py")
     aux = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(aux)
@@ -172,6 +173,46 @@ def run(ctx):
     proof["media_order_and_expiry"] = media_order_and_expiry(ctx, sdk, aux)
     proof["external_gateway"] = external_gateway(ctx, sdk, aux)
     return proof
+
+
+def fixture_file_receipts(ctx):
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    from tests.harness.json_file import read_json
+
+    path = ctx.working / "delayed-fixture-receipt.json"
+    path.write_bytes(b'{"original":')
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        reader = pool.submit(read_json, path, 2)
+        time.sleep(0.05)
+        ctx.check("partial fixture response waits for the same file", not reader.done())
+        path.write_text('{"original":true}')
+        ctx.equal("completed fixture response is read without another RPC", reader.result(), {"original":True})
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel.CreateFileW.argtypes = [wintypes.LPCWSTR,wintypes.DWORD,wintypes.DWORD,
+                wintypes.LPVOID,wintypes.DWORD,wintypes.DWORD,wintypes.HANDLE]
+            kernel.CreateFileW.restype = wintypes.HANDLE
+            kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+            locked = kernel.CreateFileW(str(path),0x80000000,0,None,3,0x80,None)
+            ctx.check("actual Windows fixture receipt is exclusively held", locked != wintypes.HANDLE(-1).value)
+            try:
+                reader = pool.submit(read_json,path,2)
+                time.sleep(0.05)
+                ctx.check("Windows sharing conflict retains the original file read", not reader.done())
+            finally:
+                kernel.CloseHandle(locked)
+            ctx.equal("released Windows receipt is consumed without another call",reader.result(),{"original":True})
+    malformed = ctx.working / "malformed-fixture-receipt.json"
+    malformed.write_bytes(b'{')
+    try:
+        read_json(malformed,0.03)
+    except json.JSONDecodeError:
+        ctx.check("permanently malformed fixture receipt fails its bound",True)
+    else:
+        ctx.check("permanently malformed fixture receipt fails its bound",False)
 
 
 def private_owner(ctx, sdk, name, model=None, media=False, tool=None, granted=True):
