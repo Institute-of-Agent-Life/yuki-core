@@ -244,6 +244,7 @@ Mac 與 HJW Windows 各 383 項通過，來源樹 `bf43b16e03c308a6cf43c6526664e
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/linux-arm64/candidate/yuki-code-preview-f74ecdd86b73-linux-arm64.zip`，SHA-256 `7a2a68e2e2be6009962948b2015b266ab613f233790111765f345163b6e05da2`。
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/macos-arm64/yuki-code-preview-f74ecdd86b73-darwin-arm64.zip`，SHA-256 `4f65192f02e234e7c2146f8eebb3c472e3656b41fabeac89dde7d05c4a7a99b1`。
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/windows-validation/handoff/yuki-code-preview-f74ecdd86b73-windows-x86_64.zip`，SHA-256 `4d073b6f15f5d10c0c8594064c568555671e90c49394f7da64ff1d9568b7ec2e`。
+CORE-016 分段補核已接入個人入口 `c979a2e` 的搜尋整合。分段、搜尋、原聯絡人工具回歸通過 `artifacts/CORE-{016,024,014}/segments-search-integration-01/`。PR #42 等最新三平台 CI。
 已接入 main `30a5ea7` 的 Host 合併提交。實作樹與上一輪驗證相同，PR 已轉向 main 並重新執行 CI。
 
 CORE-039 已接入 main 的 Work `0261764`。Mac 分發與 Work 回歸分別通過，產物為 `artifacts/CORE-039/work-main-integration-01/`、`artifacts/CORE-016/dist-main-integration-01/`。PR #28 以此次整合的最新提交重新等待三平台 CI。
@@ -288,3 +289,6 @@ CORE-030 同步檢索 `87a07f9` 與個人入口 main `76cf762` 的提交祖先�
 
 CORE-034 接入清除 `b745a9d`、檢索及 main 的分發入口。Mac CORE-034 通過 `erasure-distribution-main-02/`，CORE-039／030 通過 `code-erasure-distribution-main-03/`、`code-distribution-main-03/`。整合時移除重複的 Tool provider 欄位，候選共用打包器按被驗的 debug／release profile 取二進位；兩次先前失敗回條保留。原 `f74ecdd` 三機候選仍按原來源供擴展讀取，PR #43 以最新整合 head 重驗六項 CI。
 CORE-038 已整合個人入口 `d576aee` 及 main `692e323` 的分發入口。Mac CORE-038、039 通過 `artifacts/CORE-038/dist-main-integration-01/`、`artifacts/CORE-039/media-broker-main-integration-01/`；整合用 development-package 實際打包及乾淨 PATH 啟動通過，該包標記 dirty 且未發布，並非新增正式交接包。PR #40 以新 head 重驗，等待個人入口在 main 完成。
+CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自動合併重複的 provider 欄位，保留原工具宣告入口。Mac CORE-016、014、039 全部通過 `artifacts/CORE-016/dist-main-segments-03/`、`artifacts/CORE-014/dist-segments-integration-02/`、`artifacts/CORE-039/work-segments-main-integration-02/`。PR #42 以整合後 head 等 CI。
+
+CORE-034 同步媒體 `7cd4e42` 及 Work 分段 `e357ab6`。兩次祖先整合只改進度記錄，保留既有單次聯絡人註冊與 memory 配置驗證，實作與上一輪已驗來源一致。
