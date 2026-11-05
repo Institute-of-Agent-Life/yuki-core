@@ -567,3 +567,5 @@ CORE-013 群目錄三平台乾淨候選已驗：來源 `6d76210943e75a29c5bfa5f3
 PR #57 等 #56 與最新 head 六項 CI 通過；未發布、不標穩定擴展驗收。下一項原 `recall_own_message` 在 `codex/core-013-recall-wire` 進行，已核原 bot、未知結果與真實 writer 崩潰，待完整驗證及候選。
 
 CORE-034 Code 啟動修復 `9bb02fc` 的同源三平台驗證完成：tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`，`artifacts/CORE-034/unapproved-runtime-{mac,linux,windows}-01/` 各 387 項通過；Mac CORE-037 同名回歸 977 項通過。未批准的 Code 留在 discovered／disabled／offline，owner 管理入口可用；原 Work 不越過 runtime revision 或原預算。最新 PR CI 仍待完成。
+
+CORE-015／034 整合補核：Code 測試 peer 仍使用 Artifact 舊 version／字串 path，被現行公開模型 schema 拒絕。改為原 operation=get 與相對 logical_root 的陣列 path；仍核兩次業務扣額、Artifact 子讀零扣額、真派發／回執及原 128 字元。`artifacts/CORE-034/original-artifact-wire-mac-02/` 387 項通過。首次 mac-01 誤把既有核心效果外層當成 Python envelope，已修正斷言路徑並保留失敗；不改產品授權或放寬 schema。

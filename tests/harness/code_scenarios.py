@@ -45,6 +45,8 @@ def budgets(ctx, sdk, install):
                 else:
                     steps = ([{'name':'put','arguments':{'target':'large','value':'🦀'*15000}}, {'name':'get','arguments':{'target':'large'}}, {'name':'read_tool_artifact','arguments':{},'previous_artifact':True}] if kind=='readback' else [{'name':'send','arguments':{'text':'same'}} for _ in range(3)])
                     result=response(o,model,event,steps)
+                    if result['state']!='confirmed':
+                        ctx.write('code-budget-failure-'+kind+'.json',{'result':result,'children':o.rows('SELECT ordinal,operation,receipt FROM code_children'),'faults':{p.name:read_json(p) for p in folder.glob('private*fault*.json')}})
                     ctx.equal('native composition settled '+kind,result['state'],'confirmed')
                     ctx.equal('business root admits exactly two '+kind,o.rows('SELECT used_calls FROM root_tool_budgets'),[(2,)])
                     root,slots,units=o.rows('SELECT root,max_requests,max_units FROM root_budgets')[0]
