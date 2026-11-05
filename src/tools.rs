@@ -1,5 +1,6 @@
 pub mod batch;
 pub(crate) mod budget;
+pub(crate) mod permissions;
 pub mod registry;
 pub mod results;
 pub mod transient;
@@ -90,6 +91,7 @@ pub async fn perform(
         Ok(serde_json::from_str(&original)?)
     } else {
         match name {
+            "get_my_capabilities" => permissions::read(&mut tx, exec, actor, &args).await,
             "lookup_tools" => manifest.lookup(&args, cfg.try_get("code_projection")?),
             "time_get_current" => transient::clock(transient::now()?, &timezone),
             "update_short_state" => Ok(Value::Null),
@@ -171,6 +173,11 @@ pub(crate) async fn finish_guarded(
     let mut output = prepared;
     if output.is_ok() {
         match name.as_str() {
+            "get_my_capabilities" => {
+                output = permissions::read(conn, exec, actor, &args)
+                    .await
+                    .map_err(|e| e.to_string());
+            }
             "search_memory" => {
                 output = crate::memory::search_tool::confirm(conn, exec, actor, &args, &output?)
                     .await

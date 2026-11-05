@@ -191,8 +191,14 @@ impl Dispatch {
                     crate::tools::reject(&store, &exec, &actor, &id, error.to_string()).await?;
                 }
             }
-            "lookup_tools" | "time_get_current" | "history_directory" | "get_group_members"
-            | "find_contacts" | "find_conversations" | "update_short_state"
+            "lookup_tools"
+            | "time_get_current"
+            | "history_directory"
+            | "get_group_members"
+            | "find_contacts"
+            | "find_conversations"
+            | "update_short_state"
+            | "get_my_capabilities"
             | "read_tool_artifact" => {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }

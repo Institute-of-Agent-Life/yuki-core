@@ -359,6 +359,91 @@ async fn history_drops_projection_prepared_before_source_erasure() {
 }
 
 #[tokio::test]
+async fn permission_directory_rechecks_role_at_writer_and_self_never_inherits_admin() {
+    let (_temp, mut driver, _readers) = fixture().await;
+    let conn = driver.connection();
+    seed_history_event(conn).await;
+    let actor = "00000000-0000-4000-8000-000000000088";
+    sqlx::raw_sql("INSERT INTO accepted_sources VALUES(1);
+      INSERT INTO executions(id,source,original_actor,state) VALUES('permission-run',1,'00000000-0000-4000-8000-000000000088','running');
+      INSERT INTO operations(namespace,operation_id,action,target,payload,state) VALUES('permission-run','directory','external','get_my_capabilities','{}','intent');
+      UPDATE persons SET admin=1;")
+      .execute(&mut *conn).await.unwrap();
+    let prepared = crate::tools::permissions::read(conn, "permission-run", actor, &json!({}))
+        .await
+        .unwrap();
+    assert_eq!(prepared["permission_level"], "superuser");
+    sqlx::query("UPDATE persons SET admin=0")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    let result = crate::tools::finish_guarded(
+        conn,
+        "permission-run",
+        actor,
+        "directory",
+        Ok(prepared),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(result["state"], "confirmed");
+    assert_eq!(
+        result["result"]["permission_level"], "user",
+        "publication recomputes the live role after the earlier read"
+    );
+    sqlx::raw_sql("UPDATE persons SET admin=1;
+      INSERT INTO entries(id,scope,space) VALUES('self-group','group','[\"qq\",\"history\",\"700\"]');
+      INSERT INTO main_origins(ref,kind,conversation) VALUES('self-permission','self','self-group');
+      INSERT INTO executions(id,origin,state) VALUES('self-permission-run','self-permission','running');
+      INSERT INTO main_origins(ref,kind,conversation,parent) VALUES('self-child','child','self-group','self-permission-run');
+      INSERT INTO executions(id,origin,state) VALUES('self-child-run','self-child','running');")
+      .execute(&mut *conn).await.unwrap();
+    sqlx::raw_sql("INSERT INTO main_origins(ref,kind,conversation,parent) VALUES('human-child','child','private','permission-run');
+      INSERT INTO executions(id,origin,state) VALUES('human-child-run','human-child','running');")
+      .execute(&mut *conn).await.unwrap();
+    let delegated =
+        crate::tools::permissions::read(conn, "human-child-run", "human-child", &json!({}))
+            .await
+            .unwrap();
+    assert_eq!(delegated["permission_level"], "superuser");
+    sqlx::query("UPDATE persons SET admin=0")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    let delegated =
+        crate::tools::permissions::read(conn, "human-child-run", "human-child", &json!({}))
+            .await
+            .unwrap();
+    assert_eq!(
+        delegated["permission_level"], "user",
+        "delegated metadata follows the original human's current role"
+    );
+    sqlx::query("UPDATE persons SET admin=1")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    for (run, owner) in [
+        ("self-permission-run", "self-permission"),
+        ("self-child-run", "self-child"),
+    ] {
+        let result = crate::tools::permissions::read(conn, run, owner, &json!({}))
+            .await
+            .unwrap();
+        assert_eq!(result["permission_level"], "user");
+    }
+    sqlx::query("UPDATE persons SET enabled=0")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    assert!(
+        crate::tools::permissions::read(conn, "permission-run", actor, &json!({}))
+            .await
+            .is_err()
+    );
+}
+
+#[tokio::test]
 async fn tool_output_rechecks_revocation_after_decode_and_short_state_expires() {
     let (_temp, mut driver, readers) = fixture().await;
     let conn = driver.connection();

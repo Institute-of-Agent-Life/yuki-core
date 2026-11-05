@@ -141,6 +141,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
         for path in ("protocol/control/README.md","protocol/plugin/control/methods.json","protocol/admin/capabilities.json","protocol/admin/person-capabilities.json"):
             files[path]=(ROOT/path).read_bytes()
     if control:
+        permissions=receipt('original-permission-directory.json')
+        original=(ROOT/'fixtures/control/v4-permissions.json').read_bytes()
+        if digest(original)!=json.loads(permissions)['permission_oracle_sha256']:raise ValueError('permission directory differs from verified original')
+        files['evidence/original-permission-directory.json']=permissions
+        files['evidence/v4-permissions.json']=original
+        files['docs/permission-directory.md']=(ROOT/'docs/permission-directory.md').read_bytes()
         for path,expected in [("protocol/plugin/control/methods.json","control_schema_sha256"),("protocol/baseline-v4/admin-openapi.json","admin_openapi_sha256")]:
             raw_contract=(ROOT/path).read_bytes()
             if digest(raw_contract)!=data[expected]:raise ValueError("control contract differs from verified source")
@@ -426,6 +432,8 @@ def build(manifest_path, out, development=False):
         candidate["validation"]["consumer"]="native Admin HTTP and original billing ledger fixtures"
         candidate["validation"]["real_extension_consumers"]="pending EXT-049"
     if control:
+        candidate['validated_core_tools']=['get_my_capabilities']
+        candidate['permission_oracle_sha256']=json.loads(receipt('original-permission-directory.json'))['permission_oracle_sha256']
         candidate["control_schema_revision"]=1
         candidate["control_schema_sha256"]=data["control_schema_sha256"]
         candidate["admin_openapi_sha256"]=data["admin_openapi_sha256"]

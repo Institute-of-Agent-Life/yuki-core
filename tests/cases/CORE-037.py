@@ -136,6 +136,8 @@ def run(ctx):
     results['outbox'] = outbox(ctx, wire)
     from tests.harness.control_failure_receipts import run as failures
     results['deterministic_failures'] = failures(ctx, wire)
+    from tests.harness.permission_directory import run as permissions
+    ctx.write('original-permission-directory.json',permissions(ctx))
     binary=ctx.root/'target/debug'/('yuki-core.exe' if os.name=='nt' else 'yuki-core')
     return {'phase':'implemented-unpublished-candidate','results':results,'paid_calls':0,
             'real_extension_consumption':False,'database_schema_revision':results['outbox']['database_schema_version'],

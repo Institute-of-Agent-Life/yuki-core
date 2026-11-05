@@ -585,3 +585,9 @@ CORE-013 撤回三平台乾淨候選已驗：來源 `266e9aa23e13990c156c6ed0bf8
 - Windows ZIP `b72683a71ba2a8260f801bc6d85fd535dc871e3dd2ee366fff06b6222b569877`。
 
 實作 `3dafd7a` 已推 PR #58，等 #57 及最新 head 六項 CI 再合併 main。候選未發布，未宣稱真擴展穩定驗收或 CORE-040 全切片等價。下一項 CORE-037 原主體權限目錄已在 `codex/core-037-permission-directory` 實作，Mac 整合初驗 1052 項通過，相鄰回歸及乾淨候選仍在進行。
+
+CORE-037 原權限目錄補核：`codex/core-037-permission-directory` 加入 Rust 原生 `get_my_capabilities`，固定舊版 247 個 descriptor、16 組角色／篩選結果及原宣告。角色只沿原執行來源讀取，writer 發布時重核；人類委派讀取目前原人角色，SELF 不繼承管理員。目錄只提供權限 metadata，不授予操作、不表示擴展已在線。
+
+Mac `artifacts/CORE-037/permission-directory-mac-04/` 1052 項通過（tree `e2ee781aba904258d7e5ec8ea06c01d30a24f7e1a6f11eda6ba1f9e8589fb160`）；`permissions-adjacent-01/{CORE-012,CORE-026,CORE-034,CORE-030}` 及 `permissions-tools-regression-01/` CORE-015 通過。之後新增的人類委派撤權 Rust 用例通過。舊版 `original-permissions-oracle-01/` 原用例通過；不寫舊倉。mac-01 Clippy 與 mac-02 測試預算超出產品上限的失敗已保留；改 fixture 至 32000，實驗證大型目錄 Artifact 及 SHA-256 回讀，未放寬上限。
+
+乾淨 commit 後跑 Mac／Linux／HJW Windows CORE-037 並產候選；舊 development-package 僅打包自測。Host 2、reader 43、SDK alpha.11／a11 不變。下一項可獨立工作：CORE-015 原工具宣告與 Code 投影補核；缺實際擴展的方法保持待輸入，CORE-040 完整同線比較未完成。

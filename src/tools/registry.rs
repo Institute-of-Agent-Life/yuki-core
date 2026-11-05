@@ -50,6 +50,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if name == "get_my_capabilities" {
+        return Some(super::permissions::declaration());
+    }
     if name == "recall_own_message" {
         return Some(crate::social::recall::declaration());
     }
@@ -192,6 +195,7 @@ impl Manifest {
                 "query_chat_history",
                 "history_directory",
                 "get_group_members",
+                "get_my_capabilities",
                 "find_contacts",
                 "find_conversations",
                 "time_get_current",
