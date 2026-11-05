@@ -509,7 +509,7 @@ def inline_modes(ctx):
             with (svc.data / "yuki.toml").open("a") as f:
                 f.write(cfg(search, "openai_responses", mode, strategy))
                 f.write(
-                    f'\n[main]\nprotocol="anthropic_messages"\nnative_web_search=true\nendpoint="{main.url}"\nkey_env="YUKI_FIXTURE_SEARCH"\nmodel="fixture"\nname="Yuki"\nmerge_ms=0\nroot_slots=5\nmax_input_units=30000\nmax_output=256\n'
+                    f'\n[main]\nprotocol="anthropic_messages"\nnative_web_search=true\nendpoint="{main.url}"\nkey_env="YUKI_FIXTURE_SEARCH"\nmodel="fixture"\nname="Yuki"\nmerge_ms=0\nroot_slots=5\nmax_input_units=400000\nmax_output=256\n'
                 )
             with svc.running(environment=env):
                 human("policy")
