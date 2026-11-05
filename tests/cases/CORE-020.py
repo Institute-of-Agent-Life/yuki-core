@@ -2,6 +2,7 @@
 
 import json
 import os
+import queue
 import sqlite3
 import time
 from contextlib import closing
@@ -102,9 +103,11 @@ def run(ctx):
             entry = op("entry", "private", who, bot)["entry"]
         with Recorder("/v1/messages", binding_status=503) as peer:
             extra = 'reasoning_effort="low"\n' if thinking else ""
+            # This case exhausts four request slots. Keep the independent byte
+            # allowance above four complete tool catalogs, including new core tools.
             with (svc.data / "yuki.toml").open("a") as f:
                 f.write(
-                    f'\n[main]\nprotocol="anthropic_messages"\nendpoint="{peer.url}"\nbinding_endpoint="http://127.0.0.1:{peer.server.server_port}/binding"\nkey_env="YUKI_TEST_MESSAGES_KEY"\nmodel="fixture"\ntool_choice="{choice}"\n{extra}native_web_search={str(choice == "auto").lower()}\nname="Yuki"\nmerge_ms=0\nroot_slots=4\nmax_input_units=200000\nmax_output=8192\n'
+                    f'\n[main]\nprotocol="anthropic_messages"\nendpoint="{peer.url}"\nbinding_endpoint="http://127.0.0.1:{peer.server.server_port}/binding"\nkey_env="YUKI_TEST_MESSAGES_KEY"\nmodel="fixture"\ntool_choice="{choice}"\n{extra}native_web_search={str(choice == "auto").lower()}\nname="Yuki"\nmerge_ms=0\nroot_slots=4\nmax_input_units=1000000\nmax_output=8192\n'
                 )
             with svc.running(
                 environment={
@@ -123,7 +126,17 @@ def run(ctx):
                     ]
 
                 def receive():
-                    raw, q = peer.receive()
+                    try:
+                        raw, q = peer.receive()
+                    except queue.Empty:
+                        ctx.write("missing-messages-request.json", {
+                            "profile":num,"thinking":thinking,"choice":choice,
+                            "execution":op("main","inspect",run),
+                            "requests":rows("SELECT id,ordinal,root,estimated_input,length(request_json) FROM model_requests WHERE activation=?", "main:"+run),
+                            "budgets":rows("SELECT * FROM root_budgets WHERE root=?",run),
+                            "turns":rows("SELECT execution,diagnostic FROM main_turns WHERE execution=?",run),
+                        })
+                        raise
                     return json.loads(raw), q
 
                 run = trigger("roundtrip")
@@ -396,6 +409,9 @@ def run(ctx):
                         len(op("main", "inspect", run)["attempts"]),
                         4,
                     )
+                    ctx.equal("pause exhaustion is the request-count boundary, not input capacity",
+                              rows("SELECT max_requests,reserved_requests,reserved_units<max_units FROM root_budgets WHERE root=?",run),
+                              [(4,4,1)])
     ctx.write(
         "messages-choice-pause.json",
         {"cases": {"H18": {"profiles": runs, "validation": failures}}},
