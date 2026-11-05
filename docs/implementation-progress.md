@@ -144,3 +144,9 @@ CORE-028 已接入媒體 `894a27a` 的搜尋整合，原生搜尋離線 fixture 
 CORE-029 已接入向量 `9e32244` 的搜尋整合。授權檢索與搜尋回歸通過 `artifacts/CORE-{029,024}/retrieval-search-integration-01/`。PR #37 等最新三平台 CI。
 
 CORE-030 已接入檢索 `5c5a830` 的搜尋整合。原人物清除與搜尋回歸通過 `artifacts/CORE-{030,024}/forget-search-integration-01/`。PR #39 等最新三平台 CI。
+
+CORE-028 計費補核統一 Embedding 寫入的 `input` 欄位。擦除保留器把舊 `input_tokens` 轉為共同欄位，狀態查詢同時相容兩種原紀錄。Mac 與 HJW 的 `embedding-usage-{regression,windows}-01` 通過實際晚返／來源擦除斷言，來源樹 `53f59231008eca8de8f82b0c0145d80fd4f319471739c5329379d9aace65fefe`。CORE-052、011 回歸通過，舊欄位單元測試回條在 `artifacts/CORE-028/embedding-usage-regression-01/legacy-usage-unit.txt`。既有已丟失的 usage 維持未知。
+
+CORE-029 已接入向量 usage 補修 `5e0a59e`。檢索與向量回歸通過 `artifacts/CORE-029/embedding-usage-integration-01/`、`artifacts/CORE-028/retrieval-usage-integration-01/`。PR #37 依最新來源等待三平台 CI。
+
+CORE-030 已接入檢索 `89a736f` 的 usage 補修。清除與向量回歸分別通過 `artifacts/CORE-030/embedding-usage-integration-01/`、`artifacts/CORE-028/forget-usage-integration-01/`。PR #39 從此最新來源重跑 CI。
