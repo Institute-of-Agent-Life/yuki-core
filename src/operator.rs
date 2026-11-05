@@ -13,6 +13,10 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Personal {
+        #[command(subcommand)]
+        command: crate::host::personal::Operator,
+    },
     Media {
         #[command(subcommand)]
         command: crate::media::Action,
@@ -89,6 +93,9 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Personal {
+        command: crate::host::personal::Operator,
+    },
     Media {
         command: crate::media::Action,
     },
@@ -184,6 +191,10 @@ async fn handle(
             None => Err("plugin host not configured".into()),
         },
         Request::Tools { command } => crate::tools::invoke(&store, command).await,
+        Request::Personal { command } => {
+            crate::host::personal::write(&store, crate::host::personal::Request::Operator(command))
+                .await
+        }
         Request::Media { command } => crate::media::invoke(&store, &qq, command).await,
         Request::Memory { command } => crate::memory::invoke(&store, command).await,
         Request::Work { command } => crate::work::signal::invoke(&store, command).await,
@@ -238,6 +249,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Effect { command } => Request::Effect { command },
         Action::Host { command } => Request::Host { command },
         Action::Tools { command } => Request::Tools { command },
+        Action::Personal { command } => Request::Personal { command },
         Action::Media { command } => Request::Media { command },
         Action::Memory { command } => Request::Memory { command },
         Action::Work { command } => Request::Work { command },

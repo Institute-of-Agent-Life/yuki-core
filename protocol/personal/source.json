@@ -1,0 +1,14 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "wire_revision": 9,
+  "members": [
+    {
+      "path": "protocol/baseline-v4/client-openapi.json",
+      "sha256": "2ac0ee897f207d181a703ad25bf15571a66e77f390c20d6177ddee4d325ea7f6"
+    },
+    {
+      "path": "protocol/baseline-v4/admin-openapi.json",
+      "sha256": "6caf8f1a6da0c09a9f033b06eb5f6b27b179e60c740d437a393907f04c5aa51c"
+    }
+  ]
+}

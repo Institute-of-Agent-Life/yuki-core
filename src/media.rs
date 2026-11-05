@@ -452,6 +452,28 @@ async fn acquire(
     )
     .await
 }
+pub(crate) async fn bind_version_sources(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    version: &str,
+) -> Result<()> {
+    let producer: String = sqlx::query_scalar(
+        "SELECT producer FROM media_version_readers WHERE reader=? AND version=?",
+    )
+    .bind(exec)
+    .bind(version)
+    .fetch_one(&mut *conn)
+    .await?;
+    let src: Option<i64> = sqlx::query_scalar("SELECT source FROM executions WHERE id=?")
+        .bind(&producer)
+        .fetch_one(&mut *conn)
+        .await?;
+    if crate::privacy::source::execution_erased(conn, &producer, src).await? {
+        return Err("original media source expired".into());
+    }
+    sqlx::query("INSERT OR IGNORE INTO main_dependencies SELECT ?1,e.id FROM events e WHERE e.id IN(SELECT source FROM media_versions WHERE id=?2 UNION SELECT source FROM executions WHERE id=?3 UNION SELECT event FROM main_dependencies WHERE execution=?3)").bind(exec).bind(version).bind(producer).execute(conn).await?;
+    Ok(())
+}
 async fn bind(store: &Store, exec: &str, actor: &str, v: &Value) -> Result<()> {
     let id = v["artifact_id"].as_str().ok_or("missing version")?;
     if sqlx::query_scalar::<_, bool>(

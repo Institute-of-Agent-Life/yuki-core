@@ -301,6 +301,10 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     )
                     .await
                 }
+                "device.auth" | "work.get" | "work.input" | "work.cancel" | "native.notify"
+                | "native.queryAck" => {
+                    super::personal::callback(conn, id, instance, method, params).await
+                }
                 "forget.ack" => {
                     crate::privacy::apply(
                         conn,

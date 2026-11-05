@@ -86,17 +86,25 @@ pub(crate) async fn scope(conn: &mut SqliteConnection, exec: &str, actor: &str) 
     let subject: String = home.try_get("raw_actor")?;
     let entry: String = home.try_get("entry_id")?;
     let delegated = home.try_get::<String, _>("id")? != exec;
+    for_person(conn, &subject, &entry, delegated).await
+}
+pub(crate) async fn for_person(
+    conn: &mut SqliteConnection,
+    subject: &str,
+    entry: &str,
+    delegated: bool,
+) -> Result<Scope> {
     let entries:Vec<String>=sqlx::query_scalar("SELECT d.id FROM entries d JOIN persons who ON who.id=?
       JOIN persons root ON root.id=coalesce(who.current_root,who.id) WHERE who.enabled AND root.enabled
       AND (NOT ? OR d.id=?) AND (
         (d.scope='private' AND EXISTS(SELECT 1 FROM assignments a JOIN persons p ON p.id=a.original_person WHERE a.id=d.actor_stage AND p.enabled AND coalesce(p.current_root,p.id)=root.id))
         OR (d.scope='group' AND EXISTS(SELECT 1 FROM events e JOIN persons p ON p.id=e.raw_actor WHERE e.entry_id=d.id AND p.enabled AND coalesce(p.current_root,p.id)=root.id
            AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) AND json_extract(e.envelope,'$.kind')='message'))) ORDER BY d.id")
-      .bind(&subject).bind(delegated).bind(&entry).fetch_all(conn).await?;
+      .bind(subject).bind(delegated).bind(entry).fetch_all(conn).await?;
     Ok(Scope {
-        home: entry,
+        home: entry.to_owned(),
         entries,
-        subject,
+        subject: subject.to_owned(),
     })
 }
 

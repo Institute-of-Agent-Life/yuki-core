@@ -3,7 +3,7 @@ pub mod embedding;
 mod evidence;
 pub mod extract;
 pub mod facts;
-mod scope;
+pub(crate) mod scope;
 pub mod tools;
 use crate::{
     Result,

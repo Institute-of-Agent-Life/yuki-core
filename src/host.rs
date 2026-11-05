@@ -2,6 +2,7 @@ pub(crate) mod calls;
 mod commands;
 pub(crate) mod domain;
 mod grants;
+pub(crate) mod personal;
 mod process;
 mod send;
 use crate::{
