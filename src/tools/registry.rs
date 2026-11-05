@@ -50,6 +50,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if name == "query_chat_history" {
+        return Some(crate::history::query::original::declaration());
+    }
     if let Some(tool) = crate::history::query::contacts::declaration(name) {
         return Some(tool);
     }
@@ -182,6 +185,7 @@ impl Manifest {
                 "send",
                 "complete",
                 "history_query",
+                "query_chat_history",
                 "history_directory",
                 "find_contacts",
                 "find_conversations",

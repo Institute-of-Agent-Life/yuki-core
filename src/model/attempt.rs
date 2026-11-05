@@ -429,6 +429,11 @@ pub(crate) async fn tool_receipt(
         && row.try_get::<String, _>("state")? != "failed"
     {
         crate::history::query::material(conn, exec, actor, id).await?
+    } else if row.try_get::<String, _>("action")? == "external"
+        && row.try_get::<String, _>("target")? == "query_chat_history"
+        && row.try_get::<String, _>("state")? != "failed"
+    {
+        crate::history::query::original::material(conn, exec, actor, id).await?
     } else if row.try_get::<String, _>("action")? == "external" {
         let r = effects::receipt(conn, exec, id).await?;
         if !matches!(

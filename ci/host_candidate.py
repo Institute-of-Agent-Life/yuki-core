@@ -43,6 +43,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
     personal = card == "CORE-033"
     media = card == "CORE-038"
     control = card == "CORE-037"
+    history = card == "CORE-014"
     usage = card == "CORE-055"
     profiles = card == "CORE-048"
     notifications = card == "CORE-058"
@@ -52,6 +53,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
     auxiliary = card == "CORE-050"
     composition = card == "CORE-034"
     proof_name = {
+        "CORE-014": "original-history-wire.json",
         "CORE-055": "usage-field-coverage.json",
         "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
@@ -76,7 +78,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control or usage
+        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control or usage or history
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -101,6 +103,11 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if history:
+        declaration=(ROOT/"fixtures/history/v4-query-declaration.json").read_bytes()
+        if digest(declaration)!=data["history_declaration_sha256"]:raise ValueError("history declaration differs from tested original")
+        files["protocol/query_chat_history.json"]=declaration
+        files["evidence/v4-original-query.json"]=(ROOT/"fixtures/history/v4-original-query.json").read_bytes()
     if usage:
         contract=(ROOT/"protocol/control/usage.json").read_bytes()
         if digest(contract)!=data["usage_schema_sha256"]:raise ValueError("usage contract differs from verified source")
@@ -250,7 +257,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037", "CORE-055"}
+        m["card"] not in {"CORE-014", "CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037", "CORE-055"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -269,6 +276,7 @@ def build(manifest_path, out, development=False):
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
     control = m["card"] == "CORE-037"
+    history = m["card"] == "CORE-014"
     usage = m["card"] == "CORE-055"
     profiles = m["card"] == "CORE-048"
     notifications = m["card"] == "CORE-058"
@@ -278,6 +286,7 @@ def build(manifest_path, out, development=False):
     auxiliary = m["card"] == "CORE-050"
     composition = m["card"] == "CORE-034"
     proof_name = {
+        "CORE-014": "original-history-wire.json",
         "CORE-055": "usage-field-coverage.json",
         "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
@@ -296,6 +305,7 @@ def build(manifest_path, out, development=False):
     target = (
         (
             {
+                "CORE-014": "yuki-history-preview-",
                 "CORE-055": "yuki-usage-preview-",
                 "CORE-037": "yuki-control-preview-",
                 "CORE-032": "yuki-host-preview-",
@@ -345,6 +355,12 @@ def build(manifest_path, out, development=False):
         },
         "members": members,
     }
+    if history:
+        candidate["database_schema_revision"]=m["schema_version"]
+        candidate["history_declaration_sha256"]=data["history_declaration_sha256"]
+        candidate["validated_core_tools"]=["query_chat_history"]
+        candidate["validation"]["consumer"]="physical Main Chat tool invocation and fixed v4 query fixtures; SDK packages independently installed"
+        candidate["validation"]["real_extension_consumers"]=False
     if usage:
         candidate["usage_schema_revision"]=1
         candidate["usage_schema_sha256"]=data["usage_schema_sha256"]

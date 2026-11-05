@@ -1,0 +1,2225 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "declaration": {
+    "name": "query_chat_history",
+    "description": "查询已观察到的聊天账本。recent 读取近期，search 按原文/本人语音、作者、日期或附件筛选，around 按内部 event_id 读取原会话邻文。target 省略时 recent 浏览当前会话，search 搜索所有获准的聊天。source可按平台及private/group筛选，与target取交集；recent仅给source时浏览该来源的会话集合。显式目标使用一个内部 ID，多入口合并检索并分别标明平台、私聊/群聊、会话名称与话题来源。可查重开上下文前的永久账本。target.person_id 选择私聊入口，顶层 person_id 筛选原作者。operation_id 沿原发送回执定位会话和原锚点。cursor 按 order 续查 ID 页；before/after 是 around 条数；around按锚点取邻文，不使用关键词、作者、日期、附件筛选。recent/search可用context_before/context_after附带各结果的邻文，默认不读；around只用before/after，按事件ID升序，不应用cursor/limit/order。日期未带时区按 UTC+8，起点包含、终点不含。不调用平台补查，不接受平台消息号。",
+    "parameters": {
+      "$defs": {
+        "HistorySource": {
+          "additionalProperties": false,
+          "properties": {
+            "platform": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Platform"
+            },
+            "scope": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "private",
+                    "group"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Scope"
+            }
+          },
+          "title": "HistorySource",
+          "type": "object"
+        },
+        "HistoryTarget": {
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "required": [
+                "conversation_id"
+              ]
+            },
+            {
+              "required": [
+                "person_id"
+              ]
+            },
+            {
+              "required": [
+                "space_id"
+              ]
+            },
+            {
+              "required": [
+                "binding_id"
+              ]
+            },
+            {
+              "required": [
+                "operation_id"
+              ]
+            }
+          ],
+          "properties": {
+            "conversation_id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Conversation Id"
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Person Id"
+            },
+            "space_id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Space Id"
+            },
+            "binding_id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Binding Id"
+            },
+            "operation_id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Operation Id"
+            }
+          },
+          "title": "HistoryTarget",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "view": {
+          "default": "recent",
+          "enum": [
+            "recent",
+            "search",
+            "around"
+          ],
+          "title": "View",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HistoryTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HistorySource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "order": {
+          "default": "recent",
+          "enum": [
+            "recent",
+            "oldest"
+          ],
+          "title": "Order",
+          "type": "string"
+        },
+        "keyword": {
+          "default": "",
+          "title": "Keyword",
+          "type": "string"
+        },
+        "match": {
+          "default": "all",
+          "enum": [
+            "all",
+            "any",
+            "phrase"
+          ],
+          "title": "Match",
+          "type": "string"
+        },
+        "exclude": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Exclude",
+          "type": "array"
+        },
+        "person_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Person Id"
+        },
+        "author_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "person",
+                "yuki",
+                "external_bot",
+                "system"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author Kind"
+        },
+        "event_kind": {
+          "default": "message",
+          "enum": [
+            "message",
+            "external_event",
+            "all"
+          ],
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "start_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start At"
+        },
+        "end_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End At"
+        },
+        "has": {
+          "default": [],
+          "items": {
+            "enum": [
+              "image",
+              "video",
+              "file",
+              "audio"
+            ],
+            "type": "string"
+          },
+          "title": "Has",
+          "type": "array"
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "cursor": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cursor"
+        },
+        "event_id": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Event Id"
+        },
+        "before": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Before"
+        },
+        "after": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "After"
+        },
+        "context_before": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Context Before",
+          "type": "integer"
+        },
+        "context_after": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Context After",
+          "type": "integer"
+        }
+      },
+      "title": "HistoryQuery",
+      "type": "object"
+    }
+  },
+  "identities": {
+    "person": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+    "group": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+    "group_conversation": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+    "private_conversation": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+    "center": 3,
+    "voice": 5,
+    "receipt": {
+      "operation_id": "7dbbcf41-a01a-4f91-b747-f4611e1a7969",
+      "action": "send_message",
+      "status": "succeeded",
+      "target": {
+        "kind": "space",
+        "id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54"
+      },
+      "presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+      "event_id": 7,
+      "original_event_id": 7,
+      "original_conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+      "error_category": null,
+      "text_planned": true,
+      "delivered_text_available": true,
+      "delivered_text": "original receipt"
+    }
+  },
+  "cases": [
+    {
+      "name": "recent_default",
+      "request": {},
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+        "events": [
+          {
+            "id": 7,
+            "event_id": 7,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "yuki",
+            "source": "social_tool",
+            "origin": "social_tool",
+            "person_id": null,
+            "author_person_id": null,
+            "presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "Agent",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "outbound",
+            "content": "original receipt",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:49.117248+08:00",
+            "observed_at": "2026-11-05T23:44:49.117248+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 5,
+            "event_id": 5,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "[当前消息的语音转写（自动识别，可能有误）]\n乾坤 電動車",
+            "mentions": [],
+            "asr": [
+              {
+                "segment_index": 0,
+                "text": "乾坤 電動車",
+                "source": "current"
+              }
+            ],
+            "reply_to_event_id": null,
+            "attachments": [
+              {
+                "attachment_index": 0,
+                "segment_index": 0,
+                "kind": "record",
+                "name": "spoken.ogg"
+              }
+            ],
+            "occurred_at": "2026-01-02T08:03:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.095261+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 4,
+            "event_id": 4,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "last context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:02:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.091400+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 3,
+            "event_id": 3,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "雷達站 electric",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:01:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.087003+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 2,
+            "event_id": 2,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "first context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:00:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.082418+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 1,
+            "event_id": 1,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "hello",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:48.779015+08:00",
+            "observed_at": "2026-11-05T23:44:48.779015+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 6,
+        "order": "recent",
+        "matched_fields": {
+          "7": [],
+          "5": [],
+          "4": [],
+          "3": [],
+          "2": [],
+          "1": []
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "platform": "qq",
+        "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+        "target_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+        "generation": 1,
+        "kind": "space",
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        7,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "name": "recent_empty_source",
+      "request": {
+        "source": {}
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+        "events": [
+          {
+            "id": 7,
+            "event_id": 7,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "yuki",
+            "source": "social_tool",
+            "origin": "social_tool",
+            "person_id": null,
+            "author_person_id": null,
+            "presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "Agent",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "outbound",
+            "content": "original receipt",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:49.117248+08:00",
+            "observed_at": "2026-11-05T23:44:49.117248+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 5,
+            "event_id": 5,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "[当前消息的语音转写（自动识别，可能有误）]\n乾坤 電動車",
+            "mentions": [],
+            "asr": [
+              {
+                "segment_index": 0,
+                "text": "乾坤 電動車",
+                "source": "current"
+              }
+            ],
+            "reply_to_event_id": null,
+            "attachments": [
+              {
+                "attachment_index": 0,
+                "segment_index": 0,
+                "kind": "record",
+                "name": "spoken.ogg"
+              }
+            ],
+            "occurred_at": "2026-01-02T08:03:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.095261+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 4,
+            "event_id": 4,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "last context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:02:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.091400+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 3,
+            "event_id": 3,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "雷達站 electric",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:01:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.087003+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 2,
+            "event_id": 2,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "first context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:00:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.082418+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 1,
+            "event_id": 1,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "hello",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:48.779015+08:00",
+            "observed_at": "2026-11-05T23:44:48.779015+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 6,
+        "order": "recent",
+        "matched_fields": {
+          "7": [],
+          "5": [],
+          "4": [],
+          "3": [],
+          "2": [],
+          "1": []
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "platform": "qq",
+        "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+        "target_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+        "generation": 1,
+        "kind": "space",
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        7,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "name": "recent_source_only",
+      "request": {
+        "source": {
+          "platform": "telegram"
+        }
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+        "events": [
+          {
+            "id": 6,
+            "event_id": 6,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "91ef8559-fa30-411c-8ccb-7f17445f3c2c",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "private",
+            "conversation_id": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+            "direction": "inbound",
+            "content": "雷達站 private",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:49.105406+08:00",
+            "observed_at": "2026-11-05T23:44:49.105406+08:00",
+            "platform": "telegram",
+            "conversation_name": "telegram friend",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 1,
+        "order": "recent",
+        "matched_fields": {
+          "6": []
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "platform": "telegram",
+        "binding_id": "86a28471-f8e6-4808-a7e1-67c20ebe71b1",
+        "target_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+        "generation": 1,
+        "kind": "person",
+        "sources": [
+          {
+            "conversation_id": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+            "platform": "telegram",
+            "scope": "private",
+            "conversation_name": "telegram friend",
+            "binding_id": "86a28471-f8e6-4808-a7e1-67c20ebe71b1",
+            "presence_id": "91ef8559-fa30-411c-8ccb-7f17445f3c2c",
+            "thread_id": null,
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "space_id": null,
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        6
+      ]
+    },
+    {
+      "name": "search_literal",
+      "request": {
+        "view": "search",
+        "keyword": "雷达站"
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [
+          {
+            "id": 6,
+            "event_id": 6,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "91ef8559-fa30-411c-8ccb-7f17445f3c2c",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "private",
+            "conversation_id": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+            "direction": "inbound",
+            "content": "雷達站 private",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:49.105406+08:00",
+            "observed_at": "2026-11-05T23:44:49.105406+08:00",
+            "platform": "telegram",
+            "conversation_name": "telegram friend",
+            "thread_id": null
+          },
+          {
+            "id": 3,
+            "event_id": 3,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "雷達站 electric",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:01:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.087003+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 2,
+        "order": "recent",
+        "matched_fields": {
+          "6": [
+            "content"
+          ],
+          "3": [
+            "content"
+          ]
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "sources": [
+          {
+            "conversation_id": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+            "platform": "telegram",
+            "scope": "private",
+            "conversation_name": "telegram friend",
+            "binding_id": "86a28471-f8e6-4808-a7e1-67c20ebe71b1",
+            "presence_id": "91ef8559-fa30-411c-8ccb-7f17445f3c2c",
+            "thread_id": null,
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "space_id": null,
+            "generation": 1
+          },
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        6,
+        3
+      ]
+    },
+    {
+      "name": "search_current_asr",
+      "request": {
+        "view": "search",
+        "keyword": "乾 电动车",
+        "exclude": [
+          "private quoted"
+        ]
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [
+          {
+            "id": 5,
+            "event_id": 5,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "[当前消息的语音转写（自动识别，可能有误）]\n乾坤 電動車",
+            "mentions": [],
+            "asr": [
+              {
+                "segment_index": 0,
+                "text": "乾坤 電動車",
+                "source": "current"
+              }
+            ],
+            "reply_to_event_id": null,
+            "attachments": [
+              {
+                "attachment_index": 0,
+                "segment_index": 0,
+                "kind": "record",
+                "name": "spoken.ogg"
+              }
+            ],
+            "occurred_at": "2026-01-02T08:03:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.095261+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 1,
+        "order": "recent",
+        "matched_fields": {
+          "5": [
+            "audio_transcript:0"
+          ]
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        5
+      ]
+    },
+    {
+      "name": "source_target_intersection",
+      "request": {
+        "target": {
+          "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d"
+        },
+        "source": {
+          "platform": "telegram"
+        }
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [],
+        "returned_count": 0,
+        "order": "recent",
+        "matched_fields": {},
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "sources": []
+      },
+      "source_event_ids": []
+    },
+    {
+      "name": "original_author",
+      "request": {
+        "view": "search",
+        "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+        "limit": 201
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [
+          {
+            "id": 6,
+            "event_id": 6,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "91ef8559-fa30-411c-8ccb-7f17445f3c2c",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "private",
+            "conversation_id": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+            "direction": "inbound",
+            "content": "雷達站 private",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:49.105406+08:00",
+            "observed_at": "2026-11-05T23:44:49.105406+08:00",
+            "platform": "telegram",
+            "conversation_name": "telegram friend",
+            "thread_id": null
+          },
+          {
+            "id": 5,
+            "event_id": 5,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "[当前消息的语音转写（自动识别，可能有误）]\n乾坤 電動車",
+            "mentions": [],
+            "asr": [
+              {
+                "segment_index": 0,
+                "text": "乾坤 電動車",
+                "source": "current"
+              }
+            ],
+            "reply_to_event_id": null,
+            "attachments": [
+              {
+                "attachment_index": 0,
+                "segment_index": 0,
+                "kind": "record",
+                "name": "spoken.ogg"
+              }
+            ],
+            "occurred_at": "2026-01-02T08:03:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.095261+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 4,
+            "event_id": 4,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "last context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:02:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.091400+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 3,
+            "event_id": 3,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "雷達站 electric",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:01:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.087003+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 2,
+            "event_id": 2,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "first context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:00:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.082418+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 1,
+            "event_id": 1,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "hello",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:48.779015+08:00",
+            "observed_at": "2026-11-05T23:44:48.779015+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 6,
+        "order": "recent",
+        "matched_fields": {
+          "6": [],
+          "5": [],
+          "4": [],
+          "3": [],
+          "2": [],
+          "1": []
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "sources": [
+          {
+            "conversation_id": "450480d8-8acf-4d9d-be8d-8639465e0c53",
+            "platform": "telegram",
+            "scope": "private",
+            "conversation_name": "telegram friend",
+            "binding_id": "86a28471-f8e6-4808-a7e1-67c20ebe71b1",
+            "presence_id": "91ef8559-fa30-411c-8ccb-7f17445f3c2c",
+            "thread_id": null,
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "space_id": null,
+            "generation": 1
+          },
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "name": "self_author",
+      "request": {
+        "view": "search",
+        "author_kind": "yuki"
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [
+          {
+            "id": 7,
+            "event_id": 7,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "yuki",
+            "source": "social_tool",
+            "origin": "social_tool",
+            "person_id": null,
+            "author_person_id": null,
+            "presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "Agent",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "outbound",
+            "content": "original receipt",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:49.117248+08:00",
+            "observed_at": "2026-11-05T23:44:49.117248+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 1,
+        "order": "recent",
+        "matched_fields": {
+          "7": []
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        7
+      ]
+    },
+    {
+      "name": "date_utc8",
+      "request": {
+        "view": "search",
+        "start_at": "2026-01-02T08:01:00",
+        "end_at": "2026-01-02T08:02:00"
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [
+          {
+            "id": 3,
+            "event_id": 3,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "雷達站 electric",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:01:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.087003+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 1,
+        "order": "recent",
+        "matched_fields": {
+          "3": []
+        },
+        "context": [],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": "2026-01-02T00:01:00+00:00",
+        "end_at": "2026-01-02T00:02:00+00:00",
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        3
+      ]
+    },
+    {
+      "name": "context",
+      "request": {
+        "view": "search",
+        "keyword": "electric",
+        "context_before": 1,
+        "context_after": 1
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [
+          {
+            "id": 3,
+            "event_id": 3,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "雷達站 electric",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:01:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.087003+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 1,
+        "order": "recent",
+        "matched_fields": {
+          "3": [
+            "content"
+          ]
+        },
+        "context": [
+          {
+            "id": 2,
+            "event_id": 2,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "first context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:00:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.082418+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 4,
+            "event_id": 4,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "last context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:02:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.091400+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "has_more": false,
+        "next_cursor": null,
+        "start_at": null,
+        "end_at": null,
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        3,
+        2,
+        4
+      ]
+    },
+    {
+      "name": "around_ignores_filters",
+      "request": {
+        "view": "around",
+        "event_id": 3,
+        "before": 1,
+        "after": 1,
+        "keyword": "absent",
+        "author_kind": "system",
+        "has": [
+          "video"
+        ],
+        "limit": 1,
+        "cursor": 1,
+        "order": "recent"
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+        "events": [
+          {
+            "id": 2,
+            "event_id": 2,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "first context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:00:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.082418+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 3,
+            "event_id": 3,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "雷達站 electric",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:01:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.087003+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 4,
+            "event_id": 4,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "last context",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-01-02T08:02:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.091400+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 3,
+        "order": "oldest",
+        "matched_fields": {},
+        "context": [],
+        "center_event_id": 3,
+        "before": 1,
+        "after": 1,
+        "has_more": false,
+        "center_status": "available",
+        "platform": "qq",
+        "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+        "target_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+        "generation": 1,
+        "kind": "space",
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "around_missing",
+      "request": {
+        "view": "around",
+        "event_id": 999999,
+        "before": 1,
+        "after": 1
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": null,
+        "events": [],
+        "returned_count": 0,
+        "order": "oldest",
+        "matched_fields": {},
+        "context": [],
+        "center_event_id": 999999,
+        "before": 0,
+        "after": 0,
+        "has_more": false,
+        "center_status": "unavailable",
+        "anchor_status": "unavailable",
+        "sources": []
+      },
+      "source_event_ids": []
+    },
+    {
+      "name": "receipt_anchor",
+      "request": {
+        "target": {
+          "operation_id": "7dbbcf41-a01a-4f91-b747-f4611e1a7969"
+        },
+        "view": "around",
+        "before": 1
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+        "events": [
+          {
+            "id": 5,
+            "event_id": 5,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "[当前消息的语音转写（自动识别，可能有误）]\n乾坤 電動車",
+            "mentions": [],
+            "asr": [
+              {
+                "segment_index": 0,
+                "text": "乾坤 電動車",
+                "source": "current"
+              }
+            ],
+            "reply_to_event_id": null,
+            "attachments": [
+              {
+                "attachment_index": 0,
+                "segment_index": 0,
+                "kind": "record",
+                "name": "spoken.ogg"
+              }
+            ],
+            "occurred_at": "2026-01-02T08:03:00+08:00",
+            "observed_at": "2026-11-05T23:44:49.095261+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          },
+          {
+            "id": 7,
+            "event_id": 7,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "yuki",
+            "source": "social_tool",
+            "origin": "social_tool",
+            "person_id": null,
+            "author_person_id": null,
+            "presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "Agent",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "outbound",
+            "content": "original receipt",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:49.117248+08:00",
+            "observed_at": "2026-11-05T23:44:49.117248+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 2,
+        "order": "oldest",
+        "matched_fields": {},
+        "context": [],
+        "center_event_id": 7,
+        "before": 1,
+        "after": 0,
+        "has_more": false,
+        "center_status": "available",
+        "platform": "qq",
+        "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+        "target_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+        "generation": 1,
+        "kind": "space",
+        "operation_id": "7dbbcf41-a01a-4f91-b747-f4611e1a7969",
+        "receipt_status": "succeeded",
+        "event_id": 7,
+        "original_conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+        "anchor_status": "available",
+        "receipt_anchor": {
+          "event_id": 7,
+          "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+          "status": "available"
+        },
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        5,
+        7
+      ]
+    },
+    {
+      "name": "positive_page",
+      "request": {
+        "limit": 1,
+        "order": "oldest"
+      },
+      "result": {
+        "source": "canonical_ledger",
+        "coverage": "observed",
+        "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+        "events": [
+          {
+            "id": 1,
+            "event_id": 1,
+            "event_kind": "message",
+            "source_plugin_id": null,
+            "external_source": null,
+            "external_event_type": null,
+            "author_kind": "person",
+            "source": "user_message",
+            "origin": "user_message",
+            "person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "author_person_id": "36d7976c-ef13-49bd-8487-d5f5980fc83f",
+            "presence_id": null,
+            "author_presence_id": null,
+            "author_account_id": null,
+            "ingress_presence_id": "fa8eb938-4367-4469-b7fc-9cc72a651cb0",
+            "sender_nickname": "",
+            "sender_group_card": "",
+            "sender_display_name": "成员",
+            "scope": "group",
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "direction": "inbound",
+            "content": "hello",
+            "mentions": [],
+            "asr": [],
+            "reply_to_event_id": null,
+            "attachments": [],
+            "occurred_at": "2026-11-05T23:44:48.779015+08:00",
+            "observed_at": "2026-11-05T23:44:48.779015+08:00",
+            "platform": "qq",
+            "conversation_name": "",
+            "thread_id": null
+          }
+        ],
+        "returned_count": 1,
+        "order": "oldest",
+        "matched_fields": {
+          "1": []
+        },
+        "context": [],
+        "has_more": true,
+        "next_cursor": 1,
+        "start_at": null,
+        "end_at": null,
+        "platform": "qq",
+        "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+        "target_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+        "generation": 1,
+        "kind": "space",
+        "sources": [
+          {
+            "conversation_id": "aec6a4b0-bbaf-4fa7-bf4f-de75132a385d",
+            "platform": "qq",
+            "scope": "group",
+            "conversation_name": "",
+            "binding_id": "9a564e67-7cee-4b8a-9587-7227f6f6a2cd",
+            "presence_id": null,
+            "thread_id": null,
+            "person_id": null,
+            "space_id": "b0f383f7-7c17-4f06-9739-7e7ad6a15e54",
+            "generation": 1
+          }
+        ]
+      },
+      "source_event_ids": [
+        1
+      ]
+    }
+  ],
+  "platform_calls": []
+}

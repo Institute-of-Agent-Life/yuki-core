@@ -238,7 +238,7 @@
       "artifact": "literal-search-gold.json",
       "timeout_seconds": 240,
       "rust": true,
-      "capabilities": ["source-authorized-history","literal-ngrams","durable-search-anchors"]
+      "capabilities": ["source-authorized-history","literal-ngrams","durable-search-anchors","original-query-chat-history","canonical-event-keyset-pages"]
     },
     "CORE-013": {
       "case": "tests/cases/CORE-013.py",

@@ -16,6 +16,13 @@ use sqlx::SqliteConnection;
 #[derive(Serialize, Deserialize, Subcommand)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Action {
+    ChatQuery {
+        execution: String,
+        actor: String,
+        args: String,
+        #[arg(long)]
+        operation: Option<String>,
+    },
     Query {
         execution: String,
         actor: String,
@@ -35,6 +42,13 @@ pub enum Action {
     },
 }
 pub enum Change {
+    PublicAnchor {
+        exec: String,
+        actor: String,
+        key: String,
+        args: String,
+        result: Value,
+    },
     Index(index::Prepared),
     Transcript(String, String, i64, String),
     Anchor {
@@ -48,6 +62,13 @@ pub enum Change {
 }
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
     match change {
+        Change::PublicAnchor {
+            exec,
+            actor,
+            key,
+            args,
+            result,
+        } => query::original::anchor(conn, exec, actor, key, args, result).await,
         Change::Index(p) => index::publish(conn, p).await,
         Change::Transcript(exec, actor, source, segments) => {
             effects::authorize(conn, exec, actor, true).await?;
@@ -108,6 +129,12 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
 }
 pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
     match action {
+        Action::ChatQuery {
+            execution,
+            actor,
+            args,
+            operation,
+        } => query::original::run(store, &execution, &actor, &args, operation.as_deref()).await,
         Action::Query {
             execution,
             actor,
