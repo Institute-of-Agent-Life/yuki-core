@@ -103,3 +103,5 @@ CORE-018 已接入 Compact `5d24062` 的搜尋整合。排程通過 `artifacts/C
 CORE-039 已接入 main 的 Work `0261764`。Mac 分發與 Work 回歸分別通過，產物為 `artifacts/CORE-039/work-main-integration-01/`、`artifacts/CORE-016/dist-main-integration-01/`。PR #28 以此次整合的最新提交重新等待三平台 CI。
 
 CORE-039 已整合 main `3867548` 的等待、Compact 與 facts。分發與 Compact 回歸通過 `artifacts/CORE-039/compact-main-integration-01/`、`artifacts/CORE-022/dist-main-integration-01/`。PR #28 等此版本三平台 CI，既有候選繼續對應原固定 SHA。
+
+CORE-039 已整合 main 排程 `2c01cfa`，分發與排程分別通過 `artifacts/CORE-039/schedule-main-integration-01/`、`artifacts/CORE-018/dist-main-integration-01/`。PR #28 將按整合後 head 重驗三平台 CI。
