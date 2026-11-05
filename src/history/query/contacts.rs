@@ -82,7 +82,7 @@ fn bounds(limit: i64, cursor: Option<&str>, source: Option<&Source>) -> Result<(
     }
     Ok(())
 }
-fn uuid(v: &str) -> bool {
+pub(super) fn uuid(v: &str) -> bool {
     v.len() == 36
         && v.bytes().enumerate().all(|(i, c)| {
             if matches!(i, 8 | 13 | 18 | 23) {

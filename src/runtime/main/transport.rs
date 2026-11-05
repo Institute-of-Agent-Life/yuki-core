@@ -171,6 +171,19 @@ impl Dispatch {
             "web_search" if cfg.bridge_search => {
                 crate::model::search::tool(&store, &exec, &actor, &id, &t.payload).await?
             }
+            "query_chat_history" => {
+                if let Err(error) = crate::history::query::original::run(
+                    &store,
+                    &exec,
+                    &actor,
+                    &t.payload,
+                    Some(&id),
+                )
+                .await
+                {
+                    crate::tools::reject(&store, &exec, &actor, &id, error.to_string()).await?;
+                }
+            }
             "history_query" => {
                 if let Err(error) =
                     crate::history::query::run(&store, &exec, &actor, &t.payload, Some(&id)).await

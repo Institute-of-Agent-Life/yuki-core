@@ -490,3 +490,23 @@ PR #52 待 #51 進 main 後按最新 head 六項 CI 合併。缺 EXT-049 對當�
 先保留缺入口 `import-red-01/`；`artifacts/CORE-057/import-mac-05/` 功能檢查與 dirty 開發包的乾淨 PATH 啟動通過。固定 SHA 329ca7c 的隔離 oracle 22 項通過於 `/Users/huangjiawei/.cache/yuki-core/model-config-oracle-01/`；另驗原 CI 9138a528 的 20 份 model-legacy 證據。真 kill 覆蓋寫檔後／SQL commit 後，另驗非空分群拒絕、修改版本／目的檔拒絕、SQL 後筆失敗整筆回滾、舊 Application 鎖及 WAL-only 參數。首輪功能全過但缺 native SQLite build 回條，已補實際匯入連線查詢；未將該輪標為完成。
 
 Windows／Linux 與乾淨來源候選待整合驗證；先前 dirty 包不作發布交接。此卡未啟動 owner／gateway／plugin／provider，不修改任意 .env，不修改舊倉。下一個可執行工作為 CORE-040；CORE-043 仍需 EXT-041 的實際安裝交接輸入。
+
+## CORE-014 原歷史查詢入口補齊
+
+分支 `codex/core-014-history-wire`。Rust `query_chat_history` 沿用固定 v4 宣告及共享 canonical event ID；recent/search/around、原 send receipt、source 交集、逐欄字面搜尋、當前 ASR、正數 keyset 分頁、上下文和公開外部事件已接實際 Main 工具 continuation。Reader 42 加可清除的逐來源結果快照；已刪除游標不重排，撤權／遺忘後不能重讀正文。舊 `history_query` 原入口保留。
+
+先保留缺入口失敗 `original-wire-red-02/`，正常及故障檢查於 `artifacts/CORE-014/original-wire-mac-07/` 667 項通過；CORE-015、033、058 相鄰回歸均通過 `history-wire-regression-01/`。固定 SHA `329ca7c487414d2f54ddd98ff4727446ed2446cd` 隔離 oracle 的 14 個原查詢案例 SHA-256 `75c6e389ddb5bfebab6ace552a14f882f7f612c69cf712b626cf936d8aaea6d0`；大型分頁 201+29、原 provider call ID、通知 publisher、遺忘刪除結果正文均有回條。另兩次補充 fixture 因未設定 QQ 路由及用人類 erase 刪 plugin 事件被正確拒絕，失敗回條保留。
+
+Windows／Linux 原生候選待本提交快照驗證；先前 dirty Mac 包僅打包自測，非交接發布。真擴展消費及 CORE-040 全量 wire 等價尚待；本補充不宣稱所有原 DTO 值已逐位相等。下一步依序產候選，繼續 CORE-057 離線模型設定移轉與 CORE-040。
+
+CORE-037／030 CI 修復：Windows Python 缺少系統 tzdb，現以附來源版本、SHA-256 與授權的 IANA 2023c 固定 TZif 作獨立日曆測試輸入；不更動 Rust 時區計算。CORE-030 清除案例在改動 executable 宣告後，先驗證未審批不可執行，再由真 operator 按原 revision 批准，保留刪除後 ACK 前崩潰情境。Mac、Linux ARM64、HJW Windows 各自通過 CORE-030 120 項、CORE-037 977 項；回條位於 artifacts/CORE-030/approved-cleanup-{mac,windows}-01/、artifacts/CORE-037/pinned-calendar-{mac,windows}-01/ 與 artifacts/CORE-037/ci-recovery-linux-01/。源樹 e7d3d4982ab0679daead7202453e3f9a4801c74e17ed84027317425ead6870e2，PR #51 推新 head 後重新等六項 CI。
+
+CORE-055 整合 CORE-037 CI 修復 `98816c2`，用相同固定 IANA fixture 驗 DST；schema 回條改讀實際 SQLite reader，避免後續可加遷移仍報 41。`artifacts/CORE-055/pinned-calendar-mac-01/` 138 項通過，原候選來源不變；PR #52 重驗最新 head。
+
+CORE-014 三平台交接已驗：來源 `43b67d35d996ab6185507931a77e189677e9a1d6`，乾淨樹 `723429f67a5b67e8c498bba201fede6b21ec626c0e5842edd1e40d285cb66503`，Mac ARM64／Linux ARM64／HJW Windows x86_64 各 667 項與乾淨 PATH 啟動通過。reader 42、Host 2、SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`。原生 ZIP、manifest 及逐成員雜湊已核對，索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-014/handoff-final-01/verified-candidates.json`，SHA-256 `c8d373992ec7e286337a4d79deb2caec81e79ee8fca5c22a3cd1f1330edc7c4c`。候選未發布，真擴展消費待補。
+
+- macos ZIP SHA-256 `c5780e4c4346e1a378e6e5074d100cb184885126278acb9f9fb104b926a4142a`。
+- linux ZIP SHA-256 `1cd0cabae64ea714c41cd11e443a0b200d01c563eb0de7522fc884716fbac233`。
+- windows ZIP SHA-256 `18d65b272e547002ac980dc516f84c08ce9cdd2e9e83c185b58066dd99c30d7c`。
+
+已推 PR #53；等待 #52 及最新 head 三平台 push／PR 六項 CI，通過後合併 main。

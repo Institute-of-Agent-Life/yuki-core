@@ -441,6 +441,9 @@ def run(ctx):
                 )
     from tests.harness.contacts import run as contacts
 
+    from tests.harness.history_wire import run as original_history
+    original_result = original_history(ctx)
+    ctx.write("original-history-wire.json", original_result)
     contact_result = contacts(ctx)
     ctx.write("original-contact-directory.json", contact_result)
     return {
@@ -459,6 +462,7 @@ def run(ctx):
         "around": around,
         "original_replay": replay,
         "original_contacts": contact_result,
+        "original_history_wire": original_result,
         "directory": dirs,
         "method": "v4 NFKC/casefold, OpenCC t2s, 1/2/3-gram candidates with exact per-field verification",
     }
