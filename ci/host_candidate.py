@@ -124,6 +124,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/v4-recall.json']=original
         files['docs/recall-compat.md']=(ROOT/'docs/recall-compat.md').read_bytes()
     if artifact:
+        views=receipt('original-tool-views.json')
+        original=(ROOT/'fixtures/tool-results/v4-tool-views.json').read_bytes()
+        if digest(original)!=json.loads(views)['oracle_sha256']:raise ValueError('tool views differ from verified original')
+        files['evidence/original-tool-views.json']=views
+        files['evidence/v4-tool-views.json']=original
+        files['docs/original-tool-views.md']=(ROOT/'docs/original-tool-views.md').read_bytes()
         for path,key in [("fixtures/tool-results/v4-original-declaration.json","artifact_declaration_sha256"),("fixtures/tool-results/v4-original-pages.json","oracle_sha256")]:
             raw_fixture=(ROOT/path).read_bytes()
             if digest(raw_fixture)!=data[key]:raise ValueError("artifact contract differs from verified original")
@@ -413,7 +419,8 @@ def build(manifest_path, out, development=False):
     if artifact:
         candidate["database_schema_revision"]=m["schema_version"]
         candidate["artifact_declaration_sha256"]=data["artifact_declaration_sha256"]
-        candidate["validated_core_tools"]=["read_tool_artifact"]
+        candidate["validated_core_tools"]=["read_tool_artifact","lookup_tools","time_get_current","update_short_state"]
+        candidate["tool_views_oracle_sha256"]=json.loads(receipt("original-tool-views.json"))["oracle_sha256"]
         candidate["validated_artifact_operations"]=data["validated_operations"]
         candidate["validation"]["consumer"]="physical Main tool continuation and fixed original JSON/text page fixtures; SDK packages independently installed"
         candidate["validation"]["real_extension_consumers"]=False

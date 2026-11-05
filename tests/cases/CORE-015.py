@@ -13,6 +13,7 @@ from tests.peers.chat.recorder import Recorder
 
 
 def run(ctx):
+    original_views=json.loads((ctx.root/"fixtures/tool-results/v4-tool-views.json").read_bytes())
     views = []
     barriers = []
     evidence = []
@@ -96,7 +97,7 @@ def run(ctx):
             ]
             entry = op("entry", "private", a, b)["entry"]
         with Recorder() as peer:
-            config = f'\n[main]\nendpoint="{peer.url}"\nmodel="offline"\nname="Yuki"\nmerge_ms=0\nroot_slots=7\nmax_input_units=500000\nmax_output=128\nresult_page_budget=680\nresult_storage_bytes={0 if mode == "quota" else 65536}\ncode_projection={str(mode == "code").lower()}\n'
+            config = f'\n[main]\nendpoint="{peer.url}"\nmodel="offline"\nname="Yuki"\nmerge_ms=0\nroot_slots=7\nmax_input_units=500000\nmax_output=128\nresult_page_budget={32000 if mode == "code" else 680}\nresult_storage_bytes={0 if mode == "quota" else 65536}\ncode_projection={str(mode == "code").lower()}\n'
             with (svc.data / "yuki.toml").open("a") as f:
                 f.write(config)
 
@@ -156,7 +157,11 @@ def run(ctx):
                         else ("get" in names and "lookup_tools" not in names)
                     ),
                 )
-                if mode == "code":
+                for original in original_views['declarations']:
+                    if original['name'] in names:
+                        ctx.equal('native Main preserves original '+original['name']+' declaration',next(t['function'] for t in wire['tools'] if t['function']['name']==original['name']),original)
+                if mode == 'code':
+                    ctx.equal('all implemented core tools follow the original fixed Code projection',names,sorted(set(view['executable']) & set(original_views['direct_names'])))
                     calls = [
                         call("lookup_tools", "a", {"name": "history_directory"}),
                         call("lookup_tools", "b", {"query": "time"}),
@@ -168,17 +173,19 @@ def run(ctx):
                     r = receipts(w)
                     ctx.check(
                         "hidden tool appears only in discovery with its original schema",
-                        r[0]["result"]["direct"] is False
-                        and r[0]["result"]["script_name"] == "yuki_history_directory",
+                        r[0]["result"]["data"]["direct"] is False
+                        and r[0]["result"]["data"]["script_name"] == "yuki_history_directory",
                     )
                     ctx.check(
                         "paged lookup omits schemas",
-                        all("parameters" not in i for i in r[1]["result"]["items"]),
+                        all("parameters" not in i for i in r[1]["result"]["data"]["tools"]),
                     )
-                    directory = {item["name"]: item for item in r[1]["result"]["items"]}
+                    ctx.equal('lookup retains the original frozen manifest identity',r[0]['result']['manifest_revision'],view['revision'])
+                    ctx.equal('unknown lookup preserves original nonexecution error',r[2]['result'],{'ok':False,'executed':False,'error':'unknown_capability'})
+                    directory = {item["name"]: item for item in r[1]["result"]["data"]["tools"]}
                     ctx.check(
                         "long wait tool uses a short directory summary",
-                        len(directory["task_control"]["description"]) <= 121
+                        len(directory["task_control"]["description"]) <= 240
                         and "time_get_current" in directory,
                     )
                     ctx.equal(
@@ -420,6 +427,7 @@ def run(ctx):
                 )
     ctx.write("read-barriers.json", {"cases": {"H12": barriers}})
     ctx.write("frozen-views.json", {"cases": {"H09": views}})
+    ctx.write('original-tool-views.json',{'original_source_commit':original_views['source_commit'],'oracle_sha256':hashlib.sha256((ctx.root/'fixtures/tool-results/v4-tool-views.json').read_bytes()).hexdigest(),'golden_cases':len(original_views['cases']),'native_views':views,'host_code_lookup_unchanged':True})
     built=subprocess.run([sys.executable,str(ctx.root/"ci/publish-contract.py"),"build","--out",str(ctx.output/"sdk-distributions"),"--verify-work",str(ctx.working/"artifact-sdk")],capture_output=True,text=True,timeout=120)
     ctx.write("artifact-sdk-build.json",{"exit_code":built.returncode,"stderr":built.stderr})
     ctx.equal("artifact candidate has independently verified SDK packages",built.returncode,0)

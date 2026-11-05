@@ -591,3 +591,7 @@ CORE-037 原權限目錄補核：`codex/core-037-permission-directory` 加入 Ru
 Mac `artifacts/CORE-037/permission-directory-mac-04/` 1052 項通過（tree `e2ee781aba904258d7e5ec8ea06c01d30a24f7e1a6f11eda6ba1f9e8589fb160`）；`permissions-adjacent-01/{CORE-012,CORE-026,CORE-034,CORE-030}` 及 `permissions-tools-regression-01/` CORE-015 通過。之後新增的人類委派撤權 Rust 用例通過。舊版 `original-permissions-oracle-01/` 原用例通過；不寫舊倉。mac-01 Clippy 與 mac-02 測試預算超出產品上限的失敗已保留；改 fixture 至 32000，實驗證大型目錄 Artifact 及 SHA-256 回讀，未放寬上限。
 
 乾淨 commit 後跑 Mac／Linux／HJW Windows CORE-037 並產候選；舊 development-package 僅打包自測。Host 2、reader 43、SDK alpha.11／a11 不變。下一項可獨立工作：CORE-015 原工具宣告與 Code 投影補核；缺實際擴展的方法保持待輸入，CORE-040 完整同線比較未完成。
+
+CORE-015 原模型視圖補核：`codex/core-015-original-tool-views` 恢復 lookup_tools／time_get_current／update_short_state 的原宣告，原 Code 固定集合只投影本倉實有能力。模型 lookup 恢復多詞 Unicode casefold 搜尋（含 Python 額外空白）、240 字元摘要、原 data／revision／authorization 與失敗回條；既有 Host code.lookup 合同不變。Mac `artifacts/CORE-015/original-tool-views-mac-02/` 127 項與原 oracle 50 組通過；原 Python 四用例通過，五張相鄰卡全部通過 `tool-views-adjacent-01/`。新增 direct 模式排除 execute_code 的 Rust 回歸；待乾淨 commit 三平台候選。
+
+尚待獨立補核：不合 paid schema 的模型 call 目前令解碼層 held，需逐項失敗回條並保留同批獨立操作；此卡的未知查詢名稱已逐項拒絕。原 memory_change、send／workspace 參數仍待本倉相容補核，未以替代 schema 宣稱 CORE-040 全切片等價。

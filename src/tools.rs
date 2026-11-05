@@ -1,5 +1,6 @@
 pub mod batch;
 pub(crate) mod budget;
+mod original_views;
 pub(crate) mod permissions;
 pub mod registry;
 pub mod results;
@@ -92,7 +93,7 @@ pub async fn perform(
     } else {
         match name {
             "get_my_capabilities" => permissions::read(&mut tx, exec, actor, &args).await,
-            "lookup_tools" => manifest.lookup(&args, cfg.try_get("code_projection")?),
+            "lookup_tools" => manifest.model_lookup(&args, cfg.try_get("code_projection")?),
             "time_get_current" => transient::clock(transient::now()?, &timezone),
             "update_short_state" => Ok(Value::Null),
             "history_directory" => history::query::directory(&mut tx, exec, actor).await,
@@ -235,6 +236,7 @@ pub(crate) async fn finish_guarded(
         }
     }
     let (state, result) = match output {
+        Ok(v) if name == "lookup_tools" && v["ok"] == false => ("failed", v),
         Ok(v) => ("confirmed", v),
         Err(e) => ("failed", json!({"error":e})),
     };
