@@ -199,3 +199,15 @@ CORE-034 已接入媒體 `4004abf` 的自動 owner 回條及搜尋整合。Code�
 CORE-050 實作 `8359146` 已推 [PR #44](https://github.com/Institute-of-Agent-Life/yuki-core/pull/44)。Code `d28d369` 接入後，CORE-050、034、016、024、038、031、011、030 八卡通過 `aux-code-integration-01/`。同一 SDK alpha.6 同時保留 Code、媒體及輔助模型方法。下一步封裝與補上下文多來源的擦除綁定。
 
 CORE-050 多來源上下文補核通過 Mac `mac-18` 與 HJW `windows-02`，各 561 項，來源樹 `55f34d1393141e95115338b5ece6c965648e76860a3d0f3bc07d44961ab329fd`。`llm.complete.sources` 在原根額度預留前綁定實際依賴，僅接納原來源、原呼叫依賴或同入口已持有來源。額外來源擦除會封鎖晚返結果，原來源保持有效。未持有來源與跨入口來源拒絕，重送維持原請求身份。具名證據為兩目錄的 `aux-attempts.json`。下一步以乾淨提交製作三平台未發布候選。
+
+## CORE-050 未發布候選包
+
+來源 `952954d86166c6bb8ef1cec0683480df28787970`，來源樹 `b6eabdfbab78382368f8264d2e9d96bcf3e167209d64d8e38aee4af694c40a7a`。Mac、HJW Windows、Linux arm64 各 561 項與獨立路徑啟動通過。握手 1、Host 2、aux-model 1、Rust SDK `1.0.0-alpha.6`、Python `1.0.0a6`。實含 `llm.complete`、`llm.result`、六種文字 wire、Chat 圖片／音訊及多來源擦除。原根額度與物理 attempt 沿用共同帳本。真 EXT-025、030、032、033、035 消費待回傳。
+
+Windows 首次封裝遇暫存執行檔清理 WinError 32，同一固定來源與驗證 manifest 在新 sandbox 重試成功。證據與 ZIP 成員核驗位於交接根目錄的 `windows-pack-recovery.json`、`handoff-verification.json`。
+
+| 平台 | 路徑 | SHA-256 |
+|---|---|---|
+| Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/linux-arm64/candidate/yuki-aux-model-preview-952954d86166-linux-arm64.zip` | `800bff7da32c81bb7173c9411c6edd898c32a2934dbf496a491dbca5d04023ee` |
+| macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/macos-arm64/yuki-aux-model-preview-952954d86166-darwin-arm64.zip` | `a4b05689a35b4fec34fea2657c187507611e71e6d079f75ab629ddcff55e7fb8` |
+| Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/windows-validation/handoff-retry-02/yuki-aux-model-preview-952954d86166-windows-x86_64.zip` | `ec0088c957caf21ca11b344cb69db539e22085f4aa8520c56feb19b272f29fe4` |
