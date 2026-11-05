@@ -136,6 +136,15 @@ CORE-033 已補上 Client9 原檔目錄、依 `artifact_id + version` 下載及 
 
 CORE-030 在 `codex/core-030-forget` 增補同人族與歷史私聊清除、原管理路由、可續 GC，以及有待清義務時的獨立插件清除入口。Mac `artifacts/CORE-030/mac-11/forget-canaries.json` 已驗 115 項；先前 HJW `windows-02` 驗過同一核心清除劇本，後續 raw-method gate 補強會隨新來源重驗。固定 v4 七項測試在 `artifacts/CORE-030/v4-oracle-01/`。25 張相鄰卡通過各卡 `family-forget-01/`，包括 ASR、附件、兩種 Compact、提取、向量、歷史及 Host 的實際遲到來源斷言。原人物 ID、付費計數和防重放鍵保留；去內容及實體回收分欄。可繼續 CORE-041 的資料交接準備；其跨倉部分仍須對方 owner 的公開見證。啟動配置與外部邊界見 `docs/owner-erasure.md`。
 最終 `artifacts/CORE-030/mac-12/` 與 `windows-04/` 各 115 項，來源 `f290cb757a66d82361fa610819f4a0338f00d3316e2d0a3cf9c348fba39a2b83`。清除世代的底層 raw method gate 也已反驗；CORE-032、033、052 重跑 `family-forget-03/` 通過。
+### CORE-033 可交接原檔候選
+
+三份未發布候選都固定在 `718cba6b1cf2b26ff2a26d33c554d4fa9452cdd1`，握手 1、Host 2、personal 1、Client 9、connector 4，Rust SDK 1.0.0-alpha.3 和 Python SDK 1.0.0a3。三機各 256 項斷言，已核對壓縮檔和每個成員。HTTP 及 SDK 方法名單見各自的 `candidate.json`。EXT-011／015 可依下列路徑讀同一原檔，正式跨倉回條仍待對方提供。
+
+| 平台 | 本地 ZIP | SHA-256 |
+| --- | --- | --- |
+| Windows x86_64 | `artifacts/CORE-033/handoff-718cba6b1cf2/windows-validation/handoff/yuki-personal-preview-718cba6b1cf2-windows-x86_64.zip` | `5482c2628c57fdadb8a4ddc0f4680b73621a1307c476a582d341056a139e37f1` |
+| macOS arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/macos-arm64/yuki-personal-preview-718cba6b1cf2-darwin-arm64.zip` | `4b0cb965d048e11063dc235756c104f83d22670cf02670ac3467e75dc72310ae` |
+| Linux arm64 | `artifacts/CORE-033/handoff-718cba6b1cf2/linux-arm64-02/candidate/yuki-personal-preview-718cba6b1cf2-linux-arm64.zip` | `4427bd183ae5ea95566e65cb7dc7bb1df282eaf140f94e81c526399e932968bd` |
 CORE-017 實作 `8a41277`，[PR #29](https://github.com/Institute-of-Agent-Life/yuki-core/pull/29)，HJW 與 Mac 均通過 106 項。
 CORE-012 提示詞補核 [PR #25](https://github.com/Institute-of-Agent-Life/yuki-core/pull/25) 的 head `1eb7be0` 通過六項檢查，已合併 `791e686`。
 CORE-024 在 `codex/core-024-search` 實作獨立原生搜索。Responses、Messages 及 Gemini 都用實際 loopback HTTP 驗證來源；一般 Main 透過自己的工具宣告派發，原聊天未送入獨立連線。冷重啟仍可命中完整且未過期的原收據，改 connection、Profile、金鑰域或憑據會重新派發。日期不明、孤立來源和未完成回應分開處理，原邏輯的未知嘗試重啟後維持一次。方法和來源證據在 `artifacts/CORE-024/{mac-07,windows-01}/search-proof-cache.json`；固定舊版橋接 24 項測試在 `artifacts/CORE-024/v4-oracle-01/junit.xml`。EXT-029 尚需以它的真實 Tavily owner 消費核心合同。
@@ -173,6 +182,7 @@ CORE-028 計費補核統一 Embedding 寫入的 `input` 欄位。擦除保留器
 CORE-029 已接入向量 usage 補修 `5e0a59e`。檢索與向量回歸通過 `artifacts/CORE-029/embedding-usage-integration-01/`、`artifacts/CORE-028/retrieval-usage-integration-01/`。PR #37 依最新來源等待三平台 CI。
 
 CORE-030 已接入檢索 `89a736f` 的 usage 補修。清除與向量回歸分別通過 `artifacts/CORE-030/embedding-usage-integration-01/`、`artifacts/CORE-028/forget-usage-integration-01/`。PR #39 從此最新來源重跑 CI。
+CORE-033 已接入媒體 `894a27a` 的搜尋整合。個人入口與搜尋回歸通過 `artifacts/CORE-{033,024}/personal-search-integration-01/`。PR #36 等最新三平台 CI。
 已接入 main `30a5ea7` 的 Host 合併提交。實作樹與上一輪驗證相同，PR 已轉向 main 並重新執行 CI。
 
 CORE-039 已接入 main 的 Work `0261764`。Mac 分發與 Work 回歸分別通過，產物為 `artifacts/CORE-039/work-main-integration-01/`、`artifacts/CORE-016/dist-main-integration-01/`。PR #28 以此次整合的最新提交重新等待三平台 CI。
@@ -207,3 +217,10 @@ CORE-029 同步向量 CI 修正 `c251510`。原目錄案例明選 lexical-only�
 CORE-029 合入新增工具後，CORE-012 的舊測試根額度在第三筆共享根請求前耗盡。CI `42070867425` 與本機 `retrieval-main-ci-01` 均保留失敗；診斷顯示兩筆已預留 68,206 units，第三筆尚未派發。測試沿用後續分支 `40d0d43` 的 1,000,000 units 設定，保留六筆請求上限及核心額度邏輯；`artifacts/CORE-012/retrieval-main-ci-02/` 已通過。超時現在附原執行、診斷和根預留，方便定位。
 
 CORE-030 已整合檢索 `e9af0f5` 及 main 分發／個人入口。CORE-030 `forget-main-integration-01/` 與 CORE-039 `forget-main-final-01/` 通過；可攜包離線啟動明選 lexical-only。CORE-039 第三次整合遇到一次 Rust tool 後續請求未派發，保留 `forget-main-integration-03/host-rust-followup-diagnostic.json`；原因未定位。隨後 debug 三次、release 十二次診斷及移除臨時診斷後的最終檢查均通過，原故障回條保留，測試失敗時現在附原 turn／intent 狀態。PR #39 以整合 head 等 CI。
+CORE-025 六項 CI 通過並合併 main `692e323`；CORE-033 已整合此來源及核心分發入口。Mac CORE-033、039 通過 `artifacts/CORE-033/media-main-integration-01/`、`artifacts/CORE-039/personal-main-integration-01/`。PR #36 以整合後提交重新等待三平台 CI。
+
+CORE-033 已由六項 CI 合併 main `76cf762`。CORE-028 整合此來源，保留兩張卡的 CI；Mac CORE-028／033／012／039 全部通過 `vectors-personal-main-01/`。Main fixture 沿用檢索已驗的 1,000,000 units，不改核心額度邏輯。PR #35 按最新整合 head 重新驗證三平台。
+
+CORE-029 整合向量 `e43339b` 與個人通道 main `76cf762`。Mac CORE-029、033、039 全部通過 `artifacts/CORE-{029,033,039}/retrieval-personal-main-01/`；兩組 SDK、個人協議與記憶檢索介面一併保留。PR #37 按此整合 head 等最新三平台 CI。
+
+CORE-030 同步檢索 `87a07f9` 與個人入口 main `76cf762` 的提交祖先。此次整合只有 CI 和進度記錄差異，實作及測試來源均與 `62abb62` 相同，沿用 `forget-main-final-01/` 驗證；最新 head 仍須通過六項 CI 才合併。
