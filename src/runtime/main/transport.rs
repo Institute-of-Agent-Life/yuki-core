@@ -14,7 +14,7 @@ use sqlx::Row;
 use std::{path::Path, sync::Arc};
 use tokio::sync::watch;
 
-async fn physical(
+pub(crate) async fn physical(
     client: &reqwest::Client,
     cfg: &Config,
     raw: &str,
@@ -120,6 +120,9 @@ impl Dispatch {
                 .await? =>
             {
                 crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
+            }
+            "web_search" if cfg.bridge_search => {
+                crate::model::search::tool(&store, &exec, &actor, &id, &t.payload).await?
             }
             "history_query" => {
                 if let Err(error) =
