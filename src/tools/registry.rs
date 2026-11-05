@@ -280,6 +280,9 @@ pub async fn pinned(
     }
     let code = cfg.code_projection || cfg.code_tool.is_some();
     let mut tools: Vec<Tool> = Manifest::core().0.into_values().collect();
+    if cfg.bridge_search {
+        tools.push(crate::model::search::declaration());
+    }
     let installed: Vec<(String, String, String)> = sqlx::query_as(
         "SELECT plugin,revision,tools FROM host_installations WHERE enabled ORDER BY plugin",
     )
@@ -293,9 +296,6 @@ pub async fn pinned(
             });
             tools.push(tool);
         }
-    }
-    if cfg.bridge_search {
-        tools.push(crate::model::search::declaration());
     }
     let manifest = Manifest::freeze(tools)?;
     let rev = manifest.revision()?;

@@ -171,13 +171,13 @@ impl Query {
 }
 pub fn declaration() -> Tool {
     Tool {
-        provider: None,
         name: "web_search".into(),
         description: "用獨立的已配置搜索連線查詢公開來源；結果保留原生來源及部分失敗狀態。".into(),
         schema: json!({"type":"object","properties":{"query":{"type":"string","minLength":1},"topic":{"enum":["general","news"]},"time_range":{"enum":["day","week","month","year"]},"start_date":{"type":"string"},"end_date":{"type":"string"},"max_results":{"type":"integer","minimum":1,"maximum":20}},"required":["query"],"additionalProperties":false}),
         parallel_read: false,
         cacheable: false,
         code_direct: false,
+        provider: None,
     }
 }
 #[derive(clap::Args, Serialize, Deserialize)]
