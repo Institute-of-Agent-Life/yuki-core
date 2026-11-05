@@ -1,0 +1,926 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_path": "src/yuki/tool_results/artifacts.py",
+  "source_sha256": "04556e97b544d2421f3b172f3faa1e913cf0496464f19c1219ae9e351526999c",
+  "cases": [
+    {
+      "name": "inspect-object",
+      "operation": "inspect",
+      "value": {
+        "z": null,
+        "A": [
+          "中\n",
+          {
+            "x": true
+          }
+        ],
+        "beta": "Straße 中😀 tail"
+      },
+      "path": [],
+      "offset": 0,
+      "limit": 2,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "object",
+        "total_children": 3,
+        "children": [
+          {
+            "key": "A",
+            "type": "array",
+            "length": 2
+          },
+          {
+            "key": "beta",
+            "type": "string",
+            "characters": 14
+          }
+        ],
+        "next_offset": 2
+      },
+      "raw_value": "{\"z\": null, \"A\": [\"中\\n\", {\"x\": true}], \"beta\": \"Straße 中😀 tail\"}"
+    },
+    {
+      "name": "inspect-array",
+      "operation": "inspect",
+      "value": [
+        "中\n",
+        {
+          "x": true
+        }
+      ],
+      "path": [
+        "A"
+      ],
+      "offset": 0,
+      "limit": 1,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [
+          "A"
+        ],
+        "type": "array",
+        "length": 2,
+        "children": [
+          {
+            "index": 0,
+            "type": "string",
+            "characters": 2
+          }
+        ],
+        "next_offset": 1
+      },
+      "raw_value": "[\"中\\n\", {\"x\": true}]"
+    },
+    {
+      "name": "inspect-scalar",
+      "operation": "inspect",
+      "value": true,
+      "path": [
+        "flag"
+      ],
+      "offset": 0,
+      "limit": 20,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [
+          "flag"
+        ],
+        "type": "boolean",
+        "value": true
+      },
+      "raw_value": "true"
+    },
+    {
+      "name": "inspect-past-eof",
+      "operation": "inspect",
+      "value": {
+        "z": null,
+        "A": [
+          "中\n",
+          {
+            "x": true
+          }
+        ],
+        "beta": "Straße 中😀 tail"
+      },
+      "path": [],
+      "offset": 20,
+      "limit": 20,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "object",
+        "total_children": 3,
+        "children": [],
+        "next_offset": null
+      },
+      "raw_value": "{\"z\": null, \"A\": [\"中\\n\", {\"x\": true}], \"beta\": \"Straße 中😀 tail\"}"
+    },
+    {
+      "name": "get-object",
+      "operation": "get",
+      "value": {
+        "z": null,
+        "A": [
+          "中\n",
+          {
+            "x": true
+          }
+        ],
+        "beta": "Straße 中😀 tail"
+      },
+      "path": [],
+      "offset": 0,
+      "limit": 2,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "object",
+        "total_items": 3,
+        "offset": 0,
+        "value": {
+          "A": [
+            "中\n",
+            {
+              "x": true
+            }
+          ],
+          "beta": "Straße 中😀 tail"
+        },
+        "next_offset": 2
+      },
+      "raw_value": "{\"z\": null, \"A\": [\"中\\n\", {\"x\": true}], \"beta\": \"Straße 中😀 tail\"}"
+    },
+    {
+      "name": "get-array",
+      "operation": "get",
+      "value": [
+        "中\n",
+        {
+          "x": true
+        }
+      ],
+      "path": [
+        "A"
+      ],
+      "offset": 0,
+      "limit": 1,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [
+          "A"
+        ],
+        "type": "array",
+        "total_items": 2,
+        "offset": 0,
+        "value": [
+          "中\n"
+        ],
+        "next_offset": 1
+      },
+      "raw_value": "[\"中\\n\", {\"x\": true}]"
+    },
+    {
+      "name": "get-scalar",
+      "operation": "get",
+      "value": true,
+      "path": [
+        "flag"
+      ],
+      "offset": 0,
+      "limit": 20,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [
+          "flag"
+        ],
+        "type": "boolean",
+        "value": true
+      },
+      "raw_value": "true"
+    },
+    {
+      "name": "get-past-eof",
+      "operation": "get",
+      "value": {
+        "z": null,
+        "A": [
+          "中\n",
+          {
+            "x": true
+          }
+        ],
+        "beta": "Straße 中😀 tail"
+      },
+      "path": [],
+      "offset": 20,
+      "limit": 20,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "object",
+        "total_items": 3,
+        "offset": 20,
+        "value": {},
+        "next_offset": null
+      },
+      "raw_value": "{\"z\": null, \"A\": [\"中\\n\", {\"x\": true}], \"beta\": \"Straße 中😀 tail\"}"
+    },
+    {
+      "name": "casefold-key-order",
+      "operation": "get",
+      "value": {
+        "ß": 1,
+        "SS": 2,
+        "ss": 3,
+        "a": 4,
+        "A": 5,
+        "İ": 6,
+        "i̇": 7
+      },
+      "path": [],
+      "offset": 1,
+      "limit": 4,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "object",
+        "total_items": 7,
+        "offset": 1,
+        "value": {
+          "A": 5,
+          "İ": 6,
+          "i̇": 7,
+          "ß": 1
+        },
+        "next_offset": 5
+      },
+      "raw_value": "{\"ß\": 1, \"SS\": 2, \"ss\": 3, \"a\": 4, \"A\": 5, \"İ\": 6, \"i̇\": 7}"
+    },
+    {
+      "name": "unicode-0",
+      "operation": "get",
+      "value": "中😀\n尾",
+      "path": [],
+      "offset": 0,
+      "limit": 2,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "string",
+        "offset": 0,
+        "next_offset": 2,
+        "total_characters": 4,
+        "value": "中😀",
+        "offset_unit": "characters",
+        "truncated": true
+      },
+      "raw_value": "\"中😀\\n尾\""
+    },
+    {
+      "name": "unicode-1",
+      "operation": "get",
+      "value": "中😀\n尾",
+      "path": [],
+      "offset": 1,
+      "limit": 2,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "string",
+        "offset": 1,
+        "next_offset": 3,
+        "total_characters": 4,
+        "value": "😀\n",
+        "offset_unit": "characters",
+        "truncated": true
+      },
+      "raw_value": "\"中😀\\n尾\""
+    },
+    {
+      "name": "unicode-4",
+      "operation": "get",
+      "value": "中😀\n尾",
+      "path": [],
+      "offset": 4,
+      "limit": 2,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "string",
+        "offset": 4,
+        "next_offset": null,
+        "total_characters": 4,
+        "value": "",
+        "offset_unit": "characters",
+        "truncated": false
+      },
+      "raw_value": "\"中😀\\n尾\""
+    },
+    {
+      "name": "whole-first-item",
+      "operation": "get",
+      "value": [
+        "firstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirst",
+        "later"
+      ],
+      "path": [],
+      "offset": 0,
+      "limit": 20,
+      "budget": 400,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "error_code": "artifact_value_too_large",
+        "detail": "目标值无法完整放入当前工具结果预算，请读取更深层路径",
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "value_shape": {
+          "type": "array",
+          "length": 2
+        },
+        "estimated_characters": 1013
+      },
+      "raw_value": "[\"firstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirstfirst\", \"later\"]"
+    },
+    {
+      "name": "search-parent-dedup",
+      "operation": "search",
+      "value": {
+        "item": {
+          "b": "hit",
+          "a": "hit",
+          "nested": [
+            "hit",
+            "hit"
+          ]
+        }
+      },
+      "path": [],
+      "offset": 0,
+      "limit": 20,
+      "budget": 8000,
+      "query": "hit",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "query": "hit",
+        "matches": [
+          {
+            "path": [
+              "item"
+            ],
+            "matched_path": [
+              "item",
+              "a"
+            ],
+            "value": {
+              "b": "hit",
+              "a": "hit",
+              "nested": [
+                "hit",
+                "hit"
+              ]
+            }
+          },
+          {
+            "path": [
+              "item",
+              "nested",
+              0
+            ],
+            "matched_path": [
+              "item",
+              "nested",
+              0
+            ],
+            "value": "hit"
+          },
+          {
+            "path": [
+              "item",
+              "nested",
+              1
+            ],
+            "matched_path": [
+              "item",
+              "nested",
+              1
+            ],
+            "value": "hit"
+          }
+        ],
+        "next_offset": null,
+        "scanned_nodes": 3
+      },
+      "raw_value": "{\"item\": {\"b\": \"hit\", \"a\": \"hit\", \"nested\": [\"hit\", \"hit\"]}}"
+    },
+    {
+      "name": "search-complete-record",
+      "operation": "search",
+      "value": [
+        {
+          "message": "Straße",
+          "author": "甲"
+        },
+        {
+          "message": "no",
+          "author": "乙"
+        }
+      ],
+      "path": [],
+      "offset": 0,
+      "limit": 20,
+      "budget": 8000,
+      "query": "STRASSE",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "query": "STRASSE",
+        "matches": [
+          {
+            "path": [
+              0
+            ],
+            "matched_path": [
+              0,
+              "message"
+            ],
+            "value": {
+              "message": "Straße",
+              "author": "甲"
+            }
+          }
+        ],
+        "next_offset": null,
+        "scanned_nodes": 3
+      },
+      "raw_value": "[{\"message\": \"Straße\", \"author\": \"甲\"}, {\"message\": \"no\", \"author\": \"乙\"}]"
+    },
+    {
+      "name": "search-oversized-record",
+      "operation": "search",
+      "value": [
+        {
+          "hit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "path": [],
+      "offset": 0,
+      "limit": 20,
+      "budget": 600,
+      "query": "hit",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "query": "hit",
+        "matches": [
+          {
+            "path": [
+              0
+            ],
+            "matched_path": [
+              0,
+              "hit"
+            ],
+            "value_omitted": true,
+            "value_shape": {
+              "type": "object",
+              "child_count": 1
+            },
+            "instruction": "匹配对象过大，请对 path 执行 inspect 或 get"
+          }
+        ],
+        "next_offset": null,
+        "scanned_nodes": 2
+      },
+      "raw_value": "[{\"hit\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]"
+    },
+    {
+      "name": "search-paged",
+      "operation": "search",
+      "value": [
+        {
+          "key": "hit"
+        },
+        {
+          "key": "hit"
+        },
+        {
+          "key": "hit"
+        }
+      ],
+      "path": [],
+      "offset": 1,
+      "limit": 1,
+      "budget": 8000,
+      "query": "hit",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "query": "hit",
+        "matches": [
+          {
+            "path": [
+              1
+            ],
+            "matched_path": [
+              1,
+              "key"
+            ],
+            "value": {
+              "key": "hit"
+            }
+          }
+        ],
+        "next_offset": 2,
+        "scanned_nodes": 4
+      },
+      "raw_value": "[{\"key\": \"hit\"}, {\"key\": \"hit\"}, {\"key\": \"hit\"}]"
+    },
+    {
+      "name": "search-no-match",
+      "operation": "search",
+      "value": {
+        "z": null,
+        "A": [
+          "中\n",
+          {
+            "x": true
+          }
+        ],
+        "beta": "Straße 中😀 tail"
+      },
+      "path": [],
+      "offset": 0,
+      "limit": 20,
+      "budget": 8000,
+      "query": "absent",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "query": "absent",
+        "matches": [],
+        "next_offset": null,
+        "scanned_nodes": 3
+      },
+      "raw_value": "{\"z\": null, \"A\": [\"中\\n\", {\"x\": true}], \"beta\": \"Straße 中😀 tail\"}"
+    },
+    {
+      "name": "text-unicode",
+      "operation": "text",
+      "value": "A中😀\n尾",
+      "path": [],
+      "offset": 1,
+      "limit": 3,
+      "budget": 8000,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "text",
+        "offset": 1,
+        "next_offset": 4,
+        "total_characters": 5,
+        "content": "中😀\n",
+        "query_matched": null
+      },
+      "raw_value": "\"A中😀\\n尾\""
+    },
+    {
+      "name": "text-folded-offset",
+      "operation": "text",
+      "value": "前ß x STRASSE end",
+      "path": [],
+      "offset": 0,
+      "limit": 7,
+      "budget": 8000,
+      "query": "strasse",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "text",
+        "offset": 5,
+        "next_offset": 12,
+        "total_characters": 16,
+        "content": "STRASSE",
+        "query_matched": true
+      },
+      "raw_value": "\"前ß x STRASSE end\""
+    },
+    {
+      "name": "text-no-match",
+      "operation": "text",
+      "value": "前ß",
+      "path": [],
+      "offset": 0,
+      "limit": 20,
+      "budget": 8000,
+      "query": "absent",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "text",
+        "offset": 0,
+        "next_offset": null,
+        "total_characters": 2,
+        "content": "",
+        "query_matched": false
+      },
+      "raw_value": "\"前ß\""
+    },
+    {
+      "name": "text-budget",
+      "operation": "text",
+      "value": "中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n",
+      "path": [],
+      "offset": 0,
+      "limit": 1000,
+      "budget": 256,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "error_code": "artifact_budget_too_small",
+        "detail": "预算不足以返回一个字符",
+        "handle": "h",
+        "offset": 0,
+        "next_offset": 0
+      },
+      "raw_value": "\"中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n\""
+    },
+    {
+      "name": "get-budget",
+      "operation": "get",
+      "value": "中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n",
+      "path": [],
+      "offset": 0,
+      "limit": 1000,
+      "budget": 400,
+      "query": "",
+      "base": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t"
+      },
+      "result": {
+        "handle": "h",
+        "mode": "json",
+        "logical_root": "data",
+        "provider_id": "p",
+        "tool_name": "t",
+        "path": [],
+        "type": "string",
+        "offset": 0,
+        "next_offset": 19,
+        "total_characters": 300,
+        "value": "中😀\n中😀\n中😀\n中😀\n中😀\n中😀\n中",
+        "offset_unit": "characters",
+        "truncated": true
+      },
+      "raw_value": "\"中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n中😀\\n\""
+    }
+  ]
+}

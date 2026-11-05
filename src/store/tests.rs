@@ -354,12 +354,59 @@ async fn tool_output_rechecks_revocation_after_decode_and_short_state_expires() 
       ('run','reader','external','read_tool_artifact','{\"handle\":\"id\",\"version\":\"v\"}','intent',NULL);
       INSERT INTO tool_artifacts VALUES('id','v','run','producer','{\"result\":\"private-material\"}');")
       .execute(&mut *conn).await.unwrap();
-    let args = json!({"handle":"id","version":"v","path":"/result"});
+    use sha2::{Digest, Sha256};
+    let raw: String = sqlx::query_scalar("SELECT body FROM tool_artifacts WHERE handle='id'")
+        .fetch_one(&mut *conn)
+        .await
+        .unwrap();
+    let hash = format!("{:x}", Sha256::digest(raw.as_bytes()));
+    sqlx::query("UPDATE tool_artifacts SET version=? WHERE handle='id'")
+        .bind(&hash)
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE operations SET payload=? WHERE operation_id='reader'")
+        .bind(r#"{"handle":"id","path":["result"]}"#)
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    let args = json!({"handle":"id","path":["result"]});
     let original = crate::tools::results::load(conn, "run", actor, &args)
         .await
         .unwrap();
-    let decoded = crate::tools::results::page(&original, &args, 8000).unwrap();
+    let decoded = original.page(&args, 8000).unwrap();
     assert_eq!(decoded["value"], "private-material");
+    assert_eq!(original.hash, hash);
+    sqlx::query("INSERT INTO operations(namespace,operation_id,action,target,payload,state) SELECT namespace,'replaced-reader',action,target,payload,'intent' FROM operations WHERE operation_id='reader'").execute(&mut *conn).await.unwrap();
+    sqlx::query("UPDATE tool_artifacts SET version='replacement' WHERE handle='id'")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    assert!(
+        crate::tools::results::load(conn, "run", actor, &args)
+            .await
+            .is_err(),
+        "stored bytes must match their recorded digest"
+    );
+    let refused = crate::tools::finish_guarded(
+        conn,
+        "run",
+        actor,
+        "replaced-reader",
+        Ok(decoded.clone()),
+        Some(&original.hash),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        refused["state"], "failed",
+        "a replacement after decode cannot publish the earlier bytes"
+    );
+    sqlx::query("UPDATE tool_artifacts SET version=? WHERE handle='id'")
+        .bind(&hash)
+        .execute(&mut *conn)
+        .await
+        .unwrap();
     crate::tools::transient::update(conn, "run", &json!({"slot":1,"text":"short"}), 100)
         .await
         .unwrap();
@@ -391,9 +438,16 @@ async fn tool_output_rechecks_revocation_after_decode_and_short_state_expires() 
     .await
     .unwrap();
     assert!(
-        crate::tools::finish_prepared(conn, "run", actor, "reader", Ok(decoded))
-            .await
-            .is_err()
+        crate::tools::finish_guarded(
+            conn,
+            "run",
+            actor,
+            "reader",
+            Ok(decoded),
+            Some(&original.hash)
+        )
+        .await
+        .is_err()
     );
     let (state,raw):(String,Option<String>)=sqlx::query_as("SELECT state,body FROM operations JOIN tool_artifacts ON operation=operation_id AND execution=namespace WHERE operation_id='producer'").fetch_one(&mut *conn).await.unwrap();
     assert_eq!(state, "confirmed");

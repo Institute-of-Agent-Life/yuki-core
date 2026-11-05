@@ -133,11 +133,8 @@ pub fn builtin(name: &str) -> Option<Tool> {
             true,
         ),
         "read_tool_artifact" => (
-            "Continue a specific immutable result at a JSON pointer and character or item offset.",
-            object(
-                json!({"handle":{"type":"string"},"version":{"type":"string"},"path":{"type":"string"},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":8000}}),
-                &["handle", "version"],
-            ),
+            "读取工具产生的短期 Artifact。默认 get 按路径读取 JSON，read_more 中的参数项可原样传入；可用 inspect 查看结构、search 返回关键词命中的完整对象；文本使用 text。get 字符串按字符分页，offset/next_offset 单位为 characters；limit 默认当前有效结果字符预算，实际页受该预算约束。图片 Artifact 使用 image 将原图交给当前主模型原生查看。",
+            json!({"type": "object", "properties": {"handle": {"type": "string"}, "operation": {"type": "string", "enum": ["inspect", "get", "search", "text", "image"], "description": "默认 get；JSON 使用 inspect/get/search，文本使用 text，图片使用 image"}, "path": {"type": "array", "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]}, "description": "相对返回中 logical_root 的 JSON 路径，对象键用字符串、数组下标用整数"}, "offset": {"type": "integer", "minimum": 0, "description": "JSON 的键/元素/匹配偏移，或 text 字符偏移"}, "limit": {"type": "integer", "minimum": 1, "description": "JSON 条目数，或 text 最大字符数"}, "query": {"type": "string", "description": "search 关键词，或 text 的字符串定位词"}}, "required": ["handle"], "additionalProperties": false}),
             true,
             false,
             true,
