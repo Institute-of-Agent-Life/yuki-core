@@ -1,0 +1,256 @@
+use super::{
+    Change,
+    evidence::Source,
+    facts::{self, Edit, Subject},
+    scope::Reader,
+};
+use crate::{
+    Result,
+    runtime::effects,
+    store::{Mutation, Store},
+    tools::registry::Tool,
+};
+use serde_json::{Value, json};
+use sqlx::{Row, SqliteConnection};
+use std::sync::LazyLock;
+
+static DECLARATIONS: LazyLock<Value> = LazyLock::new(|| {
+    serde_json::from_str(include_str!("v4-declarations.json")).expect("v4 Memory tool declarations")
+});
+pub fn declaration(name: &str) -> Option<Tool> {
+    let item = DECLARATIONS["tools"]
+        .as_array()?
+        .iter()
+        .find(|v| v["name"] == name)?;
+    let mut schema = item["parameters"].clone();
+    let desc = if name == "memory_change" {
+        let props = schema["properties"].as_object_mut()?;
+        props.retain(|key, _| {
+            [
+                "operation",
+                "fact_id",
+                "target",
+                "new_content",
+                "memory_key",
+                "confidence",
+                "evidence_event_id",
+                "evidence_quote",
+                "evidence_refs",
+                "expected_fact_state",
+                "request_basis",
+            ]
+            .contains(&key.as_str())
+        });
+        props.get_mut("operation")?["enum"] = json!(["create", "correct", "invalidate"]);
+        props.get_mut("expected_fact_state")?["enum"] = json!(["active"]);
+        props.get_mut("request_basis")?["enum"] = json!(["user_requested"]);
+        props.get_mut("evidence_refs")?["items"] = json!({"type":"string","const":"current_event"});
+        let target = &mut props.get_mut("target")?["properties"];
+        target
+            .as_object_mut()?
+            .retain(|key, _| matches!(key.as_str(), "scope_type" | "subject_ref"));
+        target["scope_type"]["enum"] = json!(["person"]);
+        target["subject_ref"]["enum"] = json!(["current_speaker"]);
+        "按真实原事件写入本人事实。correct 或 invalidate 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。"
+    } else {
+        item["description"].as_str()?
+    };
+    Some(Tool {
+        name: name.into(),
+        description: desc.into(),
+        schema,
+        parallel_read: false,
+        cacheable: false,
+        code_direct: false,
+        provider: None,
+    })
+}
+pub async fn perform(store: &Store, exec: &str, actor: &str, op: &str) -> Result<()> {
+    store
+        .write(Mutation::Memory(Box::new(Change::Tool {
+            exec: exec.into(),
+            actor: actor.into(),
+            op: op.into(),
+        })))
+        .await?;
+    Ok(())
+}
+async fn fact(conn: &mut SqliteConnection, args: &Value) -> Result<String> {
+    let number = args["fact_id"]
+        .as_i64()
+        .ok_or("original fact ID required")?;
+    Ok(
+        sqlx::query_scalar("SELECT id FROM memory_facts WHERE number=?")
+            .bind(number)
+            .fetch_one(conn)
+            .await?,
+    )
+}
+async fn original_event(conn: &mut SqliteConnection, exec: &str, args: &Value) -> Result<Source> {
+    let event: i64 = if let Some(id) = args["evidence_event_id"].as_i64() {
+        sqlx::query_scalar("SELECT id FROM events WHERE id=? AND id IN(SELECT source FROM executions WHERE id=? UNION SELECT event FROM main_inputs WHERE execution=?)").bind(id).bind(exec).bind(exec).fetch_one(&mut *conn).await?
+    } else {
+        sqlx::query_scalar("SELECT source FROM executions WHERE id=? AND source IS NOT NULL")
+            .bind(exec)
+            .fetch_one(&mut *conn)
+            .await?
+    };
+    Ok(Source::Event {
+        id: event,
+        quote: args["evidence_quote"]
+            .as_str()
+            .ok_or("original quote required")?
+            .into(),
+    })
+}
+async fn act(
+    conn: &mut SqliteConnection,
+    r: &Reader,
+    exec: &str,
+    op: &str,
+    name: &str,
+    args: Value,
+) -> Result<Value> {
+    let actor = &r.actor;
+    if name == "read_memory" {
+        let id = fact(conn, &args).await?;
+        let detail = args["view"] == "evidence";
+        let value = facts::read(conn, r, Some(&id), "", 1, detail, false).await?;
+        let mut row = value["items"][0].clone();
+        if detail {
+            let own:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM memory_facts f JOIN persons p ON p.id=f.person WHERE f.id=? AND coalesce(p.current_root,p.id)=?)").bind(&id).bind(&r.root).fetch_one(&mut *conn).await?;
+            if !own {
+                return Err("evidence view requires the original subject".into());
+            }
+            let evidence = row["evidence"]
+                .as_array_mut()
+                .ok_or("missing evidence view")?;
+            evidence.truncate(args["limit"].as_u64().unwrap_or(5) as usize);
+        } else {
+            sqlx::query("INSERT INTO memory_paid_reads VALUES(?,?,?,?) ON CONFLICT(execution,fact) DO UPDATE SET revision=excluded.revision,proof=excluded.proof").bind(exec).bind(&id).bind(row["revision"].as_i64()).bind(row["proof"].as_str()).execute(&mut *conn).await?;
+        }
+        bind_sources(conn, exec, &id).await?;
+        return Ok(row);
+    }
+    if name != "memory_change" {
+        return Err("unsupported Memory tool".into());
+    }
+    let requested = args["operation"]
+        .as_str()
+        .ok_or("missing memory operation")?;
+    let edit = if requested == "create" {
+        Edit::Add {
+            subject: Subject {
+                kind: "person".into(),
+                person: Some(r.base.subject.clone()),
+                space: None,
+                entry: None,
+                visibility: None,
+            },
+            fact_key: args["memory_key"]
+                .as_str()
+                .ok_or("memory_key required")?
+                .into(),
+            body: args["new_content"]
+                .as_str()
+                .ok_or("fact content required")?
+                .into(),
+            confidence: args["confidence"].as_f64(),
+            evidence: vec![original_event(conn, exec, &args).await?],
+        }
+    } else {
+        let id = fact(conn, &args).await?;
+        let (revision, proof) = sqlx::query_as::<_, (i64, String)>(
+            "SELECT revision,proof FROM memory_paid_reads WHERE execution=? AND fact=?",
+        )
+        .bind(exec)
+        .bind(&id)
+        .fetch_one(&mut *conn)
+        .await
+        .map_err(|_| "read the original fact before changing it")?;
+        if requested == "correct" {
+            Edit::Correct {
+                fact: id,
+                revision,
+                proof,
+                body: args["new_content"]
+                    .as_str()
+                    .ok_or("correction content required")?
+                    .into(),
+                confidence: args["confidence"].as_f64(),
+                evidence: if !args["evidence_quote"].is_null()
+                    || !args["evidence_refs"].is_null()
+                    || !args["evidence_event_id"].is_null()
+                {
+                    vec![original_event(conn, exec, &args).await?]
+                } else {
+                    vec![]
+                },
+            }
+        } else if requested == "invalidate" {
+            Edit::Retract {
+                fact: id,
+                revision,
+                proof,
+            }
+        } else {
+            return Err("unsupported Memory operation".into());
+        }
+    };
+    let mut receipt = facts::edit(conn, r, exec, actor, op, &edit, false).await?;
+    let id = receipt["fact"].as_str().ok_or("fact receipt missing")?;
+    let number: i64 = sqlx::query_scalar("SELECT number FROM memory_facts WHERE id=?")
+        .bind(id)
+        .fetch_one(&mut *conn)
+        .await?;
+    bind_sources(conn, exec, id).await?;
+    receipt["fact_id"] = json!(number);
+    Ok(receipt)
+}
+pub(super) async fn bind_sources(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    fact: &str,
+) -> Result<()> {
+    sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) SELECT ?1,e.id FROM events e WHERE e.id IN(SELECT event FROM memory_evidence WHERE fact=?2 UNION SELECT d.event FROM main_dependencies d JOIN memory_evidence m ON m.origin_execution=d.execution WHERE m.fact=?2 UNION SELECT x.source FROM executions x JOIN memory_evidence m ON m.origin_execution=x.id WHERE m.fact=?2) AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=e.id)").bind(exec).bind(fact).execute(conn).await?;
+    Ok(())
+}
+pub async fn apply(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+    op: &str,
+) -> Result<Value> {
+    effects::authorize(conn, exec, actor, false).await?;
+    let row=sqlx::query("SELECT state,target,payload FROM operations WHERE namespace=? AND operation_id=? AND action='external'").bind(exec).bind(op).fetch_one(&mut *conn).await?;
+    if row.try_get::<String, _>("state")? != "intent" {
+        return effects::receipt(conn, exec, op).await;
+    }
+    let reader = Reader::at(conn, exec, actor, false, true).await?;
+    sqlx::query("SAVEPOINT memory_tool")
+        .execute(&mut *conn)
+        .await?;
+    let result = act(
+        conn,
+        &reader,
+        exec,
+        op,
+        row.try_get("target")?,
+        serde_json::from_str(row.try_get("payload")?)?,
+    )
+    .await;
+    let (state, out) = match result {
+        Ok(v) => ("confirmed", v),
+        Err(e) => {
+            sqlx::query("ROLLBACK TO memory_tool")
+                .execute(&mut *conn)
+                .await?;
+            ("failed", json!({"error":e.to_string()}))
+        }
+    };
+    sqlx::query("RELEASE memory_tool")
+        .execute(&mut *conn)
+        .await?;
+    sqlx::query("UPDATE operations SET state=?,result=? WHERE namespace=? AND operation_id=? AND state='intent'").bind(state).bind(out.to_string()).bind(exec).bind(op).execute(&mut *conn).await?;
+    effects::receipt(conn, exec, op).await
+}

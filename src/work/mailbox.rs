@@ -40,6 +40,7 @@ pub async fn consume(conn: &mut SqliteConnection, work: &str, exec: &str) -> Res
         };
         sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) SELECT ?1,id FROM events WHERE id IN(SELECT source FROM executions WHERE id=?2 UNION SELECT event FROM main_dependencies WHERE execution=?2) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=events.id)")
             .bind(exec).bind(r.try_get::<String,_>("origin_execution")?).execute(&mut *conn).await?;
+        sqlx::query("INSERT OR IGNORE INTO main_dependencies SELECT ?,m.source_event FROM work_wait_mail m WHERE m.mail=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=m.source_event)").bind(exec).bind(id).execute(&mut *conn).await?;
         items.push(json!({"id":id,"kind":r.try_get::<String,_>("kind")?,"text":body,"reply_to":r.try_get::<Option<i64>,_>("reply_to")?}));
     }
     if let Some(id) = watermark {

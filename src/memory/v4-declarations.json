@@ -1,0 +1,213 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "tools": [
+    {
+      "name": "memory_change",
+      "description": "依据真实入站证据或 SELF 原执行本轮工具回执，创建、纠正、撤销、恢复、争议、合并、改归属或更新长期记忆。SELF 只能写自己的记忆；不能把自己的输出当证据，也不能编造真人事件。target.subject_ref 可使用 current_speaker、current_group、member_{person_id} 等本轮可验证成员引用，或replied_message_author；正文中的当前群姓名使用 named_member 并填写 subject_name；自我记忆使用 self + self。自我记忆仅在功能开启时，依据本轮真实用户消息或 SELF 工具回执，记录自己的判断和经历。SELF 的 visibility只能用 current_scope 或 global；global 只适合抽象偏好、反思和原则，私聊原始经历只能保存为当前私聊可见，不能提升为 global。工具回执中的 applied_operation 和 outcome才是真实结果，回复用户时必须以回执为准；被降级为 contest 或 noop时不得声称已经覆盖、删除或纠正成功。create 必须提供 target、new_content、memory_key 和 category；correct 可通过 fact_id 继承目标、memory_key 和 category；invalidate、restore、contest、merge 和update_metadata 可通过 fact_id 直接定位，不必重复 target。fact_id 缺失时，除 reassign 外可提供 target 和 selector，由后端在当前合法作用域内定位；只有唯一精确命中才执行，否则按候选或未找到结果处理。但 SELF 不支持 reassign 或 update_metadata。reassign 仍必须提供新 target。invalidate 成功表示事实保留审计记录但不再作为有效记忆；只能称为已撤回、已失效或不再记住，不得声称数据库记录已物理删除。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "correct",
+              "invalidate",
+              "restore",
+              "contest",
+              "merge",
+              "reassign",
+              "update_metadata"
+            ]
+          },
+          "fact_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "merge_fact_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "selector": {
+            "type": "object",
+            "properties": {
+              "memory_key": {
+                "type": "string"
+              },
+              "old_content": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false,
+            "description": "没有 fact_id 时使用；至少提供 memory_key 或 old_content，并同时提供合法 target。memory_key 是内部稳定键；不知道时不要根据用户说法自行编造，应把用户可见标签或原陈述放入old_content。仅唯一精确命中时执行；返回候选后使用其 fact_id重试。"
+          },
+          "merge_selector": {
+            "type": "object",
+            "properties": {
+              "memory_key": {
+                "type": "string"
+              },
+              "old_content": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false,
+            "description": "merge 没有 merge_fact_id 时使用；至少提供 memory_key 或 old_content。"
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "subject_ref": {
+                "type": "string",
+                "description": "本轮提供的主体引用，如 current_speaker、member_{person_id}、replied_message_author、named_member、self 或 current_group"
+              },
+              "scope_type": {
+                "type": "string",
+                "enum": [
+                  "person",
+                  "person_group",
+                  "group",
+                  "self"
+                ]
+              },
+              "subject_name": {
+                "type": "string",
+                "description": "subject_ref=named_member 时填写当前群姓名"
+              },
+              "candidate_ref": {
+                "type": "string",
+                "description": "姓名歧义后从工具返回候选中选择"
+              }
+            },
+            "required": [
+              "subject_ref",
+              "scope_type"
+            ],
+            "additionalProperties": false
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "current_scope",
+              "global"
+            ],
+            "description": "仅 target.scope_type=self 时生效；其他目标误填合法值会被后端忽略。current_scope 表示当前私聊或群，global 仅适合抽象偏好、反思和原则。"
+          },
+          "request_basis": {
+            "type": "string",
+            "enum": [
+              "user_requested",
+              "agent_initiated"
+            ],
+            "description": "用户要求变更时用 user_requested；自主决定时用 agent_initiated"
+          },
+          "new_content": {
+            "type": "string"
+          },
+          "memory_key": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fact",
+              "preference",
+              "episode"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "简述记忆变更理由，不写思考过程。"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "importance": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "1–2 是临时琐事，3 是未来有用的事实或有意义的单次经历，4–5 是重要变化/承诺/里程碑。"
+          },
+          "evidence_event_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "真实内部证据事件 ID。无入站消息时，先查询创建者在当前会话的原始记录；省略使用当前入站事件，不可编造。"
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "入站轮使用 current_event。主动 SELF 可省略，由 evidence_quote 定位本轮最近匹配的真实工具回执，或使用已有工具回执 tool_N；不可编造事件。"
+          },
+          "evidence_quote": {
+            "type": "string"
+          },
+          "expected_fact_state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "contested",
+              "superseded",
+              "invalidated"
+            ]
+          },
+          "valid_from": {
+            "type": "string"
+          },
+          "valid_until": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "read_memory",
+      "description": "按内部 fact_id 读取记忆。view=fact 返回有权查看的事实；view=evidence 只返回本人记忆的有界证据摘要，不暴露他人来源身份，也不记作已读事实。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "view": {
+            "type": "string",
+            "enum": [
+              "fact",
+              "evidence"
+            ]
+          },
+          "fact_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "view",
+          "fact_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

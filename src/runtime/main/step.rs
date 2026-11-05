@@ -1,4 +1,4 @@
-use super::{Config, domain::human_text};
+use super::Config;
 use crate::{
     Result,
     context::assemble,
@@ -23,6 +23,14 @@ pub async fn prepare(
     ) {
         return Ok(Value::Null);
     }
+    if let Some(next) =
+        crate::context::compact_public::job::recover(conn, cfg, exec, &actor).await?
+    {
+        return Ok(next);
+    }
+    if crate::context::compact_public::history::stale(conn, exec).await? {
+        return hold(conn, exec, "public_source_changed").await;
+    }
     let activation = format!("main:{exec}");
     execution::activate(conn, exec, &activation, &cfg.contract()).await?;
     let prior=sqlx::query("SELECT r.id,r.ordinal,r.request_json,p.state,p.response,p.diagnostic
@@ -39,13 +47,14 @@ pub async fn prepare(
         Some(raw) => serde_json::from_str::<Input>(&raw)?,
         None => Input::default(),
     };
-    let fresh: Vec<String> = event_rows
+    let fresh: Vec<i64> = event_rows
         .iter()
         .filter(|r| r.try_get::<bool, _>("consumed").ok() == Some(false))
-        .map(|r| human_text(r.try_get("envelope")?))
-        .collect::<Result<_>>()?;
+        .map(|r| r.try_get("id"))
+        .collect::<std::result::Result<_, sqlx::Error>>()?;
+    let zone = cfg.timezone.as_deref().unwrap_or("Asia/Shanghai");
     if !fresh.is_empty() {
-        material.text = fresh.join("\n");
+        material.text = crate::context::event::trigger(conn, &fresh, zone).await?;
     }
     let mut index = 0;
     let mut body;
@@ -93,6 +102,9 @@ pub async fn prepare(
                             t.try_get("paired_receipt")?,
                         )?;
                     }
+                    if crate::work::wait::settle(conn, exec, &logical).await? {
+                        return Ok(Value::Null);
+                    }
                     if !continue_turn && crate::work::settle(conn, exec, &logical, None).await? {
                         return Ok(Value::Null);
                     }
@@ -138,20 +150,14 @@ pub async fn prepare(
             cfg.protocol.user(&mut body, &material.text)?;
         }
     } else {
-        let mut history = Vec::new();
-        if turn.try_get::<Option<String>, _>("material")?.is_none() {
-            let rows=sqlx::query("SELECT e.id,e.envelope FROM main_inputs i JOIN events e ON e.id=i.event JOIN main_turns t ON t.execution=i.execution JOIN executions x ON x.id=t.execution
-              WHERE t.conversation=? AND t.window=? AND t.rowid<? AND e.raw_actor=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) ORDER BY e.id")
-                .bind(turn.try_get::<String,_>("conversation")?).bind(turn.try_get::<i64,_>("window")?).bind(turn.try_get::<i64,_>("rowid")?).bind(&actor).fetch_all(&mut *conn).await?;
-            for r in rows {
-                sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
-                    .bind(exec)
-                    .bind(r.try_get::<i64, _>("id")?)
-                    .execute(&mut *conn)
-                    .await?;
-                history.push(json!({"role":"user","content":human_text(r.try_get("envelope")?)?}));
-            }
-        }
+        let history = crate::context::compact_public::history::prepare(
+            conn,
+            exec,
+            &actor,
+            &assemble::static_program(cfg, soul),
+            zone,
+        )
+        .await?;
         if let Some(origin) = turn.try_get::<Option<String>, _>("origin")? {
             let kind: String = sqlx::query_scalar("SELECT kind FROM main_origins WHERE ref=?")
                 .bind(&origin)
@@ -180,6 +186,23 @@ pub async fn prepare(
     }
     if cfg.protocol.is_messages() {
         crate::model::messages::cache_last(&mut body)?;
+    }
+    match crate::context::compact_public::job::consider(
+        conn,
+        cfg,
+        exec,
+        &actor,
+        &mut body,
+        material.structured.is_some(),
+    )
+    .await
+    {
+        Ok(Some(next)) => return Ok(next),
+        Ok(None) => {}
+        Err(e) if e.to_string() == "model_request_capacity" => {
+            return hold(conn, exec, "model_request_capacity").await;
+        }
+        Err(e) => return Err(e),
     }
     let raw = body.to_string();
     let logical = format!("{exec}:logical:{index}");

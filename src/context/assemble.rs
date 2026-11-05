@@ -4,14 +4,7 @@ use crate::{
 };
 use serde_json::{Value, json};
 
-/// Assemble once, before reservation. Runtime data has its own message and never impersonates the trigger.
-pub fn body(
-    profile: &Config,
-    soul: &str,
-    input: &Input,
-    history: Vec<Value>,
-    declarations: Vec<Value>,
-) -> Value {
+pub fn static_program(profile: &Config, soul: &str) -> String {
     let name = &profile.name;
     // The original compiler emits the character contribution before the direct-mode program.
     let mut prefix = format!("【角色身份】\n当前角色的名称是 {name}。");
@@ -21,6 +14,18 @@ pub fn body(
     }
     prefix.push_str("\n\n");
     prefix.push_str(include_str!("main-program.txt"));
+    prefix
+}
+
+/// Assemble once, before reservation. Runtime data has its own message and never impersonates the trigger.
+pub fn body(
+    profile: &Config,
+    soul: &str,
+    input: &Input,
+    history: Vec<Value>,
+    declarations: Vec<Value>,
+) -> Value {
+    let prefix = static_program(profile, soul);
     let mut messages = vec![json!({"role":"system","content":prefix})];
     messages.extend(history);
     if !input.context.is_empty() {
