@@ -524,3 +524,5 @@ CORE-057 三平台候選已驗：乾淨來源 `4dfb1c026a7f8e046c504484f6e773849
 - Windows ZIP `a60fc52ed9bbf2840244e23163a6ba0db7c4115cb42b5b37b96add9f05fcd5bb`。
 
 原 failed／aborted 回條保留：第一輪缺舊 compiler cache；第二輪誤收 AppleDouble；`handoff-final-02/linux-validation/` 因發現並行共用編譯輸出而主動中止。最後 `linux-validation-02/` 在前一程序退出後順序重驗通過。PR #54 已加 CORE-057 三平台 CI，待 #53 與最新 head 六項全綠後合併 main；不發布或部署本候選。CORE-043 尚缺 EXT-041 真實安裝交接輸入，下一個本倉工作是 CORE-040 原切片差異補核。
+
+CORE-037 整合 CI 時序修復：CORE-050 變更 aux Profile 宣告後先按實際 revision 重新批准；CORE-058 先確認離線通知已以 bot_unavailable 結算，再接上 QQ 發起另一個通知，不依賴偶然連線時序。Mac `approved-profile-mac-01`／`refused-receiver-mac-01` 與 Linux `CORE-037/ci-lifecycle-linux-02/{CORE-050,CORE-058}` 分別通過 566／330 項；HJW 的 `CORE-050/approved-profile-windows-01` 566 項通過，CORE-058 原生回歸續跑中。源樹 `9b08b55f460f89a3d6a280f52c655851dc9292eac25ab304b1a1051019b7abee`。保留原 CI 失敗；只修 fixture 的明確批准／派發時序，無放寬產品授權、通知狀態或等待上限。PR #51 最新 head 重新跑六項 CI 後才合併。
