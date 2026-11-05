@@ -25,6 +25,8 @@ pub enum Edit {
         body: String,
         confidence: Option<f64>,
         evidence: Vec<Source>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        metadata: Option<super::metadata::Patch>,
     },
     Correct {
         fact: String,
@@ -34,6 +36,8 @@ pub enum Edit {
         confidence: Option<f64>,
         #[serde(default)]
         evidence: Vec<Source>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        metadata: Option<super::metadata::Patch>,
     },
     Retract {
         fact: String,
@@ -44,6 +48,15 @@ pub enum Edit {
         fact: String,
         revision: i64,
         proof: String,
+        evidence: Vec<Source>,
+    },
+    Metadata {
+        fact: String,
+        revision: i64,
+        proof: String,
+        fields: super::metadata::Patch,
+        body: Option<String>,
+        confidence: Option<f64>,
         evidence: Vec<Source>,
     },
 }
@@ -58,11 +71,18 @@ async fn summary(
     let row=sqlx::query("SELECT f.*,v.body,v.confidence FROM memory_facts f JOIN memory_versions v ON v.fact=f.id AND v.revision=f.revision WHERE f.id=?").bind(id).fetch_one(&mut *conn).await?;
     let revision: i64 = row.try_get("revision")?;
     let evidence = evidence::readable(conn, r, actor, id, home_only).await?;
-    let binding = scope::hash(&json!([id, revision, &evidence]));
+    let metadata = super::metadata::read(conn, id).await?;
+    let binding = scope::hash(&json!([
+        id,
+        revision,
+        &evidence,
+        &metadata,
+        row.try_get::<String, _>("fact_key")?
+    ]));
     let mut result = json!({"fact":id,"fact_id":row.try_get::<i64,_>("number")?,"revision":revision,"status":row.try_get::<String,_>("status")?,"kind":row.try_get::<String,_>("kind")?,
        "person":row.try_get::<Option<String>,_>("person")?,"space":row.try_get::<Option<String>,_>("space")?,"visibility":row.try_get::<String,_>("visibility")?,
        "fact_key":row.try_get::<String,_>("fact_key")?,"body":row.try_get::<Option<String>,_>("body")?,"confidence":row.try_get::<Option<f64>,_>("confidence")?,
-       "readable_evidence":evidence.len(),"proof":binding});
+       "readable_evidence":evidence.len(),"proof":binding,"metadata":metadata});
     if detail {
         result["evidence"] = json!(evidence);
     }
@@ -200,6 +220,7 @@ pub async fn edit(
             body,
             confidence,
             evidence,
+            ..
         } => {
             if body.trim().is_empty() || fact_key.trim().is_empty() || evidence.is_empty() {
                 return Err("fact text, key and original evidence required".into());
@@ -221,6 +242,12 @@ pub async fn edit(
             proof,
         }
         | Edit::Restore {
+            fact,
+            revision,
+            proof,
+            ..
+        }
+        | Edit::Metadata {
             fact,
             revision,
             proof,
@@ -250,6 +277,28 @@ pub async fn edit(
                 (
                     "active",
                     Some(body.clone()),
+                    confidence.or(current["confidence"].as_f64()),
+                )
+            } else if let Edit::Metadata {
+                body,
+                confidence,
+                evidence,
+                ..
+            } = edit
+            {
+                if evidence.is_empty() || body.as_ref().is_some_and(|s| s.trim().is_empty()) {
+                    return Err(
+                        "metadata update requires original evidence and nonempty content".into(),
+                    );
+                }
+                sources(conn, r, actor, fact, evidence).await?;
+                (
+                    "active",
+                    Some(
+                        body.clone()
+                            .or_else(|| current["body"].as_str().map(str::to_owned))
+                            .ok_or("fact content unavailable")?,
+                    ),
                     confidence.or(current["confidence"].as_f64()),
                 )
             } else if let Edit::Restore { evidence, .. } = edit {
@@ -283,6 +332,14 @@ pub async fn edit(
     .bind(exec)
     .execute(&mut *conn)
     .await?;
+    let metadata = match edit {
+        Edit::Add { metadata, .. } | Edit::Correct { metadata, .. } => metadata.as_ref(),
+        Edit::Metadata { fields, .. } => Some(fields),
+        _ => None,
+    };
+    if let Some(fields) = metadata {
+        super::metadata::apply(conn, &fact, fields).await?;
+    }
     sqlx::query("INSERT INTO memory_operations VALUES(?,?,?,?,?,?)")
         .bind(exec)
         .bind(key)

@@ -654,3 +654,15 @@ Windows 實機目錄 `D:\yuki-core-validation-20261104\CORE-015-28d8bd4ff10f-139
 - windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/restore-handoff-final-01/windows-validation/handoff/yuki-memory-preview-d107b186066b-windows-x86_64.zip`；SHA-256 `e987462da475dbdb5ec1face297057ff552f57dd45fb6cf013993e97f7f124b4`。
 
 Windows 原執行目錄 `D:\yuki-core-validation-20261104\CORE-026-1296fbc52a76-d3e08b21`。GitHub push 的 commit_refs_rules 暫時失敗後，同分支重試成功，PR #62 已建立。CORE-023 舊 fixture 容量失敗已以 `2fb542d` 修正並併入 #57～#62；最新來源仍需六項 CI 全過。候選的能力驗證範圍不擴充為整倉通過。
+
+## CORE-026 metadata 版本補核
+
+分支 `codex/core-026-memory-metadata`，接 #62 的 `94d441c`。Rust writer 增加 update_metadata，create／correct 可保留分類、kind、importance、memory_key；每個新 fact revision 同交易保存 metadata，FTS 使用目前 key／category，省略 confidence 保留原值。reader 44 僅回填 reader 43 的目前版本，不補造過往未知資料。實際舊 binary add／correct fixture 的原請求雜湊與回執可在升級及冷啟後重放；privacy erase 清除全部歷史 metadata 內容，保留 fact／revision 鍵。
+
+Mac `memory-metadata-mac-05` 370 項通過。`memory-metadata-adjacent-01` 的 CORE-027／028／029／030／033 通過；CORE-035 捕獲新增內部 metadata 超出嚴格 Host 結果 schema。修正維護投影後，`memory-metadata-adjacent-02` 的 CORE-035／026／015／012／023 全通過。Host 2、handshake 1、SDK alpha.11／a11 維持已宣告合同，未放寬檢查。
+
+原版 oracle `original-memory-metadata-oracle-01` 七項通過；保留既有 SQLAlchemy 外鍵循環 warning。fixture 來源固定 `329ca7c487414d2f54ddd98ff4727446ed2446cd`，執行前後 tracked 內容未變。reader 43 fixture 實際 binary SHA 與已驗恢復候選相同。QQ 回覆測試現按原 payload 收齊多段並逐字核對，首段之外也納入驗證。早期 mac-01 的單段測試失敗回條保留。
+
+開發自測包 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/metadata-package-development-01/yuki-memory-preview-94d441cc9095-darwin-arm64.zip`，SHA-256 `942c2a51040b223d68e1e52df58729ee1bad244200f0b126f6903d08de3d9541`；dirty source，僅打包自測，非交接或發布候選。乾淨三平台候選接續產出。
+
+CORE-023 補修另於 Linux `hard-capacity-linux-01` 通過；來源 `94d441cc9095629363104cf565b91e46c804dd36`／tree `25645f363b0b77bc2272055f482b8e400cd77b3c977aa6313488d87c6230268e`。Windows 同來源驗證中。

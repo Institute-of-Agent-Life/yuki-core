@@ -118,6 +118,13 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/memory-restore.json']=proof
         files['evidence/v4-restore.json']=raw_fixture
         files['docs/memory-restore.md']=(ROOT/'docs/memory-restore.md').read_bytes()
+        proof=receipt('memory-metadata.json')
+        for name,expected in [('v4-metadata.json',json.loads(proof)['oracle_sha256']),('reader43-metadata.json',json.loads(proof)['upgrade']['fixture_sha256'])]:
+            raw_fixture=(ROOT/'fixtures/memory'/name).read_bytes()
+            if digest(raw_fixture)!=expected:raise ValueError('memory metadata fixture differs from validated input')
+            files['evidence/'+name]=raw_fixture
+        files['evidence/memory-metadata.json']=proof
+        files['docs/memory-metadata.md']=(ROOT/'docs/memory-metadata.md').read_bytes()
     if importing:
         files["docs/model-config-import.md"]=(ROOT/"docs/model-config-import.md").read_bytes()
         files["evidence/legacy-import-provenance.json"]=(ROOT/"tests/fixtures/import/model-v4/provenance.json").read_bytes()
@@ -429,7 +436,8 @@ def build(manifest_path, out, development=False):
     if memory:
         candidate['database_schema_revision']=m['schema_version']
         candidate['validated_core_tools']=['memory_change','read_memory']
-        candidate['validated_memory_operations']=['create','correct','invalidate','restore']
+        candidate['validated_memory_operations']=['create','correct','invalidate','restore','update_metadata']
+        candidate['memory_metadata_oracle_sha256']=json.loads(receipt('memory-metadata.json'))['oracle_sha256']
         candidate['memory_restore_oracle_sha256']=json.loads(receipt('memory-restore.json'))['oracle_sha256']
         candidate['validation']['consumer']='physical Main, QQ command and original writer fixtures; SDK packages independently installed'
         candidate['validation']['real_extension_consumers']=False

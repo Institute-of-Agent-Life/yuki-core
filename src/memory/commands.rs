@@ -47,6 +47,7 @@ async fn command(
                 return Err("需要事實內容".into());
             }
             Edit::Add {
+                metadata: None,
                 subject: Subject {
                     kind: "person".into(),
                     person: Some(reader.base.subject.clone()),
@@ -90,6 +91,7 @@ async fn command(
                 }
             } else {
                 Edit::Correct {
+                    metadata: None,
                     fact: id.into(),
                     revision,
                     proof,

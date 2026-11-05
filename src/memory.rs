@@ -4,6 +4,7 @@ pub(crate) mod evidence;
 pub mod extract;
 pub mod facts;
 pub(crate) mod index;
+mod metadata;
 mod rank;
 pub(crate) mod retrieve;
 pub(crate) mod scope;

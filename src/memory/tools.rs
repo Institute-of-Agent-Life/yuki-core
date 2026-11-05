@@ -38,10 +38,19 @@ pub fn declaration(name: &str) -> Option<Tool> {
                 "evidence_refs",
                 "expected_fact_state",
                 "request_basis",
+                "category",
+                "kind",
+                "importance",
             ]
             .contains(&key.as_str())
         });
-        props.get_mut("operation")?["enum"] = json!(["create", "correct", "invalidate", "restore"]);
+        props.get_mut("operation")?["enum"] = json!([
+            "create",
+            "correct",
+            "invalidate",
+            "restore",
+            "update_metadata"
+        ]);
         props.get_mut("expected_fact_state")?["enum"] = json!(["active", "invalidated"]);
         props.get_mut("request_basis")?["enum"] = json!(["user_requested"]);
         props.get_mut("evidence_refs")?["items"] = json!({"type":"string","const":"current_event"});
@@ -51,7 +60,7 @@ pub fn declaration(name: &str) -> Option<Tool> {
             .retain(|key, _| matches!(key.as_str(), "scope_type" | "subject_ref"));
         target["scope_type"]["enum"] = json!(["person"]);
         target["subject_ref"]["enum"] = json!(["current_speaker"]);
-        "按真实原事件写入本人事实。correct、invalidate 或 restore 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。restore 仅恢复已撤回且未到期的原事实，保留最后有效内容；已忘记内容不能恢复。"
+        "按真实原事件写入本人事实。correct、invalidate、restore 或 update_metadata 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。category、kind、importance 和 memory_key 随原版本保存，省略字段保留原值。restore 仅恢复已撤回且未到期的原事实；已忘记内容不能恢复。"
     } else {
         item["description"].as_str()?
     };
@@ -150,6 +159,16 @@ async fn act(
     let requested = args["operation"]
         .as_str()
         .ok_or("missing memory operation")?;
+    let metadata = super::metadata::Patch {
+        memory_key: args["memory_key"].as_str().map(str::to_owned),
+        category: args["category"].as_str().map(str::to_owned),
+        kind: args["kind"].as_str().map(str::to_owned),
+        importance: args["importance"].as_i64(),
+    };
+    let patch = ["memory_key", "category", "kind", "importance"]
+        .iter()
+        .any(|name| !args[name].is_null())
+        .then_some(metadata.clone());
     let edit = if requested == "create" {
         Edit::Add {
             subject: Subject {
@@ -169,6 +188,7 @@ async fn act(
                 .into(),
             confidence: args["confidence"].as_f64(),
             evidence: vec![original_event(conn, exec, &args).await?],
+            metadata: patch,
         }
     } else {
         let id = fact(conn, &args).await?;
@@ -201,6 +221,7 @@ async fn act(
                     .ok_or("correction content required")?
                     .into(),
                 confidence: args["confidence"].as_f64(),
+                metadata: patch,
                 evidence: if !args["evidence_quote"].is_null()
                     || !args["evidence_refs"].is_null()
                     || !args["evidence_event_id"].is_null()
@@ -209,6 +230,16 @@ async fn act(
                 } else {
                     vec![]
                 },
+            }
+        } else if requested == "update_metadata" {
+            Edit::Metadata {
+                fact: id,
+                revision,
+                proof,
+                fields: metadata,
+                body: args["new_content"].as_str().map(str::to_owned),
+                confidence: args["confidence"].as_f64(),
+                evidence: vec![original_event(conn, exec, &args).await?],
             }
         } else if requested == "invalidate" {
             Edit::Retract {

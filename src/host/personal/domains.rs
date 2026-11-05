@@ -135,6 +135,7 @@ pub async fn correct(
         .to_owned();
     let edit = match body["action"].as_str() {
         Some("correct") => facts::Edit::Correct {
+            metadata: None,
             fact: id.clone(),
             revision: rev,
             proof,
