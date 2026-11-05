@@ -110,6 +110,7 @@ async fn execute(args: Args) -> Result<()> {
             store.media = Some(media::Runtime::open(&owner.data, config.media)?);
             media::recover(&store).await?;
             let extraction = memory::extract::start(store.clone(), config.extraction).await?;
+            store.search = model::search::start(config.search)?;
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
             host::Hub::start(&mut store, config.plugins, &owner.data, qq.clone()).await?;
             let stop = Arc::new(Notify::new());
