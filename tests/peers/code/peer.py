@@ -10,6 +10,9 @@ import threading
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from tests.harness.json_file import read_json
+
 folder = Path(sys.argv[1])
 folder.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, sys.argv[2])
@@ -33,6 +36,12 @@ def note(name, value):
     file = folder / (name + ".tmp")
     file.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
     file.replace(folder / (name + ".json"))
+
+
+threading.excepthook = lambda failure: note("private-thread-fault", {
+    "type":failure.exc_type.__name__, "message":str(failure.exc_value),
+    "thread":failure.thread.name if failure.thread else None,
+})
 
 
 def rpc_call(method, params, accepted=True):
@@ -177,7 +186,7 @@ def probes():
     while True:
         path=folder/'probe.json'
         if path.is_file():
-            request=json.loads(path.read_bytes())
+            request=read_json(path)
             path.unlink()
             result=rpc_call(request['method'],request['params'],False)
             note('probe-'+str(request['id']),result)

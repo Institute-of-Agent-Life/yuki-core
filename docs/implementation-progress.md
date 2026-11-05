@@ -316,3 +316,5 @@ PR #48 head `58e53f5` 的原 CI 失敗 ZIP、雜湊與位置保留在 `artifacts
 Mac CORE-058 的 `file-receipts-mac-01/` 通過 321 項，HJW `file-receipts-windows-01/` 通過 324 項，含三個 Windows 鎖定檢查。同一來源樹 `32f477e6cc94d0cf870e9d282a97b93d20c2f4e8f8130cc61ca36b2f43e4ac65` 的 Linux ARM64 CORE-058／050／051 分別通過 321／561／735 項，位於 `artifacts/CORE-058/file-receipts-linux-01/`；Mac 的 CORE-050／051 `notification-file-receipts-01/` 亦通過。實際 Mac Host binary 與 `cb02f74` 候選逐位元相同，原候選仍按其固定來源與 318 項回條交接。
 
 已接入 CORE-051 `aa0f52d` 的合併歷史，較上述驗證只改進度記錄。PR #48 等修補後最新 head 的三平台 CI。
+
+PR #48 head `8007173` 的 Windows CI 已通過 CORE-058 324 項及 CORE-050 561 項，後於 CORE-034 結束後的新 child 拒絕探針等待檔案回條超時。原 ZIP SHA-256 `bf833847112c33ec61c7b32eeb63bb76cf498a395c5083dec02f6b4e96391763` 和失敗位置保存在 `artifacts/CORE-058/ci-failure-8007173.json`。Code peer 與探針讀者也沿同一檔案作有界讀取，新增 parent 結算斷言及執行緒／原 Host calls 診斷。Mac、HJW Windows 的 `artifacts/CORE-034/code-probe-files-{mac,windows}-01/` 同樹 `6708d16ffa66418132770a5cd96a39652090dea772cbf615529541e1e115d526` 均通過 384 項。核心 Runtime 與逾時、授權條件均沿用原值，等待修補後最新 CI。
