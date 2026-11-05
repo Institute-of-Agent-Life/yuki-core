@@ -233,6 +233,7 @@ pub(super) async fn receive(inner: &Inner, bot: &str, packet: &Value) -> Result<
             nickname: packet["sender"]["nickname"].as_str().map(str::to_owned),
             card: packet["sender"]["card"].as_str().map(str::to_owned),
         }),
+        answer_work_id: None,
         reply_bot: route,
         text: Some(text),
     };

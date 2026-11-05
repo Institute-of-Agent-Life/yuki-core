@@ -1,7 +1,10 @@
 mod control;
 mod mailbox;
 mod note;
+pub(crate) mod questions;
+pub mod signal;
 mod tree;
+pub(crate) mod wait;
 use crate::{
     Result,
     runtime::{effects, main::Config},
@@ -21,18 +24,8 @@ pub fn declaration(name: &str) -> Option<Tool> {
         .as_array()?
         .iter()
         .find(|v| v["name"] == name)?;
-    let mut schema = spec["schema"].clone();
-    let description = if name == "task_control" {
-        schema["properties"]["action"]["enum"]
-            .as_array_mut()?
-            .retain(|a| !matches!(a.as_str(), Some("wait" | "wait_status" | "cancel_wait")));
-        for key in ["conditions", "run_id", "deadline_at", "wait_mode"] {
-            schema["properties"].as_object_mut()?.remove(key);
-        }
-        "管理持久工作。普通发言用 send。accept 在当前执行登记目标，derive 派生子工作；按原 work_id 查询、恢复、更新、取消或提交内部结果。complete 与 need_input 在本批后续获准调用结束后结算。".into()
-    } else {
-        spec["description"].as_str()?.to_owned()
-    };
+    let schema = spec["schema"].clone();
+    let description = spec["description"].as_str()?.to_owned();
     Some(Tool {
         name: name.into(),
         description,
@@ -159,6 +152,14 @@ pub async fn settle(
         return Ok(false);
     };
     tree::terminal(conn, &id, exec, &op, &kind, &summary).await?;
+    if kind == "need_input"
+        && !sqlx::query_scalar::<_, bool>("SELECT parent IS NOT NULL FROM work_nodes WHERE id=?")
+            .bind(&id)
+            .fetch_one(&mut *conn)
+            .await?
+    {
+        questions::register(conn, &id, exec).await?;
+    }
     sqlx::query("UPDATE main_turns SET result=? WHERE execution=?")
         .bind(json!(summary).to_string())
         .bind(exec)
