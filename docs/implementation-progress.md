@@ -551,3 +551,5 @@ CORE-048／039 CI 編譯診斷：PR #49 的兩個 Mac Intel run（42085724620、
 本地 Mac `artifacts/CORE-039/profile-compiler-mac-01/` 81 項分發驗證通過，source tree `a8a009014eb8f64a246d94279914c8611a5904f9443a60ae5e203837a94dc57f`；原功能驗收完整執行。
 
 CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。
+
+CORE-015／034 整合補核：Code 測試 peer 仍使用 Artifact 舊 version／字串 path，被現行公開模型 schema 拒絕。改為原 operation=get 與相對 logical_root 的陣列 path；仍核兩次業務扣額、Artifact 子讀零扣額、真派發／回執及原 128 字元。`artifacts/CORE-034/original-artifact-wire-mac-02/` 387 項通過。首次 mac-01 誤把既有核心效果外層當成 Python envelope，已修正斷言路徑並保留失敗；不改產品授權或放寬 schema。
