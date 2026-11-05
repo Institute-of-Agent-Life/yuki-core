@@ -73,12 +73,12 @@ impl Default for Query {
         }
     }
 }
-struct Scope {
-    home: String,
-    entries: Vec<String>,
-    subject: String,
+pub(crate) struct Scope {
+    pub(crate) home: String,
+    pub(crate) entries: Vec<String>,
+    pub(crate) subject: String,
 }
-async fn scope(conn: &mut SqliteConnection, exec: &str, actor: &str) -> Result<Scope> {
+pub(crate) async fn scope(conn: &mut SqliteConnection, exec: &str, actor: &str) -> Result<Scope> {
     effects::authorize(conn, exec, actor, false).await?;
     let home=sqlx::query("WITH RECURSIVE lineage(id) AS(SELECT ? UNION SELECT o.parent FROM lineage l JOIN executions x ON x.id=l.id JOIN main_origins o ON o.ref=x.origin WHERE o.parent IS NOT NULL)
       SELECT e.raw_actor,e.entry_id,x.id FROM lineage l JOIN executions x ON x.id=l.id JOIN events e ON e.id=x.source")

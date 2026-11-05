@@ -29,7 +29,7 @@ fn inbound(raw: &str) -> Result<String> {
         .filter_map(|s| s["text"].as_str())
         .collect())
 }
-fn outbound(raw: &str) -> Result<String> {
+pub(crate) fn outbound(raw: &str) -> Result<String> {
     let body: Value = serde_json::from_str(raw)?;
     if let Some(text) = body["text"].as_str() {
         return Ok(text.to_owned());

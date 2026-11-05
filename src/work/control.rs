@@ -88,6 +88,16 @@ async fn steer(
     if instruction.trim().is_empty() {
         return Err("new Work input required".into());
     }
+    sqlx::query("DELETE FROM work_suspensions WHERE work=?")
+        .bind(id)
+        .execute(&mut *conn)
+        .await?;
+    sqlx::query(
+        "UPDATE work_waits SET state='cancelled' WHERE work=? AND state IN('proposed','armed')",
+    )
+    .bind(id)
+    .execute(&mut *conn)
+    .await?;
     mailbox::put(conn, id, exec, op, "instruction", instruction, None).await?;
     let active:Option<String>=sqlx::query_scalar("SELECT x.id FROM work_runs r JOIN executions x ON x.id=r.execution WHERE r.work=? AND x.state IN('pending','running') AND NOT x.cancelled ORDER BY x.rowid DESC LIMIT 1").bind(id).fetch_optional(&mut *conn).await?;
     let run = if let Some(run) = active {
@@ -159,23 +169,17 @@ pub async fn run(
             .ok_or("child ID required")?;
         if parent.is_some() {
             let body = field(a, "text")?;
-            let key = mailbox::put(
-                conn,
-                id,
-                exec,
-                op,
-                if a["ask"] == true {
-                    "question"
-                } else {
-                    "message"
-                },
-                body,
-                None,
-            )
-            .await?;
             if a["ask"] == true {
-                propose(conn, s, exec, op, "need_input", body).await?;
+                let work = s.work.as_deref().ok_or("current child Work required")?;
+                let response = super::questions::parent_question(conn, work, exec, op, body)
+                    .await?
+                    .ok_or("unknown original parent")?;
+                if response["wait"] == true {
+                    propose(conn, s, exec, op, "need_input", body).await?;
+                }
+                return Ok(response);
             }
+            let key = mailbox::put(conn, id, exec, op, "message", body, None).await?;
             return Ok(json!({"work_id":id,"message_id":key.to_string()}));
         }
         tree::authorize(conn, s, id).await?;
@@ -235,6 +239,9 @@ pub async fn run(
     }
     let id = a["work_id"].as_str().or(s.work.as_deref());
     match action {
+        "wait" => super::wait::propose(conn, s, exec, op, a).await,
+        "wait_status" => super::wait::status(conn, s, id.ok_or("original Work required")?).await,
+        "cancel_wait" => super::wait::cancel(conn, s, id.ok_or("original Work required")?).await,
         "list" => list(conn, s, a, false).await,
         "get" => tree::detail(conn, s, id.ok_or("original Work required")?).await,
         "accept" => {
@@ -314,6 +321,15 @@ pub async fn run(
             };
             if id != s.work.as_deref() {
                 return Err("proposal requires current Work".into());
+            }
+            if kind == "need_input"
+                && let Some(work) = s.work.as_deref()
+                && let Some(parent) =
+                    super::questions::parent_question(conn, work, exec, op, field(a, "reason")?)
+                        .await?
+                && parent["wait"] == false
+            {
+                return Ok(parent);
             }
             propose(
                 conn,
