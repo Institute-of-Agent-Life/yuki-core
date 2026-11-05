@@ -1,0 +1,230 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "tools": [
+    {
+      "name": "task_control",
+      "description": "管理持久工作。get 用原 work_id 查看状态、完整 goal 和等待条件；原私有来源获准时附最近执行与真实结果，limit/cursor 翻更早页。按 history_order 和发生时间读进展；状态和查询时间不代表刚完成了目标。list 默认 active，终态用 status=terminal，全部用 all。持续目标（含定期复查、持续跟进）用 accept(goal) 登记，写清目标与反馈约定；普通聊天无需登记，发言用 send。当前工作直接继续或 update；恢复已有工作用原 work_id 调用 resume，不重复 accept。恢复另一项工作是将它交回原执行链，不会替换当前工作；以回执为准。独立新工作用 accept 排队，update 只修正当前目标。derive(goal) 为当前或指定 parent_work_id 登记实际子目标，继承原来源。update 也可仅保存 context_note：facts/unresolved/next_steps 每项含 text 和 refs（goal、input:ID、event:ID、effect:原键、artifact:handle、child:ID）；线索不改变执行状态，研究原文按 artifact 回读。按需要保存累积发现、必要中间值与下一步；业务续跑使用当前聊天和 note，不会自动恢复此前整段工具往返。持续目标本轮暂无变化时，保存必要进展后用 wait 等待，不要 complete。wait conditions 每项用 kind：time_due(after_seconds 或含时区 at)、conversation、plugin_event(plugin_id,event_type)、owned_run(run_id)，wait_mode=any/all，deadline_at 可选；信号到达续原 work_id。conversation 只等当前会话下一条输入，没有人物、主题筛选；只登记它不会因普通子任务完成通知而唤醒。既要接收会话输入又要处理子结果时，用 any 组合 conversation 与 owned_run(run_id=child_id)；all 等全部条件满足。任一信号唤醒后，处理当前输入并继续可执行工作；仍依赖未完成子任务且当前无可执行步骤时，按原 ID 等待剩余结果，不重新派生。定期查证用 time_due。wait_status 查询，cancel_wait 撤销。主任务需要用户补充时，先用 send 提出问题，再用 need_input(reason) 登记等待；子任务的 need_input 会直接向父任务提问，按回执等待回答。complete 提交结束；可在 result 中给出真实内部结果（调用方或父工作读取它，不会自动外发）；fail/cancel 终止指定工作及其所属执行。complete/wait/need_input 不截断本批后续获准调用；原批次或程序收拢后结算。get/list/wait_status 是只读查询。",
+      "schema": {
+        "type": "object",
+        "$defs": {
+          "SourcedFact": {
+            "properties": {
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "refs": {
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "title": "Refs",
+                "type": "array"
+              }
+            },
+            "required": [
+              "text",
+              "refs"
+            ],
+            "title": "SourcedFact",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "get",
+              "list",
+              "accept",
+              "derive",
+              "resume",
+              "update",
+              "wait",
+              "wait_status",
+              "cancel_wait",
+              "need_input",
+              "complete",
+              "fail",
+              "cancel"
+            ]
+          },
+          "goal": {
+            "type": "string"
+          },
+          "context_note": {
+            "properties": {
+              "version": {
+                "default": 1,
+                "title": "Version",
+                "type": "integer"
+              },
+              "facts": {
+                "items": {
+                  "$ref": "#/$defs/SourcedFact"
+                },
+                "title": "Facts",
+                "type": "array"
+              },
+              "unresolved": {
+                "items": {
+                  "$ref": "#/$defs/SourcedFact"
+                },
+                "title": "Unresolved",
+                "type": "array"
+              },
+              "next_steps": {
+                "items": {
+                  "$ref": "#/$defs/SourcedFact"
+                },
+                "title": "Next Steps",
+                "type": "array"
+              }
+            },
+            "title": "ContextNote",
+            "type": "object"
+          },
+          "work_id": {
+            "type": "string",
+            "maxLength": 36,
+            "description": "get 查询或 resume/cancel/fail 操作指定原工作的内部 ID。"
+          },
+          "parent_work_id": {
+            "type": "string",
+            "description": "derive 的直属父工作，默认当前工作；list 可按此列出直属子工作。"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "terminal",
+              "all"
+            ]
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "result": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "complete 的内部结果；按实际工作需要填写。"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string",
+            "description": "wait 的简写参数：所属执行的原 run_id 或子 Work 的 child_id；与 conditions 二选一。"
+          },
+          "wait_mode": {
+            "type": "string",
+            "enum": [
+              "any",
+              "all"
+            ]
+          },
+          "conditions": {
+            "type": "array",
+            "description": "一次性等待条件。等子任务时 kind 填 owned_run、run_id 填原 child_id；同时等会话输入时追加 kind=conversation，并用 wait_mode=any。",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "deadline_at": {
+            "type": "string",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "subagent_start",
+      "description": "将复杂工作交给后台工作者，立即返回 child_id；父任务可继续处理其他输入。需要当前 Work；尚未登记时先用 task_control accept 父任务。派出的子任务已经登记工作，直接执行；结果由最终正文或 complete.result 回传父任务。仍需这个子任务的结果且当前无可独立推进的工作时，用 task_control(action=wait, run_id=child_id) 等待。父任务按原目标整合结果和处理交付；子任务结束不代表父目标已经完成。已有子任务用 subagent_control，勿重复派生。",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string"
+          },
+          "acceptance": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "goal"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "subagent_control",
+      "description": "按原 child_id 查询、取消或恢复自己的持久子任务；已归档会明确返回。已有子任务直接按 ID 管理，无需先 accept 新任务；resume 用 instruction 继续；message 用 text 补充或提问，省略 child_id 联系父任务。向父 ask=true 保存问题并按回执等待；reply_to 回答原问题。",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "status",
+              "result",
+              "cancel",
+              "resume",
+              "message"
+            ]
+          },
+          "child_id": {
+            "type": "string"
+          },
+          "instruction": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "ask": {
+            "type": "boolean"
+          },
+          "reply_to": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 36
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

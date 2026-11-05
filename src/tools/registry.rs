@@ -31,6 +31,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if let Some(tool) = crate::work::declaration(name) {
+        return Some(tool);
+    }
     if name == "web_search" {
         return Some(crate::model::search::declaration());
     }
@@ -153,6 +156,9 @@ impl Manifest {
                 "update_short_state",
                 "read_tool_artifact",
                 "lookup_tools",
+                "task_control",
+                "subagent_start",
+                "subagent_control",
             ]
             .into_iter()
             .map(|name| builtin(name).expect("static core registry")),
