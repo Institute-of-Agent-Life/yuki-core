@@ -111,6 +111,13 @@
       "rust": true,
       "capabilities": ["persistent-any-all-waits","source-bound-private-answers","coalesced-progress"]
     },
+    "CORE-022": {
+      "case": "tests/cases/CORE-022.py",
+      "artifact": "compact-public-next-wire.json",
+      "timeout_seconds": 360,
+      "rust": true,
+      "capabilities": ["original-public-fragment-cuts","recoverable-paid-public-checkpoint","manual-public-only"]
+    },
     "CORE-016": {
       "case": "tests/cases/CORE-016.py",
       "artifact": "work-tree.json",

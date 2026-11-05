@@ -197,6 +197,21 @@ pub async fn admit_human(
             .await?;
         return Ok(());
     }
+    if text
+        .split_whitespace()
+        .take(2)
+        .map(|s| s.to_ascii_lowercase())
+        .eq(["/ai", "compact"].into_iter().map(str::to_owned))
+    {
+        let focus = text
+            .trim()
+            .splitn(3, char::is_whitespace)
+            .nth(2)
+            .unwrap_or("")
+            .trim();
+        crate::context::compact_public::job::manual(conn, cfg, event, focus).await?;
+        return Ok(());
+    }
     if crate::work::wait::route_event(conn, event).await? {
         return Ok(());
     }

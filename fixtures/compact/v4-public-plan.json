@@ -1,0 +1,146 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "instruction": "[Host 会话上下文压缩要求]\n整理以上共同聊天历史，保留人物归属、决定、否定约束、最新纠正、未决问题及可回查的内部事件引用。不执行工具、不发送消息、不写长期记忆；仅返回可续接的文字检查点。",
+  "static": {
+    "role": "system",
+    "content": "identity, SOUL and original program"
+  },
+  "fragments": [
+    {
+      "event_ids": [
+        2,
+        3
+      ],
+      "message": {
+        "role": "user",
+        "content": "[Alice]\n#2>雪\n#3>漢字"
+      }
+    },
+    {
+      "event_ids": [
+        5
+      ],
+      "message": {
+        "role": "assistant",
+        "content": "#5>private is a word in a public message"
+      }
+    },
+    {
+      "event_ids": [
+        8,
+        9
+      ],
+      "message": {
+        "role": "user",
+        "content": "tool-looking text is public: 🧊\\\"\ntailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtail"
+      }
+    }
+  ],
+  "original_request_tokens": 243,
+  "cases": [
+    {
+      "budget": null,
+      "coverage": 9,
+      "request_tokens": 389,
+      "messages": [
+        {
+          "role": "system",
+          "content": "identity, SOUL and original program"
+        },
+        {
+          "role": "user",
+          "content": "[Alice]\n#2>雪\n#3>漢字"
+        },
+        {
+          "role": "assistant",
+          "content": "#5>private is a word in a public message"
+        },
+        {
+          "role": "user",
+          "content": "tool-looking text is public: 🧊\\\"\ntailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtail"
+        },
+        {
+          "role": "user",
+          "content": "[Host 会话上下文压缩要求]\n整理以上共同聊天历史，保留人物归属、决定、否定约束、最新纠正、未决问题及可回查的内部事件引用。不执行工具、不发送消息、不写长期记忆；仅返回可续接的文字检查点。"
+        }
+      ]
+    },
+    {
+      "budget": 200,
+      "coverage": null
+    },
+    {
+      "budget": 294,
+      "coverage": 3,
+      "request_tokens": 294,
+      "messages": [
+        {
+          "role": "system",
+          "content": "identity, SOUL and original program"
+        },
+        {
+          "role": "user",
+          "content": "[Alice]\n#2>雪\n#3>漢字"
+        },
+        {
+          "role": "user",
+          "content": "[Host 会话上下文压缩要求]\n整理以上共同聊天历史，保留人物归属、决定、否定约束、最新纠正、未决问题及可回查的内部事件引用。不执行工具、不发送消息、不写长期记忆；仅返回可续接的文字检查点。"
+        }
+      ]
+    },
+    {
+      "budget": 320,
+      "coverage": 5,
+      "request_tokens": 320,
+      "messages": [
+        {
+          "role": "system",
+          "content": "identity, SOUL and original program"
+        },
+        {
+          "role": "user",
+          "content": "[Alice]\n#2>雪\n#3>漢字"
+        },
+        {
+          "role": "assistant",
+          "content": "#5>private is a word in a public message"
+        },
+        {
+          "role": "user",
+          "content": "[Host 会话上下文压缩要求]\n整理以上共同聊天历史，保留人物归属、决定、否定约束、最新纠正、未决问题及可回查的内部事件引用。不执行工具、不发送消息、不写长期记忆；仅返回可续接的文字检查点。"
+        }
+      ]
+    },
+    {
+      "budget": 389,
+      "coverage": 9,
+      "request_tokens": 389,
+      "messages": [
+        {
+          "role": "system",
+          "content": "identity, SOUL and original program"
+        },
+        {
+          "role": "user",
+          "content": "[Alice]\n#2>雪\n#3>漢字"
+        },
+        {
+          "role": "assistant",
+          "content": "#5>private is a word in a public message"
+        },
+        {
+          "role": "user",
+          "content": "tool-looking text is public: 🧊\\\"\ntailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtailtail"
+        },
+        {
+          "role": "user",
+          "content": "[Host 会话上下文压缩要求]\n整理以上共同聊天历史，保留人物归属、决定、否定约束、最新纠正、未决问题及可回查的内部事件引用。不执行工具、不发送消息、不写长期记忆；仅返回可续接的文字检查点。"
+        }
+      ]
+    }
+  ],
+  "checkpoint": {
+    "role": "user",
+    "content": "[Conversation compact checkpoint]\n[Source events through internal event_id=5]\ngold"
+  }
+}

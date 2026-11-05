@@ -1,6 +1,7 @@
 mod domain;
-pub(crate) use domain::human_text as event_text;
+pub(crate) use domain::{human_text as event_text, window as public_window};
 mod step;
+pub(crate) use step::hold as hold_original;
 pub(crate) mod transport;
 use crate::{
     Result,
@@ -46,6 +47,12 @@ pub struct Config {
     pub result_storage_bytes: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timezone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compact_soft_tokens: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_input_tokens: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<u64>,
     pub endpoint: String,
     pub model: String,
     pub name: String,
@@ -86,6 +93,17 @@ impl Config {
         }
         if let Some(zone) = &self.timezone {
             zone.parse::<chrono_tz::Tz>()?;
+        }
+        if [
+            self.compact_soft_tokens,
+            self.max_input_tokens,
+            self.context_window,
+        ]
+        .into_iter()
+        .flatten()
+        .any(|n| n == 0)
+        {
+            return Err("configured context capacities must be positive".into());
         }
         if self.protocol.is_chat()
             && (self.native_web_search
@@ -338,7 +356,7 @@ impl Runner {
             JOIN assignments a ON a.id=e.actor_stage AND a.status='active' JOIN assignments b ON b.id=e.bot_stage AND b.status='active'
             JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
             WHERE p.enabled AND r.enabled AND d.closed_at IS NULL AND NOT EXISTS(SELECT 1 FROM main_inputs WHERE event=s.event_id)
-            AND NOT EXISTS(SELECT 1 FROM work_explicit_answers WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_wait_routed WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
+            AND NOT EXISTS(SELECT 1 FROM compact_manual WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_explicit_answers WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM work_wait_routed WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM host_command_events WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=s.event_id) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=s.event_id)
             AND NOT EXISTS(SELECT 1 FROM executions x WHERE x.source=s.event_id AND (x.state!='pending' OR x.cancelled))
             AND NOT EXISTS(SELECT 1 FROM main_admission_delays WHERE event=s.event_id AND retry_after>?) ORDER BY s.event_id LIMIT 64").bind(timestamp).fetch_all(self.store.readers()).await?;
         for event in events {
