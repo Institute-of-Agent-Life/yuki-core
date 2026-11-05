@@ -53,3 +53,9 @@ CORE-012 提示詞補核在 `codex/core-012-prompt-order`。原版 HTTP 錄製�
 CORE-014 補核發現原版長 Work 在續接時呼叫 `find_contacts`。已於 `codex/core-014-contacts` 補原名稱、原參數 schema、單一人物的多帳號綁定、Person／Space keyset，以及分開的 `find_conversations`。讀取沿原 caller 和來源交集，發布前重查並綁真實來源；舊人物與會話目錄入口仍可用。固定 v4 八項對拍在 `artifacts/CORE-014/contacts-v4-01/`，正常 Main 的原 wire 在 `contacts-mac-04/original-contact-directory.json`。此修正供 CORE-040 原長 Work 消費，不以替代工具替換原劇本。
 
 聯絡人補核最終來源樹 `62ca2f8c48e6cf303e74cb780ebf47c4dd608182b04acb3e77b81d97319e7a53`，Mac 與 HJW Windows 各 142 項通過，產物在 `artifacts/CORE-014/{contacts-mac-06,contacts-windows-02}/original-contact-directory.json`。CORE-005、007、015、052 的 `contacts-regression-02` 均通過，另留 13 張相鄰卡的 `contacts-regression-01`。包含原 UUID 大小寫別名升級、現有來源的發布前重查與目錄來源依賴。下一步將此版本供 CORE-040 原長 Work 使用。
+CORE-024 在 `codex/core-024-search` 實作獨立原生搜索。Responses、Messages 及 Gemini 都用實際 loopback HTTP 驗證來源；一般 Main 透過自己的工具宣告派發，原聊天未送入獨立連線。冷重啟仍可命中完整且未過期的原收據，改 connection、Profile、金鑰域或憑據會重新派發。日期不明、孤立來源和未完成回應分開處理，原邏輯的未知嘗試重啟後維持一次。方法和來源證據在 `artifacts/CORE-024/{mac-07,windows-01}/search-proof-cache.json`；固定舊版橋接 24 項測試在 `artifacts/CORE-024/v4-oracle-01/junit.xml`。EXT-029 尚需以它的真實 Tavily owner 消費核心合同。
+兩機各 377 項斷言，驗證來源 `de95a208c5a3464a46e50105baf3801f00f32cd86e2c2072b8350974a8243d80`；10 張相鄰卡的回歸位於各卡的 `native-search-regression-01/`。
+
+CORE-024 PR #38 已以 `905e968c5a04187944bf8f0ff4a3667652221731` 合併 main。此分支同步凍結原生搜尋與聯絡人工具，整合來源另外重驗。
+
+聯絡人分支同步 main 搜尋後，CORE-014 的 `search-main-integration-01` 142 項、CORE-024 的 `contacts-main-integration-01` 377 項、CORE-015 的 `search-contacts-integration-01` 均通過。此合併供 PR #41 的新來源 CI 使用。
