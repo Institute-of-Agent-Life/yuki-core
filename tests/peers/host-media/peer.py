@@ -52,6 +52,7 @@ def serve(frame):
     method = frame["method"]
     try:
         if method == "forget.request":
+            note("forget-" + p["key"], {"key": p["key"], "watermark": p["watermark"], "sources": p["sources"]})
             result = {
                 "key": p["key"],
                 "watermark": p["watermark"],
