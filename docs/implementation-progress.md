@@ -555,3 +555,15 @@ CORE-048／039 CI 編譯診斷：PR #49 的兩個 Mac Intel run（42085724620、
 本地 Mac `artifacts/CORE-039/profile-compiler-mac-01/` 81 項分發驗證通過，source tree `a8a009014eb8f64a246d94279914c8611a5904f9443a60ae5e203837a94dc57f`；原功能驗收完整執行。
 
 CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。
+
+CORE-013 群目錄三平台乾淨候選已驗：來源 `6d76210943e75a29c5bfa5f310ad378737fb9f06`，tree `a96812e8d50128f7db3f73b00860667a1d8e970a7ddea28b0b56ca2952262c6d`，Mac ARM64／Linux ARM64／HJW Windows x86_64 各 175 項通過，獨立 SDK 安裝與乾淨 PATH 啟動通過。Reader 42、Host 2、握手 1，Rust SDK `1.0.0-alpha.11`／Python `1.0.0a11`，本次驗證工具為 `get_group_members`，coverage 僅 observed。
+
+未發布交接索引：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/handoff-final-01/verified-candidates.json`，SHA-256 `2c531868119a9b8d549e06820a16ee667f3667f668c1c221fbd24f2487460284`；索引附三個 ZIP 絕對路徑、逐成員雜湊與來源 manifest。
+
+- Mac ZIP `ca0daa2585b185b7a1d2266f4cabb88be08445946083016b6a0fb7355a6db8da`。
+- Linux ZIP `1cffea8b9ef0c9937b6a71133107abb5161f05fe068153a37d736c38ba176a84`。
+- Windows ZIP `a46dcbb838a1d7fa4e724e76e22c0346be45ee919eb45bd511ddb0600cd10dff`。
+
+PR #57 等 #56 與最新 head 六項 CI 通過；未發布、不標穩定擴展驗收。下一項原 `recall_own_message` 在 `codex/core-013-recall-wire` 進行，已核原 bot、未知結果與真實 writer 崩潰，待完整驗證及候選。
+
+CORE-034 Code 啟動修復 `9bb02fc` 的同源三平台驗證完成：tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`，`artifacts/CORE-034/unapproved-runtime-{mac,linux,windows}-01/` 各 387 項通過；Mac CORE-037 同名回歸 977 項通過。未批准的 Code 留在 discovered／disabled／offline，owner 管理入口可用；原 Work 不越過 runtime revision 或原預算。最新 PR CI 仍待完成。
