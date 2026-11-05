@@ -72,7 +72,7 @@ async fn propose(
 ) -> Result<Value> {
     let work = s.work.as_deref().ok_or("current Work required")?;
     tree::authorize(conn, s, work).await?;
-    sqlx::query("INSERT INTO work_proposals(execution,operation,logical,work,summary,kind) SELECT execution,operation_id,logical,?,?,? FROM model_tool_intents WHERE execution=? AND operation_id=? RETURNING operation")
+    sqlx::query("INSERT INTO work_proposals(execution,operation,logical,work,summary,kind) WITH RECURSIVE ancestors(op) AS(SELECT ?5 UNION SELECT o.parent FROM ancestors a JOIN operations o ON o.namespace=?4 AND o.operation_id=a.op WHERE o.parent IS NOT NULL) SELECT ?4,?5,i.logical,?1,?2,?3 FROM model_tool_intents i JOIN ancestors a ON a.op=i.operation_id WHERE i.execution=?4 LIMIT 1 RETURNING operation")
         .bind(work).bind(text).bind(kind).bind(exec).bind(op).fetch_one(&mut *conn).await?;
     Ok(json!({"work_id":work,"proposal":kind,"settlement":"after_original_batch"}))
 }

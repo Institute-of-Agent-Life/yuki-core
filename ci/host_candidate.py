@@ -18,7 +18,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-038", "CORE-050"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -37,11 +37,13 @@ def build(manifest_path, out, development=False):
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
     auxiliary = m["card"] == "CORE-050"
+    composition = m["card"] == "CORE-034"
     proof_name = {
         "CORE-032": "host-delegation.json",
         "CORE-033": "personal-handoff.json",
         "CORE-038": "media-handle-bridge.json",
         "CORE-050": "aux-attempts.json",
+        "CORE-034": "nested-boundary.json",
     }[m["card"]]
     proof = receipt(proof_name)
     data = json.loads(proof)
@@ -54,7 +56,7 @@ def build(manifest_path, out, development=False):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or auxiliary
+        if personal or media or composition or auxiliary
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -84,6 +86,12 @@ def build(manifest_path, out, development=False):
         if digest(methods)!=data["aux_schema_sha256"] or set(data["negotiated_aux_methods"])!=set(json.loads(methods)["methods"]):
             raise ValueError("auxiliary methods differ from exercised original")
         files["protocol/aux-model/methods.json"]=methods
+    if composition:
+        methods=(ROOT/"protocol/plugin/composition/methods.json").read_bytes()
+        if digest(methods)!=data["composition_schema_sha256"] or set(data["negotiated_composition_methods"])!=set(json.loads(methods)["methods"]):
+            raise ValueError("composition methods differ from exercised original")
+        files["protocol/composition/methods.json"]=methods
+        files["evidence/vm-recovery-cuts.json"]=receipt("vm-recovery-cuts.json")
     if media:
         methods = (ROOT / "protocol/plugin/media/methods.json").read_bytes()
         if digest(methods) != data["media_schema_sha256"] or set(
@@ -178,6 +186,7 @@ def build(manifest_path, out, development=False):
                 "CORE-033": "yuki-personal-preview-",
                 "CORE-038": "yuki-media-preview-",
                 "CORE-050": "yuki-aux-model-preview-",
+                "CORE-034": "yuki-code-preview-",
             }[m["card"]]
         )
         + source["commit"][:12]
@@ -233,6 +242,12 @@ def build(manifest_path, out, development=False):
         candidate["validated_aux_protocols"]=["chat"]+[item["dialect"] for item in data["wires"]]
         candidate["validated_media_protocols"]=["chat"]
         candidate["validation"]["real_extension_consumers"]="pending EXT-025, EXT-030, EXT-032, EXT-033 and EXT-035"
+    if composition:
+        candidate["composition_schema_revision"]=1
+        candidate["composition_schema_sha256"]=data["composition_schema_sha256"]
+        candidate["validated_composition_methods"]=data["negotiated_composition_methods"]
+        candidate["validation"]["consumer"]="opaque SDK checkpoint fixtures"
+        candidate["validation"]["real_vm_consumer"]="pending EXT-023 and EXT-024"
     files["candidate.json"] = (
         json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     ).encode()

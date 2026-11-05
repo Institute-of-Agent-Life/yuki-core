@@ -45,7 +45,7 @@ async fn root(conn: &mut SqliteConnection, entry: &str, parent: Option<&str>) ->
             .execute(&mut *conn)
             .await?;
     } else {
-        execution::root(conn, &exec, 1, 2_000_000).await?;
+        execution::root(conn, &exec, 1, 2_000_000, Some(0)).await?;
     }
     Ok(exec)
 }

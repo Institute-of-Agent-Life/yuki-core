@@ -172,7 +172,14 @@ pub async fn tick(
         wire["temperature"] = json!(0.1);
     }
     let raw = wire.to_string();
-    execution::root(conn, &exec, profile.root_slots, profile.max_input_units).await?;
+    execution::root(
+        conn,
+        &exec,
+        profile.root_slots,
+        profile.max_input_units,
+        profile.root_tool_calls,
+    )
+    .await?;
     execution::activate(conn, &exec, &origin, &profile.contract()).await?;
     attempt::apply(
         conn,

@@ -129,7 +129,15 @@ def run(ctx):
         soul.write_text("hello {{name}}; literal {{other}}", encoding="utf-8")
 
         def wire():
-            raw, reply = server.receive()
+            try:
+                raw, reply = server.receive()
+            except queue.Empty:
+                ctx.write("main-timeout.json", {
+                    table: rows("SELECT * FROM " + table)
+                    for table in ("executions", "main_turns", "main_segments",
+                                  "root_budgets", "model_requests", "budget_members")
+                })
+                raise
             return raw, json.loads(raw), reply
 
         with service.running():

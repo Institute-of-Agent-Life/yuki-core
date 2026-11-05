@@ -92,6 +92,27 @@ impl Dispatch {
             hub,
         } = self;
         let id = t.operation_id;
+        if store
+            .write(crate::store::Mutation::ToolBudget(
+                exec.clone(),
+                actor.clone(),
+                id.clone(),
+            ))
+            .await?
+            != true
+        {
+            return Ok(());
+        }
+        let state: String =
+            sqlx::query_scalar("SELECT state FROM operations WHERE namespace=? AND operation_id=?")
+                .bind(&exec)
+                .bind(&id)
+                .fetch_one(store.readers())
+                .await?;
+        if matches!(state.as_str(), "confirmed" | "failed") {
+            return Ok(());
+        }
+        crate::host::composition::check_runtime(&store, &exec, &id).await?;
         if t.action != "external" {
             effects::invoke(
                 &store,
@@ -128,6 +149,9 @@ impl Dispatch {
             {
                 crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
             }
+            "web_search" if cfg.bridge_search => {
+                crate::model::search::tool(&store, &exec, &actor, &id, &t.payload).await?
+            }
             "history_query" => {
                 if let Err(error) =
                     crate::history::query::run(&store, &exec, &actor, &t.payload, Some(&id)).await
@@ -156,8 +180,8 @@ impl Dispatch {
                 }
             }
             _ => {
-                if let Some(host) = &store.host
-                    && let Some(receipt) = host
+                if let Some(host) = &store.host {
+                    let delegated = host
                         .tool(
                             &store,
                             &exec,
@@ -166,15 +190,39 @@ impl Dispatch {
                             serde_json::from_str(&t.payload)?,
                             cfg.vision_input,
                         )
-                        .await?
-                {
-                    if !matches!(
-                        receipt["state"].as_str(),
-                        Some("confirmed" | "failed" | "unknown")
-                    ) {
-                        return Err("original plugin effect pending".into());
+                        .await;
+                    match delegated {
+                        Ok(Some(receipt)) => {
+                            if !matches!(
+                                receipt["state"].as_str(),
+                                Some("confirmed" | "failed" | "unknown")
+                            ) {
+                                return Err("original plugin effect pending".into());
+                            }
+                            return Ok(());
+                        }
+                        Err(error) => {
+                            let state: String = sqlx::query_scalar(
+                                "SELECT state FROM operations WHERE namespace=? AND operation_id=?",
+                            )
+                            .bind(&exec)
+                            .bind(&id)
+                            .fetch_one(store.readers())
+                            .await?;
+                            if state == "intent" {
+                                return crate::tools::reject(
+                                    &store,
+                                    &exec,
+                                    &actor,
+                                    &id,
+                                    error.to_string(),
+                                )
+                                .await;
+                            }
+                            return Err(error);
+                        }
+                        Ok(None) => {}
                     }
-                    return Ok(());
                 }
                 let endpoint = cfg
                     .binding_endpoint
@@ -225,6 +273,55 @@ impl Dispatch {
         Ok(())
     }
 }
+pub(crate) async fn dispatch_child(
+    store: &Store,
+    exec: &str,
+    op: &str,
+    hub: &crate::gateway::qq::Hub,
+) -> Result<()> {
+    let profile: String = sqlx::query_scalar(
+        "SELECT w.profile FROM work_runs r JOIN work_nodes w ON w.id=r.work WHERE r.execution=?",
+    )
+    .bind(exec)
+    .fetch_one(store.readers())
+    .await?;
+    let cfg: Config = serde_json::from_str(&profile)?;
+    let actor: String =
+        sqlx::query_scalar("SELECT coalesce(original_actor,origin) FROM executions WHERE id=?")
+            .bind(exec)
+            .fetch_one(store.readers())
+            .await?;
+    let row = sqlx::query(
+        "SELECT action,target,payload FROM operations WHERE namespace=? AND operation_id=?",
+    )
+    .bind(exec)
+    .bind(op)
+    .fetch_one(store.readers())
+    .await?;
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none())
+        .retry(reqwest::retry::never())
+        .timeout(std::time::Duration::from_secs(30))
+        .build()?;
+    Dispatch {
+        store: store.clone(),
+        cfg,
+        client,
+        exec: exec.into(),
+        actor,
+        hub: hub.clone(),
+    }
+    .one(Intent {
+        ordinal: 0,
+        operation_id: op.into(),
+        action: row.get("action"),
+        target: row.get("target"),
+        payload: row.get("payload"),
+    })
+    .await
+}
+
 async fn pair(
     store: &Store,
     cfg: &Config,

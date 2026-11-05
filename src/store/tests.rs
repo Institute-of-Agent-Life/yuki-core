@@ -415,6 +415,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
     let install = Install {
         aux_routes: Default::default(),
         erasure_args: None,
+        composition: None,
         id: "fixture".into(),
         namespace: "history".into(),
         program: std::env::current_exe().unwrap(),

@@ -161,6 +161,7 @@ pub(super) async fn execution(
                 parent,
                 route.profile.root_slots,
                 route.profile.max_input_units,
+                route.profile.root_tool_calls,
             )
             .await?;
         }
@@ -186,6 +187,7 @@ pub(super) async fn execution(
             &exec,
             route.profile.root_slots,
             route.profile.max_input_units,
+            route.profile.root_tool_calls,
         )
         .await?;
     }

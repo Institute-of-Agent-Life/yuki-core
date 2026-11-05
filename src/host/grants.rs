@@ -20,6 +20,8 @@ pub struct Install {
     pub args: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub erasure_args: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub composition: Option<super::composition::Runtime>,
     #[serde(default)]
     pub env: Vec<String>,
     #[serde(default)]
@@ -43,6 +45,8 @@ pub fn methods() -> &'static Value {
         for schema in [
             include_str!("../../protocol/plugin/personal/methods.json"),
             include_str!("../../protocol/plugin/media/methods.json"),
+            include_str!("../../protocol/plugin/composition/methods.json"),
+            include_str!("../../protocol/plugin/aux-model/methods.json"),
         ] {
             let group: Value = serde_json::from_str(schema).expect("host extension IDL");
             for (name, method) in group["methods"].as_object().expect("extension methods") {
@@ -54,18 +58,6 @@ pub fn methods() -> &'static Value {
                         .is_none()
                 );
             }
-        }
-        let auxiliary: Value =
-            serde_json::from_str(include_str!("../../protocol/plugin/aux-model/methods.json"))
-                .expect("auxiliary model IDL");
-        for (name, method) in auxiliary["methods"].as_object().expect("auxiliary methods") {
-            assert!(
-                base["methods"]
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(name.clone(), method.clone())
-                    .is_none()
-            );
         }
         base
     })
@@ -96,6 +88,9 @@ impl Install {
         }
         if self.erasure_args.is_some() && !self.grants.contains("forget.owner") {
             return Err("cleanup entry requires forget.owner".into());
+        }
+        if let Some(runtime) = &self.composition {
+            runtime.validate(self)?;
         }
         let known = methods()["methods"].as_object().unwrap();
         if self
@@ -165,6 +160,9 @@ impl Install {
         if !self.aux_routes.is_empty() {
             identity["aux_routes"] = serde_json::to_value(&self.aux_routes)?;
         }
+        if let Some(runtime) = &self.composition {
+            identity["composition"] = serde_json::to_value(runtime)?;
+        }
         Ok(format!(
             "{:x}",
             Sha256::digest(serde_json::to_vec(&identity)?)
@@ -232,6 +230,7 @@ mod tests {
         let mut i = Install {
             erasure_args: None,
             aux_routes: BTreeMap::new(),
+            composition: None,
             id: "p".into(),
             namespace: "qq.native".into(),
             program: std::env::current_exe().unwrap(),

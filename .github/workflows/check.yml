@@ -109,6 +109,10 @@ jobs:
         run: python ci/check.py CORE-030 --out artifacts/CORE-030/ci
       - name: Verify original auxiliary model routes, receipts and source bounds
         run: python ci/check.py CORE-050 --out artifacts/CORE-050/ci
+      - name: Verify original Code checkpoints and shared tool accounting
+        run: python ci/check.py CORE-034 --out artifacts/CORE-034/ci
+      - name: Verify native search proof, budget and cache on physical HTTP
+        run: python ci/check.py CORE-024 --out artifacts/CORE-024/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

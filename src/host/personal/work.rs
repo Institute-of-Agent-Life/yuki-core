@@ -144,7 +144,11 @@ pub async fn project(conn: &mut SqliteConnection, who: &Principal, id: &str) -> 
         v => v,
     };
     let updates: i64 = r.get("updated");
-    let tools:i64=sqlx::query_scalar("SELECT count(*) FROM operations o JOIN work_runs r ON r.execution=o.namespace WHERE r.work=?").bind(id).fetch_one(&mut *conn).await?;
+    let (tools, tool_limit): (i64, Option<i64>) =
+        sqlx::query_as("SELECT used_calls,max_calls FROM root_tool_budgets WHERE root=?")
+            .bind(r.get::<&str, _>("budget"))
+            .fetch_one(&mut *conn)
+            .await?;
     let source = json!({"conversation_id":r.get::<&str,_>("entry"),"kind":if r.get::<&str,_>("scope")=="group"{"space"}else{"private"},"platform":r.get::<Option<String>,_>("platform"),"binding_id":r.get::<Option<String>,_>("actor_stage"),"space_id":r.get::<Option<String>,_>("space"),"display_name":r.get::<String,_>("display_name")});
     let deliveries=sqlx::query("SELECT o.entry,o.event,o.body FROM personal_live_deliveries o JOIN work_runs run ON run.execution=o.namespace WHERE run.work=? ORDER BY o.id").bind(id).fetch_all(&mut *conn).await?;
     let mut results = Vec::new();
@@ -158,7 +162,7 @@ pub async fn project(conn: &mut SqliteConnection, who: &Principal, id: &str) -> 
         .and_then(|event| results.iter().find(|item| item["event_id"] == event))
         .cloned();
     Ok(
-        json!({"work_id":id,"conversation_id":r.get::<&str,_>("entry"),"generation":r.get::<i64,_>("generation"),"state":status,"revision":r.get::<i64,_>("revision"),"goal":r.get::<Option<String>,_>("goal"),"source":source,"result_delivery":source,"waiting_kind":if status=="waiting_user"{Some("user")}else{None},"waiting_question":waiting,"child_count":r.get::<i64,_>("children"),"budget":{"root_id":r.get::<&str,_>("budget"),"models":r.get::<i64,_>("reserved_requests"),"model_limit":r.get::<i64,_>("max_requests"),"tools":tools,"tool_limit":null},"results":results,"updated_at":updates as f64/1000.}),
+        json!({"work_id":id,"conversation_id":r.get::<&str,_>("entry"),"generation":r.get::<i64,_>("generation"),"state":status,"revision":r.get::<i64,_>("revision"),"goal":r.get::<Option<String>,_>("goal"),"source":source,"result_delivery":source,"waiting_kind":if status=="waiting_user"{Some("user")}else{None},"waiting_question":waiting,"child_count":r.get::<i64,_>("children"),"budget":{"root_id":r.get::<&str,_>("budget"),"models":r.get::<i64,_>("reserved_requests"),"model_limit":r.get::<i64,_>("max_requests"),"tools":tools,"tool_limit":tool_limit},"results":results,"updated_at":updates as f64/1000.}),
     )
 }
 pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value) -> Result<Value> {

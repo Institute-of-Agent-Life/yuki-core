@@ -1,4 +1,5 @@
 pub mod batch;
+pub(crate) mod budget;
 pub mod registry;
 pub mod results;
 pub mod transient;

@@ -322,6 +322,10 @@ def run(ctx):
         (f / "hold-late").touch()
         late = pool.submit(process, other_exec, "late", other_event)
         o.until(lambda: (f / "read-late.json").is_file())
+        automatic_holds = o.rows(
+            "SELECT h.item,h.source FROM source_holds h JOIN host_calls c ON c.handle=h.item WHERE h.owner='codec-a' AND h.source=?", other_event
+        )
+        ctx.equal("selected media automatically registers its original holder", len(automatic_holds), 1)
         o.op("privacy", "erase", "erase-late-codec", o.actor, json.dumps([other_event]))
         (f / "hold-late").unlink()
         withheld = late.result()
@@ -332,6 +336,10 @@ def run(ctx):
             )
             and withheld.get("result") is None,
         )
+        o.until(lambda: o.rows("SELECT proof FROM owner_erasures WHERE owner='codec-a' AND proof IS NOT NULL"))
+        automatic_forget = json.loads((f / "forget-erase-late-codec.json").read_bytes())
+        ctx.equal("automatic media holder receives original forget source", automatic_forget["sources"], [other_event])
+        ctx.equal("automatic media obligation is acknowledged", o.op("privacy", "pending", "codec-a")["obligations"], [])
         blocked_event, blocked_exec = event(104, False)
         outside = ctx.working / "outside-media"
         outside.mkdir()
@@ -563,6 +571,8 @@ def run(ctx):
         "physical_reader": capture,
         "foreign_handle_denied": True,
         "late_result": withheld,
+        "automatic_source_holds": automatic_holds,
+        "automatic_forget": automatic_forget,
         "cases": {"R13": visuals},
         "host_idl_sha256": hashlib.sha256(
             (ctx.root / "sdk/rust/src/host-preview.json").read_bytes()

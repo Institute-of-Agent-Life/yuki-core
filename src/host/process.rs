@@ -121,7 +121,12 @@ impl Session {
             }
             return Err("plugin outbound queue unavailable".into());
         }
-        match tokio::time::timeout(Duration::from_secs(12), rx).await {
+        let timeout = if let Some(handle) = &handle {
+            sqlx::query_scalar::<_,f64>("SELECT json_extract(contract,'$.request_timeout_seconds') FROM code_parents WHERE handle=?").bind(handle).fetch_optional(store.readers()).await?.unwrap_or(12.0)
+        } else {
+            12.0
+        };
+        match tokio::time::timeout(Duration::from_secs_f64(timeout), rx).await {
             Ok(Ok(reply)) => reply,
             _ => {
                 self.stop();
@@ -306,7 +311,9 @@ pub async fn launch(
                     callbacks.spawn(async move{
                         let r=if matches!(method.as_str(),"llm.complete"|"llm.result") {
                             super::aux_model::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
-                        } else { write(&s,Change::Callback(l.plugin.clone(),l.generation.clone(),method,msg["params"].clone())).await };
+                        } else if super::composition::handles(&method) {
+                            super::composition::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
+                        } else {write(&s,Change::Callback(l.plugin.clone(),l.generation.clone(),method,msg["params"].clone())).await};
                         let out=match r{Ok(v)=>json!({"result":v}),Err(_)=>json!({"error":{"code":-32003,"message":"method, grant or original scope denied"}})};
                         let mut frame=out;frame["id"]=msg["id"].clone();frame["jsonrpc"]=json!("2.0");
                         if !l.notify(frame){l.stop();}

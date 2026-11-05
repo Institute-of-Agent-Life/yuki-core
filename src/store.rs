@@ -57,6 +57,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    ToolBudget(String, String, String),
     Personal(Box<crate::host::personal::Request>),
     Host(Box<crate::host::Change>),
     Tool(Box<crate::tools::Change>),
@@ -75,6 +76,7 @@ pub enum Mutation {
     SeedPausedGroup(String, String, String),
     RecoverGroup(Box<crate::ingress::group_recovery::Recovery>),
     Privacy(crate::privacy::Action),
+    Search(Box<crate::model::search::Change>),
     Model(Box<crate::model::attempt::Action>),
     Effect(crate::runtime::effects::Action),
     ObserveQqAccount(String, String),
@@ -135,6 +137,9 @@ impl Driver for SqliteDriver {
     }
     async fn apply(&mut self, action: &Mutation) -> Result<Value> {
         let label = match action {
+            Mutation::ToolBudget(exec, actor, op) => {
+                return crate::tools::budget::charge(self.connection(), exec, actor, op).await;
+            }
             Mutation::SeedPausedGroup(namespace, group, stage) => {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
@@ -219,6 +224,7 @@ impl Driver for SqliteDriver {
             Mutation::Privacy(action) => {
                 return crate::privacy::apply(self.connection(), action).await;
             }
+            Mutation::Search(c) => return crate::model::search::apply(self.connection(), c).await,
             Mutation::Model(action) => {
                 return crate::model::attempt::apply(self.connection(), action).await;
             }
@@ -302,6 +308,7 @@ pub struct Store {
     pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
     pub vectors: Option<Arc<crate::memory::embedding::Engine>>,
+    pub search: Option<Arc<crate::model::search::Engine>>,
     pub main: Option<Arc<crate::runtime::main::Config>>,
     pub work_segments: crate::runtime::main::segment::Config,
     commands: mpsc::Sender<Command>,
@@ -387,6 +394,7 @@ impl Store {
         Self {
             vectors: None,
             media: None,
+            search: None,
             main: None,
             work_segments: Default::default(),
             host: None,

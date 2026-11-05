@@ -163,6 +163,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 h
             };
             if r.method == "tool.call" {
+                super::composition::open(conn, r, &handle).await?;
                 super::media::retain_inputs(conn, r, &handle).await?;
                 sqlx::query("INSERT OR IGNORE INTO host_media_profiles VALUES(?,?)")
                     .bind(&handle)
@@ -197,17 +198,23 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .ok_or("unknown grant")?,
             )
             .await?;
-            let permit = effects::apply(
-                conn,
-                &effects::Action::Dispatch {
-                    execution: exec,
-                    id: row.try_get("operation")?,
-                    actor: who,
-                },
-            )
-            .await?;
-            if permit["dispatch_now"] != true {
-                return Err("operation already crossed dispatch boundary".into());
+            let resume=sqlx::query("UPDATE code_resume_attempts SET state='dispatched' WHERE handle=? AND generation=? AND state='queued'").bind(handle).bind(generation).execute(&mut *conn).await?.rows_affected()==1;
+            if resume {
+                domain::active(conn, plugin, generation, "composition.execute").await?;
+                effects::authorize(conn, &exec, &who, true).await?;
+            } else {
+                let permit = effects::apply(
+                    conn,
+                    &effects::Action::Dispatch {
+                        execution: exec,
+                        id: row.try_get("operation")?,
+                        actor: who,
+                    },
+                )
+                .await?;
+                if permit["dispatch_now"] != true {
+                    return Err("operation already crossed dispatch boundary".into());
+                }
             }
             sqlx::query("UPDATE host_calls SET state='dispatched' WHERE handle=?")
                 .bind(handle)
@@ -285,6 +292,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 return Ok(json!({"handle":handle,"state":"unknown","observed_state":state}));
             }
             let mut data = data;
+            if publish && valid {
+                super::composition::finished(conn, handle, &mut data).await?;
+            }
             if state == "confirmed" && publish {
                 super::media::project(conn, handle, &exec, &who, &method, &mut data).await?;
             }

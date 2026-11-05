@@ -42,7 +42,14 @@ pub async fn manual(
         .await?;
     let permitted = permitted(conn, event).await?;
     sqlx::query("INSERT INTO main_turns(execution,conversation,window,ready_after,diagnostic) VALUES(?,?,?,0,?)").bind(exec).bind(&entry).bind(generation).bind((!permitted).then_some("compact_admin_required")).execute(&mut *conn).await?;
-    execution::root(conn, exec, cfg.root_slots, cfg.max_input_units).await?;
+    execution::root(
+        conn,
+        exec,
+        cfg.root_slots,
+        cfg.max_input_units,
+        cfg.root_tool_calls,
+    )
+    .await?;
     sqlx::query("INSERT OR IGNORE INTO main_dependencies VALUES(?,?)")
         .bind(exec)
         .bind(event)
