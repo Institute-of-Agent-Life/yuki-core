@@ -133,7 +133,7 @@ def serve(frame):
                     child = rpc_call("tool.resume", {"handle": handle, "ordinal": index, "feed_index": original["feed_index"], "engine_call_id": original["engine_call_id"]})
                 else:
                     snap = upload(handle, state, "before-" + str(index))
-                    child_request = {"handle": handle, "ordinal": index, "feed_index": index, "engine_call_id": call_id, "checkpoint": checkpoint, "snapshot": snap, "name": step["name"], "arguments": args}
+                    child_request = {"handle": handle, "ordinal": index, "feed_index": step.get("feed_index", index), "engine_call_id": call_id, "checkpoint": checkpoint, "snapshot": snap, "name": step["name"], "arguments": args}
                     if step.get("expect_denied"):
                         refused = rpc_call("tool.invoke", child_request, False)
                         assert "error" in refused
@@ -151,10 +151,14 @@ def serve(frame):
                 state["seen"].append(child)
                 state["next"] += 1
                 after = upload(handle, state, "after-" + str(index))
-                ack = {"handle": handle, "ordinal": index, "feed_index": child["feed_index"], "engine_call_id": child["engine_call_id"], "ack": {"checkpoint": child["checkpoint"], "snapshot": after, "feed_index": index+1}}
+                after_feed = step.get("after_feed", index+1)
+                ack = {"handle": handle, "ordinal": index, "feed_index": child["feed_index"], "engine_call_id": child["engine_call_id"], "ack": {"checkpoint": child["checkpoint"], "snapshot": after, "feed_index": after_feed}}
+                if child["feed_index"] > 0:
+                    regressed = {**ack, "ack": {**ack["ack"], "feed_index": child["feed_index"]-1}}
+                    assert "error" in rpc_call("tool.resume", regressed, False)
                 fed = rpc_call("tool.resume", ack)
                 assert rpc_call("tool.resume", ack) == fed
-                changed_ack = {**ack, "ack": {**ack["ack"], "feed_index": index+2}}
+                changed_ack = {**ack, "ack": {**ack["ack"], "feed_index": after_feed+1}}
                 assert "error" in rpc_call("tool.resume", changed_ack, False)
                 checkpoint = fed["checkpoint"]
             else:
