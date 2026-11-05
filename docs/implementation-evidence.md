@@ -621,3 +621,14 @@ CORE-015 H12 逐項拒絕補核在 `codex/core-015-call-isolation`。可信 deco
 `artifacts/CORE-015/call-isolation-mac-04/` 363 項通過；`call-isolation-adjacent-02/CORE-019` 及 `call-isolation-adjacent-03/{CORE-020,CORE-021,CORE-012,CORE-011,CORE-010,CORE-030,CORE-034}` 全過。原 oracle 四用例通過於 `original-call-rejections-oracle-01/`。內部 intent 多一個有型別的 rejected 欄位，操作仍使用原 failed 狀態；Host 2、reader 43、SDK alpha.11／a11 不變。development-package 只作打包自測，待乾淨提交產三平台未發布候選。
 
 失敗留證：red-01 的自建 target symlink 被來源規則拒絕，已只移除該自建連結，改獨立編譯；red-02 實測原整批 response_held。mac-01 五協議通過後，Gemini fixture 因未指定原 model 路徑啟動失敗；修正 fixture 後六協議及重複 ID 反例通過。adjacent-01 打包器清單少一個右括號，已修正並保留 packaging-failure.txt。adjacent-02 發現 Messages 把普通 choice 套到結構化 emit_result；按實際 paid 結構化宣告分開後，adjacent-03 全過。未以跳過檢查換取通過，原未知派發仍不自動重試。
+
+
+## CORE-015 逐項拒絕乾淨候選
+
+來源 `969fb62e34de6a52a5fbe31d798e6b5436d6e9a8`、tree `28d8bd4ff10f5d49dbaf0f98a4f7fb7e09cd4a370349e7a04e2c05512fb4e8b3`，分支 `codex/core-015-call-isolation`，PR #61。三平台各 363 斷言；逐 ZIP 成員、大小、SHA-256、manifest 綁定、獨立 SDK 安裝與乾淨 PATH 啟動均已驗。索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/isolation-handoff-final-01/verified-candidates.json`，SHA-256 `1e2e368f0f2996e024f3d0afba92c9fee199af4781e6de3cff4482932cf7614b`。Host 2、handshake 1、reader 43、Rust SDK alpha.11／Python a11；實驗零付費 API。候選尚未發布，不代替真擴展消費。
+
+- macos：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/isolation-handoff-final-01/macos-validation/candidate/yuki-artifact-preview-969fb62e34de-darwin-arm64.zip`；SHA-256 `d1e6509e4a11c7b7dd40bd10ab7dbcb550755de44f276c236fcbdbca49bd296e`。
+- linux：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/isolation-handoff-final-01/linux-validation/candidate/yuki-artifact-preview-969fb62e34de-linux-arm64.zip`；SHA-256 `540dc3791f7ebaafd72748d5c7e0d67fdb9f86380b85f36136dda8f0cfca61ab`。
+- windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/isolation-handoff-final-01/windows-validation/handoff/yuki-artifact-preview-969fb62e34de-windows-x86_64.zip`；SHA-256 `3b45be537020e1aa094afbd1c2e9f0ed81dda90defdf6b1518aa0cf61aa08dca`。
+
+Windows 實機目錄 `D:\yuki-core-validation-20261104\CORE-015-28d8bd4ff10f-1399e17c`。六協議為 Chat、OpenAI Responses、DeepSeek Responses／legacy、Messages、Gemini。額度及 unknown 重試規則維持原合同。
