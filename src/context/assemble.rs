@@ -13,6 +13,8 @@ pub fn static_program(profile: &Config, soul: &str) -> String {
         prefix.push_str(&soul.replace("{{name}}", name));
     }
     prefix.push_str("\n\n");
+    prefix.push_str(include_str!("memory-program.txt").trim_end());
+    prefix.push_str("\n\n");
     prefix.push_str(include_str!("main-program.txt"));
     prefix
 }

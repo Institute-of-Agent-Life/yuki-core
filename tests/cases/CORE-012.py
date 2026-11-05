@@ -162,13 +162,16 @@ def run(ctx):
             program = (ctx.root / "src/context/main-program.txt").read_text(
                 encoding="utf-8"
             )
+            grounding = json.loads((ctx.root / "fixtures/memory/v4-grounding.json").read_text(encoding="utf-8"))
+            ctx.equal("Memory guidance comes from the fixed behavior baseline",grounding["source_commit"],"329ca7c487414d2f54ddd98ff4727446ed2446cd")
+            ctx.equal("Memory guidance preserves the exact original rule",(ctx.root / "src/context/memory-program.txt").read_text(encoding="utf-8").rstrip(),grounding["text"])
             ctx.equal(
                 "physical Chat request preserves original identity, SOUL and program order",
                 body["messages"][0],
                 {
                     "role": "system",
                     "content": "【角色身份】\n当前角色的名称是 Yuki。\n\n【SOUL】\nhello Yuki; literal {{other}}\n\n"
-                    + program,
+                    + grounding["text"] + "\n\n" + program,
                 },
             )
             layout.append(raw)

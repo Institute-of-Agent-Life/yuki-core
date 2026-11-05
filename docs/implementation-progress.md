@@ -516,3 +516,5 @@ CORE-057 跨平台封裝補正：Linux `handoff-final-01/linux-validation-02/` �
 CORE-005／040 量測補核：`database-info` 改從原 SQLite writer 佇列查詢，公開實際 synchronous、busy_timeout_ms 及 observed_connection，避免用 reader 的 PRAGMA 當 writer 設定。`artifacts/CORE-005/writer-info-mac-01/` 通過。CORE-040 最新 Rust release 的 `c-current-1200-02/` 逐筆 1200 輸入／1200 送達相符，20 組長 Work 正在跑；工具集合與提示差異仍在核對，未完成投資裁決。先前 C attempt 01 因未顯式選 lexical-only 啟動失敗，保留原紀錄。
 
 CORE-020 整合回歸：PR #53 Linux run 42107381636 與 `history-pause-mac-01/02` 均在第 4 次 pause 前 held。原回條顯示 3 次預留共 154875 units；完整新工具宣告令下一次超過原測試 200000 units，尚未觸及待驗的 4-request 邊界。僅把該 fixture 的獨立 units 額度改為 1000000，新增「4 次全預留且 units 尚未耗盡」斷言；`history-pause-mac-03/` 通過。保留超時時的原 execution／request／budget 記錄，worker 對空字串異常保留類型，避免錯報缺 artifact。無產品預算或重試語義變更，Windows／Linux 由最新 CI 再驗。
+
+CORE-012／040 提示補核：固定 v4 Main 與最新 Rust 的 system prefix 只差 Memory grounding 段。已從 `329ca7c` 的 `src/yuki/memory/context.py::MEMORY_GROUNDING_RULE` 提取原文並附來源雜湊，放在 SOUL 與原 Main 程式段之間。實際 HTTP 的 `CORE-012/original-memory-prompt-mac-01/` 及 CORE-020／022 同名回歸通過。CORE-040 `c-current-long-20-01/` 20 組、800 項功能斷言全過，原歷史名稱存在；此批 timing 仍不作跨臂比較。
