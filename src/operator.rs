@@ -21,6 +21,10 @@ pub enum Action {
         #[command(subcommand)]
         command: crate::tools::Action,
     },
+    Memory {
+        #[command(subcommand)]
+        command: crate::memory::Action,
+    },
     History {
         #[command(subcommand)]
         command: crate::history::Action,
@@ -82,6 +86,9 @@ enum Request {
     },
     Tools {
         command: crate::tools::Action,
+    },
+    Memory {
+        command: crate::memory::Action,
     },
     History {
         command: crate::history::Action,
@@ -163,6 +170,7 @@ async fn handle(
             None => Err("plugin host not configured".into()),
         },
         Request::Tools { command } => crate::tools::invoke(&store, command).await,
+        Request::Memory { command } => crate::memory::invoke(&store, command).await,
         Request::History { command } => crate::history::invoke(&store, command).await,
         Request::Social { command } => crate::social::invoke(&store, &qq, command).await,
         Request::Main { command } => crate::runtime::main::invoke(&store, command).await,
@@ -214,6 +222,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Effect { command } => Request::Effect { command },
         Action::Host { command } => Request::Host { command },
         Action::Tools { command } => Request::Tools { command },
+        Action::Memory { command } => Request::Memory { command },
         Action::History { command } => Request::History { command },
         Action::Social { command } => Request::Social { command },
         Action::Main { command } => Request::Main { command },

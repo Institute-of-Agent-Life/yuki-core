@@ -31,6 +31,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if let Some(tool) = crate::memory::tools::declaration(name) {
+        return Some(tool);
+    }
     if let Some(tool) = crate::work::declaration(name) {
         return Some(tool);
     }
@@ -156,6 +159,8 @@ impl Manifest {
                 "update_short_state",
                 "read_tool_artifact",
                 "lookup_tools",
+                "read_memory",
+                "memory_change",
                 "task_control",
                 "subagent_start",
                 "subagent_control",

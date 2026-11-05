@@ -5,6 +5,7 @@ mod history;
 mod host;
 mod identity;
 mod ingress;
+mod memory;
 mod model;
 mod operator;
 mod privacy;
@@ -134,6 +135,7 @@ async fn execute(args: Args) -> Result<()> {
                 .route("/healthz", get(health))
                 .with_state(store.clone())
                 .merge(qq.router());
+            let memory = memory::start(store.clone(), qq.clone());
             let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
             let history = history::start(store.clone());
             let signal = stop.clone();
@@ -147,6 +149,8 @@ async fn execute(args: Args) -> Result<()> {
             if let Some(host) = &store.host {
                 host.stop().await;
             }
+            memory.abort();
+            let _ = memory.await;
             history.abort();
             let _ = history.await;
             if let Some(runner) = runner {

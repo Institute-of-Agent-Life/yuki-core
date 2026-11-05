@@ -105,6 +105,9 @@ impl Dispatch {
             return Ok(());
         }
         match t.target.as_str() {
+            "read_memory" | "memory_change" => {
+                crate::memory::tools::perform(&store, &exec, &actor, &id).await?
+            }
             "task_control" | "subagent_start" | "subagent_control" => {
                 crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
             }

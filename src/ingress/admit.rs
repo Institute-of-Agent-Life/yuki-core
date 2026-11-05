@@ -393,9 +393,9 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
         .bind(id)
         .execute(&mut *conn)
         .await?;
-    }
-    if request.accept && eligible && verified.current && f.ordinary() {
-        crate::host::domain::route_command(conn, id, f).await?;
+        if !crate::memory::route(conn, id, f).await? {
+            crate::host::domain::route_command(conn, id, f).await?;
+        }
     }
     let accepted: bool =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accepted_sources WHERE event_id=?)")

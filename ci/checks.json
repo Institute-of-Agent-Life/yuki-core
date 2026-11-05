@@ -97,6 +97,13 @@
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
     },
+    "CORE-026": {
+      "case": "tests/cases/CORE-026.py",
+      "artifact": "fact-evidence-acl.json",
+      "timeout_seconds": 210,
+      "rust": true,
+      "capabilities": ["subject-scoped-structured-facts","independent-original-evidence","conditional-fact-corrections"]
+    },
     "CORE-016": {
       "case": "tests/cases/CORE-016.py",
       "artifact": "work-tree.json",
