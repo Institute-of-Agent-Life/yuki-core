@@ -1,0 +1,321 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "tools": [
+    {
+      "name": "find_contacts",
+      "description": "以 kind=person/space 发现人物或群及其当前可联系入口。已知主体用 target_id；当前人物引用用 subject_ref；按名称包含查询用 display_name。source 可按平台和 private/group 交集筛选。limit 为页大小，按内部 ID 升序，cursor 续查；同名返回候选，不猜目标。查真实历史 Conversation 使用 find_conversations。",
+      "schema_version": "3",
+      "parameters": {
+        "$defs": {
+          "HistorySource": {
+            "additionalProperties": false,
+            "properties": {
+              "platform": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Platform"
+              },
+              "scope": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "private",
+                      "group"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Scope"
+              }
+            },
+            "title": "HistorySource",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "person",
+              "space"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "已知主体的内部 Person/Space ID",
+            "title": "Target Id"
+          },
+          "subject_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "当前发送者用 current_speaker；也可用 mentioned_user 或 replied_message_author",
+            "title": "Subject Ref"
+          },
+          "display_name": {
+            "default": "",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/HistorySource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "default": 20,
+            "exclusiveMinimum": 0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "SubjectContactsQuery",
+        "type": "object"
+      }
+    },
+    {
+      "name": "find_conversations",
+      "description": "发现真实历史 Conversation，平铺平台、群私聊、话题与原 Binding/Presence 阶段，含旧账号入口。target 可用一个内部 Person/Space/Conversation/Binding/operation ID；source 可按平台和 private/group 取交集，display_name 按会话名称包含查询。不要求先查联系人或按平台分层；已知 ID 可直接用。limit 为页大小，按内部 Conversation ID 升序，cursor 续查。读取许可不代表旧入口仍能发送；当前人物或群主体资料使用 find_contacts。",
+      "schema_version": "1",
+      "parameters": {
+        "$defs": {
+          "HistorySource": {
+            "additionalProperties": false,
+            "properties": {
+              "platform": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Platform"
+              },
+              "scope": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "private",
+                      "group"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Scope"
+              }
+            },
+            "title": "HistorySource",
+            "type": "object"
+          },
+          "HistoryTarget": {
+            "additionalProperties": false,
+            "oneOf": [
+              {
+                "required": [
+                  "conversation_id"
+                ]
+              },
+              {
+                "required": [
+                  "person_id"
+                ]
+              },
+              {
+                "required": [
+                  "space_id"
+                ]
+              },
+              {
+                "required": [
+                  "binding_id"
+                ]
+              },
+              {
+                "required": [
+                  "operation_id"
+                ]
+              }
+            ],
+            "properties": {
+              "conversation_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Conversation Id"
+              },
+              "person_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Person Id"
+              },
+              "space_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Space Id"
+              },
+              "binding_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Binding Id"
+              },
+              "operation_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Operation Id"
+              }
+            },
+            "title": "HistoryTarget",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/HistoryTarget"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/HistorySource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "display_name": {
+            "default": "",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "exclusiveMinimum": 0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          }
+        },
+        "title": "ConversationQuery",
+        "type": "object"
+      }
+    }
+  ]
+}
