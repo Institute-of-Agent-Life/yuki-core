@@ -518,3 +518,15 @@ CORE-005／040 量測補核：`database-info` 改從原 SQLite writer 佇列查�
 CORE-020 整合回歸：PR #53 Linux run 42107381636 與 `history-pause-mac-01/02` 均在第 4 次 pause 前 held。原回條顯示 3 次預留共 154875 units；完整新工具宣告令下一次超過原測試 200000 units，尚未觸及待驗的 4-request 邊界。僅把該 fixture 的獨立 units 額度改為 1000000，新增「4 次全預留且 units 尚未耗盡」斷言；`history-pause-mac-03/` 通過。保留超時時的原 execution／request／budget 記錄，worker 對空字串異常保留類型，避免錯報缺 artifact。無產品預算或重試語義變更，Windows／Linux 由最新 CI 再驗。
 
 CORE-012／040 提示補核：固定 v4 Main 與最新 Rust 的 system prefix 只差 Memory grounding 段。已從 `329ca7c` 的 `src/yuki/memory/context.py::MEMORY_GROUNDING_RULE` 提取原文並附來源雜湊，放在 SOUL 與原 Main 程式段之間。實際 HTTP 的 `CORE-012/original-memory-prompt-mac-01/` 及 CORE-020／022 同名回歸通過。CORE-040 `c-current-long-20-01/` 20 組、800 項功能斷言全過，原歷史名稱存在；此批 timing 仍不作跨臂比較。
+
+CORE-057 三平台候選已驗：乾淨來源 `4dfb1c026a7f8e046c504484f6e7738494a866a5`，tree `e09b81dbe090adc713eb6500a2cf5d5287e87edf682facb086429888854e872b`。macOS ARM64、Linux ARM64、HJW Windows x86_64 各 192 項，均驗 inspect／匯入／原 revision resume、實際中斷、SQL 回滾、原鎖及 WAL。SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`，Host 2／握手 1，輸入 legacy schema `0156`；本卡未啟動 owner，新資料庫 schema 不冒記為已驗。
+
+**未發布交接索引：** `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-057/handoff-final-02/verified-candidates.json`，SHA-256 `6a1c274e4002cd0b96b43870a80c5a478af997143f0df31ab81fe2cf09bab2b7`。索引含絕對路徑、逐成員驗證及 native manifest。
+
+- macOS ZIP `44ec44e6fa8875b95743ab226917cc2aaa06aff6cd030a229c8e28435ea13cf2`。
+- Linux ZIP `a9f2da713fc6c96cb17523d01cb81ba58668c69a47854ff271748afe1b0486d6`。
+- Windows ZIP `a60fc52ed9bbf2840244e23163a6ba0db7c4115cb42b5b37b96add9f05fcd5bb`。
+
+原 failed／aborted 回條保留：第一輪缺舊 compiler cache；第二輪誤收 AppleDouble；`handoff-final-02/linux-validation/` 因發現並行共用編譯輸出而主動中止。最後 `linux-validation-02/` 在前一程序退出後順序重驗通過。PR #54 已加 CORE-057 三平台 CI，待 #53 與最新 head 六項全綠後合併 main；不發布或部署本候選。CORE-043 尚缺 EXT-041 真實安裝交接輸入，下一個本倉工作是 CORE-040 原切片差異補核。
+
+CORE-037 整合 CI 時序修復：CORE-050 變更 aux Profile 宣告後先按實際 revision 重新批准；CORE-058 先確認離線通知已以 bot_unavailable 結算，再接上 QQ 發起另一個通知，不依賴偶然連線時序。Mac `approved-profile-mac-01`／`refused-receiver-mac-01` 與 Linux `CORE-037/ci-lifecycle-linux-02/{CORE-050,CORE-058}` 分別通過 566／330 項；HJW 的 `CORE-050/approved-profile-windows-01` 566 項通過，CORE-058 原生回歸續跑中。源樹 `9b08b55f460f89a3d6a280f52c655851dc9292eac25ab304b1a1051019b7abee`。保留原 CI 失敗；只修 fixture 的明確批准／派發時序，無放寬產品授權、通知狀態或等待上限。PR #51 最新 head 重新跑六項 CI 後才合併。
