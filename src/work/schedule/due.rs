@@ -134,7 +134,14 @@ pub async fn reconcile(conn: &mut SqliteConnection, cfg: &Config, id: i64, now: 
             .await?;
         sqlx::query("UPDATE main_turns SET diagnostic='original_schedule_authority_denied' WHERE execution=?").bind(&exec).execute(&mut *conn).await?;
     } else {
-        execution::root(conn, &exec, cfg.root_slots, cfg.max_input_units).await?;
+        execution::root(
+            conn,
+            &exec,
+            cfg.root_slots,
+            cfg.max_input_units,
+            cfg.root_tool_calls,
+        )
+        .await?;
     }
     Ok(())
 }

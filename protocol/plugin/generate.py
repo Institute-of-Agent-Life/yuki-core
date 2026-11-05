@@ -148,7 +148,7 @@ def generate():
         },
     }
     host=json.loads((ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes())
-    for group in ("personal","media"):
+    for group in ("personal","media","composition"):
         extension=json.loads((ROOT/f"protocol/plugin/{group}/methods.json").read_bytes())
         if host["methods"].keys() & extension["methods"].keys():
             raise ValueError("duplicate host methods")

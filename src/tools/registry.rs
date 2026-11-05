@@ -275,7 +275,7 @@ pub async fn pinned(
     if let Some((body,original))=sqlx::query_as::<_,(String,bool)>("SELECT m.body,v.code_projection FROM execution_tool_views v JOIN tool_manifests m USING(revision) WHERE v.execution=?").bind(exec).fetch_optional(&mut *conn).await?{
         return Ok((serde_json::from_str(&body)?,original));
     }
-    let code = cfg.code_projection;
+    let code = cfg.code_projection || cfg.code_tool.is_some();
     let mut tools: Vec<Tool> = Manifest::core().0.into_values().collect();
     let installed: Vec<(String, String, String)> = sqlx::query_as(
         "SELECT plugin,revision,tools FROM host_installations WHERE enabled ORDER BY plugin",

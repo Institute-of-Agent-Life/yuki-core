@@ -5,6 +5,13 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-034": {
+      "case": "tests/cases/CORE-034.py",
+      "artifact": "nested-boundary.json",
+      "timeout_seconds": 420,
+      "rust": true,
+      "capabilities": ["original-code-child-identities", "shared-tool-budget", "source-bound-vm-checkpoints"]
+    },
     "CORE-001": {
       "case": "tests/cases/CORE-001.py",
       "artifact": "harness-selftest.json",

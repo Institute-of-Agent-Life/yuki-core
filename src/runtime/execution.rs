@@ -16,6 +16,7 @@ pub async fn root(
     execution: &str,
     slots: i64,
     units: i64,
+    tools: Option<i64>,
 ) -> Result<Value> {
     eligible(conn, execution).await?;
     sqlx::query("INSERT INTO root_budgets(root,max_requests,max_units) VALUES(?,?,?) ON CONFLICT(root) DO NOTHING")
@@ -29,6 +30,7 @@ pub async fn root(
     {
         return Err("root budget cannot be replaced".into());
     }
+    crate::tools::budget::root(conn, execution, tools).await?;
     bind(conn, execution, execution).await
 }
 

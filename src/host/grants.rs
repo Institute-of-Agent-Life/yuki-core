@@ -15,6 +15,8 @@ pub struct Install {
     pub args: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub erasure_args: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub composition: Option<super::composition::Runtime>,
     #[serde(default)]
     pub env: Vec<String>,
     #[serde(default)]
@@ -38,6 +40,7 @@ pub fn methods() -> &'static Value {
         for schema in [
             include_str!("../../protocol/plugin/personal/methods.json"),
             include_str!("../../protocol/plugin/media/methods.json"),
+            include_str!("../../protocol/plugin/composition/methods.json"),
         ] {
             let group: Value = serde_json::from_str(schema).expect("host extension IDL");
             for (name, method) in group["methods"].as_object().expect("extension methods") {
@@ -67,6 +70,9 @@ impl Install {
         }
         if self.erasure_args.is_some() && !self.grants.contains("forget.owner") {
             return Err("cleanup entry requires forget.owner".into());
+        }
+        if let Some(runtime) = &self.composition {
+            runtime.validate(self)?;
         }
         let known = methods()["methods"].as_object().unwrap();
         if self
@@ -132,12 +138,11 @@ impl Install {
         Ok(())
     }
     pub fn revision(&self) -> Result<String> {
-        Ok(format!(
-            "{:x}",
-            Sha256::digest(serde_json::to_vec(
-                &json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants})
-            )?)
-        ))
+        let mut value = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if let Some(runtime) = &self.composition {
+            value["composition"] = serde_json::to_value(runtime)?;
+        }
+        Ok(format!("{:x}", Sha256::digest(serde_json::to_vec(&value)?)))
     }
     pub fn binding(&self) -> Result<Binding> {
         let declarations = self
@@ -200,6 +205,7 @@ mod tests {
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
             erasure_args: None,
+            composition: None,
             id: "p".into(),
             namespace: "qq.native".into(),
             program: std::env::current_exe().unwrap(),

@@ -1,5 +1,6 @@
 pub(crate) mod calls;
 mod commands;
+pub(crate) mod composition;
 pub(crate) mod domain;
 mod grants;
 mod media;
@@ -29,6 +30,7 @@ pub enum Change {
     Enable(String, bool),
     Callback(String, String, String, Value),
     Call(calls::Change),
+    Composition(Box<composition::Change>),
     CommandDone(i64, String),
     Reported(i64, String),
 }
@@ -40,6 +42,7 @@ struct Slot {
     session: Mutex<Option<process::Session>>,
 }
 pub struct Hub {
+    pub(crate) qq: crate::gateway::qq::Hub,
     slots: BTreeMap<String, Slot>,
     data: PathBuf,
     shutdown: tokio::sync::watch::Sender<bool>,
@@ -100,13 +103,24 @@ impl Hub {
             .collect();
         let (shutdown, end) = tokio::sync::watch::channel(false);
         let hub = Arc::new(Self {
+            qq: qq.clone(),
             shutdown,
             slots,
             data: data.into(),
         });
         store.host = Some(hub.clone());
         tokio::spawn(commands::serve(hub.clone(), store.clone(), qq, end));
-        for id in hub.slots.keys() {
+        for (id, slot) in &hub.slots {
+            if slot.spec.composition.is_some() {
+                let started = hub.restart(store, id).await;
+                if store.main.as_ref().is_some_and(|cfg| {
+                    cfg.code_tool.as_deref()
+                        == slot.spec.composition.as_ref().map(|c| c.tool.as_str())
+                }) {
+                    started?;
+                }
+                continue;
+            }
             let (h, s, id) = (hub.clone(), store.clone(), id.clone());
             tokio::spawn(async move {
                 let _ = h.restart(&s, &id).await;
@@ -202,32 +216,25 @@ impl Hub {
             .as_str()
             .ok_or("missing bound handle")?
             .to_owned();
-        if opened["send"] != true {
-            return Ok(opened);
-        }
-        let generation = opened["generation"]
-            .as_str()
-            .ok_or("missing original generation")?;
         let slot = self.slots.get(&r.plugin).ok_or("plugin not installed")?;
         let session = slot.session.lock().await.clone();
+        let (method,params,generation)=if opened["send"] == true {
+            (r.method.clone(),opened["params"].clone(),opened["generation"].as_str().ok_or("missing original generation")?.to_owned())
+        } else if opened["state"]=="unknown" && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM code_parents WHERE handle=? AND NOT closed AND snapshot IS NOT NULL)").bind(&handle).fetch_one(store.readers()).await? {
+            let generation=session.as_ref().ok_or("original Code runtime offline")?.generation.clone();
+            let params=write(store,Change::Composition(Box::new(composition::Change::Rebind(handle.clone(),generation.clone())))).await?;
+            ("code.resume".into(),params,generation)
+        } else { return Ok(opened); };
         let Some(session) = session.filter(|s| s.generation == generation) else {
             write(
                 store,
-                Change::Call(calls::Change::Unsent {
-                    handle,
-                    generation: generation.into(),
-                }),
+                Change::Call(calls::Change::Unsent { handle, generation }),
             )
             .await?;
             return Err("original plugin generation unavailable".into());
         };
         let result = session
-            .call(
-                store,
-                &r.method,
-                opened["params"].clone(),
-                Some(handle.clone()),
-            )
+            .call(store, &method, params, Some(handle.clone()))
             .await;
         if result.is_err() && session.stopped() {
             write(
@@ -263,6 +270,13 @@ impl Hub {
         else {
             return Ok(None);
         };
+        let (parent, ordinal): (Option<String>, Option<i64>) = sqlx::query_as(
+            "SELECT parent,ordinal FROM operations WHERE namespace=? AND operation_id=?",
+        )
+        .bind(exec)
+        .bind(operation)
+        .fetch_one(store.readers())
+        .await?;
         Ok(Some(
             self.execute(
                 store,
@@ -275,8 +289,8 @@ impl Hub {
                     method: "tool.call".into(),
                     name: name.into(),
                     args,
-                    parent: None,
-                    ordinal: None,
+                    parent,
+                    ordinal,
                 },
             )
             .await?,
