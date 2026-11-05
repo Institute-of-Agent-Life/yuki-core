@@ -5,6 +5,8 @@ import json
 import os
 import sqlite3
 import time
+import subprocess
+import sys
 from contextlib import closing
 from tests.harness.service import Service, previous_schema
 from tests.peers.onebot.peer import Peer
@@ -318,6 +320,12 @@ def run(ctx):
                     )
                 raise AssertionError("missing QQ memory reply")
 
+            text = cmd(808, "/ai memory restore " + fid)
+            ctx.equal("QQ command restores the same withdrawn original fact",rows("SELECT status FROM memory_facts WHERE id=?",fid),[("active",)])
+            restored_version=rows("SELECT revision FROM memory_facts WHERE id=?",fid)
+            ctx.check("QQ restore returns actual receipt","revision" in text)
+            cmd(809, "/ai memory restore " + fid)
+            ctx.equal("QQ repeated new restore cannot modify active fact",rows("SELECT revision FROM memory_facts WHERE id=?",fid),restored_version)
             text = cmd(810, "/ai memory add person-controlled entry")
             ctx.check(
                 "actual private command returns immutable fact receipt",
@@ -346,7 +354,17 @@ def run(ctx):
                 )
             }
         )
+    from tests.harness.memory_restore import run as restore
+    restored=restore(ctx)
+    ctx.write("memory-restore.json",restored)
+    built=subprocess.run([sys.executable,str(ctx.root/"ci/publish-contract.py"),"build","--out",str(ctx.output/"sdk-distributions"),"--verify-work",str(ctx.working/"memory-sdk")],capture_output=True,text=True,timeout=120)
+    ctx.write("memory-sdk-build.json",{"exit_code":built.returncode,"stderr":built.stderr})
+    ctx.equal("memory candidate has independently verified SDK packages",built.returncode,0)
+    binary=ctx.root/"target/debug"/("yuki-core.exe" if os.name=="nt" else "yuki-core")
     return {
+        "binary_sha256":hashlib.sha256(binary.read_bytes()).hexdigest(),
+        "host_idl_sha256":hashlib.sha256((ctx.root/"sdk/rust/src/host-preview.json").read_bytes()).hexdigest(),
+        "restore":restored,
         "cases": {"R16": notes},
         "paid_tools": paid_memory(ctx),
         "replay": first,

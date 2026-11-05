@@ -45,6 +45,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
     control = card == "CORE-037"
     importing = card == "CORE-057"
     history = card == "CORE-014"
+    memory = card == "CORE-026"
     artifact = card == "CORE-015"
     members = card == "CORE-013"
     usage = card == "CORE-055"
@@ -59,6 +60,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "CORE-057": "offline-config-reconciliation.json",
         "CORE-014": "original-history-wire.json",
         "CORE-015": "tool-result-pages.json",
+        "CORE-026": "fact-evidence-acl.json",
         "CORE-013": "observed-members.json",
         "CORE-055": "usage-field-coverage.json",
         "CORE-037": "control-grants.json",
@@ -84,7 +86,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control or usage or importing or history or artifact or members
+        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control or usage or importing or history or artifact or members or memory
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -109,6 +111,13 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if memory:
+        proof=receipt('memory-restore.json')
+        raw_fixture=(ROOT/'fixtures/memory/v4-restore.json').read_bytes()
+        if digest(raw_fixture)!=json.loads(proof)['oracle_sha256']:raise ValueError('memory restore oracle differs from validated input')
+        files['evidence/memory-restore.json']=proof
+        files['evidence/v4-restore.json']=raw_fixture
+        files['docs/memory-restore.md']=(ROOT/'docs/memory-restore.md').read_bytes()
     if importing:
         files["docs/model-config-import.md"]=(ROOT/"docs/model-config-import.md").read_bytes()
         files["evidence/legacy-import-provenance.json"]=(ROOT/"tests/fixtures/import/model-v4/provenance.json").read_bytes()
@@ -301,7 +310,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-013", "CORE-015", "CORE-014", "CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037", "CORE-055", "CORE-057"}
+        m["card"] not in {"CORE-026", "CORE-013", "CORE-015", "CORE-014", "CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037", "CORE-055", "CORE-057"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -322,6 +331,7 @@ def build(manifest_path, out, development=False):
     control = m["card"] == "CORE-037"
     importing = m["card"] == "CORE-057"
     history = m["card"] == "CORE-014"
+    memory = m["card"] == "CORE-026"
     artifact = m["card"] == "CORE-015"
     observed_members = m["card"] == "CORE-013"
     usage = m["card"] == "CORE-055"
@@ -336,6 +346,7 @@ def build(manifest_path, out, development=False):
         "CORE-057": "offline-config-reconciliation.json",
         "CORE-014": "original-history-wire.json",
         "CORE-015": "tool-result-pages.json",
+        "CORE-026": "fact-evidence-acl.json",
         "CORE-013": "observed-members.json",
         "CORE-055": "usage-field-coverage.json",
         "CORE-037": "control-grants.json",
@@ -358,6 +369,7 @@ def build(manifest_path, out, development=False):
                 "CORE-057": "yuki-model-import-preview-",
                 "CORE-014": "yuki-history-preview-",
                 "CORE-015": "yuki-artifact-preview-",
+                "CORE-026": "yuki-memory-preview-",
                 "CORE-013": "yuki-social-preview-",
                 "CORE-055": "yuki-usage-preview-",
                 "CORE-037": "yuki-control-preview-",
@@ -414,6 +426,13 @@ def build(manifest_path, out, development=False):
         candidate["database_schema_revision"]=None
         candidate["validation"]["consumer"]="offline stopped-copy importer; no runtime owner or provider started"
         candidate["validation"]["real_extension_consumers"]=False
+    if memory:
+        candidate['database_schema_revision']=m['schema_version']
+        candidate['validated_core_tools']=['memory_change','read_memory']
+        candidate['validated_memory_operations']=['create','correct','invalidate','restore']
+        candidate['memory_restore_oracle_sha256']=json.loads(receipt('memory-restore.json'))['oracle_sha256']
+        candidate['validation']['consumer']='physical Main, QQ command and original writer fixtures; SDK packages independently installed'
+        candidate['validation']['real_extension_consumers']=False
     if observed_members:
         candidate['database_schema_revision']=m['schema_version']
         candidate['validated_core_tools']=['get_group_members','recall_own_message']

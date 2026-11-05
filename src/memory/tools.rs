@@ -41,8 +41,8 @@ pub fn declaration(name: &str) -> Option<Tool> {
             ]
             .contains(&key.as_str())
         });
-        props.get_mut("operation")?["enum"] = json!(["create", "correct", "invalidate"]);
-        props.get_mut("expected_fact_state")?["enum"] = json!(["active"]);
+        props.get_mut("operation")?["enum"] = json!(["create", "correct", "invalidate", "restore"]);
+        props.get_mut("expected_fact_state")?["enum"] = json!(["active", "invalidated"]);
         props.get_mut("request_basis")?["enum"] = json!(["user_requested"]);
         props.get_mut("evidence_refs")?["items"] = json!({"type":"string","const":"current_event"});
         let target = &mut props.get_mut("target")?["properties"];
@@ -51,7 +51,7 @@ pub fn declaration(name: &str) -> Option<Tool> {
             .retain(|key, _| matches!(key.as_str(), "scope_type" | "subject_ref"));
         target["scope_type"]["enum"] = json!(["person"]);
         target["subject_ref"]["enum"] = json!(["current_speaker"]);
-        "按真实原事件写入本人事实。correct 或 invalidate 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。"
+        "按真实原事件写入本人事实。correct、invalidate 或 restore 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。restore 仅恢复已撤回且未到期的原事实，保留最后有效内容；已忘记内容不能恢复。"
     } else {
         item["description"].as_str()?
     };
@@ -95,13 +95,25 @@ async fn original_event(conn: &mut SqliteConnection, exec: &str, args: &Value) -
             .fetch_one(&mut *conn)
             .await?
     };
-    Ok(Source::Event {
-        id: event,
-        quote: args["evidence_quote"]
-            .as_str()
-            .ok_or("original quote required")?
-            .into(),
-    })
+    let raw: String = sqlx::query_scalar("SELECT e.envelope FROM events e JOIN executions x ON x.id=? JOIN events origin ON origin.id=x.source JOIN persons author ON author.id=e.raw_actor JOIN persons owner ON owner.id=x.original_actor WHERE e.id=? AND coalesce(author.current_root,author.id)=coalesce(owner.current_root,owner.id) AND e.entry_id=origin.entry_id AND e.bot_stage=origin.bot_stage AND json_extract(e.envelope,'$.kind')='message' AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)")
+        .bind(exec).bind(event).fetch_optional(&mut *conn).await?
+        .ok_or("untrusted_trigger_event")?;
+    let raw: Value = serde_json::from_str(&raw)?;
+    let quote = if let Some(quote) = args["evidence_quote"].as_str() {
+        quote.to_owned()
+    } else if let Some(text) = raw["text"].as_str() {
+        text.to_owned()
+    } else {
+        raw["segments"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|s| s["type"] == "text")
+            .filter_map(|s| s["text"].as_str())
+            .collect::<Vec<_>>()
+            .join("")
+    };
+    Ok(Source::Event { id: event, quote })
 }
 async fn act(
     conn: &mut SqliteConnection,
@@ -160,6 +172,17 @@ async fn act(
         }
     } else {
         let id = fact(conn, &args).await?;
+        if let Some(expected) = args["expected_fact_state"].as_str() {
+            let current = facts::read(conn, r, Some(&id), "", 1, false, false).await?;
+            let expected = if expected == "invalidated" {
+                "retracted"
+            } else {
+                expected
+            };
+            if current["items"][0]["status"] != expected {
+                return Err("expected_fact_state_mismatch".into());
+            }
+        }
         let (revision, proof) = sqlx::query_as::<_, (i64, String)>(
             "SELECT revision,proof FROM memory_paid_reads WHERE execution=? AND fact=?",
         )
@@ -192,6 +215,13 @@ async fn act(
                 fact: id,
                 revision,
                 proof,
+            }
+        } else if requested == "restore" {
+            Edit::Restore {
+                fact: id,
+                revision,
+                proof,
+                evidence: vec![original_event(conn, exec, &args).await?],
             }
         } else {
             return Err("unsupported Memory operation".into());

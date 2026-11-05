@@ -40,6 +40,12 @@ pub enum Edit {
         revision: i64,
         proof: String,
     },
+    Restore {
+        fact: String,
+        revision: i64,
+        proof: String,
+        evidence: Vec<Source>,
+    },
 }
 async fn summary(
     conn: &mut SqliteConnection,
@@ -213,8 +219,18 @@ pub async fn edit(
             fact,
             revision,
             proof,
+        }
+        | Edit::Restore {
+            fact,
+            revision,
+            proof,
+            ..
         } => {
-            scope::writable(conn, r, fact).await?;
+            if matches!(edit, Edit::Restore { .. }) {
+                scope::writable_state(conn, r, fact, "retracted").await?;
+            } else {
+                scope::writable(conn, r, fact).await?;
+            }
             let current = summary(conn, r, fact, actor, home_only, false).await?;
             if current["revision"] != *revision || current["proof"] != proof.as_str() {
                 return Err("fact revision or readable evidence changed".into());
@@ -236,6 +252,20 @@ pub async fn edit(
                     Some(body.clone()),
                     confidence.or(current["confidence"].as_f64()),
                 )
+            } else if let Edit::Restore { evidence, .. } = edit {
+                if evidence.is_empty() {
+                    return Err("restoration requires original evidence".into());
+                }
+                let expired: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM extract_fact_details WHERE fact=? AND valid_until IS NOT NULL AND (julianday(valid_until) IS NULL OR julianday(valid_until)<=julianday('now')))")
+                    .bind(fact).fetch_one(&mut *conn).await?;
+                if expired {
+                    return Err("expired fact cannot be restored".into());
+                }
+                let retained: String = sqlx::query_scalar("SELECT body FROM memory_versions WHERE fact=? AND revision<? AND body IS NOT NULL ORDER BY revision DESC LIMIT 1")
+                    .bind(fact).bind(revision).fetch_optional(&mut *conn).await?
+                    .ok_or("original fact content unavailable")?;
+                sources(conn, r, actor, fact, evidence).await?;
+                ("active", Some(retained), current["confidence"].as_f64())
             } else {
                 ("retracted", None, current["confidence"].as_f64())
             };

@@ -32,7 +32,9 @@ async fn selected(
 }
 fn sources(edit: &Edit) -> &[Source] {
     match edit {
-        Edit::Add { evidence, .. } | Edit::Correct { evidence, .. } => evidence,
+        Edit::Add { evidence, .. }
+        | Edit::Correct { evidence, .. }
+        | Edit::Restore { evidence, .. } => evidence,
         Edit::Retract { .. } => &[],
     }
 }
