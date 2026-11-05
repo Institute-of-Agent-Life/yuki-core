@@ -488,3 +488,5 @@ CORE-037／030 CI 修復：Windows Python 缺少系統 tzdb，現以附來源版
 CORE-055 整合 CORE-037 CI 修復 `98816c2`，用相同固定 IANA fixture 驗 DST；schema 回條改讀實際 SQLite reader，避免後續可加遷移仍報 41。`artifacts/CORE-055/pinned-calendar-mac-01/` 138 項通過，原候選來源不變；PR #52 重驗最新 head。
 
 CORE-037 整合 CI 時序修復：CORE-050 變更 aux Profile 宣告後先按實際 revision 重新批准；CORE-058 先確認離線通知已以 bot_unavailable 結算，再接上 QQ 發起另一個通知，不依賴偶然連線時序。Mac `approved-profile-mac-01`／`refused-receiver-mac-01` 與 Linux `CORE-037/ci-lifecycle-linux-02/{CORE-050,CORE-058}` 分別通過 566／330 項；HJW 的 `CORE-050/approved-profile-windows-01` 566 項通過，CORE-058 原生回歸續跑中。源樹 `9b08b55f460f89a3d6a280f52c655851dc9292eac25ab304b1a1051019b7abee`。保留原 CI 失敗；只修 fixture 的明確批准／派發時序，無放寬產品授權、通知狀態或等待上限。PR #51 最新 head 重新跑六項 CI 後才合併。
+
+CORE-058 冷恢復補正（codex/core-037-control-integration）：Windows 原回條 `artifacts/CORE-058/refused-receiver-windows-01` 顯示恢復後 QQ 尚未在線，原投遞已安全拒絕，測試仍等待自動發送而逾時。改為先核持久 failed／bot_unavailable 與零物理投遞，再經 plugin.outbox.retry 的版本比較恢復同一原始操作；未知回執仍不重試。所有新 QQ 發布先等核心觀測 online。Mac `artifacts/CORE-058/cold-recovery-mac-02` 通過；首次 mac-01 把合法建立的物理子操作也誤當根身份變動，已改為核根操作，保留失敗回條。Windows cold-recovery-windows-02 及 Linux CORE-037/cold-recovery-linux-03 正在跑，未標通過。
