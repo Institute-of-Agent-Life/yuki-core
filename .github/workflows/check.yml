@@ -33,6 +33,8 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           cargo fetch --locked
           cargo fetch --locked --manifest-path sdk/rust/Cargo.toml
+      - name: Verify scoped maintenance and original paid review results
+        run: python ci/check.py CORE-035 --out artifacts/CORE-035/ci
       - name: Verify original human promotion and scene-bound SELF feedback
         run: python ci/check.py CORE-036 --out artifacts/CORE-036/ci
       - name: Replay offline harness and reject injected faults

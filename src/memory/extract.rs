@@ -1,4 +1,4 @@
-pub(super) mod source;
+pub(crate) mod source;
 mod writer;
 use crate::{
     Result,
@@ -241,5 +241,22 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
             crate::store::tests::commit_barrier("extract-response-before-facts").await;
         }
     }
+    Ok(())
+}
+
+/// Shared original extraction metadata for online commits and reviewed subsets.
+pub(crate) async fn details(conn: &mut SqliteConnection, fact: &str, claim: &Value) -> Result<()> {
+    sqlx::query(
+        "INSERT INTO extract_fact_details VALUES(?,?,?,?,?,?,?) ON CONFLICT(fact) DO NOTHING",
+    )
+    .bind(fact)
+    .bind(claim["category"].as_str())
+    .bind(claim["kind"].as_str().unwrap_or("fact"))
+    .bind(claim["importance"].as_i64().unwrap_or(3))
+    .bind(claim["temporal_mode"].as_str().unwrap_or("persistent"))
+    .bind(claim["valid_from"].as_str())
+    .bind(claim["valid_until"].as_str())
+    .execute(conn)
+    .await?;
     Ok(())
 }

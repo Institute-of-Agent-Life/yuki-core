@@ -18,7 +18,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -36,6 +36,7 @@ def build(manifest_path, out, development=False):
 
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
+    maintenance = m["card"] == "CORE-035"
     participation = m["card"] == "CORE-036"
     auxiliary = m["card"] == "CORE-050"
     composition = m["card"] == "CORE-034"
@@ -45,6 +46,7 @@ def build(manifest_path, out, development=False):
         "CORE-038": "media-handle-bridge.json",
         "CORE-050": "aux-attempts.json",
         "CORE-036": "promotion-vs-self.json",
+        "CORE-035": "maintenance-grants.json",
         "CORE-034": "nested-boundary.json",
     }[m["card"]]
     proof = receipt(proof_name)
@@ -58,7 +60,7 @@ def build(manifest_path, out, development=False):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation
+        if personal or media or composition or auxiliary or participation or maintenance
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -83,6 +85,11 @@ def build(manifest_path, out, development=False):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if maintenance:
+        methods=(ROOT/"protocol/plugin/maintenance/methods.json").read_bytes()
+        if digest(methods)!=data["maintenance_schema_sha256"] or set(data["negotiated_maintenance_methods"])!=set(json.loads(methods)["methods"]):
+            raise ValueError("maintenance methods differ from exercised original")
+        files["protocol/maintenance/methods.json"]=methods
     if participation:
         methods=(ROOT/"protocol/plugin/participation/methods.json").read_bytes()
         if digest(methods)!=data["participation_schema_sha256"] or set(data["negotiated_participation_methods"])!=set(json.loads(methods)["methods"]):
@@ -194,6 +201,7 @@ def build(manifest_path, out, development=False):
                 "CORE-038": "yuki-media-preview-",
                 "CORE-050": "yuki-aux-model-preview-",
                 "CORE-036": "yuki-participation-preview-",
+                "CORE-035": "yuki-maintenance-preview-",
                 "CORE-034": "yuki-code-preview-",
             }[m["card"]]
         )
@@ -243,6 +251,11 @@ def build(manifest_path, out, development=False):
         candidate["media_schema_revision"] = 1
         candidate["media_schema_sha256"] = data["media_schema_sha256"]
         candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
+    if maintenance:
+        candidate["maintenance_schema_revision"]=1
+        candidate["maintenance_schema_sha256"]=data["maintenance_schema_sha256"]
+        candidate["validated_maintenance_methods"]=data["negotiated_maintenance_methods"]
+        candidate["validation"]["real_extension_consumers"]="pending EXT-033, EXT-034, EXT-035, EXT-036 and EXT-048"
     if participation:
         candidate["participation_schema_revision"]=1
         candidate["participation_schema_sha256"]=data["participation_schema_sha256"]

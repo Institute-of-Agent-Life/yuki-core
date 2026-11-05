@@ -27,7 +27,7 @@ impl Route {
             || self
                 .origins
                 .iter()
-                .any(|o| !matches!(o.as_str(), "event" | "call"))
+                .any(|o| !matches!(o.as_str(), "event" | "call" | "maintenance"))
             || self.entries.is_empty()
             || self.entries.iter().any(String::is_empty)
             || self
@@ -66,6 +66,7 @@ pub enum Change {
     },
 }
 
+pub(super) use writer::structured_receipt;
 pub(super) use writer::{apply, configure};
 
 pub(super) async fn callback(

@@ -82,6 +82,8 @@ class Peer:
         self.owner.until(p.exists)
         result = json.loads(p.read_bytes())
         if ok is not None:
+            if ("result" in result) != ok:
+                self.owner.ctx.write("aux-rpc-failure-" + key + ".json", result)
             self.owner.ctx.equal(
                 "original auxiliary RPC " + key + " accepted", "result" in result, ok
             )

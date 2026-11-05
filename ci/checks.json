@@ -5,6 +5,20 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-035": {
+      "case": "tests/cases/CORE-035.py",
+      "artifact": "maintenance-grants.json",
+      "timeout_seconds": 360,
+      "rust": true,
+      "capabilities": [
+        "scoped-maintenance-reads",
+        "original-paid-review",
+        "historical-extraction",
+        "scoped-reembed",
+        "source-audit",
+        "tool-evidence-map"
+      ]
+    },
     "CORE-036": {
       "case": "tests/cases/CORE-036.py",
       "artifact": "promotion-vs-self.json",

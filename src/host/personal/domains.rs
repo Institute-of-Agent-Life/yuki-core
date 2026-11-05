@@ -18,6 +18,8 @@ fn home(w: &Principal) -> Result<&str> {
 }
 async fn reader(conn: &mut SqliteConnection, w: &Principal) -> Result<Reader> {
     Ok(Reader {
+        archived_evidence: false,
+        write_subject: None,
         base: query::for_person(conn, &w.owner, home(w)?, false).await?,
         root: w.root.clone(),
         actor: w.owner.clone(),

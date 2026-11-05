@@ -41,10 +41,19 @@ pub(super) async fn resolve(
     plugin: &str,
     generation: &str,
     input: &Value,
+    route_name: &str,
     route: &Route,
     new_request: bool,
 ) -> Result<Origin> {
-    let (entry, parent, event) = if let Some(handle) = input["handle"].as_str() {
+    let (entry, parent, event) = if let Some(root) = input["maintenance"].as_str() {
+        if !route.origins.contains("maintenance") {
+            return Err("route excludes maintenance origins".into());
+        }
+        let entry =
+            super::super::maintenance::resolve_origin(db, plugin, generation, root, route_name)
+                .await?;
+        (entry, Some(root.to_owned()), None)
+    } else if let Some(handle) = input["handle"].as_str() {
         if !route.origins.contains("call") {
             return Err("route excludes host call origins".into());
         }

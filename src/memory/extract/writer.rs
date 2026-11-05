@@ -274,16 +274,7 @@ async fn commit(conn: &mut SqliteConnection, id: &str, zone: &str, result: &Valu
                     let fid = facts::insert_fact(conn, &exec, &subject, "subject", key).await?;
                     evidence::attach(conn, &fid, proof).await?;
                     sqlx::query("INSERT INTO memory_versions(fact,revision,body,confidence,execution) VALUES(?,1,?,?,?)").bind(&fid).bind(body).bind(claim["confidence"].as_f64().unwrap_or(0.8)).bind(&exec).execute(&mut *conn).await?;
-                    sqlx::query("INSERT INTO extract_fact_details VALUES(?,?,?,?,?,?,?)")
-                        .bind(&fid)
-                        .bind(claim["category"].as_str())
-                        .bind(claim["kind"].as_str().unwrap_or("fact"))
-                        .bind(claim["importance"].as_i64().unwrap_or(3))
-                        .bind(claim["temporal_mode"].as_str().unwrap_or("persistent"))
-                        .bind(claim["valid_from"].as_str())
-                        .bind(claim["valid_until"].as_str())
-                        .execute(&mut *conn)
-                        .await?;
+                    super::details(conn, &fid, claim).await?;
                     fact = Some(fid);
                     "created"
                 }

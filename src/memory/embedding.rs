@@ -1,4 +1,4 @@
-pub(super) mod profile;
+pub(crate) mod profile;
 mod writer;
 use crate::{
     Result,
@@ -60,7 +60,7 @@ pub async fn status(store: &Store) -> Result<Value> {
     };
     let profile = engine.profile.identity();
     let (total,covered):(i64,i64)=sqlx::query_as("SELECT count(*),count(v.fact) FROM memory_facts f LEFT JOIN fact_vectors v ON v.fact=f.id AND v.revision=f.revision AND v.profile=? WHERE f.status='active'").bind(&profile).fetch_one(store.readers()).await?;
-    let rows=sqlx::query("SELECT j.purpose,j.state,count(*) AS logical,sum((SELECT count(*) FROM model_attempts a WHERE a.logical=j.logical)) AS attempts,sum((SELECT count(*) FROM model_attempts a WHERE a.logical=j.logical AND a.ever_unknown)) AS unknowns,sum((SELECT json_extract(a.usage_json,'$.input_tokens') FROM model_attempts a WHERE a.logical=j.logical)) AS tokens FROM embedding_requests j WHERE j.profile=? GROUP BY j.purpose,j.state ORDER BY j.purpose,j.state").bind(&profile).fetch_all(store.readers()).await?;
+    let rows=sqlx::query("SELECT j.purpose,j.state,count(*) AS logical,sum((SELECT count(*) FROM model_attempts a WHERE a.logical=j.logical)) AS attempts,sum((SELECT count(*) FROM model_attempts a WHERE a.logical=j.logical AND a.ever_unknown)) AS unknowns,sum((SELECT coalesce(json_extract(a.usage_json,'$.input'),json_extract(a.usage_json,'$.input_tokens')) FROM model_attempts a WHERE a.logical=j.logical)) AS tokens FROM embedding_requests j WHERE j.profile=? GROUP BY j.purpose,j.state ORDER BY j.purpose,j.state").bind(&profile).fetch_all(store.readers()).await?;
     let usage:Vec<_>=rows.iter().map(|r|json!({"purpose":r.get::<&str,_>("purpose"),"state":r.get::<&str,_>("state"),"logical":r.get::<i64,_>("logical"),"attempts":r.get::<i64,_>("attempts"),"unknown":r.get::<i64,_>("unknowns"),"known_input_tokens":r.get::<Option<i64>,_>("tokens")})).collect();
     let degraded:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM embedding_items i JOIN embedding_requests j ON j.logical=i.logical WHERE j.profile=?1 AND i.state IN('missing','unknown')) OR coalesce((SELECT state IN('failed','partial','unknown') FROM embedding_requests WHERE profile=?1 AND purpose='query' ORDER BY rowid DESC LIMIT 1),0)").bind(&profile).fetch_one(store.readers()).await?;
     Ok(
@@ -91,13 +91,26 @@ pub async fn query(store: &Store, exec: &str, actor: &str, op: &str, text: &str)
 }
 async fn run(store: &Store, id: &str) -> Result<Value> {
     let engine = engine(store)?;
-    let p = &engine.profile;
+    transport(store, &engine.profile, &engine.client, id).await
+}
+pub(crate) async fn run_scoped(store: &Store, profile: Arc<Profile>, id: &str) -> Result<Value> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(20))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()?;
+    transport(store, &profile, &client, id).await
+}
+async fn transport(
+    store: &Store,
+    p: &Arc<Profile>,
+    client: &reqwest::Client,
+    id: &str,
+) -> Result<Value> {
     let next = write(store, Change::Dispatch(p.clone(), id.into())).await?;
     if next["dispatch_now"] != true {
         return Err("embedding attempt already dispatched; no duplicate call".into());
     }
-    let mut req = engine
-        .client
+    let mut req = client
         .post(p.endpoint())
         .header("content-type", "application/json")
         .body(
@@ -185,4 +198,14 @@ pub(super) async fn open_reference(store: &Store) -> Result<bool> {
     .fetch_one(store.readers())
     .await?;
     Ok(ready || write(store, Change::OpenReference(p)).await? == true)
+}
+
+pub(crate) async fn prepare_scoped(
+    conn: &mut SqliteConnection,
+    profile: &Profile,
+    fact: &str,
+    revision: i64,
+    parent: &str,
+) -> Result<Value> {
+    writer::selected_document(conn, profile, fact, revision, parent).await
 }

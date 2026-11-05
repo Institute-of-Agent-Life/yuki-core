@@ -1,6 +1,6 @@
 mod commands;
 pub mod embedding;
-mod evidence;
+pub(crate) mod evidence;
 pub mod extract;
 pub mod facts;
 pub(crate) mod index;

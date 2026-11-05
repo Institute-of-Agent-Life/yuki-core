@@ -89,7 +89,11 @@ pub async fn read(
 }
 async fn verify_subject(conn: &mut SqliteConnection, r: &Reader, s: &Subject) -> Result<String> {
     let visibility = s.visibility.as_deref().unwrap_or("subject");
-    if !r.admin {
+    if let Some(granted) = &r.write_subject {
+        if !scope::same_subject(conn, granted, s).await? {
+            return Err("fact outside installed maintenance subject".into());
+        }
+    } else if !r.admin {
         let owner: Option<String> = sqlx::query_scalar(
             "SELECT coalesce(current_root,id) FROM persons WHERE id=? AND enabled",
         )

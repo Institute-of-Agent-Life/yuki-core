@@ -37,6 +37,20 @@
                   "event"
                 ],
                 "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "maintenance": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "maintenance"
+                ],
+                "additionalProperties": false
               }
             ]
           },

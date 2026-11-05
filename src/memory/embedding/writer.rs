@@ -89,6 +89,14 @@ pub async fn documents(conn: &mut SqliteConnection, p: &Profile) -> Result<Value
     .bind(i64::try_from(p.batch_size)?)
     .fetch_all(&mut *conn)
     .await?;
+    prepare_documents(conn, p, rows, None).await
+}
+async fn prepare_documents(
+    conn: &mut SqliteConnection,
+    p: &Profile,
+    rows: Vec<sqlx::sqlite::SqliteRow>,
+    parent: Option<&str>,
+) -> Result<Value> {
     let Some(first) = rows.first() else {
         return Ok(Value::Null);
     };
@@ -123,7 +131,7 @@ pub async fn documents(conn: &mut SqliteConnection, p: &Profile) -> Result<Value
         items.push((row, digest(text.as_bytes())));
         texts.push(text);
     }
-    let exec = root(conn, entry, None).await?;
+    let exec = root(conn, entry, parent).await?;
     let logical = format!("embed-doc:{exec}");
     for (row, _) in &items {
         dependency(conn, &exec, row.try_get("execution")?).await?;
@@ -253,7 +261,7 @@ pub async fn settle(
     let (raw, values) = match http {
         Outcome::Ok(raw) => {
             let value: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
-            let usage=json!({"input_tokens":value["usage"]["prompt_tokens"].as_u64().or(value["usage"]["total_tokens"].as_u64())}).to_string();
+            let usage=json!({"input":value["usage"]["prompt_tokens"].as_u64().or(value["usage"]["total_tokens"].as_u64())}).to_string();
             let receipt = attempt::apply(
                 conn,
                 &attempt::Action::Response {
@@ -389,4 +397,38 @@ pub async fn init(conn: &mut SqliteConnection) -> Result<Value> {
         sqlx::query(sql).execute(&mut *conn).await?;
     }
     Ok(Value::Null)
+}
+
+pub(super) async fn selected_document(
+    conn: &mut SqliteConnection,
+    p: &Profile,
+    fact: &str,
+    revision: i64,
+    parent: &str,
+) -> Result<Value> {
+    let current: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM fact_vectors WHERE fact=? AND revision=? AND profile=?)",
+    )
+    .bind(fact)
+    .bind(revision)
+    .bind(p.identity())
+    .fetch_one(&mut *conn)
+    .await?;
+    if current {
+        return Ok(json!({"state":"current"}));
+    }
+    let prior:Option<String>=sqlx::query_scalar("SELECT i.state FROM embedding_items i JOIN embedding_requests j ON j.logical=i.logical WHERE i.fact=? AND i.revision=? AND j.profile=? AND i.state IN('pending','unknown','missing') ORDER BY j.rowid DESC LIMIT 1")
+        .bind(fact).bind(revision).bind(p.identity()).fetch_optional(&mut *conn).await?;
+    if let Some(state) = prior {
+        return Ok(json!({"state":state}));
+    }
+    let rows = sqlx::query(&format!("{SELECT_FACT} AND f.id=? AND f.revision=?"))
+        .bind(fact)
+        .bind(revision)
+        .fetch_all(&mut *conn)
+        .await?;
+    if rows.is_empty() {
+        return Err("original scoped fact version unavailable".into());
+    }
+    prepare_documents(conn, p, rows, Some(parent)).await
 }

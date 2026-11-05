@@ -229,3 +229,11 @@ Mac `mac-06` 與 HJW `windows-01` 各通過 128 項，來源樹 `0c5c2a018ddf935
 | Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/linux-arm64/candidate/yuki-participation-preview-9f9c3d0eaace-linux-arm64.zip` | `127847f6cab2d7cb8c3378068701ffd51d6610467a0d7ef4c42d0affb5d1174a` |
 | macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/macos-arm64/yuki-participation-preview-9f9c3d0eaace-darwin-arm64.zip` | `c438c7f23c4549210b13e9d77bd3ed5360e853fd47164854ec4d74cac0de4584` |
 | Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/windows-validation/handoff/yuki-participation-preview-9f9c3d0eaace-windows-x86_64.zip` | `6c2d5f22416836ac0c489b3fe1bb308e8f79b813e21c9ca321d4ec619eb59f1f` |
+
+## CORE-035 維護授權與已付審閱
+
+`codex/core-035-maintenance` 已完成十二個維護 RPC、加法遷移 33、SDK alpha.8／a8。包含原來源與 fact／工具回執版本綁定、已付 preview、核准子集與原鍵回放、歷史入口重建、限定 Reembed、來源審計及 FTS 重建。大內容與依賴以原 SHA-256 分頁。工具證據保留真實 Work 子任務與原人物來源，私聊上下文限原 SELF 範圍。
+
+Mac `artifacts/CORE-035/tool-map-mac-06/maintenance-grants.json` 通過 303 項，來源樹 `02e537febf439d9e4f39754f421120d8334d2cc032d8847c1d297f2f2fb8e401`。實機 HJW Windows `windows-01` 同來源亦通過 303 項。CORE-007、011、016、026、027、028、029、030、033、036、050、052 十二卡 `maintenance-regression-01/` 全部通過。前幾輪 fixture、合同分支與 SDK 版本不一致的失敗回條保留。
+
+CORE-028 已知 usage 擦除補修隨此工作樹驗過，獨立修正已推向量 PR #35。真 EXT-033、034、035、036、048 的候選消費證據仍待交接。此卡本地驗證已通過，下一步由乾淨提交製作三平台未發布候選，再接 CORE-051 隔離插件會話。

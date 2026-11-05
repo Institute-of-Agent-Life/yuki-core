@@ -96,6 +96,35 @@ pub async fn event_proof(conn: &mut SqliteConnection, id: i64, quote: &str) -> R
         quote: quote.into(),
     })
 }
+/// Read retained receipts under a separately installed maintenance scope. Action dispatch
+/// continues to use effects::authorize and the live original route.
+pub(crate) async fn execution_scope(
+    conn: &mut SqliteConnection,
+    r: &Reader,
+    execution: &str,
+    actor: &str,
+) -> Result<crate::history::query::Scope> {
+    if !r.archived_evidence {
+        effects::authorize(conn, execution, actor, false).await?;
+        return crate::history::query::scope(conn, execution, actor).await;
+    }
+    let (subject, entry): (String, String) = sqlx::query_as(
+        "SELECT actor,entry FROM maintenance_execution_access WHERE execution=? AND entry=?",
+    )
+    .bind(execution)
+    .bind(&r.base.home)
+    .fetch_one(conn)
+    .await?;
+    if !r.admits_entry(&entry) {
+        return Err("original evidence unavailable".into());
+    }
+    Ok(crate::history::query::Scope {
+        subject,
+        home: entry.clone(),
+        entries: vec![entry],
+    })
+}
+
 pub async fn resolve(
     conn: &mut SqliteConnection,
     r: &Reader,
@@ -115,8 +144,7 @@ pub async fn resolve(
             operation,
             quote,
         } => {
-            effects::authorize(conn, execution, actor, false).await?;
-            let origin = crate::history::query::scope(conn, execution, actor).await?;
+            let origin = execution_scope(conn, r, execution, actor).await?;
             let raw:String=sqlx::query_scalar("SELECT result FROM operations WHERE namespace=? AND operation_id=? AND state='confirmed' AND result IS NOT NULL").bind(execution).bind(operation).fetch_one(&mut *conn).await?;
             (
                 "tool",
@@ -130,8 +158,7 @@ pub async fn resolve(
             )
         }
         Source::Run { execution, quote } => {
-            effects::authorize(conn, execution, actor, false).await?;
-            let origin = crate::history::query::scope(conn, execution, actor).await?;
+            let origin = execution_scope(conn, r, execution, actor).await?;
             let raw:String=sqlx::query_scalar("SELECT t.result FROM main_turns t JOIN executions x ON x.id=t.execution WHERE t.execution=? AND x.state='completed' AND t.result IS NOT NULL").bind(execution).fetch_one(&mut *conn).await?;
             (
                 "run",

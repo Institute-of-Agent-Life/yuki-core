@@ -413,6 +413,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
     sqlx::raw_sql("INSERT INTO accepted_sources VALUES(1);
        INSERT INTO executions(id,source,original_actor,state) VALUES('run',1,'00000000-0000-4000-8000-000000000088','running')").execute(&mut *conn).await.unwrap();
     let install = Install {
+        maintenance: None,
         participation: None,
         aux_routes: Default::default(),
         erasure_args: None,

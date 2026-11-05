@@ -52,7 +52,16 @@ async fn request(
         }
         return Ok(json!({"request":row.get::<&str,_>("id")}));
     }
-    let origin = scope::resolve(db, plugin, generation, &params["origin"], &route, true).await?;
+    let origin = scope::resolve(
+        db,
+        plugin,
+        generation,
+        &params["origin"],
+        text(params, "route")?,
+        &route,
+        true,
+    )
+    .await?;
     let task: Option<chat::Task> = params
         .get("task")
         .map(|v| serde_json::from_value(v.clone()))
@@ -247,7 +256,16 @@ async fn authorized_route(
         return Err("original auxiliary route changed".into());
     }
     let origin: Value = serde_json::from_str(row.get("origin"))?;
-    scope::resolve(db, plugin, generation, &origin, &route, false).await?;
+    scope::resolve(
+        db,
+        plugin,
+        generation,
+        &origin,
+        row.get("route"),
+        &route,
+        false,
+    )
+    .await?;
     if dispatch && let Some(handle) = origin["handle"].as_str() {
         let closed: bool = sqlx::query_scalar(
             "SELECT state IN('confirmed','failed') FROM host_calls WHERE handle=?",
@@ -395,4 +413,38 @@ pub(in crate::host) async fn apply(db: &mut SqliteConnection, change: &Change) -
             page,
         } => result(db, plugin, generation, params, *page).await,
     }
+}
+
+/// A maintenance preview can consume only the original successfully decoded structured result.
+pub(in crate::host) async fn structured_receipt(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    generation: &str,
+    id: &str,
+) -> Result<Value> {
+    super::super::domain::active(db, plugin, generation, "llm.result").await?;
+    let row = load(db, plugin, id).await?;
+    if source::execution_erased(db, row.get("execution"), None).await? {
+        return Err("original paid sources erased".into());
+    }
+    let route = authorized_route(db, &row, plugin, generation, false).await?;
+    let task: chat::Task = serde_json::from_str(
+        row.get::<Option<&str>, _>("task")
+            .ok_or("structured paid result required")?,
+    )?;
+    let response:String=sqlx::query_scalar("SELECT response FROM model_attempts WHERE logical=? AND state IN('response','paired') ORDER BY ordinal DESC LIMIT 1")
+        .bind(row.get::<&str,_>("logical")).fetch_one(&mut *db).await?;
+    let request: String = sqlx::query_scalar("SELECT request_json FROM model_requests WHERE id=?")
+        .bind(row.get::<&str, _>("logical"))
+        .fetch_one(&mut *db)
+        .await?;
+    let decoded = route.profile.protocol.decode(
+        &response,
+        Some(&task),
+        &route.profile,
+        &serde_json::from_str(&request)?,
+    )?;
+    Ok(
+        json!({"result":decoded.result,"execution":row.get::<String,_>("execution"),"logical":row.get::<String,_>("logical"),"route":row.get::<String,_>("route"),"purpose":row.get::<String,_>("purpose")}),
+    )
 }
