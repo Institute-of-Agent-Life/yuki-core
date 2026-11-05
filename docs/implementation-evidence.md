@@ -632,3 +632,14 @@ CORE-015 H12 逐項拒絕補核在 `codex/core-015-call-isolation`。可信 deco
 - windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/isolation-handoff-final-01/windows-validation/handoff/yuki-artifact-preview-969fb62e34de-windows-x86_64.zip`；SHA-256 `3b45be537020e1aa094afbd1c2e9f0ed81dda90defdf6b1518aa0cf61aa08dca`。
 
 Windows 實機目錄 `D:\yuki-core-validation-20261104\CORE-015-28d8bd4ff10f-1399e17c`。六協議為 Chat、OpenAI Responses、DeepSeek Responses／legacy、Messages、Gemini。額度及 unknown 重試規則維持原合同。
+
+
+## CORE-026 原事實恢復
+
+本地提交 `806d160`，`codex/core-026-memory-restore`。先設時序及能力界線見 `docs/memory-restore.md`。Rust 保留原 fact ID，只有 retracted、未過期、原 revision／可讀證據 proof 相符時恢復最後有效內容與 confidence；新版本、證據、FTS 與原回執同 writer。模型／CLI／QQ 命令共用此路徑。原已讀與 evidence-only 分開；其他人、失效來源和已忘記資料不能復活。
+
+驗證：`artifacts/CORE-026/memory-restore-mac-03/` 共 226 項；來源 tree `4fbace697c9eba1051cf20df8a7d4a58401ccd414d5a9f8308676259731b5793`，本地未提交測試。`memory-restore-adjacent-01/` 的 CORE-015、012、030、035、033、029 全部通過；原版隔離固定 SHA 的 7 項測試在 `original-memory-restore-oracle-01/`。開發包 `memory-restore-mac-03/development-package/` SHA-256 `49141b13ddcafebb5817d2f36fad1e7077cbdd062b541f83c45076676076ea26` 僅封裝自測，不交作乾淨候選。
+
+失敗保留：mac-01 編譯找出 maintenance preview 未覆蓋新增 Restore，現已沿既有來源 proof 管線驗證；mac-02 第 186 項後碰到測試單輪 8 次模型額度，拆成兩個真實入站輪次以覆蓋無原讀取的恢復，產品額度未放寬。mac-03 與相關卡均通過。原版 SQLAlchemy 表循環警告保留於 oracle log，7 項執行成功。
+
+遠端狀態：GitHub 於本輪對 CORE-015 文件提交 `47468b8` 的兩次 push 及本提交 push 回 `fatal error in commit_refs_rules`；尚未把這些本地新提交當作已推送。已觀察的 PR #61 遠端仍是 `969fb62`。保留原分支，先完成候選與排查，再重試。
