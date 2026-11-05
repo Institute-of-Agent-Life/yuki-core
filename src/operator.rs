@@ -45,6 +45,7 @@ pub enum Action {
         #[command(subcommand)]
         command: crate::privacy::Action,
     },
+    Search(crate::model::search::Action),
     Model {
         #[command(subcommand)]
         command: crate::model::attempt::Action,
@@ -108,6 +109,7 @@ enum Request {
     Privacy {
         command: crate::privacy::Action,
     },
+    Search(crate::model::search::Action),
     Model {
         command: crate::model::attempt::Action,
     },
@@ -181,6 +183,7 @@ async fn handle(
         Request::Social { command } => crate::social::invoke(&store, &qq, command).await,
         Request::Main { command } => crate::runtime::main::invoke(&store, command).await,
         Request::Privacy { command } => crate::privacy::invoke(&store, command).await,
+        Request::Search(a) => crate::model::search::invoke(&store, a).await,
         Request::Model { command } => crate::model::attempt::invoke(&store, command).await,
         Request::GetLabel => store.label().await,
         Request::SetLabel { value } => store.write(Mutation::SetLabel(value)).await,
@@ -233,6 +236,7 @@ pub async fn invoke(data: &Path, action: Action) -> Result<()> {
         Action::Social { command } => Request::Social { command },
         Action::Main { command } => Request::Main { command },
         Action::Privacy { command } => Request::Privacy { command },
+        Action::Search(a) => Request::Search(a),
         Action::Model { command } => Request::Model { command },
         Action::GetLabel => Request::GetLabel,
         Action::SetLabel { value } => Request::SetLabel { value },
