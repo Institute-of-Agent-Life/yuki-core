@@ -248,7 +248,7 @@ pub(super) async fn ack(
     if current["can_feed"] != true
         || checkpoint != parent.checkpoint
         || feed < parent.feed_index
-        || feed <= old.get::<i64, _>("feed_index")
+        || feed < old.get::<i64, _>("feed_index")
     {
         return Err("original receipt or VM feed checkpoint unavailable".into());
     }

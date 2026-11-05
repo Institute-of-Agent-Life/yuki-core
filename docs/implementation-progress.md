@@ -194,3 +194,9 @@ CORE-033 已接入媒體 `894a27a` 的搜尋整合。個人入口與搜尋回歸
 CORE-038 已接入個人入口 `c979a2e` 的搜尋整合。媒體自動 owner 與搜尋回歸通過 `artifacts/CORE-{038,024}/broker-search-integration-01/`。PR #40 等最新三平台 CI。
 
 CORE-034 已接入媒體 `4004abf` 的自動 owner 回條及搜尋整合。Code、媒體、搜尋與工具 registry 通過 `artifacts/CORE-{034,038,024,015}/code-owner-integration-02/`。原 `f3f3723` 三平台候選保留固定來源，PR #43 等最新 CI。
+
+## CORE-034 原生 feed 確認補修
+
+真 EXT-023 回條 `core034-consumer-01/native-feed-ack.json`（SHA-256 `6b8fc8a5029880d68d7c15285de33a36e57d05003b58779740b9eae303060f11`）證實 Monty 同一 feed 可有兩個相繼呼叫。核心確認現在接受相同 feed，仍核原 child／engine call、checkpoint、snapshot 與已知回執，拒絕倒退和改寫重播。
+
+Mac 與 HJW Windows 各 383 項通過，來源樹 `bf43b16e03c308a6cf43c6526664eec511a32d81810cf35ecfb0b90b8ee68f8f`，具名產物在 `artifacts/CORE-034/native-feed-ack-{mac,windows}-01/{nested-boundary,vm-recovery-cuts}.json`。四個 kill cut 均以同 feed 的兩個不同 call 驗證。CORE-011、016、032、052 回歸 460 項通過，彙總 `artifacts/CORE-034/feed-ack-regression-summary-01.json`。此補修將由乾淨提交重新封裝候選，真插件重跑結果待回傳。
