@@ -53,6 +53,9 @@ pub fn builtin(name: &str) -> Option<Tool> {
     if let Some(tool) = crate::media::declaration(name) {
         return Some(tool);
     }
+    if let Some(tool) = crate::history::query::contacts::declaration(name) {
+        return Some(tool);
+    }
     if let Some(tool) = crate::memory::tools::declaration(name) {
         return Some(tool);
     }
@@ -180,6 +183,8 @@ impl Manifest {
                 "complete",
                 "history_query",
                 "history_directory",
+                "find_contacts",
+                "find_conversations",
                 "time_get_current",
                 "update_short_state",
                 "read_tool_artifact",
