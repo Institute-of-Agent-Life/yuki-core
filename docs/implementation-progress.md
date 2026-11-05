@@ -219,3 +219,13 @@ Windows 首次封裝遇暫存執行檔清理 WinError 32，同一固定來源與
 Mac `mac-06` 與 HJW `windows-01` 各通過 128 項，來源樹 `0c5c2a018ddf9356b274a196e453c477e3517a5f43bcdb2b659f1cf5676c1838`。兩端的 `promotion-vs-self.json` 包含原 Work、來源、SELF 身份與物理發送回條。11 張相鄰卡均通過，彙總為 `artifacts/CORE-036/regression-summary-01.json`。候選 schema 1、SDK alpha.7，真 EXT-025 消費待回傳。先前失敗 fixture／gateway 綁定案例保留於 `mac-01`、`mac-03`、`mac-04`。
 
 兩端已驗開發封裝屬未提交工作樹來源。下一步從本卡乾淨提交重新封裝三平台候選。CORE-035 已建立正常與故障時序，將接續維護授權與審閱寫入。CORE-050 的來源補核另通過 CORE-011、016、030、052 四卡 `aux-sources-regression-01/`。
+
+## CORE-036 未發布候選包
+
+實作 `9f9c3d0eaace08c2abe59e0a6ca229c9293dd8e1` 已推 [PR #45](https://github.com/Institute-of-Agent-Life/yuki-core/pull/45)。Mac、HJW Windows、Linux arm64 各 128 項通過，來源樹 `7fc0d1a8f2a15257589776606608c86c18bab0f2a596650d610209e3764dcaa1`。三端均完成獨立路徑啟動與 ZIP 成員雜湊核驗，交接根目錄附 `handoff-verification.json`。握手 1、Host 2、participation 1、Rust SDK `1.0.0-alpha.7`、Python `1.0.0a7`。五個公開方法涵蓋來源頁、來源分段、真人提升、SELF 提案及實際回饋。真 EXT-025 消費待回傳，候選均未發布。
+
+| 平台 | 路徑 | SHA-256 |
+|---|---|---|
+| Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/linux-arm64/candidate/yuki-participation-preview-9f9c3d0eaace-linux-arm64.zip` | `127847f6cab2d7cb8c3378068701ffd51d6610467a0d7ef4c42d0affb5d1174a` |
+| macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/macos-arm64/yuki-participation-preview-9f9c3d0eaace-darwin-arm64.zip` | `c438c7f23c4549210b13e9d77bd3ed5360e853fd47164854ec4d74cac0de4584` |
+| Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/windows-validation/handoff/yuki-participation-preview-9f9c3d0eaace-windows-x86_64.zip` | `6c2d5f22416836ac0c489b3fe1bb308e8f79b813e21c9ca321d4ec619eb59f1f` |
