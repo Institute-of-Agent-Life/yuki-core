@@ -1,7 +1,7 @@
 mod domain;
 pub(crate) use domain::human_text as event_text;
 mod step;
-mod transport;
+pub(crate) mod transport;
 use crate::{
     Result,
     store::{Mutation, Store},
@@ -33,7 +33,11 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking_budget: Option<i64>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub gemini_mixed_tools: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub native_web_search: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub bridge_search: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -104,6 +108,21 @@ impl Config {
             return Err("empty reasoning effort".into());
         }
         let url = reqwest::Url::parse(&self.endpoint)?;
+        if self.gemini_mixed_tools && !self.protocol.is_gemini() {
+            return Err("mixed Google Search profile requires GenerateContent".into());
+        }
+        if self.protocol.is_gemini() {
+            let model = self.model.strip_prefix("models/").unwrap_or(&self.model);
+            if model.is_empty()
+                || !url
+                    .path()
+                    .ends_with(&format!("/models/{model}:generateContent"))
+            {
+                return Err(
+                    "GenerateContent endpoint must select the original configured model".into(),
+                );
+            }
+        }
         let local = url
             .host_str()
             .and_then(|h| h.trim_matches(['[', ']']).parse::<std::net::IpAddr>().ok())

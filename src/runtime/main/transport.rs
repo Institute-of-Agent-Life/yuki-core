@@ -14,7 +14,7 @@ use sqlx::Row;
 use std::{path::Path, sync::Arc};
 use tokio::sync::watch;
 
-async fn physical(
+pub(crate) async fn physical(
     client: &reqwest::Client,
     cfg: &Config,
     raw: &str,
@@ -30,6 +30,8 @@ async fn physical(
         let secret = std::env::var(key).map_err(|_| "provider credential unavailable")?;
         request = if cfg.protocol.is_messages() {
             request.header("x-api-key", secret)
+        } else if cfg.protocol.is_gemini() {
+            request.header("x-goog-api-key", secret)
         } else {
             request.bearer_auth(secret)
         };
@@ -118,6 +120,9 @@ impl Dispatch {
                 .await? =>
             {
                 crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
+            }
+            "web_search" if cfg.bridge_search => {
+                crate::model::search::tool(&store, &exec, &actor, &id, &t.payload).await?
             }
             "history_query" => {
                 if let Err(error) =
@@ -372,6 +377,8 @@ pub async fn run(
                                 if !cfg.protocol.is_chat() && response.starts_with("event:") {
                                     if cfg.protocol.is_messages() {
                                         "incomplete_messages_stream"
+                                    } else if cfg.protocol.is_gemini() {
+                                        "incomplete_generate_content_stream"
                                     } else {
                                         "incomplete_responses_stream"
                                     }
