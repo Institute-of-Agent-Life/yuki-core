@@ -291,4 +291,4 @@ CORE-034 接入清除 `b745a9d`、檢索及 main 的分發入口。Mac CORE-034 
 CORE-038 已整合個人入口 `d576aee` 及 main `692e323` 的分發入口。Mac CORE-038、039 通過 `artifacts/CORE-038/dist-main-integration-01/`、`artifacts/CORE-039/media-broker-main-integration-01/`；整合用 development-package 實際打包及乾淨 PATH 啟動通過，該包標記 dirty 且未發布，並非新增正式交接包。PR #40 以新 head 重驗，等待個人入口在 main 完成。
 CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自動合併重複的 provider 欄位，保留原工具宣告入口。Mac CORE-016、014、039 全部通過 `artifacts/CORE-016/dist-main-segments-03/`、`artifacts/CORE-014/dist-segments-integration-02/`、`artifacts/CORE-039/work-segments-main-integration-02/`。PR #42 以整合後 head 等 CI。
 
-CORE-034 同步媒體 `7cd4e42` 及 Work 分段 `e357ab6`。兩次祖先整合只改進度記錄，保留既有單次聯絡人註冊與 memory 配置驗證，實作與上一輪已驗來源一致。
+CORE-034 同步媒體 `7cd4e42` 及 Work 分段 `e357ab6`。祖先整合保留 memory 配置驗證；Work 分段自動合併造成聯絡人註冊遺漏，已恢復並由 CORE-014／015 `code-segment-main-01/` 驗證。最新修正 head 通過 CI 前不合併。
