@@ -296,6 +296,23 @@ async fn social_crash_child() {
     panic!("receipt returned before simulated reply loss");
 }
 
+#[tokio::test]
+#[ignore = "launched and killed after the CORE-013 original recall writer claim"]
+async fn model_recall_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let store = Store::open(&data).await.unwrap();
+    let [exec, actor, op, stage]: [String; 4] =
+        serde_json::from_str(&std::env::var("YUKI_MODEL_RECALL_TEST").unwrap()).unwrap();
+    store
+        .write(Mutation::Social(Box::new(
+            crate::social::Change::ModelRecall(exec, actor, op, stage, 1),
+        )))
+        .await
+        .unwrap();
+    panic!("claim returned before simulated reply loss");
+}
+
 async fn seed_history_event(conn: &mut SqliteConnection) {
     sqlx::raw_sql("INSERT INTO persons(id) VALUES('00000000-0000-4000-8000-000000000088');
       INSERT INTO accounts VALUES('a','qq','history','1'),('b','qq','history','2');

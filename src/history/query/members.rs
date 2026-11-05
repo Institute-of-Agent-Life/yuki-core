@@ -58,7 +58,11 @@ impl Default for Request {
     }
 }
 
-async fn scope(db: &mut SqliteConnection, exec: &str, actor: &str) -> Result<super::Scope> {
+pub(crate) async fn scope(
+    db: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+) -> Result<super::Scope> {
     effects::authorize(db, exec, actor, false).await?;
     if let Some((origin, entry, _)) = crate::host::participation::self_binding(db, exec).await? {
         return Ok(super::Scope {

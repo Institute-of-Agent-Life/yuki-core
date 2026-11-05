@@ -372,6 +372,11 @@ pub async fn recover(conn: &mut SqliteConnection) -> Result<()> {
     sqlx::query("UPDATE social_recalls SET state='unknown' WHERE state='dispatched'")
         .execute(&mut *tx)
         .await?;
+    let recalls: Vec<(String,String,String)> = sqlx::query_as("SELECT DISTINCT r.namespace,r.child,r.state FROM social_recalls r JOIN model_recalls m ON m.original_execution=r.namespace AND m.child=r.child JOIN operations o ON o.namespace=m.execution AND o.operation_id=m.operation WHERE o.state IN ('dispatched','unknown')")
+        .fetch_all(&mut *tx).await?;
+    for (execution, child, state) in recalls {
+        super::recall::settle(&mut tx, &execution, &child, &state).await?;
+    }
     tx.commit().await?;
     Ok(())
 }

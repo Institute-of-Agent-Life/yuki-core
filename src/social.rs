@@ -1,4 +1,5 @@
 pub mod content;
+pub(crate) mod recall;
 pub mod send;
 pub mod split;
 use crate::{
@@ -54,6 +55,7 @@ pub enum Action {
     },
 }
 pub enum Change {
+    ModelRecall(String, String, String, String, u64),
     Next(String, String, String, Option<u64>, split::Limits),
     GatewayReply(String, u64, String, Value),
     Reply(String, String, i64, Option<Value>),
@@ -65,6 +67,9 @@ pub enum Change {
 
 pub async fn apply(conn: &mut SqliteConnection, c: &Change) -> Result<Value> {
     match c {
+        Change::ModelRecall(exec, actor, op, stage, session) => {
+            recall::claim(conn, exec, actor, op, stage, *session).await
+        }
         Change::Next(exec, id, actor, session, limits) => {
             send::next(conn, exec, id, actor, *session, *limits).await
         }
@@ -158,9 +163,10 @@ async fn record_recall(
         sqlx::query("UPDATE social_outbound SET recalled=1 WHERE namespace=? AND child=?")
             .bind(exec)
             .bind(child)
-            .execute(conn)
+            .execute(&mut *conn)
             .await?;
     }
+    recall::settle(conn, exec, child, state).await?;
     Ok(json!({"state":state,"child":child}))
 }
 async fn write(store: &Store, c: Change) -> Result<Value> {

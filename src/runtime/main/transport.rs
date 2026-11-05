@@ -196,6 +196,9 @@ impl Dispatch {
             | "read_tool_artifact" => {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }
+            "recall_own_message" => {
+                crate::social::recall::perform(&store, &hub, &exec, &actor, &id).await?;
+            }
             "send" if cfg.binding_endpoint.is_none() => {
                 if let Some(host) = &store.host
                     && host.deliver(&store, &exec, &actor, &id).await?.is_some()

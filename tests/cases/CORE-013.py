@@ -648,6 +648,8 @@ def run(ctx):
                 [(0,)],
             )
 
+    from tests.harness.recall_wire import run as recall
+    ctx.write("original-recall-wire.json",recall(ctx))
     from tests.harness.observed_members import run as members
     member_result=members(ctx)
     ctx.write("observed-members.json",member_result)

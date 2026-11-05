@@ -117,6 +117,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
         if digest(raw_fixture)!=data['members_oracle_sha256']:raise ValueError('member contract differs from verified original')
         files['evidence/v4-members.json']=raw_fixture
         files['docs/observed-members-compat.md']=(ROOT/'docs/observed-members-compat.md').read_bytes()
+        recall=receipt('original-recall-wire.json')
+        original=(ROOT/'fixtures/social/v4-recall.json').read_bytes()
+        if digest(original)!=json.loads(recall)['recall_oracle_sha256']:raise ValueError('recall contract differs from verified original')
+        files['evidence/original-recall-wire.json']=recall
+        files['evidence/v4-recall.json']=original
+        files['docs/recall-compat.md']=(ROOT/'docs/recall-compat.md').read_bytes()
     if artifact:
         for path,key in [("fixtures/tool-results/v4-original-declaration.json","artifact_declaration_sha256"),("fixtures/tool-results/v4-original-pages.json","oracle_sha256")]:
             raw_fixture=(ROOT/path).read_bytes()
@@ -334,7 +340,7 @@ def build(manifest_path, out, development=False):
                 "CORE-057": "yuki-model-import-preview-",
                 "CORE-014": "yuki-history-preview-",
                 "CORE-015": "yuki-artifact-preview-",
-                "CORE-013": "yuki-members-preview-",
+                "CORE-013": "yuki-social-preview-",
                 "CORE-055": "yuki-usage-preview-",
                 "CORE-037": "yuki-control-preview-",
                 "CORE-032": "yuki-host-preview-",
@@ -392,10 +398,11 @@ def build(manifest_path, out, development=False):
         candidate["validation"]["real_extension_consumers"]=False
     if observed_members:
         candidate['database_schema_revision']=m['schema_version']
-        candidate['validated_core_tools']=['get_group_members']
+        candidate['validated_core_tools']=['get_group_members','recall_own_message']
+        candidate['recall_oracle_sha256']=json.loads(receipt('original-recall-wire.json'))['recall_oracle_sha256']
         candidate['members_oracle_sha256']=data['members_oracle_sha256']
         candidate['coverage']='observed'
-        candidate['validation']['consumer']='physical Main and original observed directory fixtures; SDK packages independently installed'
+        candidate['validation']['consumer']='physical Main, authenticated original QQ recall and observed directory fixtures; SDK packages independently installed'
         candidate['validation']['real_extension_consumers']=False
     if artifact:
         candidate["database_schema_revision"]=m["schema_version"]

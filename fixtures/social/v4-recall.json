@@ -1,0 +1,88 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "pytest_exit": 0,
+  "declarations": [
+    {
+      "name": "recall_own_message",
+      "description": "撤回真实账本中自己发送的消息；必须由原发送账号执行，新账号不能代撤回。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "original_results": [
+    {
+      "args": {
+        "event_id": 2
+      },
+      "conversation_id": "0806552b-1113-4b63-8339-6b4374aa7811",
+      "space_id": "d939f93b-1612-45a2-9fc7-599706b107cf",
+      "result": {
+        "operation_id": "397e5fab-35b3-4dbc-9dde-43e8b164347a",
+        "action": "recall_own_message",
+        "status": "succeeded",
+        "target": {
+          "kind": "space",
+          "id": "d939f93b-1612-45a2-9fc7-599706b107cf"
+        },
+        "presence_id": "7e084e22-2559-4179-99f1-1d3a221fd83d",
+        "event_id": null,
+        "original_event_id": null,
+        "original_conversation_id": null,
+        "error_category": null
+      }
+    },
+    {
+      "args": {
+        "event_id": 2
+      },
+      "conversation_id": "56a9c181-4232-4939-91f4-7d89351aea94",
+      "space_id": "d939f93b-1612-45a2-9fc7-599706b107cf",
+      "result": {
+        "operation_id": "7bed25b4-817c-45ad-9ede-2534e7528130",
+        "action": "recall_own_message",
+        "status": "succeeded",
+        "target": {
+          "kind": "space",
+          "id": "d939f93b-1612-45a2-9fc7-599706b107cf"
+        },
+        "presence_id": "356e5e5d-6b53-4b41-92eb-9c53f421f050",
+        "event_id": null,
+        "original_event_id": null,
+        "original_conversation_id": null,
+        "error_category": null
+      }
+    },
+    {
+      "args": {
+        "event_id": 2
+      },
+      "conversation_id": "fc0bb181-d2ee-4167-b400-574a63df1670",
+      "space_id": "d939f93b-1612-45a2-9fc7-599706b107cf",
+      "result": {
+        "operation_id": "56b9b55d-6ae9-49fd-b96c-ff9107296514",
+        "action": "recall_own_message",
+        "status": "succeeded",
+        "target": {
+          "kind": "space",
+          "id": "d939f93b-1612-45a2-9fc7-599706b107cf"
+        },
+        "presence_id": "651ffc00-03c0-449b-b71a-234c7ae2544e",
+        "event_id": null,
+        "original_event_id": null,
+        "original_conversation_id": null,
+        "error_category": null
+      }
+    }
+  ]
+}
