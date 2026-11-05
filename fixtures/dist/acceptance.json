@@ -1,0 +1,4 @@
+{
+  "normal": ["install a signed native archive in an empty directory with an external trusted public key", "bootstrap, start and probe the installed release owner on loopback", "run the installed SDK peers on this same release binary", "run the Linux OCI as its non-root default user"],
+  "faults": ["reject a package for a different machine", "reject a substituted fixture and unexpected member", "reject a wrong signer, source commit or SDK digest", "reject before extracting any bytes on a path traversal or symlink"]
+}

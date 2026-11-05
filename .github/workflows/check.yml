@@ -89,6 +89,8 @@ jobs:
         run: python ci/check.py CORE-015 --out artifacts/CORE-015/ci
       - name: Exercise installed plugin subprocesses and source-bound receipts
         run: python ci/check.py CORE-032 --out artifacts/CORE-032/ci
+      - name: Verify the signed native release in an empty directory
+        run: python ci/check.py CORE-039 --out artifacts/CORE-039/ci
       - name: Recover original Work settlement and private child messages
         run: python ci/check.py CORE-016 --out artifacts/CORE-016/ci
       - name: Verify fact visibility independently of private evidence and correction receipts
