@@ -514,3 +514,13 @@ CORE-014 三平台交接已驗：來源 `43b67d35d996ab6185507931a77e189677e9a1d
 CORE-057 跨平台封裝補正：Linux `handoff-final-01/linux-validation-02/` 查出 provenance 誤收 ExFAT 的 AppleDouble `._` 中繼資料；移除非來源成員後，仍逐一驗 20 份原 CI JSON 與 defaults 的 SHA-256。`provenance-mac-01/` 通過，先前 Mac 212 項包含 21 項中繼資料檢查，修正後為 192 項（新增來源集合檢查）。原失敗及舊候選保留，未列入交接；將從本提交重做三平台候選。
 
 CORE-020 整合回歸：PR #53 Linux run 42107381636 與 `history-pause-mac-01/02` 均在第 4 次 pause 前 held。原回條顯示 3 次預留共 154875 units；完整新工具宣告令下一次超過原測試 200000 units，尚未觸及待驗的 4-request 邊界。僅把該 fixture 的獨立 units 額度改為 1000000，新增「4 次全預留且 units 尚未耗盡」斷言；`history-pause-mac-03/` 通過。保留超時時的原 execution／request／budget 記錄，worker 對空字串異常保留類型，避免錯報缺 artifact。無產品預算或重試語義變更，Windows／Linux 由最新 CI 再驗。
+
+CORE-057 三平台候選已驗：乾淨來源 `4dfb1c026a7f8e046c504484f6e7738494a866a5`，tree `e09b81dbe090adc713eb6500a2cf5d5287e87edf682facb086429888854e872b`。macOS ARM64、Linux ARM64、HJW Windows x86_64 各 192 項，均驗 inspect／匯入／原 revision resume、實際中斷、SQL 回滾、原鎖及 WAL。SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`，Host 2／握手 1，輸入 legacy schema `0156`；本卡未啟動 owner，新資料庫 schema 不冒記為已驗。
+
+**未發布交接索引：** `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-057/handoff-final-02/verified-candidates.json`，SHA-256 `6a1c274e4002cd0b96b43870a80c5a478af997143f0df31ab81fe2cf09bab2b7`。索引含絕對路徑、逐成員驗證及 native manifest。
+
+- macOS ZIP `44ec44e6fa8875b95743ab226917cc2aaa06aff6cd030a229c8e28435ea13cf2`。
+- Linux ZIP `a9f2da713fc6c96cb17523d01cb81ba58668c69a47854ff271748afe1b0486d6`。
+- Windows ZIP `a60fc52ed9bbf2840244e23163a6ba0db7c4115cb42b5b37b96add9f05fcd5bb`。
+
+原 failed／aborted 回條保留：第一輪缺舊 compiler cache；第二輪誤收 AppleDouble；`handoff-final-02/linux-validation/` 因發現並行共用編譯輸出而主動中止。最後 `linux-validation-02/` 在前一程序退出後順序重驗通過。PR #54 已加 CORE-057 三平台 CI，待 #53 與最新 head 六項全綠後合併 main；不發布或部署本候選。CORE-043 尚缺 EXT-041 真實安裝交接輸入，下一個本倉工作是 CORE-040 原切片差異補核。
