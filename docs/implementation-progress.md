@@ -546,3 +546,8 @@ CORE-015 三平台乾淨候選已驗：來源 `c61f45c6e831f69cd4dc7b9cefb93c778
 PR #56 等 #55 及最新 head 六項 CI；真擴展消費與 CORE-040 全切片等價待補。下一個獨立工作是 CORE-013 原 `get_group_members` 讀取接線。
 
 CORE-058 冷恢復三平台完成：來源修正 `5081c5d`、tree `ca3a329a86cd1d483d38c51038a72201de1a95935ae9fb005a3e60907b579acb`，Mac `artifacts/CORE-058/cold-recovery-mac-02/` 341 項、Linux `artifacts/CORE-037/cold-recovery-linux-03/CORE-058/` 341 項及 HJW `artifacts/CORE-058/cold-recovery-windows-02/` 344 項通過。核原 failed／bot_unavailable 回條後，顯式按 revision 重試同一根操作；未知投遞仍不重試。
+CORE-048／039 CI 編譯診斷：PR #49 的兩個 Mac Intel run（42085724620、42085715264）均在 release 冷編譯 600 秒截止，尚未執行發布驗證案例。回移 CORE-037 已使用的編譯階段處理：只有 release build 使用 1200 秒編譯預算，超時仍失敗並保存部分編譯輸出和 stage 回條；其他編譯及所有功能、故障、啟動與分發驗收時間不變。原失敗保留。此處不因其他平台通過而跳過 Mac，需最新 head 三平台六項 CI 全通過才合併。
+
+本地 Mac `artifacts/CORE-039/profile-compiler-mac-01/` 81 項分發驗證通過，source tree `a8a009014eb8f64a246d94279914c8611a5904f9443a60ae5e203837a94dc57f`；原功能驗收完整執行。
+
+CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。

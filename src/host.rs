@@ -286,7 +286,9 @@ impl Hub {
         tokio::spawn(commands::serve(hub.clone(), store.clone(), qq, end));
         for (id, slot) in hub.installed() {
             if slot.spec.composition.is_some() {
-                let started = hub.restart(store, &id).await;
+                // A discovered or disabled Code plugin must not block the owner from
+                // starting its control plane and holding the original paid execution.
+                let started = hub.reconcile(store, &id, false).await;
                 if store.main.as_ref().is_some_and(|cfg| {
                     cfg.code_tool.as_deref()
                         == slot.spec.composition.as_ref().map(|c| c.tool.as_str())
