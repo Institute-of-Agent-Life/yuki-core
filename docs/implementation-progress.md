@@ -200,3 +200,9 @@ PR #35 的 `a5a9b35` 在 Linux／Windows CI 顯示新聯絡人 fixture 啟動時
 CORE-025 六項 CI 通過並合併 main `692e323`；CORE-033 已整合此來源及核心分發入口。Mac CORE-033、039 通過 `artifacts/CORE-033/media-main-integration-01/`、`artifacts/CORE-039/personal-main-integration-01/`。PR #36 以整合後提交重新等待三平台 CI。
 
 CORE-033 已由六項 CI 合併 main `76cf762`。CORE-028 整合此來源，保留兩張卡的 CI；Mac CORE-028／033／012／039 全部通過 `vectors-personal-main-01/`。Main fixture 沿用檢索已驗的 1,000,000 units，不改核心額度邏輯。PR #35 按最新整合 head 重新驗證三平台。
+
+## CORE-028 CI 診斷補核
+
+PR #35 原 head `e43339b` 的 Windows 重跑在 CORE-012 等候工具序列後的模型請求逾時，12 秒限制保留；下載證據 `/Volumes/huawei/項目實戰/yuki-core/.cache/vector-ci-13449371446.zip`。框架原先將 `queue.Empty` 記成空字串，已修正為非空例外名稱並增加真子程序負向案例；發生 wire 逾時會保留原 executions／operations／attempts 與本地實收資料。此修正不宣稱已找出該次平台逾時根因。
+
+Mac `artifacts/CORE-001/empty-exception-01/`、`artifacts/CORE-012/wire-diagnostics-mac-01/` 通過；HJW 同一快照 `CORE-012-ba61fb93385f-415385e6` 的 CORE-001 與 CORE-012 亦通過，後者取回 `artifacts/CORE-012/wire-diagnostics-windows-01/`。PR 仍須最新 head 的六項 CI 全過才合併。

@@ -129,7 +129,20 @@ def run(ctx):
         soul.write_text("hello {{name}}; literal {{other}}", encoding="utf-8")
 
         def wire():
-            raw, reply = server.receive()
+            try:
+                raw, reply = server.receive()
+            except queue.Empty as error:
+                # Capture the original state before Service.running closes the owner.
+                # These fixtures contain no external provider or user credentials.
+                with closing(sqlite3.connect(
+                    (service.data / "core.sqlite").as_uri() + "?mode=ro", uri=True
+                )) as db:
+                    db.row_factory = sqlite3.Row
+                    diagnostic = {table: [dict(row) for row in db.execute("SELECT * FROM " + table)]
+                                  for table in ("executions", "main_turns", "operations", "model_attempts")}
+                diagnostic["physical_deliveries"] = list(server.deliveries)
+                ctx.write("main-wire-timeout.json", diagnostic)
+                raise AssertionError("physical Main request not received; see main-wire-timeout.json") from error
             return raw, json.loads(raw), reply
 
         with service.running():

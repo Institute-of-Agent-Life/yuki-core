@@ -30,7 +30,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("card")
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--fault", choices=["swap", "empty"])
+    parser.add_argument("--fault", choices=["swap", "empty", "empty-exception"])
     args = parser.parse_args()
     out = args.out.resolve()
     try:
