@@ -12,6 +12,8 @@ use yuki_plugin_sdk::{Binding, Declaration};
 #[serde(deny_unknown_fields)]
 pub struct Install {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notifications: Option<super::notification::Policy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sessions: Option<super::plugin_sessions::Policy>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maintenance: Option<super::maintenance::Policy>,
@@ -56,6 +58,7 @@ pub fn methods() -> &'static Value {
             include_str!("../../protocol/plugin/participation/methods.json"),
             include_str!("../../protocol/plugin/maintenance/methods.json"),
             include_str!("../../protocol/plugin/sessions/methods.json"),
+            include_str!("../../protocol/plugin/notifications/methods.json"),
         ] {
             let group: Value = serde_json::from_str(schema).expect("host extension IDL");
             for (name, method) in group["methods"].as_object().expect("extension methods") {
@@ -80,6 +83,9 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if let Some(policy) = &self.notifications {
+            policy.validate(self)?;
+        }
         if let Some(policy) = &self.sessions {
             policy.validate(self)?;
         }
@@ -175,6 +181,9 @@ impl Install {
     }
     pub fn revision(&self) -> Result<String> {
         let mut identity = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if let Some(policy) = &self.notifications {
+            identity["notifications"] = serde_json::to_value(policy)?;
+        }
         if let Some(policy) = &self.sessions {
             identity["sessions"] = serde_json::to_value(policy)?;
         }
@@ -255,6 +264,7 @@ mod tests {
     #[test]
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
+            notifications: None,
             sessions: None,
             maintenance: None,
             participation: None,

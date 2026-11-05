@@ -13,20 +13,26 @@ impl Hub {
     ) -> Result<Option<Value>> {
         let mut tx = store.readers().begin().await?;
         effects::authorize(&mut tx, exec, actor, true).await?;
-        let self_scene = super::participation::self_binding(&mut tx, exec).await?;
+        let self_scene = match super::participation::self_binding(&mut tx, exec).await? {
+            Some(scene) => Some(scene),
+            None => super::notification::binding(&mut tx, exec).await?,
+        };
         let self_entry = self_scene.as_ref().map(|(_, entry, _)| entry.as_str());
         let self_stage = self_scene.as_ref().map(|(_, _, stage)| stage.as_str());
-        let route=sqlx::query("SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,e.entry_id,e.bot_stage,d.scope,d.space,d.topic,a.native AS sender,b.native AS bot,o.payload
+        let route=sqlx::query("SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,e.entry_id,e.bot_stage,d.scope,d.space,d.topic,a.native AS sender,b.native AS bot,o.payload,e.raw_actor AS recipient
             FROM executions x JOIN events e ON e.id=x.source JOIN entries d ON d.id=e.entry_id JOIN accounts a ON a.id=e.account_id
             JOIN assignments s ON s.id=e.bot_stage JOIN accounts b ON b.id=s.account_id
             JOIN host_installations i ON i.platform=b.platform AND i.namespace=b.namespace AND i.bot_stage=e.bot_stage
             JOIN operations o ON o.namespace=x.id AND o.operation_id=? AND o.target='send' WHERE x.id=?2
             UNION ALL
-            SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,d.id,s.id,d.scope,d.space,d.topic,'' AS sender,b.native AS bot,o.payload
+            SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,d.id,s.id,d.scope,d.space,d.topic,coalesce(person_account.native,'') AS sender,b.native AS bot,o.payload,person.original_person AS recipient
             FROM entries d JOIN assignments s ON s.id=?4 JOIN accounts b ON b.id=s.account_id
             JOIN host_installations i ON i.platform=b.platform AND i.namespace=b.namespace AND i.bot_stage=s.id
             JOIN operations o ON o.namespace=?2 AND o.operation_id=?1 AND o.target='send'
-            JOIN main_turns t ON t.execution=?2 JOIN main_windows w ON w.conversation=d.id AND w.generation=t.window
+            LEFT JOIN assignments person ON person.id=d.actor_stage LEFT JOIN accounts person_account ON person_account.id=person.account_id
+            JOIN main_windows w ON w.conversation=d.id AND w.generation=coalesce(
+                (SELECT window FROM main_turns WHERE execution=?2),
+                (SELECT window FROM notification_publications WHERE delivery_execution=?2))
             WHERE d.id=?3 AND d.closed_at IS NULL")
             .bind(operation).bind(exec).bind(self_entry).bind(self_stage).fetch_optional(&mut *tx).await?;
         let Some(row) = route else { return Ok(None) };
@@ -53,7 +59,9 @@ impl Hub {
             .transpose()?
             .map(|(_, _, native)| native);
         if let Some(target) = message.get("target").filter(|v| !v.is_null())
-            && !((target["kind"] == "person" && group.is_none() && target["id"] == actor)
+            && !((target["kind"] == "person"
+                && group.is_none()
+                && target["id"].as_str() == row.get::<Option<&str>, _>("recipient"))
                 || (target["kind"] == "space"
                     && (group.as_deref() == target["id"].as_str()
                         || native_group.as_deref() == target["id"].as_str())))

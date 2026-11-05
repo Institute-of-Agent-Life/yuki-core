@@ -121,6 +121,7 @@ pub(crate) async fn authorize(
         crate::host::participation::authorize(conn, execution).await?;
         crate::host::maintenance::authorize(conn, execution).await?;
         crate::host::plugin_sessions::authorize(conn, execution).await?;
+        crate::host::notification::authorize(conn, execution).await?;
     }
     if dispatch && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM executions x JOIN work_suspensions s ON s.work=x.work_id WHERE x.id=?)").bind(execution).fetch_one(&mut *conn).await?{return Err("Work independently suspended".into());}
     let erased = crate::privacy::source::execution_erased(conn, execution, None).await?;

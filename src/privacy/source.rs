@@ -27,8 +27,16 @@ pub async fn execution_erased(
 async fn check(conn: &mut SqliteConnection, owner: &str, source: i64) -> Result<()> {
     let allowed: bool = sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM source_owners o JOIN events e ON e.id=?
-         JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
-         WHERE o.id=? AND o.enabled AND p.enabled AND r.enabled
+         LEFT JOIN persons p ON p.id=e.raw_actor LEFT JOIN persons r ON r.id=coalesce(p.current_root,p.id)
+         WHERE o.id=? AND o.enabled AND ((p.enabled AND r.enabled) OR
+           (e.raw_actor IS NULL AND EXISTS(SELECT 1 FROM notification_publications n
+            JOIN notification_target_scope grant ON grant.plugin=n.plugin AND grant.entry=n.entry AND grant.receiver=n.receiver
+            JOIN entries entry ON entry.id=n.entry AND entry.closed_at IS NULL
+            JOIN assignments receiver ON receiver.id=n.receiver AND receiver.status='active'
+            LEFT JOIN persons owner ON owner.id=n.target_person LEFT JOIN persons root ON root.id=coalesce(owner.current_root,owner.id)
+            WHERE n.event=e.id AND n.state='published'
+            AND n.window=coalesce((SELECT generation FROM main_windows WHERE conversation=n.entry),1)
+            AND (n.target_person IS NULL OR (owner.enabled AND root.enabled)))))
            AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
            AND NOT EXISTS(SELECT 1 FROM owner_erasures WHERE owner=o.id AND proof IS NULL))",
     )

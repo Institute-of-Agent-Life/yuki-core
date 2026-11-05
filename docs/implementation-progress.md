@@ -279,3 +279,13 @@ CORE-051 實作 `b176a7e` 已推 [PR #47](https://github.com/Institute-of-Agent-
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/windows-validation/handoff/yuki-session-preview-9db8b3f073e3-windows-x86_64.zip`，SHA-256 `1e0d5856740899539c9f4adac2b4c6ce6d01aff6d7697597203d37f2d87d7f56`。
 
 下一個已就緒核心任務是 CORE-058，工作分支 `codex/core-058-notifications`，已從本候選建立正常與故障時序。CORE-048、CORE-014 原歷史適配及 CORE-040 完整長 Work 對拍仍有本倉工作。
+
+## CORE-058 通知與原目標授權
+
+`codex/core-058-notifications` 已實作六個公開入口 `notification.publish/read/sources/grant_target/revoke_target/status`。migration 35、Host 2、notifications 1、SDK alpha.10／a10。Mac `artifacts/CORE-058/legacy-gateway-mac-02/notification-publication.json` 的 318 項通過，來源樹 `0cbb8333febc0bff62bc8832c640ffae5fec8c88e4df6c0979426bff95ea6705`。HJW Windows `artifacts/CORE-058/windows-01/notification-publication.json` 同樹 318 項通過。
+
+同插件原鍵、UTC／manifest、雙插件隔離、媒體順序／過期／未知雜湊、commit 後失答、未知投遞、QQ／外部 gateway 實收、Main 靜默、真人及插件原 Work 喚醒、動態目標撤權、來源清除均有具名回條。真管理員從原 Host call 的執行鏈取得，固定 v4 訂閱插件所用的 `grant_target.conversation_id` 與 `status` 已對照；舊授權回條重投不撤銷後來的 revoke。舊 media 句柄案例使用明示降級 fixture，未聲稱已導入 v4 資料庫。
+
+CORE-007、010、011、013、016、017、025、030、032、034、036、038、050、051、052 的 `notification-regression-01/` 共 2,948 項全部通過，彙總 `artifacts/CORE-058/regression-summary-01.json`。候選尚待乾淨提交與三平台封裝，真 EXT-027／047 消費待回傳。下一個已就緒任務為 CORE-048，工作分支 `codex/core-048-profiles` 位於 `.cache/worktrees/profile-config`。
+
+CORE-014 聯絡人補核 PR #41 已合併 main `0ded0dd`。CORE-023 PR #32 最新 push／PR 六項 CI 通過後合併 `e01cd30`，核驗回條 `artifacts/CORE-023/main-merge-b0dab43835c2.json`。CORE-034 feed 修正已接入 CORE-050 並以 `94ee5c3` 推送，CORE-034／050 的 `aux-feed-integration-01/` 均通過。

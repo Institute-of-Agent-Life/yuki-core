@@ -18,7 +18,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-058"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -36,6 +36,7 @@ def build(manifest_path, out, development=False):
 
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
+    notifications = m["card"] == "CORE-058"
     sessions = m["card"] == "CORE-051"
     maintenance = m["card"] == "CORE-035"
     participation = m["card"] == "CORE-036"
@@ -49,6 +50,7 @@ def build(manifest_path, out, development=False):
         "CORE-036": "promotion-vs-self.json",
         "CORE-035": "maintenance-grants.json",
         "CORE-051": "isolated-session-replay.json",
+        "CORE-058": "notification-publication.json",
         "CORE-034": "nested-boundary.json",
     }[m["card"]]
     proof = receipt(proof_name)
@@ -62,7 +64,7 @@ def build(manifest_path, out, development=False):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation or maintenance or sessions
+        if personal or media or composition or auxiliary or participation or maintenance or sessions or notifications
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -87,6 +89,11 @@ def build(manifest_path, out, development=False):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if notifications:
+        methods=(ROOT/"protocol/plugin/notifications/methods.json").read_bytes()
+        if digest(methods)!=data["notification_schema_sha256"] or set(data["negotiated_notification_methods"])!=set(json.loads(methods)["methods"]):
+            raise ValueError("notification methods differ from exercised original")
+        files["protocol/notifications/methods.json"]=methods
     if sessions:
         methods=(ROOT/"protocol/plugin/sessions/methods.json").read_bytes()
         if digest(methods)!=data["session_schema_sha256"] or set(data["negotiated_session_methods"])!=set(json.loads(methods)["methods"]):
@@ -210,6 +217,7 @@ def build(manifest_path, out, development=False):
                 "CORE-036": "yuki-participation-preview-",
                 "CORE-035": "yuki-maintenance-preview-",
                 "CORE-051": "yuki-session-preview-",
+                "CORE-058": "yuki-notification-preview-",
                 "CORE-034": "yuki-code-preview-",
             }[m["card"]]
         )
@@ -259,6 +267,11 @@ def build(manifest_path, out, development=False):
         candidate["media_schema_revision"] = 1
         candidate["media_schema_sha256"] = data["media_schema_sha256"]
         candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
+    if notifications:
+        candidate["notification_schema_revision"]=1
+        candidate["notification_schema_sha256"]=data["notification_schema_sha256"]
+        candidate["validated_notification_methods"]=data["negotiated_notification_methods"]
+        candidate["validation"]["real_extension_consumers"]="pending EXT-027 and EXT-047"
     if sessions:
         candidate["session_schema_revision"]=1
         candidate["session_schema_sha256"]=data["session_schema_sha256"]

@@ -250,6 +250,11 @@
           "bytes": {
             "type": "string",
             "maxLength": 21848
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 604800
           }
         },
         "required": [

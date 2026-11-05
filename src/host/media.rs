@@ -175,8 +175,10 @@ async fn publish(
     let expected = field("digest")?;
     let offset = p["offset"].as_i64().ok_or("missing media offset")?;
     let size = p["size"].as_i64().ok_or("missing media size")?;
+    let ttl = p["ttl_seconds"].as_i64().unwrap_or(86_400);
     let bytes = STANDARD.decode(field("bytes")?)?;
-    if bytes.len() > 16384
+    if !(60..=7 * 86_400).contains(&ttl)
+        || bytes.len() > 16384
         || !(0..=MAX_BYTES as i64).contains(&size)
         || offset < 0
         || offset + bytes.len() as i64 > size
@@ -200,6 +202,9 @@ async fn publish(
             || row.get::<&str, _>("mime") != mime
             || row.get::<&str, _>("digest") != expected
             || row.get::<i64, _>("size") != size
+            || row
+                .get::<Option<i64>, _>("notification_ttl")
+                .is_some_and(|original| original != ttl)
         {
             return Err("publication conflicts with immutable key".into());
         }
@@ -226,7 +231,8 @@ async fn publish(
         if n >= 8 || total + size > MAX_BYTES as i64 {
             return Err("original media publication bound exceeded".into());
         }
-        sqlx::query("INSERT INTO host_media_uploads(handle,name,filename,kind,mime,digest,size) VALUES(?,?,?,?,?,?,?)").bind(handle).bind(key).bind(name).bind(kind).bind(mime).bind(expected).bind(size).execute(&mut *conn).await?;
+        sqlx::query("INSERT INTO host_media_uploads(handle,name,filename,kind,mime,digest,size,notification_ttl,notification_expires) VALUES(?,?,?,?,?,?,?,?,CAST(unixepoch('subsec')*1000 AS INTEGER)+?*1000)")
+            .bind(handle).bind(key).bind(name).bind(kind).bind(mime).bind(expected).bind(size).bind(ttl).bind(ttl).execute(&mut *conn).await?;
     }
     if offset > cursor {
         return Err("media chunk gap".into());

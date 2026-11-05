@@ -5,6 +5,17 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-058": {
+      "case": "tests/cases/CORE-058.py",
+      "artifact": "notification-publication.json",
+      "timeout_seconds": 420,
+      "rust": true,
+      "capabilities": [
+        "original-notification-publications",
+        "scoped-notification-delivery",
+        "notification-source-erasure"
+      ]
+    },
     "CORE-051": {
       "case": "tests/cases/CORE-051.py",
       "artifact": "isolated-session-replay.json",

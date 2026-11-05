@@ -15,6 +15,9 @@ pub struct Route {
 }
 pub async fn route(conn: &mut SqliteConnection, exec: &str, actor: &str) -> Result<Route> {
     effects::authorize(conn, exec, actor, true).await?;
+    if let Some(route) = crate::host::notification::qq_route(conn, exec).await? {
+        return Ok(route);
+    }
     if let Some(route) = crate::host::participation::self_group_route(conn, exec).await? {
         return Ok(route);
     }

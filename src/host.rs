@@ -6,6 +6,7 @@ pub(crate) mod domain;
 mod grants;
 pub(crate) mod maintenance;
 mod media;
+pub(crate) mod notification;
 pub(crate) mod participation;
 pub(crate) mod personal;
 pub(crate) mod plugin_sessions;
@@ -31,6 +32,7 @@ pub enum Change {
     Participation(Box<participation::Change>),
     Maintenance(Box<maintenance::Change>),
     PluginSession(Box<plugin_sessions::Change>),
+    Notification(notification::Change),
     Configure(Vec<Install>),
     Start(String, bool),
     Online(String, String),
@@ -117,6 +119,12 @@ impl Hub {
             data: data.into(),
         });
         store.host = Some(hub.clone());
+        tokio::spawn(notification::serve(
+            hub.clone(),
+            store.clone(),
+            qq.clone(),
+            end.clone(),
+        ));
         tokio::spawn(commands::serve(hub.clone(), store.clone(), qq, end));
         for (id, slot) in &hub.slots {
             if slot.spec.composition.is_some() {
