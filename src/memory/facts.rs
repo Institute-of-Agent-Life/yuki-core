@@ -137,6 +137,17 @@ async fn sources(
     }
     Ok(())
 }
+pub(super) async fn insert_fact(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    subject: &Subject,
+    visibility: &str,
+    key: &str,
+) -> Result<String> {
+    let id = new_id(conn).await?;
+    sqlx::query("INSERT INTO memory_facts(id,kind,person,space,visibility,visibility_entry,fact_key,created_execution,status) VALUES(?,?,?,?,?,?,?,?,'active')").bind(&id).bind(&subject.kind).bind(&subject.person).bind(&subject.space).bind(visibility).bind(&subject.entry).bind(key).bind(exec).execute(conn).await?;
+    Ok(id)
+}
 pub async fn edit(
     conn: &mut SqliteConnection,
     r: &Reader,
@@ -184,8 +195,7 @@ pub async fn edit(
                 return Err("fact text, key and original evidence required".into());
             }
             let visibility = verify_subject(conn, r, subject).await?;
-            let id = new_id(conn).await?;
-            sqlx::query("INSERT INTO memory_facts(id,kind,person,space,visibility,visibility_entry,fact_key,created_execution,status) VALUES(?,?,?,?,?,?,?,?,'active')").bind(&id).bind(&subject.kind).bind(&subject.person).bind(&subject.space).bind(visibility).bind(&subject.entry).bind(fact_key).bind(exec).execute(&mut *conn).await?;
+            let id = insert_fact(conn, exec, subject, &visibility, fact_key).await?;
             sources(conn, r, actor, &id, evidence).await?;
             (id, 1, "active", Some(body.clone()), *confidence)
         }

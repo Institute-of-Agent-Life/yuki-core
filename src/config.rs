@@ -14,6 +14,8 @@ pub struct Config {
     #[serde(default)]
     pub main: Option<crate::runtime::main::Config>,
     #[serde(default)]
+    pub extraction: Option<crate::memory::extract::Config>,
+    #[serde(default)]
     pub search: Option<crate::model::search::Config>,
     #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
@@ -38,6 +40,9 @@ impl Config {
                     search.bridge() && !(main.protocol.is_messages() && main.native_web_search);
             }
             main.validate()?;
+        }
+        if let Some(extract) = &config.extraction {
+            extract.validate()?;
         }
         Ok(config)
     }
