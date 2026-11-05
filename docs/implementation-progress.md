@@ -534,3 +534,15 @@ CORE-037 整合 CI 時序修復：CORE-050 變更 aux Profile 宣告後先按實
 CORE-015 原 Artifact 工具補核（codex/core-015-artifact-wire）：新增原 handle／operation／陣列 path 的 inspect、get、search、text，JSON 的 image 保持明確拒絕。保留舊版顯式版本 operator 游標；讀取時核正文 SHA-256，解碼後核同版本及來源，無版本參數不能繞過晚返校驗。23 組固定 SHA 舊版 oracle 的輸入順序與回條已複驗；新 Main 工具宣告逐欄相同，既有逐項效果外層保留。Mac `artifacts/CORE-015/original-pages-mac-04` 117 項及 28 項 Rust 測試通過；mac-01 為測試尚未轉接 Snapshot 型別的編譯失敗，已保留並修正。新增候選打包入口，待乾淨 commit 三平台建包及回歸，不宣稱 CORE-040 整體等價或穩定跨倉驗收。
 
 CORE-058 冷恢復補正（codex/core-037-control-integration）：Windows 原回條 `artifacts/CORE-058/refused-receiver-windows-01` 顯示恢復後 QQ 尚未在線，原投遞已安全拒絕，測試仍等待自動發送而逾時。改為先核持久 failed／bot_unavailable 與零物理投遞，再經 plugin.outbox.retry 的版本比較恢復同一原始操作；未知回執仍不重試。所有新 QQ 發布先等核心觀測 online。Mac `artifacts/CORE-058/cold-recovery-mac-02` 通過；首次 mac-01 把合法建立的物理子操作也誤當根身份變動，已改為核根操作，保留失敗回條。Windows cold-recovery-windows-02 及 Linux CORE-037/cold-recovery-linux-03 正在跑，未標通過。
+
+CORE-015 三平台乾淨候選已驗：來源 `c61f45c6e831f69cd4dc7b9cefb93c778b7d2e1a`，tree `b83992480f2a9fa72f310476f8a1de6307a9b3cad3aaefd8e4c02d3a4b70b092`。Mac ARM64、Linux ARM64、HJW Windows x86_64 各 117 項及獨立乾淨 PATH 啟動通過；CORE-012／020／022／026 相鄰回歸全過（`artifacts/CORE-015/adjacent-regression-01/`）。Reader 42、Host 2、握手 1，SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`。實含 JSON／text Artifact 的 inspect、get、search、text 與 JSON image 拒絕；不宣稱 native image Artifact 驗收。
+
+未發布交接索引：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/handoff-final-01/verified-candidates.json`，SHA-256 `da8b01c6762e7555622d63503c10822f2bd6deb7e977a802af75e43ed9cad67a`；內含三個 ZIP 絕對路徑、逐成員驗證與來源 manifest。
+
+- Mac ZIP `49bafba2a09ec2bab6f237c8de2eed15d2ad7a344c7f2fa3c575af77d7cd0e81`。
+- Linux ZIP `5517250b51c40c4acefce7d949f749de94f319a068ecbd27a10879b0750ea467`。
+- Windows ZIP `b136a092ca206c53ab38cd48cea68589523dc4fa53d95c798df2ece3e51d8cf4`。
+
+PR #56 等 #55 及最新 head 六項 CI；真擴展消費與 CORE-040 全切片等價待補。下一個獨立工作是 CORE-013 原 `get_group_members` 讀取接線。
+
+CORE-058 冷恢復三平台完成：來源修正 `5081c5d`、tree `ca3a329a86cd1d483d38c51038a72201de1a95935ae9fb005a3e60907b579acb`，Mac `artifacts/CORE-058/cold-recovery-mac-02/` 341 項、Linux `artifacts/CORE-037/cold-recovery-linux-03/CORE-058/` 341 項及 HJW `artifacts/CORE-058/cold-recovery-windows-02/` 344 項通過。核原 failed／bot_unavailable 回條後，顯式按 revision 重試同一根操作；未知投遞仍不重試。
