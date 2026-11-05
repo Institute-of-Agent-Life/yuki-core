@@ -528,3 +528,9 @@ CORE-057 三平台候選已驗：乾淨來源 `4dfb1c026a7f8e046c504484f6e773849
 CORE-037 整合 CI 時序修復：CORE-050 變更 aux Profile 宣告後先按實際 revision 重新批准；CORE-058 先確認離線通知已以 bot_unavailable 結算，再接上 QQ 發起另一個通知，不依賴偶然連線時序。Mac `approved-profile-mac-01`／`refused-receiver-mac-01` 與 Linux `CORE-037/ci-lifecycle-linux-02/{CORE-050,CORE-058}` 分別通過 566／330 項；HJW 的 `CORE-050/approved-profile-windows-01` 566 項通過，CORE-058 原生回歸續跑中。源樹 `9b08b55f460f89a3d6a280f52c655851dc9292eac25ab304b1a1051019b7abee`。保留原 CI 失敗；只修 fixture 的明確批准／派發時序，無放寬產品授權、通知狀態或等待上限。PR #51 最新 head 重新跑六項 CI 後才合併。
 
 CORE-058 冷恢復補正（codex/core-037-control-integration）：Windows 原回條 `artifacts/CORE-058/refused-receiver-windows-01` 顯示恢復後 QQ 尚未在線，原投遞已安全拒絕，測試仍等待自動發送而逾時。改為先核持久 failed／bot_unavailable 與零物理投遞，再經 plugin.outbox.retry 的版本比較恢復同一原始操作；未知回執仍不重試。所有新 QQ 發布先等核心觀測 online。Mac `artifacts/CORE-058/cold-recovery-mac-02` 通過；首次 mac-01 把合法建立的物理子操作也誤當根身份變動，已改為核根操作，保留失敗回條。Windows cold-recovery-windows-02 及 Linux CORE-037/cold-recovery-linux-03 正在跑，未標通過。
+
+CORE-048／039 CI 編譯診斷：PR #49 的兩個 Mac Intel run（42085724620、42085715264）均在 release 冷編譯 600 秒截止，尚未執行發布驗證案例。回移 CORE-037 已使用的編譯階段處理：只有 release build 使用 1200 秒編譯預算，超時仍失敗並保存部分編譯輸出和 stage 回條；其他編譯及所有功能、故障、啟動與分發驗收時間不變。原失敗保留。此處不因其他平台通過而跳過 Mac，需最新 head 三平台六項 CI 全通過才合併。
+
+本地 Mac `artifacts/CORE-039/profile-compiler-mac-01/` 81 項分發驗證通過，source tree `a8a009014eb8f64a246d94279914c8611a5904f9443a60ae5e203837a94dc57f`；原功能驗收完整執行。
+
+CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。
