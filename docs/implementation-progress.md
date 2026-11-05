@@ -471,4 +471,14 @@ PR #51 等 #48／#49 進 main 後，按最新 head 的三平台 push／PR 六項
 
 `codex/core-055-usage` 以 CORE-037 `1e7b893` 為前置。先設六次呼叫含失敗、零／缺欄位、47/110 同報分母、分離 attempt 欄位、紐約 DST、跨午夜重試與四種當前資格。`coverage-red-03/` 在跨 attempt 分母案例確實失敗；修正唯讀投影後 `coverage-mac-01/` 136 項通過；加入 SDK 包後 `coverage-mac-02/` 138 項、CORE-037 `usage-regression-01/` 977 項通過。原 provider/model/profile、邏輯呼叫計數與 DTO 保留，依實際 attempt 派發時間選欄位；無新增 writer／估價／重試權。
 
-原 DTO 合同 `protocol/control/usage.json`、SDK 包驗證和空 PATH 候選啟動已過，候選仍未發布。最終乾淨來源三平台與 ZIP 雜湊會寫入 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-055/handoff-final-01/verified-candidates.json`。初次 `coverage-red-01/` 因 Mac 系統碟滿而中斷，`-02/` 是 fixture ordinal 衝突；均保留。跨倉輸入仍缺 EXT-049 對當版候選的實際管理 HTTP 消費。
+實作 `0efe249`，整合來源 `214197a1a8d3bebbc3364d3566a65ea81bab09a6`，已推 [PR #52](https://github.com/Institute-of-Agent-Life/yuki-core/pull/52)。Mac ARM64、HJW Windows x86_64、Linux ARM64 同一乾淨樹 `37472cf77eecc810a2ca5b4d3cf663cb26dc2accf79ae27ec410654aa3ead666` 各 138 項通過；原 DTO `protocol/control/usage.json`、兩種 SDK 包及空 PATH 候選啟動均已驗證。握手 1、Host 2、usage 1、reader 41，SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`。
+
+**候選未發布。** 交接索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-055/handoff-final-01/verified-candidates.json`，SHA-256 `cda5ff398b353784f013fef7d39e7b72d1d9a219a834c18846db8672a53b26f5`；內含絕對路徑、來源及逐成員雜湊驗證。ZIP 雜湊如下：
+
+| 平台 | SHA-256 |
+|---|---|
+| Mac ARM64 | `b7ca70569b4fc6f536caad15134fd332a23aea5436c8b57ce3d9b1775c67dcb1` |
+| Linux ARM64 | `d09aa148ba767db66019fb231fe2b6ce25d755e1eef74643b8a9d91819c51530` |
+| HJW Windows x86_64 | `83e473a6ddb750b5b5de7e1febddffdeecec1bc0d4e344be8848c6f10c9cf1f8` |
+
+PR #52 待 #51 進 main 後按最新 head 六項 CI 合併。缺 EXT-049 對當版候選的實際管理 HTTP 消費，穩定協議未凍結。初次 `coverage-red-01/` 為 Mac 系統碟滿、`-02/` 為 fixture ordinal 衝突，失敗產物保留。下一個可執行工作為 CORE-014 原歷史查詢 wire，供 CORE-040 原腳本等價對拍使用。
