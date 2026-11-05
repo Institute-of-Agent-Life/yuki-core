@@ -287,3 +287,4 @@ CORE-029 整合向量 `e43339b` 與個人通道 main `76cf762`。Mac CORE-029、
 CORE-030 同步檢索 `87a07f9` 與個人入口 main `76cf762` 的提交祖先。此次整合只有 CI 和進度記錄差異，實作及測試來源均與 `62abb62` 相同，沿用 `forget-main-final-01/` 驗證；最新 head 仍須通過六項 CI 才合併。
 
 CORE-034 接入清除 `b745a9d`、檢索及 main 的分發入口。Mac CORE-034 通過 `erasure-distribution-main-02/`，CORE-039／030 通過 `code-erasure-distribution-main-03/`、`code-distribution-main-03/`。整合時移除重複的 Tool provider 欄位，候選共用打包器按被驗的 debug／release profile 取二進位；兩次先前失敗回條保留。原 `f74ecdd` 三機候選仍按原來源供擴展讀取，PR #43 以最新整合 head 重驗六項 CI。
+CORE-038 已整合個人入口 `d576aee` 及 main `692e323` 的分發入口。Mac CORE-038、039 通過 `artifacts/CORE-038/dist-main-integration-01/`、`artifacts/CORE-039/media-broker-main-integration-01/`；整合用 development-package 實際打包及乾淨 PATH 啟動通過，該包標記 dirty 且未發布，並非新增正式交接包。PR #40 以新 head 重驗，等待個人入口在 main 完成。
