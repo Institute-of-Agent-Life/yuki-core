@@ -546,3 +546,7 @@ CORE-015 三平台乾淨候選已驗：來源 `c61f45c6e831f69cd4dc7b9cefb93c778
 PR #56 等 #55 及最新 head 六項 CI；真擴展消費與 CORE-040 全切片等價待補。下一個獨立工作是 CORE-013 原 `get_group_members` 讀取接線。
 
 CORE-058 冷恢復三平台完成：來源修正 `5081c5d`、tree `ca3a329a86cd1d483d38c51038a72201de1a95935ae9fb005a3e60907b579acb`，Mac `artifacts/CORE-058/cold-recovery-mac-02/` 341 項、Linux `artifacts/CORE-037/cold-recovery-linux-03/CORE-058/` 341 項及 HJW `artifacts/CORE-058/cold-recovery-windows-02/` 344 項通過。核原 failed／bot_unavailable 回條後，顯式按 revision 重試同一根操作；未知投遞仍不重試。
+
+CORE-013 原群成員目錄補核（`codex/core-013-observed-members`）：Rust `get_group_members` 接原模型宣告、UUID keyset 分頁、同人多帳號、目前 assignment／Person／Presence、未知 mention 和來源撤銷。實際讀取只含原授權入口的已觀察帳號，群暫停或 QQ 離線仍可讀；不借發送路由、不查平台完整名冊。Mac `artifacts/CORE-013/observed-members-mac-07/` 175 項與 Rust 測試通過；CORE-009／014／015／036 四項相鄰回歸均通過 `adjacent-regression-01/`。舊版 oracle 三個原用例重跑通過，fixture SHA-256 `72a7d9c67f7e26a7c09897dc04d103d13eee45f68d6142508aece6c5c32a37a5`。
+
+失敗保留：mac-01 在暫停前未先取得觀察；mac-03／04 發現 Main 派發漏接，已補實際原生呼叫。mac-02 誤在 root 舊 main 執行，結果不作本接線證據。mac-06 的 development-package 只供打包自測；待乾淨 commit 產 Windows／Mac／Linux 正式本地候選。reader 42、Host 2、SDK alpha.11／a11；尚未發布，未宣稱 CORE-040 全功能等價。下一個核心缺口為原 `recall_own_message`／權限目錄的 Main 接線。

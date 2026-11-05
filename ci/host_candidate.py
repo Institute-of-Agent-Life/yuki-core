@@ -46,6 +46,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
     importing = card == "CORE-057"
     history = card == "CORE-014"
     artifact = card == "CORE-015"
+    members = card == "CORE-013"
     usage = card == "CORE-055"
     profiles = card == "CORE-048"
     notifications = card == "CORE-058"
@@ -58,6 +59,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "CORE-057": "offline-config-reconciliation.json",
         "CORE-014": "original-history-wire.json",
         "CORE-015": "tool-result-pages.json",
+        "CORE-013": "observed-members.json",
         "CORE-055": "usage-field-coverage.json",
         "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
@@ -82,7 +84,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control or usage or importing or history or artifact
+        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control or usage or importing or history or artifact or members
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -110,6 +112,11 @@ def tested_contents(receipt, profile, personal=False, card=None):
     if importing:
         files["docs/model-config-import.md"]=(ROOT/"docs/model-config-import.md").read_bytes()
         files["evidence/legacy-import-provenance.json"]=(ROOT/"tests/fixtures/import/model-v4/provenance.json").read_bytes()
+    if members:
+        raw_fixture=(ROOT/'fixtures/social/v4-members.json').read_bytes()
+        if digest(raw_fixture)!=data['members_oracle_sha256']:raise ValueError('member contract differs from verified original')
+        files['evidence/v4-members.json']=raw_fixture
+        files['docs/observed-members-compat.md']=(ROOT/'docs/observed-members-compat.md').read_bytes()
     if artifact:
         for path,key in [("fixtures/tool-results/v4-original-declaration.json","artifact_declaration_sha256"),("fixtures/tool-results/v4-original-pages.json","oracle_sha256")]:
             raw_fixture=(ROOT/path).read_bytes()
@@ -270,7 +277,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-015", "CORE-014", "CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037", "CORE-055", "CORE-057"}
+        m["card"] not in {"CORE-013", "CORE-015", "CORE-014", "CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037", "CORE-055", "CORE-057"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -292,6 +299,7 @@ def build(manifest_path, out, development=False):
     importing = m["card"] == "CORE-057"
     history = m["card"] == "CORE-014"
     artifact = m["card"] == "CORE-015"
+    observed_members = m["card"] == "CORE-013"
     usage = m["card"] == "CORE-055"
     profiles = m["card"] == "CORE-048"
     notifications = m["card"] == "CORE-058"
@@ -304,6 +312,7 @@ def build(manifest_path, out, development=False):
         "CORE-057": "offline-config-reconciliation.json",
         "CORE-014": "original-history-wire.json",
         "CORE-015": "tool-result-pages.json",
+        "CORE-013": "observed-members.json",
         "CORE-055": "usage-field-coverage.json",
         "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
@@ -325,6 +334,7 @@ def build(manifest_path, out, development=False):
                 "CORE-057": "yuki-model-import-preview-",
                 "CORE-014": "yuki-history-preview-",
                 "CORE-015": "yuki-artifact-preview-",
+                "CORE-013": "yuki-members-preview-",
                 "CORE-055": "yuki-usage-preview-",
                 "CORE-037": "yuki-control-preview-",
                 "CORE-032": "yuki-host-preview-",
@@ -380,6 +390,13 @@ def build(manifest_path, out, development=False):
         candidate["database_schema_revision"]=None
         candidate["validation"]["consumer"]="offline stopped-copy importer; no runtime owner or provider started"
         candidate["validation"]["real_extension_consumers"]=False
+    if observed_members:
+        candidate['database_schema_revision']=m['schema_version']
+        candidate['validated_core_tools']=['get_group_members']
+        candidate['members_oracle_sha256']=data['members_oracle_sha256']
+        candidate['coverage']='observed'
+        candidate['validation']['consumer']='physical Main and original observed directory fixtures; SDK packages independently installed'
+        candidate['validation']['real_extension_consumers']=False
     if artifact:
         candidate["database_schema_revision"]=m["schema_version"]
         candidate["artifact_declaration_sha256"]=data["artifact_declaration_sha256"]

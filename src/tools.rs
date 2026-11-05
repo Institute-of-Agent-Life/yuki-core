@@ -94,6 +94,9 @@ pub async fn perform(
             "time_get_current" => transient::clock(transient::now()?, &timezone),
             "update_short_state" => Ok(Value::Null),
             "history_directory" => history::query::directory(&mut tx, exec, actor).await,
+            "get_group_members" => {
+                history::query::members::read(&mut tx, exec, actor, &args, false).await
+            }
             "find_contacts" | "find_conversations" => {
                 history::query::contacts::read(&mut tx, exec, actor, name, &args).await
             }
@@ -175,6 +178,11 @@ pub(crate) async fn finish_guarded(
             }
             "update_short_state" => {
                 output = Ok(transient::update(conn, exec, &args, transient::now()?).await?);
+            }
+            "get_group_members" => {
+                output = history::query::members::read(conn, exec, actor, &args, true)
+                    .await
+                    .map_err(|e| e.to_string());
             }
             "find_contacts" | "find_conversations" => {
                 output = history::query::contacts::read(conn, exec, actor, &name, &args)

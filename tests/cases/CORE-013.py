@@ -648,6 +648,9 @@ def run(ctx):
                 [(0,)],
             )
 
+    from tests.harness.observed_members import run as members
+    member_result=members(ctx)
+    ctx.write("observed-members.json",member_result)
     return {
         "wire": wire,
         "original_entry": g,
