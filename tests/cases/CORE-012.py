@@ -123,13 +123,22 @@ def run(ctx):
     with Recorder() as server:
         with (service.data / "yuki.toml").open("a") as cfg:
             cfg.write(
-                f'\n[main]\nendpoint="{server.url}"\nbinding_endpoint="{server.url.removesuffix("/v1/chat/completions")}/binding"\nmodel="fixture-chat"\nname="Yuki"\nmerge_ms=450\nroot_slots=6\nmax_input_units=100000\nmax_output=128\n'
+                f'\n[main]\nendpoint="{server.url}"\nbinding_endpoint="{server.url.removesuffix("/v1/chat/completions")}/binding"\nmodel="fixture-chat"\nname="Yuki"\nmerge_ms=450\nroot_slots=6\nmax_input_units=1000000\nmax_output=128\n'
             )
         soul = service.data / "SOUL.md"
         soul.write_text("hello {{name}}; literal {{other}}", encoding="utf-8")
 
         def wire():
-            raw, reply = server.receive()
+            try:
+                raw, reply = server.receive()
+            except Exception:
+                ctx.write("main-wire-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT activation,id FROM model_requests"),
+                })
+                raise
             return raw, json.loads(raw), reply
 
         with service.running():

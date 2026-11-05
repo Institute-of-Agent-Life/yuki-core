@@ -181,3 +181,5 @@ CORE-029 已整合向量 `a5a9b35` 與 main `692e323` 的分發及目錄入口�
 PR #35 的 `a5a9b35` 在 Linux／Windows CI 顯示新聯絡人 fixture 啟動時缺 Embedding 配置。保留原 CI ZIP `.cache/vector-ci-13434438838.zip`，SHA-256 `3c48f5a28cce9d5b6e8a5931db42e5d2ed5826945ab78c31b9d4a8799b00d5dd`；離線目錄案例明選 lexical-only 後，Mac CORE-014 `artifacts/CORE-014/vector-contacts-memory-mode-01/` 通過。原 hybrid 必填規則及 CORE-028 的故障案例保留。
 
 CORE-029 同步向量 CI 修正 `c251510`。原目錄案例明選 lexical-only，Mac CORE-014 `artifacts/CORE-014/retrieval-contacts-memory-mode-01/` 通過；其餘實作沿用前述整合驗證。
+
+CORE-029 合入新增工具後，CORE-012 的舊測試根額度在第三筆共享根請求前耗盡。CI `42070867425` 與本機 `retrieval-main-ci-01` 均保留失敗；診斷顯示兩筆已預留 68,206 units，第三筆尚未派發。測試沿用後續分支 `40d0d43` 的 1,000,000 units 設定，保留六筆請求上限及核心額度邏輯；`artifacts/CORE-012/retrieval-main-ci-02/` 已通過。超時現在附原執行、診斷和根預留，方便定位。
