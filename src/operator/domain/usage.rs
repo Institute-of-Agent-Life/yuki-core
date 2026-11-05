@@ -165,6 +165,12 @@ pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Valu
             item.2 = Some(instant(t)?);
         }
         item.3 = row.try_get("state")?;
+        // Charges belong to their saved physical dispatch time. A retry can
+        // cross a calendar boundary without moving the earlier attempt's usage.
+        if dispatched >= end || start.is_some_and(|s| dispatched < s) {
+            continue;
+        }
+        item.4.calls = 1;
         let usage = row
             .try_get::<Option<&str>, _>("usage_json")?
             .map(serde_json::from_str::<Value>)
@@ -178,6 +184,22 @@ pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Valu
                 known[i] = true;
             }
         }
+        // Do not pair an input-only attempt with a cache-only later attempt.
+        // The public count remains logical invocations; only co-reported
+        // physical fields contribute to the numerator and denominator.
+        if known[0] && known[3] {
+            item.4.paired = 1;
+            item.4.paired_input = item
+                .4
+                .paired_input
+                .checked_add(usage["input"].as_i64().ok_or("invalid_usage")?)
+                .ok_or("usage_overflow")?;
+            item.4.paired_cache = item
+                .4
+                .paired_cache
+                .checked_add(usage["cache"].as_i64().ok_or("invalid_usage")?)
+                .ok_or("usage_overflow")?;
+        }
         let unbilled: bool = row.try_get("unbilled")?;
         if !unbilled && (!known[2] || matches!(item.3.as_str(), "unknown" | "dispatched")) {
             item.4.unknown = 1;
@@ -185,7 +207,7 @@ pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Valu
     }
     let mut sources = BTreeMap::<Dimensions, Stats>::new();
     for (_, (dims, created, received, state, mut stats)) in logical {
-        if created >= end || start.is_some_and(|s| created < s) || state == "dispatched" {
+        if stats.calls == 0 || state == "dispatched" {
             continue;
         }
         stats.calls = 1;
@@ -193,11 +215,6 @@ pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Valu
         stats.latency = received
             .map(|t| (t - created).num_milliseconds().max(0) as f64 / 1000.)
             .unwrap_or(0.);
-        if stats.coverage[0] > 0 && stats.coverage[3] > 0 {
-            stats.paired = 1;
-            stats.paired_input = stats.fields[0];
-            stats.paired_cache = stats.fields[3];
-        }
         sources.entry(dims).or_default().add(&stats)?;
     }
     let tasks: BTreeSet<_> = sources.keys().map(|d| d.0.clone()).collect();

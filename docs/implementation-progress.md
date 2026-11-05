@@ -467,3 +467,9 @@ CORE-058 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-058 `session
 UUID 大小寫同一 request 補核通過 `CORE-037/failed-command-receipts-04/` 977 項與 `CORE-048/control-request-alias-01/` 663 項；通知回歸 `CORE-058/control-failure-receipts-01/` 326 項通過。最終乾淨來源三平台驗證與包雜湊會記於 `artifacts/CORE-037/handoff-final-01/verified-candidates.json`。
 
 下一步：乾淨來源三平台候選 → 推送／PR → 最新六項 CI 通過後合併。候選將綁定乾淨來源提交。真 EXT-022／037／038／039／049 消費證據仍缺，穩定協議未凍結；其後可獨立推進 CORE-055 usage 欄位覆蓋與 CORE-014 原歷史工具、CORE-040 原 wire 等價對拍。
+
+## CORE-055：逐欄用量驗證
+
+`codex/core-055-usage` 以 CORE-037 `1e7b893` 為前置。先設六次呼叫含失敗、零／缺欄位、47/110 同報分母、分離 attempt 欄位、紐約 DST、跨午夜重試與四種當前資格。`coverage-red-03/` 在跨 attempt 分母案例確實失敗；修正唯讀投影後 `coverage-mac-01/` 136 項通過；加入 SDK 包後 `coverage-mac-02/` 138 項、CORE-037 `usage-regression-01/` 977 項通過。原 provider/model/profile、邏輯呼叫計數與 DTO 保留，依實際 attempt 派發時間選欄位；無新增 writer／估價／重試權。
+
+原 DTO 合同 `protocol/control/usage.json`、SDK 包驗證和空 PATH 候選啟動已過，候選仍未發布。最終乾淨來源三平台與 ZIP 雜湊會寫入 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-055/handoff-final-01/verified-candidates.json`。初次 `coverage-red-01/` 因 Mac 系統碟滿而中斷，`-02/` 是 fixture ordinal 衝突；均保留。跨倉輸入仍缺 EXT-049 對當版候選的實際管理 HTTP 消費。
