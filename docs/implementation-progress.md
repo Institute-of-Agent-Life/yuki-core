@@ -269,3 +269,13 @@ Mac 與 HJW Windows 各 383 項通過，來源樹 `bf43b16e03c308a6cf43c6526664e
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/windows-validation/handoff/yuki-code-preview-f74ecdd86b73-windows-x86_64.zip`，SHA-256 `4d073b6f15f5d10c0c8594064c568555671e90c49394f7da64ff1d9568b7ec2e`。
 
 CORE-051 實作 `b176a7e` 已推 [PR #47](https://github.com/Institute-of-Agent-Life/yuki-core/pull/47)。現已整合 CORE-034 `befb666` 的原生 feed 確認補修及三平台交接記錄。整合後 CORE-034、051、050 分別通過 `sessions-feed-integration-01/`、`native-feed-integration-01/`、`sessions-feed-integration-01/`，接著製作同時含兩項能力的三平台乾淨候選。
+
+### CORE-051 三平台未發布候選
+
+來源 `9db8b3f073e34a6b86c8f93e878c2de09f0e25ba`，來源樹 `8bfe544d695eb64813fadd6d7ddba27a7e43b8da97edd940d6b7f8c3e260d785`。Mac、HJW Windows、Linux arm64 各 735 項與獨立 PATH 啟動通過，ZIP 成員雜湊核驗回條位於交接根目錄。Session 1、Host 2、握手 1、Rust SDK `1.0.0-alpha.9`、Python `1.0.0a9`。八個公開方法、六種文字 wire、原 Work 根額度與來源擦除均有實際重放，亦含 CORE-034 相同 feed 補修。真 EXT-047 消費待回傳，全部候選未發布。
+
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/linux-arm64/candidate/yuki-session-preview-9db8b3f073e3-linux-arm64.zip`，SHA-256 `326325c842984e88ec80e94056b86afdab280e62968d9b22aceaa809ce281a99`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/macos-arm64/yuki-session-preview-9db8b3f073e3-darwin-arm64.zip`，SHA-256 `3c2dab0738d434db26cd145e82d29a7e79773d4d9713649a1ef04b58949a32e9`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/windows-validation/handoff/yuki-session-preview-9db8b3f073e3-windows-x86_64.zip`，SHA-256 `1e0d5856740899539c9f4adac2b4c6ce6d01aff6d7697597203d37f2d87d7f56`。
+
+下一個已就緒核心任務是 CORE-058，工作分支 `codex/core-058-notifications`，已從本候選建立正常與故障時序。CORE-048、CORE-014 原歷史適配及 CORE-040 完整長 Work 對拍仍有本倉工作。
