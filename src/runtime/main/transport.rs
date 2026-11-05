@@ -120,6 +120,12 @@ impl Dispatch {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }
             "send" if cfg.binding_endpoint.is_none() => {
+                if let Some(host) = &store.host
+                    && host.deliver(&store, &exec, &actor, &id).await?.is_some()
+                {
+                    return Ok(());
+                }
+
                 let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
                 if !matches!(
                     result["state"].as_str(),
@@ -129,6 +135,25 @@ impl Dispatch {
                 }
             }
             _ => {
+                if let Some(host) = &store.host
+                    && let Some(receipt) = host
+                        .tool(
+                            &store,
+                            &exec,
+                            &id,
+                            &t.target,
+                            serde_json::from_str(&t.payload)?,
+                        )
+                        .await?
+                {
+                    if !matches!(
+                        receipt["state"].as_str(),
+                        Some("confirmed" | "failed" | "unknown")
+                    ) {
+                        return Err("original plugin effect pending".into());
+                    }
+                    return Ok(());
+                }
                 let endpoint = cfg
                     .binding_endpoint
                     .as_ref()

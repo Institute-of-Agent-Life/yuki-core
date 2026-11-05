@@ -56,6 +56,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Host(Box<crate::host::Change>),
     Tool(Box<crate::tools::Change>),
     History(Box<crate::history::Change>),
     Social(Box<crate::social::Change>),
@@ -125,6 +126,9 @@ impl Driver for SqliteDriver {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
+            }
+            Mutation::Host(change) => {
+                return crate::host::domain::apply(self.connection(), change).await;
             }
             Mutation::Tool(change) => return crate::tools::apply(self.connection(), change).await,
             Mutation::History(change) => {
@@ -259,6 +263,7 @@ enum Command {
 
 #[derive(Clone)]
 pub struct Store {
+    pub host: Option<Arc<crate::host::Hub>>,
     pub search: Option<Arc<crate::model::search::Engine>>,
     pub main: Option<Arc<crate::runtime::main::Config>>,
     commands: mpsc::Sender<Command>,
@@ -344,6 +349,7 @@ impl Store {
         Self {
             search: None,
             main: None,
+            host: None,
             commands,
             readers,
             signals,

@@ -17,6 +17,7 @@ pub(crate) fn declaration(name: &str) -> Option<Tool> {
         .iter()
         .find(|d| d["name"] == name)?;
     Some(Tool {
+        provider: None,
         name: name.into(),
         description: d["description"].as_str()?.into(),
         schema: d["parameters"].clone(),

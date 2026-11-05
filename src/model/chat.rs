@@ -56,8 +56,10 @@ pub struct Turn {
     pub result: Value,
 }
 pub fn intent(id: &str, name: &str, arguments: Value) -> Result<Value> {
-    let tool = crate::tools::registry::builtin(name).ok_or("tool outside execution manifest")?;
-    if !jsonschema::validator_for(&tool.schema)?.is_valid(&arguments) {
+    // The physical protocol has already checked the exact paid declaration (including plugin schemas).
+    if let Some(tool) = crate::tools::registry::builtin(name)
+        && !jsonschema::validator_for(&tool.schema)?.is_valid(&arguments)
+    {
         return Err("invalid tool arguments".into());
     }
     let (action, target) = if matches!(name, "get" | "put") {

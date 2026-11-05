@@ -177,6 +177,7 @@ pub fn declaration() -> Tool {
         parallel_read: false,
         cacheable: false,
         code_direct: false,
+        provider: None,
     }
 }
 #[derive(clap::Args, Serialize, Deserialize)]

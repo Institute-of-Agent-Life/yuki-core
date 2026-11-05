@@ -79,6 +79,8 @@ jobs:
         run: python ci/check.py CORE-021 --out artifacts/CORE-021/ci
       - name: Replay frozen native tools, effect barriers and immutable result pages
         run: python ci/check.py CORE-015 --out artifacts/CORE-015/ci
+      - name: Exercise installed plugin subprocesses and source-bound receipts
+        run: python ci/check.py CORE-032 --out artifacts/CORE-032/ci
       - name: Verify native search proof, budget and cache on physical HTTP
         run: python ci/check.py CORE-024 --out artifacts/CORE-024/ci
       - name: Retain evidence on success or failure
