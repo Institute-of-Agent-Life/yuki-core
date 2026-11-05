@@ -323,3 +323,6 @@ CORE-035 最新 head `d772ed2` 的 macOS PR 工作 `127225319602` 在多個案�
 CORE-051 的 macOS PR 工作 `127228529052` 同樣被 45 分鐘 job 上限截斷，沿用同一份 timeout 診斷。接入 CORE-035 `13e64dd` 後使用 90 分鐘整體窗口，全部檢查保留。
 
 CORE-058 已接入 CORE-051 `fa1fddb` 的 90 分鐘 CI job 窗口。全部執行步驟及各卡驗證條件保留，原 runtime 未變；PR #48 按整合後 head 重驗。
+PR #47 `fa1fddb` 的 Linux CORE-027 冷恢復案例提早送出 ingress：extraction_policy.enabled 在 operator IPC 綁定前就已提交。失敗 ZIP SHA-256 `84c71110f7e19aad2b614abfd64afe0e35562f748eb11974ac860f4e914700da`，診斷 `artifacts/CORE-051/ci-failure-fa1fddb.json`。fixture 改等同一子程序的正常 ready JSON，不重送命令、不延長 timeout；Mac CORE-027 `session-owner-readiness-01/` 通過，提交後重驗 CI。
+
+CORE-058 接入 CORE-051 `002a10d` 的真 owner ready 同步修正。Mac CORE-027 `notifications-owner-readiness-01/` 通過；PR #48 按整合後 head 重驗三平台。
