@@ -135,8 +135,8 @@ impl Dispatch {
                     crate::tools::reject(&store, &exec, &actor, &id, error.to_string()).await?;
                 }
             }
-            "lookup_tools" | "time_get_current" | "history_directory" | "update_short_state"
-            | "read_tool_artifact" => {
+            "lookup_tools" | "time_get_current" | "history_directory" | "find_contacts"
+            | "find_conversations" | "update_short_state" | "read_tool_artifact" => {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }
             "send" if cfg.binding_endpoint.is_none() => {

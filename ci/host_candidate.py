@@ -13,39 +13,16 @@ from source import digest, source_identity
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def build(manifest_path, out, development=False):
-    base = manifest_path.parent
-    m = json.loads(manifest_path.read_bytes())
-    source = source_identity(ROOT)
-    if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-038"}
-        or m["status"] != "verified"
-        or m["exit_code"] != 0
-        or not m["assertions"]
-        or not all(a["passed"] for a in m["assertions"])
-    ):
-        raise ValueError("passing host capability manifest required")
-    if m["source"] != source or (source["dirty"] and not development):
-        raise ValueError("candidate needs matching source identity and clean commit")
-
-    def receipt(name):
-        raw = (base / name).read_bytes()
-        if digest(raw) != m["artifacts"].get(name):
-            raise ValueError("unverified member " + name)
-        return raw
-
-    personal = m["card"] == "CORE-033"
-    media = m["card"] == "CORE-038"
-    proof_name = {
-        "CORE-032": "host-delegation.json",
-        "CORE-033": "personal-handoff.json",
-        "CORE-038": "media-handle-bridge.json",
-    }[m["card"]]
+def tested_contents(receipt, profile, personal=False, media=False):
+    proof_name = "media-handle-bridge.json" if media else ("personal-handoff.json" if personal else "host-delegation.json")
     proof = receipt(proof_name)
     data = json.loads(proof)
     sdk = json.loads(receipt("sdk-distributions/candidate.json"))
     binary = (
-        ROOT / "target/debug" / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
+        ROOT
+        / "target"
+        / profile
+        / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
     )
     raw = binary.read_bytes()
     if digest(raw) != data["binary_sha256"]:
@@ -140,11 +117,11 @@ def build(manifest_path, out, development=False):
         exe.write_bytes(raw)
         exe.chmod(0o755)
         env = {
-            "PATH": (
-                os.path.join(os.environ.get("SystemRoot", "C:\\Windows"), "System32")
-                if os.name == "nt"
-                else "/usr/bin:/bin"
+            "PATH": os.path.join(
+                os.environ.get("SystemRoot", "C:\\Windows"), "System32"
             )
+            if os.name == "nt"
+            else "/usr/bin:/bin"
         }
         if os.name == "nt":
             env["SystemRoot"] = os.environ["SystemRoot"]
@@ -163,20 +140,37 @@ def build(manifest_path, out, development=False):
                     + result.stderr.decode(errors="replace")[:200]
                 )
             json.loads(result.stdout)
-    target = (
-        (
-            {
-                "CORE-032": "yuki-host-preview-",
-                "CORE-033": "yuki-personal-preview-",
-                "CORE-038": "yuki-media-preview-",
-            }[m["card"]]
-        )
-        + source["commit"][:12]
-        + "-"
-        + os_name
-        + "-"
-        + arch
-    )
+
+    return files, os_name, arch, host, sdk, idl
+
+
+def build(manifest_path, out, development=False):
+    base = manifest_path.parent
+    m = json.loads(manifest_path.read_bytes())
+    source = source_identity(ROOT)
+    if (
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-038"}
+        or m["status"] != "verified"
+        or m["exit_code"] != 0
+        or not m["assertions"]
+        or not all(a["passed"] for a in m["assertions"])
+    ):
+        raise ValueError("passing host or personal manifest required")
+    if m["source"] != source or (source["dirty"] and not development):
+        raise ValueError("candidate needs matching source identity and clean commit")
+
+    def receipt(name):
+        raw = (base / name).read_bytes()
+        if digest(raw) != m["artifacts"].get(name):
+            raise ValueError("unverified member " + name)
+        return raw
+
+    personal = m["card"] == "CORE-033"
+    media = m["card"] == "CORE-038"
+    data = json.loads(receipt("media-handle-bridge.json" if media else ("personal-handoff.json" if personal else "host-delegation.json")))
+    files, os_name, arch, host, sdk, idl = tested_contents(receipt, "debug", personal, media)
+    target = ("yuki-media-preview-" if media else ("yuki-personal-preview-" if personal else "yuki-host-preview-")) + source["commit"][:12] + "-" + os_name + "-" + arch
+
     members = {
         n: {"sha256": digest(content), "bytes": len(content)}
         for n, content in sorted(files.items())
