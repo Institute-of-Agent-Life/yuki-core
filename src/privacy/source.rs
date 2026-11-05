@@ -103,6 +103,11 @@ pub fn accounting_only(raw: &str) -> String {
             safe.insert(field.into(), json!(count));
         }
     }
+    if !safe.contains_key("input")
+        && let Some(input) = usage["input_tokens"].as_i64().filter(|n| *n >= 0)
+    {
+        safe.insert("input".into(), json!(input));
+    }
     Value::Object(safe).to_string()
 }
 
@@ -199,4 +204,17 @@ pub async fn scrub(conn: &mut SqliteConnection, event: i64) -> Result<()> {
         .execute(conn)
         .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn legacy_embedding_usage_survives_source_erasure() {
+        let actual =
+            super::accounting_only(r#"{"input_tokens":9,"provider_private_text":"erased"}"#);
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&actual).unwrap(),
+            serde_json::json!({"input":9})
+        );
+    }
 }

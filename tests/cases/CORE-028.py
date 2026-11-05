@@ -225,6 +225,10 @@ def run(ctx):
                 ),
                 [(0,)],
             )
+            def late_usage():
+                return o.rows("SELECT json_extract(a.usage_json,'$.input') FROM model_attempts a JOIN embedding_items i ON i.logical=a.logical WHERE i.fact=? AND a.diagnostic='source_erased'",disappearing[2])
+            o.until(lambda:late_usage()==[(5,)])
+            ctx.equal("source erasure retains known embedding usage",late_usage(),[(5,)])
             first = o.op("memory", "vector-status")
         configure(o, peer, "second-model")
         with o.svc.running():

@@ -53,6 +53,9 @@ pub fn builtin(name: &str) -> Option<Tool> {
     if let Some(tool) = crate::media::declaration(name) {
         return Some(tool);
     }
+    if let Some(tool) = crate::history::query::contacts::declaration(name) {
+        return Some(tool);
+    }
     if let Some(tool) = crate::memory::tools::declaration(name) {
         return Some(tool);
     }
@@ -61,9 +64,6 @@ pub fn builtin(name: &str) -> Option<Tool> {
     }
     if let Some(tool) = crate::work::declaration(name) {
         return Some(tool);
-    }
-    if let Some(t) = crate::history::query::contacts::declaration(name) {
-        return Some(t);
     }
     if name == "web_search" {
         return Some(crate::model::search::declaration());

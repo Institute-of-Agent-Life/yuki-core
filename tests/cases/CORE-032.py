@@ -15,8 +15,8 @@ from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer as OneBot
 
 
-def run(ctx):
-    svc = Service(ctx, ctx.working / "owner")
+def run(ctx, profile="debug"):
+    svc = Service(ctx, ctx.working / "owner", profile)
     previous_schema(ctx, svc.data, 12)
     (svc.data / "SOUL.md").write_bytes((ctx.root / "character/SOUL.md").read_bytes())
     ctx.check(
@@ -492,7 +492,19 @@ grants=["observe.metadata","tool.call"]
             ctx.check("original human admitted for Rust SDK", rust_source["accepted"])
             raw, q = peer.receive()
             q.put((reply([tool("rust_host_probe", "rust-1", {"value": "rust"})]), 0))
-            follow, q = peer.receive()
+            try:
+                follow, q = peer.receive()
+            except Exception:
+                ctx.write("host-rust-followup-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "intents": rows("SELECT * FROM model_tool_intents"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT id,root,estimated_input,max_output FROM model_requests"),
+                    "attempts": rows("SELECT id,state,diagnostic FROM model_attempts"),
+                    "calls": rows("SELECT method,state FROM host_calls"),
+                })
+                raise
             rust_result = json.loads(json.loads(follow)["messages"][-1]["content"])[
                 "result"
             ]["data"]
