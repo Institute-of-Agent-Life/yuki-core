@@ -143,10 +143,13 @@ def run(ctx):
             ctx.check(
                 "only defined name interpolation",
                 "hello Yuki; literal {{other}}" in raw
-                and not any(
+                and sum(
                     m["content"].startswith("\n\n<runtime_context>")
                     for m in body["messages"]
-                ),
+                )
+                == 1
+                and body["messages"][-2]["content"]
+                == '\n\n<runtime_context>\n{"state":"no_active_work","state_scope":"current_activation"}\n</runtime_context>\n\n',
             )
             program = (ctx.root / "src/context/main-program.txt").read_text(
                 encoding="utf-8"

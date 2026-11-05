@@ -420,7 +420,12 @@ async fn pair(conn: &mut SqliteConnection, logical: &str, ordinal: i64) -> Resul
     let result = if let Some(raw) = row.try_get::<Option<String>, _>("paired_receipt")? {
         valid_json(&raw)?
     } else {
-        effects::authorize(conn, &exec, &actor, true).await?;
+        // Pairing an already settled self-cancellation records its receipt. It grants no right
+        // to dispatch the subsequent intent. All other pairings retain the dispatch fence.
+        let cancelled_here:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM work_runs r JOIN work_nodes w ON w.id=r.work JOIN operations o ON o.namespace=r.execution WHERE r.execution=? AND o.operation_id=? AND o.state='confirmed' AND o.target IN ('task_control','subagent_control') AND json_extract(o.payload,'$.action') IN ('cancel','fail') AND w.status IN ('cancelled','failed'))").bind(&exec).bind(&id).fetch_one(&mut *conn).await?;
+        if !cancelled_here {
+            effects::authorize(conn, &exec, &actor, true).await?;
+        }
         let earlier:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM model_tool_intents WHERE logical=? AND ordinal<? AND paired_receipt IS NULL)")
             .bind(logical).bind(ordinal).fetch_one(&mut *conn).await?;
         if earlier {

@@ -1,0 +1,5 @@
+{
+ "normal":["accept attaches to current execution and keeps paid request immutable", "derive creates a private child and shares the original budget and declared tools", "parent receives original child result privately and may finish with partial results", "complete then send settle in order without a second model purchase"],
+ "faults":["crash after actual send but before final pairing reuses original receipt", "cancelling current Work suppresses the later send; cancelling another managed target does not", "replaying original input and mailbox watermark does not append another private message", "a worker may not accept itself as another root; seeing a directory cannot control a foreign tree", "late external outcome stays with its original cancelled operation"],
+ "legacy":["preexisting attached Work reference without stored Work material remains identifiable"]
+}
