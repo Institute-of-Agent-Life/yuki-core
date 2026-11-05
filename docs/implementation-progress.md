@@ -289,3 +289,5 @@ CORE-051 已接入維護分支 `d772ed2` 的合併歷史，實作檔案與已驗
 CORE-035 最新 head `d772ed2` 的 macOS PR 工作 `127225319602` 在多個案例通過後被 45 分鐘整體 job 上限截斷。GitHub annotation 明確記錄超時，診斷為 `artifacts/CORE-035/macos-ci-timeout-01.json`。整體 job 窗口改為 90 分鐘，全部案例、斷言和各卡 timeout 保留，推送後按最新 head 重驗三平台。
 
 CORE-051 的 macOS PR 工作 `127228529052` 同樣被 45 分鐘 job 上限截斷，沿用同一份 timeout 診斷。接入 CORE-035 `13e64dd` 後使用 90 分鐘整體窗口，全部檢查保留。
+
+PR #47 `fa1fddb` 的 Linux CORE-027 冷恢復案例提早送出 ingress：extraction_policy.enabled 在 operator IPC 綁定前就已提交。失敗 ZIP SHA-256 `84c71110f7e19aad2b614abfd64afe0e35562f748eb11974ac860f4e914700da`，診斷 `artifacts/CORE-051/ci-failure-fa1fddb.json`。fixture 改等同一子程序的正常 ready JSON，不重送命令、不延長 timeout；Mac CORE-027 `session-owner-readiness-01/` 通過，提交後重驗 CI。
