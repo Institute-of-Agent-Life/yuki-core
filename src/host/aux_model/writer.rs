@@ -40,7 +40,7 @@ async fn request(
     params: &Value,
 ) -> Result<Value> {
     super::super::domain::active(db, plugin, generation, "llm.complete").await?;
-    let (revision, route) =
+    let (revision, mut route) =
         scope::route(db, plugin, text(params, "route")?, text(params, "purpose")?).await?;
     let original = params["origin"].to_string();
     let hash = crate::memory::scope::hash(params);
@@ -62,11 +62,18 @@ async fn request(
         true,
     )
     .await?;
-    let task: Option<chat::Task> = params
+    if let Some(task) = route.profile.profile_task.clone() {
+        route.profile =
+            crate::model::profile_store::runtime::select(db, &route.profile, &task).await?;
+        route.validate()?;
+    }
+    let mut task: Option<chat::Task> = params
         .get("task")
         .map(|v| serde_json::from_value(v.clone()))
         .transpose()?;
-    if let Some(task) = &task {
+    if let Some(task) = &mut task {
+        task.mode =
+            crate::model::profile_store::runtime::structured_mode(&route.profile, &task.mode)?;
         jsonschema::validator_for(&task.schema)?;
         if task.validation_retries != 0 {
             return Err("auxiliary route requires explicit new calls after invalid results".into());
@@ -129,6 +136,11 @@ async fn request(
     let id = new_id(db).await?;
     let logical = format!("plugin-aux:{id}");
     execution::activate(db, &exec, &logical, &profile.contract()).await?;
+    sqlx::query("INSERT INTO core_meta(key,value) VALUES(?,?)")
+        .bind(format!("aux-model-profile:{logical}"))
+        .bind(serde_json::to_string(profile)?)
+        .execute(&mut *db)
+        .await?;
     attempt::apply(
         db,
         &attempt::Action::Reserve(attempt::Reservation {
@@ -258,7 +270,8 @@ async fn authorized_route(
     generation: &str,
     dispatch: bool,
 ) -> Result<Route> {
-    let (revision, route) = scope::route(db, plugin, row.get("route"), row.get("purpose")).await?;
+    let (revision, mut route) =
+        scope::route(db, plugin, row.get("route"), row.get("purpose")).await?;
     if revision != row.get::<&str, _>("revision") {
         return Err("original auxiliary route changed".into());
     }
@@ -286,6 +299,21 @@ async fn authorized_route(
     }
     if dispatch {
         execution::eligible(db, row.get("execution")).await?;
+    }
+    if let Some(value) = sqlx::query_scalar::<_, String>("SELECT value FROM core_meta WHERE key=?")
+        .bind(format!(
+            "aux-model-profile:{}",
+            row.get::<&str, _>("logical")
+        ))
+        .fetch_optional(&mut *db)
+        .await?
+    {
+        route.profile = serde_json::from_str(&value)?;
+        let contract: String = sqlx::query_scalar("SELECT a.profile_contract FROM activations a JOIN model_requests r ON r.activation=a.id WHERE r.id=?")
+            .bind(row.get::<&str,_>("logical")).fetch_one(db).await?;
+        if route.profile.contract() != contract {
+            return Err("original_profile_unavailable".into());
+        }
     }
     Ok(route)
 }

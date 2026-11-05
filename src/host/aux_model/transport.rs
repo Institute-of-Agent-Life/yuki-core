@@ -13,6 +13,14 @@ pub(super) async fn run(
     generation: &str,
     request: &str,
 ) -> Result<()> {
+    // Check original credential availability before recording a physical dispatch.
+    // A cold restart with a rotated key holds the original request without buying another attempt.
+    if let Some(value) = sqlx::query_scalar::<_,String>(
+        "SELECT m.value FROM core_meta m JOIN host_aux_requests q ON m.key='aux-model-profile:'||q.logical WHERE q.id=? AND q.plugin=?",
+    ).bind(request).bind(plugin).fetch_optional(store.readers()).await? {
+        let mut profile: main::Config = serde_json::from_str(&value)?;
+        crate::model::profile_store::runtime::ready(store, &mut profile)?;
+    }
     let permit = write(
         store,
         Change::Dispatch {
@@ -27,7 +35,8 @@ pub(super) async fn run(
     }
     #[cfg(test)]
     crate::store::tests::commit_barrier("aux-dispatched-before-http").await;
-    let profile: main::Config = serde_json::from_value(permit["profile"].clone())?;
+    let mut profile: main::Config = serde_json::from_value(permit["profile"].clone())?;
+    crate::model::profile_store::runtime::ready(store, &mut profile)?;
     let task: Option<Task> = serde_json::from_value(permit["task"].clone())?;
     let attempt = permit["attempt"]
         .as_str()

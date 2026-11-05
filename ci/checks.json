@@ -5,6 +5,13 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-048": {
+      "case": "tests/cases/CORE-048.py",
+      "artifact": "profile-apply-matrix.json",
+      "timeout_seconds": 360,
+      "rust": true,
+      "capabilities": ["original-profile-files", "scoped-model-configuration", "paid-profile-pinning", "recoverable-profile-save"]
+    },
     "CORE-051": {
       "case": "tests/cases/CORE-051.py",
       "artifact": "isolated-session-replay.json",

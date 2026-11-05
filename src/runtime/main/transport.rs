@@ -26,8 +26,27 @@ pub(crate) async fn physical(
     if cfg.protocol.is_messages() {
         request = request.header("anthropic-version", "2023-06-01");
     }
-    if let Some(key) = &cfg.key_env {
-        let secret = std::env::var(key).map_err(|_| "provider credential unavailable")?;
+    let secret = if let Some(binding) = &cfg.profile_binding {
+        let credentials = cfg
+            .credentials
+            .as_ref()
+            .ok_or("original_provider_credential_unavailable")?;
+        for (name, value) in &credentials.headers {
+            request = request.header(name, value);
+        }
+        request = request.timeout(std::time::Duration::from_secs_f64(
+            binding.profile["timeout_seconds"]
+                .as_f64()
+                .ok_or("validation_error")?,
+        ));
+        credentials.key.clone()
+    } else {
+        cfg.key_env
+            .as_ref()
+            .map(|key| std::env::var(key).map_err(|_| "provider credential unavailable"))
+            .transpose()?
+    };
+    if let Some(secret) = secret {
         request = if cfg.protocol.is_messages() {
             request.header("x-api-key", secret)
         } else if cfg.protocol.is_gemini() {
@@ -429,6 +448,9 @@ pub async fn run(
         }
         let logical = step["logical"].as_str().ok_or("missing logical request")?;
         let task: Option<Task> = serde_json::from_value(step["task"].clone())?;
+        if cfg.profile_binding.is_some() && cfg.credentials.is_none() {
+            return Err("original_provider_credential_unavailable".into());
+        }
         let attempt_id = format!("{logical}:http:0");
         let permit = attempt::invoke(
             store,
@@ -561,6 +583,8 @@ pub async fn run(
                         },
                     )
                     .await?;
+                    #[cfg(test)]
+                    crate::store::tests::commit_barrier("profile-paid-response").await;
                     #[cfg(test)]
                     if step["compact"] == true {
                         crate::store::tests::commit_barrier(if step["private_compact"] == true {

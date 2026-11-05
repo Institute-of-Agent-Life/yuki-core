@@ -18,7 +18,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -34,6 +34,7 @@ def build(manifest_path, out, development=False):
             raise ValueError("unverified member " + name)
         return raw
 
+    profiles = m["card"] == "CORE-048"
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
     sessions = m["card"] == "CORE-051"
@@ -50,6 +51,7 @@ def build(manifest_path, out, development=False):
         "CORE-035": "maintenance-grants.json",
         "CORE-051": "isolated-session-replay.json",
         "CORE-034": "nested-boundary.json",
+        "CORE-048": "profile-apply-matrix.json",
     }[m["card"]]
     proof = receipt(proof_name)
     data = json.loads(proof)
@@ -62,7 +64,7 @@ def build(manifest_path, out, development=False):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation or maintenance or sessions
+        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -87,6 +89,16 @@ def build(manifest_path, out, development=False):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if profiles:
+        for path, expected in [("protocol/baseline-v4/admin-openapi.json", "admin_openapi_sha256"),
+                               ("protocol/admin/model-metadata.json", "profile_metadata_sha256")]:
+            member = (ROOT / path).read_bytes()
+            if digest(member) != data[expected]:
+                raise ValueError("model configuration contract differs from verified source")
+            files[path] = member
+        files["config/model_profiles.example.toml"] = (ROOT / "config/model_profiles.example.toml").read_bytes()
+        files["protocol/admin/capabilities.json"] = (ROOT / "protocol/admin/capabilities.json").read_bytes()
+        files["docs/model-profiles.md"] = (ROOT / "docs/model-profiles.md").read_bytes()
     if sessions:
         methods=(ROOT/"protocol/plugin/sessions/methods.json").read_bytes()
         if digest(methods)!=data["session_schema_sha256"] or set(data["negotiated_session_methods"])!=set(json.loads(methods)["methods"]):
@@ -211,6 +223,7 @@ def build(manifest_path, out, development=False):
                 "CORE-035": "yuki-maintenance-preview-",
                 "CORE-051": "yuki-session-preview-",
                 "CORE-034": "yuki-code-preview-",
+                "CORE-048": "yuki-profile-preview-",
             }[m["card"]]
         )
         + source["commit"][:12]
@@ -248,6 +261,15 @@ def build(manifest_path, out, development=False):
         },
         "members": members,
     }
+    if profiles:
+        candidate["model_profile_schema_revision"] = 3
+        candidate["admin_openapi_sha256"] = data["admin_openapi_sha256"]
+        candidate["validated_http_routes"] = data["validated_http_routes"]
+        candidate["validated_profile_protocols"] = sorted(data["results"]["protocol_matrix"])
+        candidate["validated_model_tasks"] = ["chat_agent", "memory_extraction", *sorted(data["results"]["auxiliary_task_routes"])]
+        candidate["validated_runtime_connections"] = ["independent_search_profile", "embedding_restart"]
+        candidate["validation"]["consumer"] = "native operator and fixed Admin HTTP fixtures"
+        candidate["validation"]["real_extension_consumers"] = "pending EXT-049"
     if personal:
         candidate["personal_schema_revision"] = 1
         candidate["personal_schema_sha256"] = data["personal_schema_sha256"]

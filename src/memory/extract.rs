@@ -147,6 +147,9 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
     let Some(logical) = job["logical"].as_str() else {
         return Ok(());
     };
+    let mut profile: Profile = serde_json::from_value(job["profile"].clone())?;
+    crate::model::profile_store::runtime::ready(store, &mut profile)?;
+    let task: Task = serde_json::from_value(job["task"].clone())?;
     let attempt_id = format!("{logical}:http:0");
     let permit = attempt::invoke(
         store,
@@ -162,7 +165,7 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
     let raw = permit["request_raw"]
         .as_str()
         .ok_or("original extraction request missing")?;
-    let result = main::physical_request(client, &cfg.profile, raw).await;
+    let result = main::physical_request(client, &profile, raw).await;
     let Ok((status, bytes, complete)) = result else {
         attempt::invoke(
             store,
@@ -174,7 +177,7 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
         return Ok(());
     };
     let text = String::from_utf8_lossy(&bytes).to_string();
-    let p = cfg.profile.protocol;
+    let p = profile.protocol;
     let usage = p.usage(&text).to_string();
     if !complete {
         attempt::invoke(
@@ -205,13 +208,8 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
     } else {
         let parsed = serde_json::from_str(&text).unwrap_or(Value::Null);
         if !p.complete(&parsed)
-            || p.decode(
-                &text,
-                Some(&cfg.task()),
-                &cfg.profile,
-                &serde_json::from_str(raw)?,
-            )
-            .is_err()
+            || p.decode(&text, Some(&task), &profile, &serde_json::from_str(raw)?)
+                .is_err()
         {
             attempt::invoke(
                 store,

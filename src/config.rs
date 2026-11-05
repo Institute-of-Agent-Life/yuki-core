@@ -8,6 +8,10 @@ use std::path::{Path, PathBuf};
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub format_version: u32,
+    #[serde(default)]
+    pub model_profiles_file: Option<PathBuf>,
+    #[serde(default)]
+    pub operator_registry_file: Option<PathBuf>,
     pub listen: std::net::SocketAddr,
     #[serde(default)]
     pub plugins: Vec<crate::host::Install>,

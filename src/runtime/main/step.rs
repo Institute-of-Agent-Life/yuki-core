@@ -15,6 +15,7 @@ pub async fn prepare(
     soul: &str,
     policy: &super::segment::Config,
 ) -> Result<Value> {
+    crate::model::profile_store::runtime::pin(conn, exec, cfg).await?;
     let actor = execution::eligible(conn, exec).await?;
     let turn=sqlx::query("SELECT t.material,t.conversation,t.window,t.rowid,t.origin,x.state FROM main_turns t JOIN executions x ON x.id=t.execution WHERE x.id=?")
         .bind(exec).fetch_one(&mut *conn).await?;
@@ -90,7 +91,10 @@ pub async fn prepare(
         match result {
             Ok(parsed) => {
                 let original: Value = serde_json::from_str(&raw)?;
-                cfg.protocol.replay(&mut body, &original)?;
+                cfg.protocol.replay(
+                    &mut body,
+                    &crate::model::profile_store::wire::replay(cfg, &original),
+                )?;
                 continue_turn |=
                     cfg.protocol.is_messages() && original["stop_reason"] == "pause_turn";
                 if !parsed.intents.as_array().unwrap().is_empty() {

@@ -99,7 +99,10 @@ pub async fn history(
         let mut body: Value = serde_json::from_str(record.try_get("request_json")?)?;
         let start = parts(p, &body)?.len();
         let raw: Value = serde_json::from_str(record.try_get("response")?)?;
-        p.replay(&mut body, &raw)?;
+        p.replay(
+            &mut body,
+            &crate::model::profile_store::wire::replay(cfg, &raw),
+        )?;
         let intents=sqlx::query("SELECT i.ordinal,i.call_id,i.operation_id,i.paired_receipt,o.payload,o.action,o.target FROM model_tool_intents i JOIN operations o ON o.namespace=i.execution AND o.operation_id=i.operation_id WHERE i.logical=? ORDER BY i.ordinal")
           .bind(&logical).fetch_all(&mut *conn).await?;
         let mut calls = Vec::new();

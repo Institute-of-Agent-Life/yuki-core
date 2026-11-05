@@ -1,0 +1,930 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "profile_schema": {
+    "$defs": {
+      "ChatWireOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "reasoning": {
+            "default": "effort",
+            "enum": [
+              "effort",
+              "thinking",
+              "enable_thinking",
+              "openrouter",
+              "builtin",
+              "gemini",
+              "budget"
+            ],
+            "title": "Reasoning",
+            "type": "string"
+          },
+          "token_field": {
+            "default": "max_tokens",
+            "enum": [
+              "max_tokens",
+              "max_completion_tokens"
+            ],
+            "title": "Token Field",
+            "type": "string"
+          },
+          "send_temperature": {
+            "default": false,
+            "title": "Send Temperature",
+            "type": "boolean"
+          },
+          "send_tool_choice": {
+            "default": true,
+            "title": "Send Tool Choice",
+            "type": "boolean"
+          },
+          "replay_reasoning": {
+            "default": true,
+            "title": "Replay Reasoning",
+            "type": "boolean"
+          },
+          "reasoning_split": {
+            "default": false,
+            "title": "Reasoning Split",
+            "type": "boolean"
+          },
+          "send_reasoning_effort": {
+            "default": false,
+            "title": "Send Reasoning Effort",
+            "type": "boolean"
+          },
+          "native_web_search": {
+            "default": false,
+            "title": "Native Web Search",
+            "type": "boolean"
+          },
+          "thinking_budget_tokens": {
+            "default": 4096,
+            "minimum": 1024,
+            "title": "Thinking Budget Tokens",
+            "type": "integer"
+          },
+          "include_reasoning": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Include Reasoning"
+          },
+          "reasoning_format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "parsed",
+                  "hidden"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reasoning Format"
+          }
+        },
+        "title": "ChatWireOptions",
+        "type": "object"
+      },
+      "ModelCapability": {
+        "description": "Features a profile must explicitly advertise.",
+        "enum": [
+          "tools",
+          "structured_output",
+          "reasoning",
+          "long_context",
+          "native_web_search",
+          "image_input"
+        ],
+        "title": "ModelCapability",
+        "type": "string"
+      },
+      "ModelProtocol": {
+        "description": "Wire protocol used by one model profile.",
+        "enum": [
+          "chat_completions",
+          "responses",
+          "anthropic_messages",
+          "gemini"
+        ],
+        "title": "ModelProtocol",
+        "type": "string"
+      },
+      "ModelSearchMode": {
+        "description": "Per-connection choice of provider and externally executed search.",
+        "enum": [
+          "external",
+          "native",
+          "both",
+          "bridge"
+        ],
+        "title": "ModelSearchMode",
+        "type": "string"
+      },
+      "ReasoningEffort": {
+        "description": "Provider-neutral reasoning effort values used by Responses APIs.",
+        "enum": [
+          "none",
+          "minimal",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ],
+        "title": "ReasoningEffort",
+        "type": "string"
+      },
+      "StructuredOutputMode": {
+        "description": "Supported provider strategies for one validated object.",
+        "enum": [
+          "function_tool",
+          "json_schema",
+          "text_json"
+        ],
+        "title": "StructuredOutputMode",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "description": "One named provider endpoint and its defaults.",
+    "properties": {
+      "id": {
+        "minLength": 1,
+        "pattern": "^[a-zA-Z0-9_.-]+$",
+        "title": "Id",
+        "type": "string"
+      },
+      "provider": {
+        "minLength": 1,
+        "title": "Provider",
+        "type": "string"
+      },
+      "protocol": {
+        "$ref": "#/$defs/ModelProtocol",
+        "default": "chat_completions"
+      },
+      "base_url": {
+        "default": "",
+        "title": "Base Url",
+        "type": "string"
+      },
+      "api_key_env": {
+        "default": "",
+        "title": "Api Key Env",
+        "type": "string"
+      },
+      "model": {
+        "minLength": 1,
+        "title": "Model",
+        "type": "string"
+      },
+      "timeout_seconds": {
+        "exclusiveMinimum": 0,
+        "title": "Timeout Seconds",
+        "type": "number"
+      },
+      "max_retries": {
+        "minimum": 0,
+        "title": "Max Retries",
+        "type": "integer"
+      },
+      "default_temperature": {
+        "maximum": 2,
+        "minimum": 0,
+        "title": "Default Temperature",
+        "type": "number"
+      },
+      "default_max_output_tokens": {
+        "exclusiveMinimum": 0,
+        "title": "Default Max Output Tokens",
+        "type": "integer"
+      },
+      "max_output_tokens_limit": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Max Output Tokens Limit"
+      },
+      "max_input_tokens": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Max Input Tokens"
+      },
+      "context_window_tokens": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Context Window Tokens"
+      },
+      "thinking_enabled": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": true,
+        "title": "Thinking Enabled"
+      },
+      "reasoning_effort": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ReasoningEffort"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": "medium"
+      },
+      "structured_output_mode": {
+        "$ref": "#/$defs/StructuredOutputMode",
+        "default": "function_tool"
+      },
+      "search_mode": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ModelSearchMode"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "search_connection": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Search Connection"
+      },
+      "capabilities": {
+        "default": [],
+        "items": {
+          "$ref": "#/$defs/ModelCapability"
+        },
+        "title": "Capabilities",
+        "type": "array",
+        "uniqueItems": true
+      },
+      "wire_options": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ChatWireOptions"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "headers": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "title": "Headers",
+        "type": "object"
+      }
+    },
+    "required": [
+      "id",
+      "provider",
+      "model",
+      "timeout_seconds",
+      "max_retries",
+      "default_temperature",
+      "default_max_output_tokens"
+    ],
+    "title": "ModelProfile",
+    "type": "object"
+  },
+  "connection_schemas": {
+    "embedding": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "base_url": {
+          "default": "",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "api_key_env": {
+          "default": "",
+          "title": "Api Key Env",
+          "type": "string"
+        },
+        "model": {
+          "default": "",
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "default": "qwen_dashscope",
+          "enum": [
+            "qwen_dashscope",
+            "openai_compatible"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "dimensions": {
+          "default": 1024,
+          "exclusiveMinimum": 0,
+          "title": "Dimensions",
+          "type": "integer"
+        },
+        "output_type": {
+          "const": "dense",
+          "default": "dense",
+          "title": "Output Type",
+          "type": "string"
+        },
+        "document_template_version": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Document Template Version",
+          "type": "integer"
+        },
+        "query_instruct": {
+          "default": "Retrieve personal memory facts relevant to the conversational query.",
+          "title": "Query Instruct",
+          "type": "string"
+        }
+      },
+      "title": "EmbeddingConnection",
+      "type": "object"
+    },
+    "vision": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "base_url": {
+          "default": "",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "api_key_env": {
+          "default": "",
+          "title": "Api Key Env",
+          "type": "string"
+        },
+        "model": {
+          "default": "",
+          "title": "Model",
+          "type": "string"
+        },
+        "protocol": {
+          "const": "chat_completions",
+          "default": "chat_completions",
+          "title": "Protocol",
+          "type": "string"
+        }
+      },
+      "title": "VisionConnection",
+      "type": "object"
+    },
+    "asr": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "base_url": {
+          "default": "",
+          "title": "Base Url",
+          "type": "string"
+        },
+        "api_key_env": {
+          "default": "",
+          "title": "Api Key Env",
+          "type": "string"
+        },
+        "model": {
+          "default": "",
+          "title": "Model",
+          "type": "string"
+        },
+        "protocol": {
+          "default": "chat_completions",
+          "enum": [
+            "chat_completions",
+            "audio_transcriptions"
+          ],
+          "title": "Protocol",
+          "type": "string"
+        }
+      },
+      "title": "ASRConnection",
+      "type": "object"
+    },
+    "search": {
+      "$defs": {
+        "WebMode": {
+          "description": "Configured backend strategy for model-approved web access.",
+          "enum": [
+            "disabled",
+            "native",
+            "tavily",
+            "both"
+          ],
+          "title": "WebMode",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WebMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tavily_api_key_env": {
+          "default": "",
+          "title": "Tavily Api Key Env",
+          "type": "string"
+        }
+      },
+      "title": "SearchConnection",
+      "type": "object"
+    }
+  },
+  "provider_presets": [
+    {
+      "provider": "openai",
+      "display_name": "OpenAI",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.openai.com/v1",
+      "api_key_env_suggestion": "OPENAI_API_KEY",
+      "docs_url": "https://developers.openai.com/api/reference/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": "https://api.openai.com/v1"
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "deepseek",
+      "display_name": "DeepSeek",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.deepseek.com/v1",
+      "api_key_env_suggestion": "DEEPSEEK_API_KEY",
+      "docs_url": "https://api-docs.deepseek.com/",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "qwen",
+      "display_name": "Qwen / 阿里雲百鍊",
+      "protocol": "chat_completions",
+      "default_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key_env_suggestion": "DASHSCOPE_API_KEY",
+      "docs_url": "https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "qwen_dashscope",
+        "base_url": "https://dashscope.aliyuncs.com/api/v1"
+      },
+      "embedding_provider": "qwen_dashscope",
+      "supports_embedding": true
+    },
+    {
+      "provider": "moonshot",
+      "display_name": "Moonshot / Kimi",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.moonshot.ai/v1",
+      "api_key_env_suggestion": "MOONSHOT_API_KEY",
+      "docs_url": "https://platform.moonshot.ai/docs/",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "zhipu",
+      "display_name": "智譜 GLM",
+      "protocol": "chat_completions",
+      "default_base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "api_key_env_suggestion": "ZHIPU_API_KEY",
+      "docs_url": "https://docs.bigmodel.cn/",
+      "supports_model_listing": false,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "doubao",
+      "display_name": "豆包 / 火山方舟",
+      "protocol": "chat_completions",
+      "default_base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "api_key_env_suggestion": "ARK_API_KEY",
+      "docs_url": "https://docs.volcengine.com/docs/ark/base-url-and-authentication",
+      "supports_model_listing": false,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "minimax",
+      "display_name": "MiniMax",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.minimax.io/v1",
+      "api_key_env_suggestion": "MINIMAX_API_KEY",
+      "docs_url": "https://platform.minimax.io/docs/api-reference/text-openai-api",
+      "supports_model_listing": false,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "openrouter",
+      "display_name": "OpenRouter",
+      "protocol": "chat_completions",
+      "default_base_url": "https://openrouter.ai/api/v1",
+      "api_key_env_suggestion": "OPENROUTER_API_KEY",
+      "docs_url": "https://openrouter.ai/docs/quickstart",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "siliconflow",
+      "display_name": "SiliconFlow / 矽基流動",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.siliconflow.cn/v1",
+      "api_key_env_suggestion": "SILICONFLOW_API_KEY",
+      "docs_url": "https://api-docs.siliconflow.cn/",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": "https://api.siliconflow.cn/v1"
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "together",
+      "display_name": "Together AI",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.together.xyz/v1",
+      "api_key_env_suggestion": "TOGETHER_API_KEY",
+      "docs_url": "https://docs.together.ai/docs/openai-api-compatibility",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": "https://api.together.xyz/v1"
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "groq",
+      "display_name": "Groq",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.groq.com/openai/v1",
+      "api_key_env_suggestion": "GROQ_API_KEY",
+      "docs_url": "https://console.groq.com/docs/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "mistral",
+      "display_name": "Mistral AI",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.mistral.ai/v1",
+      "api_key_env_suggestion": "MISTRAL_API_KEY",
+      "docs_url": "https://docs.mistral.ai/api/",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": "https://api.mistral.ai/v1"
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "xai",
+      "display_name": "xAI",
+      "protocol": "chat_completions",
+      "default_base_url": "https://api.x.ai/v1",
+      "api_key_env_suggestion": "XAI_API_KEY",
+      "docs_url": "https://docs.x.ai/docs/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "azure_openai",
+      "display_name": "Azure OpenAI",
+      "protocol": "chat_completions",
+      "default_base_url": "",
+      "api_key_env_suggestion": "AZURE_OPENAI_API_KEY",
+      "docs_url": "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/api-version-lifecycle",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": ""
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "openai_compatible",
+      "display_name": "自訂（OpenAI 相容）",
+      "protocol": "chat_completions",
+      "default_base_url": "",
+      "api_key_env_suggestion": "YUKI_MODEL_API_KEY",
+      "docs_url": "https://developers.openai.com/api/reference/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": ""
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "openai",
+      "display_name": "OpenAI · Responses",
+      "protocol": "responses",
+      "default_base_url": "https://api.openai.com/v1",
+      "api_key_env_suggestion": "OPENAI_API_KEY",
+      "docs_url": "https://developers.openai.com/api/reference/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": "https://api.openai.com/v1"
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "deepseek",
+      "display_name": "DeepSeek · Responses",
+      "protocol": "responses",
+      "default_base_url": "https://api.deepseek.com/v1",
+      "api_key_env_suggestion": "DEEPSEEK_API_KEY",
+      "docs_url": "https://api-docs.deepseek.com/",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "openai_compatible",
+      "display_name": "自訂（OpenAI 相容） · Responses",
+      "protocol": "responses",
+      "default_base_url": "",
+      "api_key_env_suggestion": "YUKI_MODEL_API_KEY",
+      "docs_url": "https://developers.openai.com/api/reference/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": ""
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "anthropic",
+      "display_name": "Anthropic / Claude",
+      "protocol": "anthropic_messages",
+      "default_base_url": "https://api.anthropic.com/v1",
+      "api_key_env_suggestion": "ANTHROPIC_API_KEY",
+      "docs_url": "https://platform.claude.com/docs/en/api/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "gemini",
+      "display_name": "Google Gemini",
+      "protocol": "gemini",
+      "default_base_url": "https://generativelanguage.googleapis.com/v1beta",
+      "api_key_env_suggestion": "GEMINI_API_KEY",
+      "docs_url": "https://ai.google.dev/gemini-api/docs",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "anthropic",
+      "display_name": "自訂（Claude Messages）",
+      "protocol": "anthropic_messages",
+      "default_base_url": "",
+      "api_key_env_suggestion": "YUKI_MODEL_API_KEY",
+      "docs_url": "https://platform.claude.com/docs/en/api/overview",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "gemini",
+      "display_name": "自訂（Gemini）",
+      "protocol": "gemini",
+      "default_base_url": "",
+      "api_key_env_suggestion": "YUKI_MODEL_API_KEY",
+      "docs_url": "https://ai.google.dev/gemini-api/docs",
+      "supports_model_listing": true,
+      "embedding_defaults": null,
+      "embedding_provider": null,
+      "supports_embedding": false
+    },
+    {
+      "provider": "openai_compatible",
+      "display_name": "本機（Ollama）",
+      "protocol": "chat_completions",
+      "default_base_url": "http://localhost:11434/v1",
+      "api_key_env_suggestion": "",
+      "docs_url": "https://docs.ollama.com/api/openai-compatibility",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": "http://localhost:11434/v1"
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    },
+    {
+      "provider": "openai_compatible",
+      "display_name": "本機（LM Studio）",
+      "protocol": "chat_completions",
+      "default_base_url": "http://localhost:1234/v1",
+      "api_key_env_suggestion": "",
+      "docs_url": "https://lmstudio.ai/docs/developer/openai-compat",
+      "supports_model_listing": true,
+      "embedding_defaults": {
+        "provider": "openai_compatible",
+        "base_url": "http://localhost:1234/v1"
+      },
+      "embedding_provider": "openai_compatible",
+      "supports_embedding": true
+    }
+  ],
+  "task_requirements": {
+    "chat_agent": [
+      "tools"
+    ],
+    "memory_extraction": [],
+    "memory_self_reflection": [],
+    "memory_dream": [],
+    "plugin_agent_session": [
+      "tools"
+    ],
+    "utility_structured": [],
+    "embedding": [],
+    "vision": [
+      "image_input"
+    ],
+    "asr": [],
+    "search": [
+      "native_web_search"
+    ]
+  },
+  "semantic_providers": [
+    {
+      "provider": "jev",
+      "default_endpoint": "https://api.typesafe.ai/v1/systemone",
+      "default_api_key_env": "SEMANTIC_PARTICIPATION_API_KEY",
+      "required": [
+        "request_model"
+      ]
+    },
+    {
+      "provider": "tencent_jev",
+      "default_endpoint": "https://ai-gateway.edgeone.link/v1/systemone",
+      "default_api_key_env": "YUKI_SEMANTIC_TENCENT_JEV_API_KEY",
+      "required": [
+        "request_model"
+      ]
+    },
+    {
+      "provider": "aliyun_decision",
+      "default_endpoint": null,
+      "default_api_key_env": "YUKI_SEMANTIC_ALIYUN_DECISION_API_KEY",
+      "required": [
+        "request_model",
+        "endpoint"
+      ]
+    },
+    {
+      "provider": "custom",
+      "default_endpoint": null,
+      "default_api_key_env": null,
+      "required": [
+        "request_model",
+        "endpoint",
+        "api_key_env"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/yuki/model_runtime/models.py",
+      "sha256": "c8fa7701075687d2c530ba115006d5b078b0e00a8a960cf51412d43e7dcd8fd5"
+    },
+    {
+      "path": "src/yuki/model_runtime/provider_presets.py",
+      "sha256": "14ce8be29fb46ce0ee89c70881ed986ae3215794bf94d4ee48b4a4ed7b2f2d91"
+    },
+    {
+      "path": "src/yuki/admin/config_files.py",
+      "sha256": "d7259c8a19a3fd28745ed3ba7a909b6f9add19b0730ae1a7bbdd2105e209a406"
+    },
+    {
+      "path": "src/yuki/model_runtime/pool.py",
+      "sha256": "44094c64bb7627b697789d2151b55a749c315ceba65de1ab80582935883a324d"
+    },
+    {
+      "path": "src/yuki/llm/openai_responses.py",
+      "sha256": "16e48f0f423e0c6e2d3b2bbe2f811acac197c0e613cb5dd7e49edb5ffb03d898"
+    },
+    {
+      "path": "src/yuki/llm/deepseek_responses.py",
+      "sha256": "d18f31e289cfb1d12587176b096bf8672fc8b58b7ee0f88524b1120019a13b65"
+    },
+    {
+      "path": "src/yuki/llm/openai_compatible.py",
+      "sha256": "46720446f2277c1cc3d5a9e7f93cbb8e7b985c6dbd0ba8d9d77f14b67069eb36"
+    },
+    {
+      "path": "src/yuki/llm/vendor_policy.py",
+      "sha256": "c6ff07346f81a69ac46d87c971a85e2b004b10ced360184dd07beaf93560e9d0"
+    },
+    {
+      "path": "src/yuki/llm/anthropic_messages.py",
+      "sha256": "c436756f913eb3d3b34c7a6115902b22efca72e351a18b4fde4778cba8a819e6"
+    },
+    {
+      "path": "src/yuki/llm/gemini.py",
+      "sha256": "28fd801c3f51562ba07c41bf1042f7ff7ea5badda7a0c067e0beb117410118b6"
+    }
+  ]
+}

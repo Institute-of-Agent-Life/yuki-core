@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: [windows-latest, macos-15-intel, ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       CARGO_HOME: ${{ github.workspace }}/.cache/cargo
     steps:
@@ -119,6 +119,8 @@ jobs:
         run: python ci/check.py CORE-034 --out artifacts/CORE-034/ci
       - name: Verify native search proof, budget and cache on physical HTTP
         run: python ci/check.py CORE-024 --out artifacts/CORE-024/ci
+      - name: Verify original model configuration and interrupted atomic saves
+        run: python ci/check.py CORE-048 --out artifacts/CORE-048/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

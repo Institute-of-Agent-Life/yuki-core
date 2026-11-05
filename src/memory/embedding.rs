@@ -119,7 +119,11 @@ async fn transport(
                 .ok_or("missing original embedding request")?
                 .to_owned(),
         );
-    if let Some(key) = &p.key_env {
+    if let Some(key) = &p.credential {
+        req = req.bearer_auth(key.as_str());
+    } else if p.credential_hash.is_some() {
+        return Err("original_embedding_credentials_unavailable".into());
+    } else if let Some(key) = &p.key_env {
         req = req.bearer_auth(std::env::var(key)?);
     }
     let outcome = match req.send().await {

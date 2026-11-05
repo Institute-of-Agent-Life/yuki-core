@@ -28,17 +28,19 @@ impl Protocol {
         self == Self::AnthropicMessages
     }
     pub fn request(self, layout: Value, cfg: &Config, task: Option<&Task>) -> Result<Value> {
-        if self.is_gemini() {
-            return gemini::request(layout, cfg, task);
-        }
-        if self.is_chat() {
-            Ok(layout)
+        let mut body = if self.is_gemini() {
+            gemini::request(layout, cfg, task)?
+        } else if self.is_chat() {
+            layout
         } else if self.is_messages() {
-            messages::request(layout, cfg, task)
+            messages::request(layout, cfg, task)?
         } else {
-            responses::request(layout, cfg, task)
-        }
+            responses::request(layout, cfg, task)?
+        };
+        super::profile_store::wire::configure(cfg, &mut body)?;
+        Ok(body)
     }
+
     pub fn decode(
         self,
         raw: &str,

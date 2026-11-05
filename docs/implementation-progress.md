@@ -279,3 +279,22 @@ CORE-051 實作 `b176a7e` 已推 [PR #47](https://github.com/Institute-of-Agent-
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/windows-validation/handoff/yuki-session-preview-9db8b3f073e3-windows-x86_64.zip`，SHA-256 `1e0d5856740899539c9f4adac2b4c6ce6d01aff6d7697597203d37f2d87d7f56`。
 
 下一個已就緒核心任務是 CORE-058，工作分支 `codex/core-058-notifications`，已從本候選建立正常與故障時序。CORE-048、CORE-014 原歷史適配及 CORE-040 完整長 Work 對拍仍有本倉工作。
+
+## CORE-048 模型設定本地驗證通過
+
+分支 `codex/core-048-profiles`，工作目錄 `.cache/worktrees/profile-config`，基底 `e913c81`。前置 CORE-024、033 已有本地驗證。新增精確依賴 `toml_edit =0.23.7`；v3 TOML／原 Admin DTO 保未知欄位、註釋、旁檔密鑰和聯合 revision。
+
+已接入 OS／受限 bearer／真 chat 設備、原三個模型 HTTP 入口、兩階段保存和原回執恢復。Main／Work／child、提取及已批准輔助 task route 保原 Profile；獨立搜尋封存原連接，embedding 連接在重啟後生效。額度、purpose、來源與網路權限仍受原部署政策限制。原資格撤銷、同 revision 衝突、外部內容 hash 衝突、已付回應冷恢復和三個 rename 中止點都有具名測例。使用說明見 `docs/model-profiles.md`。
+
+| 同一來源樹 `176707309b2a4015855b92139b8cef1b8cecac782a6003d0511d67fba041c4c2` | 驗證結果 | 產物位置 |
+|---|---|---|
+| Mac ARM64 | 624 項通過 | `artifacts/CORE-048/complete-mac-15/` |
+| HJW Windows x86_64 | 621 項通過 | `artifacts/CORE-048/complete-windows-04/` |
+| Linux ARM64，含真 readonly mount | 645 項通過 | `artifacts/CORE-048/complete-linux-03/` |
+| Mac 18 張受影響核心卡 | 4283 項通過 | `artifacts/CORE-048/profile-regressions-02.json`、`regression-02-<卡號>/` |
+
+Windows 首次實際 rename 發現 Win32 錯誤 87，已用同一根 handle 的原生 NtSetInformationFile 修正並在 HJW 重驗；證據 `windows-rename-probe-01/`、`windows-rename-02/`。固定 SHA 隔離舊版 oracle 的 operator／v3 profile 測試 17 項、退役 route 1 項通過；原 ZIP 未修改。全部測試均無付費模型呼叫。
+
+待此可審查提交產生後，從乾淨 commit 再驗並打包三平台候選，記錄來源、schema／SDK、雜湊與交接路徑；其 CI 通過後才合併。既有 `development-package-01/` 是 dirty source 開發包，SHA-256 `17f97901360adbf8a445f01ad30709bd1f0ffab8609de629426ab59a5bfbf229`，不可作正式交接版本。
+
+CI 修正沿用已驗 `002a10d` 的 CORE-027 owner ready 回條，以及 `0f723ad` 的原檔案有界讀取；不重送 mutation、不改原 timeout 或接受條件。下一個已就緒核心任務是 CORE-037；真實 EXT-049 消費回條尚待對方，79 個固定 capability 宣告不等於全部管理方法已實作，候選不標為已發布。

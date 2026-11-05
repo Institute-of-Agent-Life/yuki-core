@@ -1,5 +1,5 @@
 mod artifacts;
-mod credentials;
+pub(crate) mod credentials;
 mod domains;
 mod http;
 mod native;

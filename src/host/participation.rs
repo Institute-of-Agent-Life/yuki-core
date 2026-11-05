@@ -68,7 +68,10 @@ pub(super) async fn callback(
             generation: generation.into(),
             method: method.into(),
             params,
-            config: store.main.as_deref().cloned(),
+            config: crate::model::profile_store::runtime::current(store)
+                .await?
+                .as_deref()
+                .cloned(),
         })),
     )
     .await

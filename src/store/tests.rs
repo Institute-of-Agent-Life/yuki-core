@@ -579,3 +579,35 @@ async fn extract_crash_child() {
     .await
     .unwrap();
 }
+
+#[tokio::test]
+#[ignore = "CORE-048 kills the original two-phase file operation"]
+async fn profile_crash_child() {
+    let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
+    let _owner = crate::config::Owner::acquire(&data).unwrap();
+    let config = crate::config::Config::read(&data).unwrap();
+    let mut store = Store::open(&data).await.unwrap();
+    store.profile_files = Some(
+        crate::model::profile_store::Service::open(
+            &data,
+            config.model_profiles_file.as_ref().unwrap(),
+            config.operator_registry_file.as_deref(),
+            config.main.unwrap(),
+        )
+        .unwrap(),
+    );
+    crate::model::profile_store::invoke(&store, crate::model::profile_store::Request::Start)
+        .await
+        .unwrap();
+    let body = serde_json::from_str(&std::env::var("YUKI_PROFILE_TEST_BODY").unwrap()).unwrap();
+    let authority = match std::env::var("YUKI_PROFILE_TEST_TOKEN") {
+        Ok(token) => crate::operator::config::Authority::Bearer(
+            crate::host::personal::credentials::hash(&token),
+        ),
+        Err(_) => crate::operator::config::Authority::Os,
+    };
+    crate::model::profile_store::save(&store, authority, body)
+        .await
+        .unwrap();
+    panic!("parent failed to kill the original configuration operation");
+}

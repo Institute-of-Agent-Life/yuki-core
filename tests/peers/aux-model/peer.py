@@ -8,6 +8,9 @@ import threading
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from tests.harness.json_file import read_json
+
 folder = Path(sys.argv[1])
 sys.path.insert(0, sys.argv[2])
 from yuki_plugin_sdk.connection import Binding, Peer, encode, read_frame
@@ -51,7 +54,7 @@ save("ready", {"pid": os.getpid(), "methods": sorted(rpc.allowed)})
 
 
 def job(path):
-    payload = json.loads(path.read_bytes())
+    payload = read_json(path)
     try:
         result = invoke(payload["method"], payload["params"])
     except Exception as error:
@@ -102,9 +105,7 @@ while raw := read_frame(sys.stdin.buffer):
         # The test explicitly decides when the original plugin call settles.
         def finish(original):
             marker = folder / ("finish-" + original["params"]["handle"] + ".json")
-            while not marker.exists():
-                time.sleep(0.01)
-            result = json.loads(marker.read_bytes()) or {
+            result = read_json(marker) or {
                 "ok": True,
                 "data": "auxiliary fixture complete",
             }

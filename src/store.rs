@@ -57,6 +57,10 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    ProfileConfig(
+        Arc<crate::model::profile_store::Service>,
+        Box<crate::model::profile_store::Request>,
+    ),
     ParticipationQq(Vec<String>, Vec<(String, String, String, bool)>),
     ToolBudget(String, String, String),
     Personal(Box<crate::host::personal::Request>),
@@ -169,6 +173,10 @@ impl Driver for SqliteDriver {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
+            }
+            Mutation::ProfileConfig(service, request) => {
+                return crate::model::profile_store::apply(self.connection(), service, request)
+                    .await;
             }
             Mutation::Personal(change) => {
                 return crate::host::personal::apply(self.connection(), change).await;
@@ -330,6 +338,7 @@ enum Command {
 
 #[derive(Clone)]
 pub struct Store {
+    pub(crate) profile_files: Option<Arc<crate::model::profile_store::Service>>,
     pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
     pub vectors: Option<Arc<crate::memory::embedding::Engine>>,
@@ -417,6 +426,7 @@ impl Store {
             let _ = driver.close().await;
         });
         Self {
+            profile_files: None,
             vectors: None,
             media: None,
             search: None,

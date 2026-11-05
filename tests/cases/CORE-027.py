@@ -475,9 +475,21 @@ def run(ctx):
                 "extract-response-before-facts",
                 {},
             )
-            cold.until(
-                lambda: cold.rows("SELECT enabled FROM extraction_policy WHERE enabled")
-            )
+            # Enabling extraction precedes binding local IPC. Wait for the owner's
+            # actual ready record before issuing the one original ingress command.
+            log = ctx.output / "extract_crash_child-extract-response-before-facts.log"
+            def listening():
+                if not log.exists():
+                    return False
+                for line in log.read_text(encoding="utf-8").splitlines():
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(record, dict) and record.get("status") == "ready":
+                        return True
+                return False
+            cold.until(listening)
             source = cold.event(cold.a, "我喜歡河流")
             _, _, q = cold.wire(http)
             answer(
