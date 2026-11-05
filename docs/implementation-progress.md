@@ -294,3 +294,6 @@ CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自
 CORE-034 同步媒體 `7cd4e42` 及 Work 分段 `e357ab6`。祖先整合保留 memory 配置驗證；Work 分段自動合併造成聯絡人註冊遺漏，已恢復並由 CORE-014／015 `code-segment-main-01/` 驗證。最新修正 head 通過 CI 前不合併。
 
 PR #43 Windows CI `42080468945` 的 CORE-039 在原命令通過後，清理臨時執行檔時遇到 WinError 32；失敗 ZIP `.cache/code-ci-13440917770.zip`，SHA-256 `4ca3d7b740a9a3c141ed87c4c2132f6c688d50dea830a08fbb424b893b15630f`。候選器僅對自建目錄的 sharing violation 最多重試五秒，持續鎖定及其他權限錯誤仍失敗，不重跑原命令。Mac CORE-039 `code-windows-cleanup-01/` 通過，HJW `code-windows-cleanup-native-01/` 正在驗證；最新提交六項 CI 完成前不合併。
+PR #42 macOS Intel CI `42071266030` 在 CORE-039 冷 release 編譯達 600 秒上限，尚未進入產品案例；原 artifact `.cache/segments-ci-13441839430.zip`，SHA-256 `6546648675809170fcb363d0797ccd2b86dc547bfcf6323e673b77ca35affdf5`。編譯器 release 階段獨立給 1200 秒，其他命令及案例期限不變，所有編譯超時現在保留 stdout／stderr 和 timed_out 回條。Mac CORE-039 `segments-release-build-budget-01/` 通過；注入超時 `segments-release-timeout-evidence-01/` 正確失敗並保留兩路輸出。PR #42 按新 head 重驗三平台，未把原失敗標為通過。
+
+CORE-034 同步 Work 分段的冷 release 編譯預算及超時輸出保留 `e542c27`，Mac CORE-039 `code-release-build-budget-01/` 通過。既有 Windows 清理修正已在 HJW 通過 `code-windows-cleanup-native-01/`。本輪取消的 14 組 CI 均已由同分支的新 head 取代，核對與取消回條在 `.cache/superseded-ci-{candidates,cancellations}-01.json`；最新 head 的所有檢查仍須通過才合併。
