@@ -31,6 +31,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if name == "web_search" {
+        return Some(crate::model::search::declaration());
+    }
     let target = json!({"type":"string","minLength":1});
     let (description, schema, parallel_read, cacheable, code_direct) = match name {
         "get" => (
@@ -231,6 +234,9 @@ pub async fn pinned(
     }
     let code = cfg.code_projection;
     let mut tools: Vec<Tool> = Manifest::core().0.into_values().collect();
+    if cfg.bridge_search {
+        tools.push(crate::model::search::declaration());
+    }
     let installed: Vec<(String, String, String)> = sqlx::query_as(
         "SELECT plugin,revision,tools FROM host_installations WHERE enabled ORDER BY plugin",
     )
