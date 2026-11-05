@@ -1,0 +1,4 @@
+{
+  "normal": ["load five version-one triggers unchanged", "early UTC offset for a folded wall clock and roll forward across a missing hour", "explicit five-field cron uses the same local calendar", "freeze definition, original actor and route on unique schedule/UTC occurrence", "neutral Main may send without accepting Work", "private Work.goal supersedes the definition only after acceptance"],
+  "faults": ["cold restart after acceptance and edit before delivery reuses the original occurrence", "pause, update or lower max_runs never cancels accepted Work", "do not issue a new DM send after assignment transfer", "a SELF schedule has no human actor", "overdue periodic schedule advances to one future occurrence after the original settles", "reject ambiguous cron syntax, unknown zone and past once"]
+}

@@ -108,7 +108,8 @@ impl Dispatch {
             "read_memory" | "memory_change" => {
                 crate::memory::tools::perform(&store, &exec, &actor, &id).await?
             }
-            "task_control" | "subagent_start" | "subagent_control" => {
+            "automation_query" | "automation_manage" | "task_control" | "subagent_start"
+            | "subagent_control" => {
                 crate::work::perform(&store, &cfg, &exec, &actor, &id).await?;
             }
             "complete"

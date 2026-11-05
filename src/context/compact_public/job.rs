@@ -33,7 +33,7 @@ pub async fn manual(
         .bind(event)
         .fetch_one(&mut *conn)
         .await?;
-    let generation = crate::runtime::main::public_window(conn, &entry).await?;
+    let generation = crate::runtime::main::window(conn, &entry).await?;
     sqlx::query("INSERT INTO compact_manual VALUES(?,?,?)")
         .bind(event)
         .bind(exec)
