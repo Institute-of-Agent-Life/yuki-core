@@ -484,6 +484,10 @@ grants=["observe.metadata","tool.call"]
                 in record("tg", "tool.status", {"handle": handle, "admin": True}),
             )
             q.put((reply(), 0))
+            # Queueing an HTTP reply is not a commit. Each independent SDK scenario
+            # starts on a new turn, after the preceding owner has actually settled.
+            until(lambda: rows("SELECT id FROM executions WHERE source=? AND state='completed'", incoming["event"]),
+                  "original Python SDK turn settled")
             rust_source = record(
                 "tg",
                 "gateway.inbound",
@@ -491,6 +495,8 @@ grants=["observe.metadata","tool.call"]
             )["result"]
             ctx.check("original human admitted for Rust SDK", rust_source["accepted"])
             raw, q = peer.receive()
+            ctx.check("Rust probe answers the second original model request",
+                      "second independent consumer" in json.dumps(json.loads(raw)["messages"]))
             q.put((reply([tool("rust_host_probe", "rust-1", {"value": "rust"})]), 0))
             try:
                 follow, q = peer.receive()
@@ -522,6 +528,8 @@ grants=["observe.metadata","tool.call"]
                 and rust_result["original"] == {"value": "rust"},
             )
             q.put((reply(), 0))
+            until(lambda: rows("SELECT id FROM executions WHERE source=? AND state='completed'", rust_source["event"]),
+                  "original Rust SDK turn settled")
             (areas["tg"] / "cut-second").touch()
             second = record("tg", "gateway.inbound", frame("send", "send test", True))[
                 "result"
