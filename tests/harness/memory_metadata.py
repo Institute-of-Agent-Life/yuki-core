@@ -70,7 +70,7 @@ def paid(ctx):
                 nonlocal wire,q
                 reply(q,calls=[call(id,name,args)]);wire,q=o.wire(model)
                 return json.loads(next(m['content'] for m in wire['messages'] if m.get('tool_call_id')==id))
-            created=tool('new','memory_change',{'operation':'create','memory_key':'tea','new_content':'tea facts','category':'daily','kind':'fact','importance':3,'confidence':0.71})
+            created=tool('new','memory_change',{'operation':'create','target':{'scope_type':'person','subject_ref':'current_speaker'},'memory_key':'tea','new_content':'tea facts','category':'daily','kind':'fact','importance':3,'confidence':0.71})
             ctx.equal('paid create accepts real metadata',created['state'],'confirmed')
             n=created['result']['fact_id'];fid=created['result']['fact']
             unread=tool('unread','memory_change',{'operation':'update_metadata','fact_id':n,'category':'unread'})

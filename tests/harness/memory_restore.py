@@ -97,7 +97,7 @@ def paid(ctx):
                 reply(q,calls=[call(id,name,args)])
                 wire,q=o.wire(model)
                 return json.loads(next(m['content'] for m in wire['messages'] if m.get('tool_call_id')==id))
-            created=tool('new','memory_change',{'operation':'create','memory_key':'tea','new_content':'latest remembered tea','confidence':0.61})
+            created=tool('new','memory_change',{'operation':'create','target':{'scope_type':'person','subject_ref':'current_speaker'},'memory_key':'tea','category':'drink','new_content':'latest remembered tea','confidence':0.61})
             ctx.equal('omitted quote binds real original inbound text',created['state'],'confirmed')
             n=created['result']['fact_id'];fid=created['result']['fact']
             tool('read','read_memory',{'view':'fact','fact_id':n})

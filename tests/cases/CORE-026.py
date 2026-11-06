@@ -369,6 +369,8 @@ def run(ctx):
                 )
             }
         )
+    from tests.harness.memory_create import run as create_arguments
+    create_arguments(ctx)
     from tests.harness.group_attribution import run as attribution
     ctx.write("group-attribution.json",attribution(ctx))
     from tests.harness.memory_contest import run as contest
@@ -502,6 +504,8 @@ def paid_memory(ctx):
                 "memory_change",
                 {
                     "operation": "create",
+                    "target": {"scope_type": "person", "subject_ref": "current_speaker"},
+                    "category": "drink",
                     "memory_key": "tea",
                     "new_content": "participant drinks oolong",
                     "evidence_quote": "original oolong quote",
