@@ -40,19 +40,20 @@ pub(super) async fn apply(
     op: &str,
     req: &Value,
 ) -> Result<Value> {
-    if req["expected_fact_state"]
-        .as_str()
-        .is_some_and(|s| s != "active")
-    {
-        return Err("expected_fact_state_mismatch".into());
-    }
     let src = resolve(db, r, req, "fact_id", "selector").await?;
     let dst = resolve(db, r, req, "merge_fact_id", "merge_selector").await?;
     if src == dst {
         return Err("cannot merge a memory fact into itself".into());
     }
-    let origin = tools::paid_active_person(db, r, exec, &src).await?;
-    let target = tools::paid_active_person(db, r, exec, &dst).await?;
+    let origin = tools::paid_person(db, r, exec, &src, &["active", "contested"]).await?;
+    let source_status = origin["status"].as_str().ok_or("missing source status")?;
+    if req["expected_fact_state"]
+        .as_str()
+        .is_some_and(|expected| expected != source_status)
+    {
+        return Err("expected_fact_state_mismatch".into());
+    }
+    let target = tools::paid_person(db, r, exec, &dst, &["active"]).await?;
     let person = |v: &Value| facts::Subject {
         kind: "person".into(),
         person: v["person"].as_str().map(str::to_owned),
@@ -100,10 +101,11 @@ pub(super) async fn apply(
         .ok_or("destination revision missing")?
         .checked_add(1)
         .ok_or("revision overflow")?;
-    for (id, rev, status, body, confidence) in [
+    for (id, rev, previous, status, body, confidence) in [
         (
             &src,
             src_rev,
+            source_status,
             "retracted",
             None,
             origin["confidence"].as_f64(),
@@ -112,15 +114,21 @@ pub(super) async fn apply(
             &dst,
             dst_rev,
             "active",
+            "active",
             Some(target["body"].as_str().ok_or("target body unavailable")?),
             target["confidence"].as_f64(),
         ),
     ] {
-        sqlx::query("UPDATE memory_facts SET status=?,revision=? WHERE id=? AND revision=? AND status='active' RETURNING id")
-            .bind(status).bind(rev).bind(id).bind(rev-1).fetch_one(&mut *db).await?;
+        sqlx::query("UPDATE memory_facts SET status=?,revision=? WHERE id=? AND revision=? AND EXISTS (SELECT 1 FROM memory_fact_states s WHERE s.id=memory_facts.id AND s.status=?) RETURNING id")
+            .bind(status).bind(rev).bind(id).bind(rev-1).bind(previous).fetch_one(&mut *db).await?;
         sqlx::query("INSERT INTO memory_versions(fact,revision,body,confidence,execution) VALUES(?,?,?,?,?)")
             .bind(id).bind(rev).bind(body).bind(confidence).bind(exec).execute(&mut *db).await?;
     }
+    // The dispute action and contradiction edge are historical. Only its current flag ends.
+    sqlx::query("DELETE FROM memory_conflict_flags WHERE fact=? AND role='alternative'")
+        .bind(&src)
+        .execute(&mut *db)
+        .await?;
     sqlx::query("INSERT INTO memory_equivalences(source,target,source_revision,target_revision,execution,operation) VALUES(?,?,?,?,?,?)")
         .bind(&src).bind(&dst).bind(src_rev).bind(dst_rev).bind(exec).bind(op).execute(&mut *db).await?;
     sqlx::query("INSERT INTO memory_operations(execution,original_key,request_hash,fact,revision,outcome) VALUES(?,?,?,?,?,'merged')")

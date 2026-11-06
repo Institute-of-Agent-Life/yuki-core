@@ -72,17 +72,47 @@ def run(ctx):
             ctx.equal('alternative inherited category/key from the real original',[other['metadata']['category'],other['fact_key']],['music','music:favorite'])
             ctx.equal('original default confidence for an alternative',other['confidence'],0.9)
             projection['links']=[{'type':kind,'source_is_alternative':src==other['fact'],'target_is_original':dst==ids[0]} for src,dst,kind in o.rows('SELECT source,target,relation_type FROM memory_contradictions')]
-            ctx.equal('both visible transitions, receipts and edge match pinned v4',projection,original['projection'])
+            ctx.equal('both visible transitions, receipts and edge match pinned v4',projection,
+                      {k:v for k,v in original['projection'].items() if k!='merge_contested'})
             invoke('memory_change',{'operation':'restore','fact_id':alt_num},'no-restore-contested','failed')
             invoke('memory_change',dict(change,fact_id=alt_num),'no-active-write-to-alternative','failed')
             ctx.equal('default current facts omit disputed alternative',o.rows('SELECT number FROM retrieval_documents WHERE number IN (?,?)',ns[0],alt_num),[(ns[0],)])
             ex=o.rows('SELECT id FROM executions WHERE source=?',evt_alt)[0][0]
             result=o.op('memory','retrieve',ex,o.actor,'search-active','music:favorite')
             ctx.equal('real ranked result distinguishes active disputed original',[(x['fact_id'],x['conflict_state']) for x in result['items']],[(ns[0],'contested')]);end(evt_alt)
+            evt_merge=o.human('请将同一人的两条音乐记忆合并。');_,q=o.wire(model)
+            read(alt_num,'merge-disputed-source')
+            guarded={'operation':'merge','fact_id':alt_num,'merge_fact_id':ns[0],'expected_fact_state':'contested','target':target}
+            before=state()
+            invoke('memory_change',guarded,'unread-kept-fact','failed')
+            read(ns[0],'merge-kept-fact')
+            reversed_pair=dict(guarded,fact_id=ns[0],merge_fact_id=alt_num,expected_fact_state='active')
+            invoke('memory_change',reversed_pair,'inactive-destination','failed')
+            mismatch=invoke('memory_change',dict(guarded,expected_fact_state='active'),'wrong-expected-state','failed')
+            ctx.equal('denial leaves every version and evidence untouched',state(),before)
+            with closing(sqlite3.connect(o.svc.data/'core.sqlite')) as db:
+                db.execute("CREATE TRIGGER fail_disputed_merge BEFORE INSERT ON memory_equivalences BEGIN SELECT RAISE(ABORT,'injected relation write failure'); END");db.commit()
+            fault=invoke('memory_change',guarded,'late-fault','failed')
+            ctx.check('late failure reached the real equivalence insert','injected relation write failure' in str(fault['result']))
+            ctx.equal('late failure restores disputed flag, both revisions and all evidence',state(),before)
+            with closing(sqlite3.connect(o.svc.data/'core.sqlite')) as db:
+                db.execute('DROP TRIGGER fail_disputed_merge');db.commit()
+            merged=invoke('memory_change',guarded,'merge-disputed-alternative')
+            former=read(alt_num,'superseded-alternative');retained=read(ns[0],'active-destination')
+            projection['merge_contested']={'source_status':former['status'],'source_conflict':former['conflict_state'],
+                'kept_content':retained['body'],'kept_status':retained['status'],
+                'mismatch':mismatch['result']['error'],'merge_outcome':merged['result']['outcome']}
+            ctx.equal('guarded disputed source transition matches the original owner',projection['merge_contested'],original['projection']['merge_contested'])
+            ctx.equal('original contradiction and new equivalence keep distinct directions',
+                      [o.rows('SELECT source,target FROM memory_contradictions'),o.rows('SELECT source,target FROM memory_equivalences')],
+                      [[(other['fact'],ids[0])],[(other['fact'],ids[0])]])
+            merge_exec=o.rows('SELECT id FROM executions WHERE source=?',evt_merge)[0][0]
+            end(evt_merge)
             kept=state()
         with o.svc.running():
             cold=o.op('effect','read',ex,alt['id'],o.actor)
             ctx.equal('cold immutable contest receipt',cold['result'],alt['result'])
+            ctx.equal('cold lookup returns the original guarded merge',o.op('effect','read',merge_exec,merged['id'],o.actor)['result'],merged['result'])
             ctx.equal('cold lookup did not create another edge or version',state(),kept)
             o.op('privacy','erase','erase-original-proof',o.actor,json.dumps([evs[0]]))
             ctx.equal('origin withdrawal prevents both bodies being recovered',o.rows('SELECT count(*) FROM memory_versions WHERE fact IN (?,?) AND body IS NOT NULL',ids[0],other['fact']),[(0,)])

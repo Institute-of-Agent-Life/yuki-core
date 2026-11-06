@@ -19,7 +19,7 @@ pub(super) async fn apply(
     id: &str,
     mut patch: metadata::Patch,
 ) -> Result<Value> {
-    let original = tools::paid_active_person(db, r, exec, id).await?;
+    let original = tools::paid_person(db, r, exec, id, &["active"]).await?;
     if original["readable_evidence"].as_u64().unwrap_or_default() == 0 {
         return Err("original evidence unavailable".into());
     }

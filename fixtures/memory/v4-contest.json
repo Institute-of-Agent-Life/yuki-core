@@ -6,7 +6,7 @@
     "src/yuki/memory/models.py": "fc6a276fa62dcf5cd07f72060f02bbd6b33711c6ef62f3750e5e74c059da96d6",
     "tests/unit/test_memory_mutation.py": "398efbb285fd12410fadfa20e8f23e30bee763f7a8097c4bbeb4de0f3090ae47"
   },
-  "junit_sha256": "11cbde9fd5bdcc11b4012f4273f0cc4a71df809cd6d3c05bc0cc3fe494c04ec5",
+  "junit_sha256": "6fce672e8c80c00559863652ae2da4d03c6d200fd09fb7f78fb64085c8433876",
   "projection": {
     "before": {
       "status": "active",
@@ -40,6 +40,14 @@
         "source_is_alternative": true,
         "target_is_original": true
       }
-    ]
+    ],
+    "merge_contested": {
+      "source_status": "superseded",
+      "source_conflict": "clear",
+      "kept_content": "喜欢爵士乐",
+      "kept_status": "active",
+      "mismatch": "expected_fact_state_mismatch",
+      "merge_outcome": "committed"
+    }
   }
 }
