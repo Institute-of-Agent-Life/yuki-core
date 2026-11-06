@@ -78,7 +78,17 @@ def run(ctx):
     )
     ctx.equal("the actual confirmed text send envelope and data fields agree with the recorded original",
               send_fields(result),original["original_send_shape"])
+    from bench.compact_trace import projection
+    from bench.core_compact import run as compact
+    compact_fixture=ctx.root/'fixtures/oracle/v4/two-public-checkpoints.json'
+    expected=json.loads(compact_fixture.read_bytes())
+    compact_results={}
+    for name,refuse in [('adopt',False),('reject',True)]:
+        rows=projection(compact(ctx,refuse))
+        ctx.equal('all fifteen physical requests retain the original public sources and checkpoints: '+name,rows,expected['expected'][name])
+        compact_results[name]={'physical_requests':len(rows),'final':rows[-1]}
     return {
+        "explicit_public_compact":{"oracle_sha256":sha(compact_fixture.read_bytes()),"scenarios":compact_results},
         "scope": original["scope"],
         "v4_source": original["source_commit"],
         "original_receipts": original["arms"],
@@ -96,6 +106,6 @@ def run(ctx):
         "timing_comparison_allowed": False,
         "remaining": [
             "equal tool declarations, original send receipt and provider controls",
-            "full long Work/Compact equivalence and controlled cross-platform timings",
+            "long Work and automatic P/E Compact equivalence; controlled cross-platform timings",
         ],
     }

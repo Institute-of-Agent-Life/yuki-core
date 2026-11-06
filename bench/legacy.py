@@ -94,7 +94,7 @@ def execute(a):
         YUKI_LONG_WORKS=str(a.works),
         PYTHONDONTWRITEBYTECODE="1",
     )
-    if not a.works:
+    if not a.works and not a.compact:
         os.environ.update(
             YUKI_SLICE_FRAMES=str(a.frames.resolve(strict=True)),
             YUKI_SLICE_FRAMES_SHA256=a.frames_sha256,
@@ -121,7 +121,7 @@ def execute(a):
                 str(
                     ROOT
                     / "bench/controls"
-                    / ("long_work_case.py" if a.works else "legacy_case.py")
+                    / ("compact_case.py" if a.compact else "long_work_case.py" if a.works else "legacy_case.py")
                 ),
                 "--basetemp",
                 str(Path(working) / "pytest"),
@@ -139,9 +139,10 @@ def execute(a):
         "driver_cpu_seconds": time.process_time() - cpu,
         "sqlite": settings[-1] if settings else None,
         "sqlite_library_sha256": hashlib.sha256(a.library.read_bytes()).hexdigest(),
-        "count": a.count,
+        "count": 15 if a.compact else a.count,
         "warmup": a.warmup,
         "long_works": a.works,
+        "public_compact": a.compact,
         "data_device": data_device,
         "paid_calls": 0,
     }
@@ -160,10 +161,12 @@ if __name__ == "__main__":
     )
     p.add_argument("--count", type=int, default=1200)
     p.add_argument("--warmup", type=int, default=0)
+    p.add_argument("--compact",action="store_true",help="compare two checkpoints in one conversation")
     p.add_argument("--works", type=int, choices=range(0, 21), default=0)
     p.add_argument("--frames", type=Path)
     p.add_argument("--frames-sha256")
     args = p.parse_args()
-    if not args.works and not (args.frames and args.frames_sha256):
+    if args.compact and args.works:p.error("choose one scenario")
+    if not args.compact and not args.works and not (args.frames and args.frames_sha256):
         p.error("QQ arrivals require --frames and --frames-sha256")
     sys.exit(execute(args))

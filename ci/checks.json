@@ -300,7 +300,7 @@
     "CORE-040": {
       "case": "tests/cases/CORE-040.py", "artifact": "slice-decision.json",
       "timeout_seconds": 180, "rust": true,
-      "capabilities": ["four-native-qq-control-inputs", "model-visible-agent-mention"]
+      "capabilities": ["four-native-qq-control-inputs", "model-visible-agent-mention", "two-public-checkpoints", "rejected-public-summary-retains-history"]
     },
     "CORE-050": {
       "case": "tests/cases/CORE-050.py",

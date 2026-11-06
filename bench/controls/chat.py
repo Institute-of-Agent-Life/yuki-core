@@ -9,7 +9,7 @@ import time
 
 
 class Chat:
-    def __init__(self, *, scripted=False):
+    def __init__(self, *, scripted=False, sample_limit=2):
         self.responses = queue.Queue() if scripted else None
         self.key = None
         self.wires = []
@@ -51,7 +51,7 @@ class Chat:
                     }
                     finish = "tool_calls"
                 with owner.lock:
-                    if len(owner.samples) < 2:
+                    if len(owner.samples) < sample_limit:
                         owner.samples.append(body)
                     owner.wires.append(
                         {
