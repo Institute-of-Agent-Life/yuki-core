@@ -83,10 +83,20 @@ def main():
             if spec.get("release"):
                 stages.append(("rust-release", ["cargo", "build", "--release", "--locked", "--offline", "--bin", "yuki-core"]))
             for name, stage in stages:
-                process = subprocess.run(stage, cwd=ROOT, env=environment,
-                                         capture_output=True, timeout=600)
+                # A cold optimized build on Intel CI exceeds the generic compiler
+                # allowance. This deadline belongs to compilation, not case execution.
+                timeout = 1200 if name == "rust-release" else 600
+                try:
+                    process = subprocess.run(stage, cwd=ROOT, env=environment,
+                                             capture_output=True, timeout=timeout)
+                except subprocess.TimeoutExpired as error:
+                    (out / (name + ".txt")).write_bytes((error.stdout or b"") + (error.stderr or b""))
+                    manifest["stages"].append({"name": name, "command": stage, "exit_code": None,
+                                               "timeout_seconds": timeout, "timed_out": True})
+                    raise RuntimeError(name + " timed out; see " + name + ".txt") from error
                 (out / (name + ".txt")).write_bytes(process.stdout + process.stderr)
-                manifest["stages"].append({"name": name, "command": stage, "exit_code": process.returncode})
+                manifest["stages"].append({"name": name, "command": stage, "exit_code": process.returncode,
+                                           "timeout_seconds": timeout, "timed_out": False})
                 if process.returncode:
                     raise RuntimeError(name + " failed; see " + name + ".txt")
                 if name == "rust-writer-tests":
