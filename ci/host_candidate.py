@@ -6,30 +6,61 @@ import os
 import platform
 import subprocess
 import tempfile
+import time
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from source import digest, source_identity
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def tested_contents(receipt, profile, personal=False, media=False):
-    proof_name = "media-handle-bridge.json" if media else ("personal-handoff.json" if personal else "host-delegation.json")
+def cleanup_workspace(cleanup, timeout=5):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            cleanup()
+            return
+        except PermissionError as error:
+            # A just-exited Windows executable can remain locked briefly.
+            # This only retries removing our workspace, never the executed command.
+            if getattr(error, "winerror", None) != 32 or time.monotonic() >= deadline:
+                raise
+            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
+
+
+@contextmanager
+def portable_workspace():
+    workspace = tempfile.TemporaryDirectory(prefix="yuki-host-candidate-")
+    try:
+        yield workspace.name
+    finally:
+        cleanup_workspace(workspace.cleanup)
+
+
+def tested_contents(receipt, profile, personal=False, card=None):
+    card = card or ("CORE-033" if personal else "CORE-032")
+    personal = card == "CORE-033"
+    media = card == "CORE-038"
+    composition = card == "CORE-034"
+    proof_name = {
+        "CORE-032": "host-delegation.json",
+        "CORE-033": "personal-handoff.json",
+        "CORE-038": "media-handle-bridge.json",
+        "CORE-034": "nested-boundary.json",
+    }[card]
     proof = receipt(proof_name)
     data = json.loads(proof)
     sdk = json.loads(receipt("sdk-distributions/candidate.json"))
     binary = (
-        ROOT
-        / "target"
-        / profile
-        / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
+        ROOT / "target" / profile / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
     )
     raw = binary.read_bytes()
     if digest(raw) != data["binary_sha256"]:
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media
+        if personal or media or composition
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -51,8 +82,15 @@ def tested_contents(receipt, profile, personal=False, media=False):
         "evidence/" + proof_name: proof,
         "LICENSE": (ROOT / "LICENSE").read_bytes(),
         "NOTICE": (ROOT / "NOTICE").read_bytes(),
+        "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if composition:
+        methods=(ROOT/"protocol/plugin/composition/methods.json").read_bytes()
+        if digest(methods)!=data["composition_schema_sha256"] or set(data["negotiated_composition_methods"])!=set(json.loads(methods)["methods"]):
+            raise ValueError("composition methods differ from exercised original")
+        files["protocol/composition/methods.json"]=methods
+        files["evidence/vm-recovery-cuts.json"]=receipt("vm-recovery-cuts.json")
     if media:
         methods = (ROOT / "protocol/plugin/media/methods.json").read_bytes()
         if digest(methods) != data["media_schema_sha256"] or set(
@@ -111,24 +149,24 @@ def tested_contents(receipt, profile, personal=False, media=False):
         if digest(content) != item["sha256"]:
             raise ValueError("SDK digest mismatch")
         files["sdk/" + n] = content
-    with tempfile.TemporaryDirectory(prefix="yuki-host-candidate-") as sandbox:
+    with portable_workspace() as sandbox:
         # The verified binary must also start after transfer without the original compiler or its PATH.
         exe = Path(sandbox) / binary.name
         exe.write_bytes(raw)
         exe.chmod(0o755)
         env = {
-            "PATH": os.path.join(
-                os.environ.get("SystemRoot", "C:\\Windows"), "System32"
+            "PATH": (
+                os.path.join(os.environ.get("SystemRoot", "C:\\Windows"), "System32")
+                if os.name == "nt"
+                else "/usr/bin:/bin"
             )
-            if os.name == "nt"
-            else "/usr/bin:/bin"
         }
         if os.name == "nt":
             env["SystemRoot"] = os.environ["SystemRoot"]
         directory = Path(sandbox) / "data"
         for command in ("init", "doctor"):
             result = subprocess.run(
-                [str(exe), "--data", str(directory), command] + (["--memory-mode", "lexical-only"] if command == "init" else []),
+                [str(exe), "--data", str(directory), command, *(["--memory-mode","lexical-only"] if command=="init" else [])],
                 cwd=sandbox,
                 env=env,
                 capture_output=True,
@@ -140,7 +178,6 @@ def tested_contents(receipt, profile, personal=False, media=False):
                     + result.stderr.decode(errors="replace")[:200]
                 )
             json.loads(result.stdout)
-
     return files, os_name, arch, host, sdk, idl
 
 
@@ -149,13 +186,13 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-038"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
         or not all(a["passed"] for a in m["assertions"])
     ):
-        raise ValueError("passing host or personal manifest required")
+        raise ValueError("passing host capability manifest required")
     if m["source"] != source or (source["dirty"] and not development):
         raise ValueError("candidate needs matching source identity and clean commit")
 
@@ -167,10 +204,30 @@ def build(manifest_path, out, development=False):
 
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
-    data = json.loads(receipt("media-handle-bridge.json" if media else ("personal-handoff.json" if personal else "host-delegation.json")))
-    files, os_name, arch, host, sdk, idl = tested_contents(receipt, "debug", personal, media)
-    target = ("yuki-media-preview-" if media else ("yuki-personal-preview-" if personal else "yuki-host-preview-")) + source["commit"][:12] + "-" + os_name + "-" + arch
-
+    composition = m["card"] == "CORE-034"
+    proof_name = {
+        "CORE-032": "host-delegation.json",
+        "CORE-033": "personal-handoff.json",
+        "CORE-038": "media-handle-bridge.json",
+        "CORE-034": "nested-boundary.json",
+    }[m["card"]]
+    data = json.loads(receipt(proof_name))
+    files, os_name, arch, host, sdk, idl = tested_contents(receipt, "debug", card=m["card"])
+    target = (
+        (
+            {
+                "CORE-032": "yuki-host-preview-",
+                "CORE-033": "yuki-personal-preview-",
+                "CORE-038": "yuki-media-preview-",
+                "CORE-034": "yuki-code-preview-",
+            }[m["card"]]
+        )
+        + source["commit"][:12]
+        + "-"
+        + os_name
+        + "-"
+        + arch
+    )
     members = {
         n: {"sha256": digest(content), "bytes": len(content)}
         for n, content in sorted(files.items())
@@ -211,6 +268,12 @@ def build(manifest_path, out, development=False):
         candidate["media_schema_revision"] = 1
         candidate["media_schema_sha256"] = data["media_schema_sha256"]
         candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
+    if composition:
+        candidate["composition_schema_revision"]=1
+        candidate["composition_schema_sha256"]=data["composition_schema_sha256"]
+        candidate["validated_composition_methods"]=data["negotiated_composition_methods"]
+        candidate["validation"]["consumer"]="opaque SDK checkpoint fixtures"
+        candidate["validation"]["real_vm_consumer"]="pending EXT-023 and EXT-024"
     files["candidate.json"] = (
         json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     ).encode()

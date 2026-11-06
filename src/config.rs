@@ -48,6 +48,14 @@ impl Config {
                     search.bridge() && !(main.protocol.is_messages() && main.native_web_search);
             }
             main.validate()?;
+            if let Some(name) = &main.code_tool {
+                let available = config.plugins.iter().any(|p| {
+                    p.composition.as_ref().is_some_and(|c| &c.tool == name) && p.program.is_file()
+                });
+                if !available {
+                    return Err("selected Code runtime unavailable".into());
+                }
+            }
         }
         if let Some(extract) = &config.extraction {
             extract.validate()?;

@@ -409,6 +409,68 @@ async fn inspect(conn: &mut SqliteConnection, logical: &str) -> Result<Value> {
     )
 }
 
+pub(crate) async fn tool_receipt(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+    id: &str,
+    transport_limit: Option<usize>,
+) -> Result<Value> {
+    effects::authorize(conn, exec, actor, false).await?;
+    let row = sqlx::query(
+        "SELECT action,target,state FROM operations WHERE namespace=? AND operation_id=?",
+    )
+    .bind(exec)
+    .bind(id)
+    .fetch_one(&mut *conn)
+    .await?;
+    let receipt = if row.try_get::<String, _>("action")? == "external"
+        && row.try_get::<String, _>("target")? == "history_query"
+        && row.try_get::<String, _>("state")? != "failed"
+    {
+        crate::history::query::material(conn, exec, actor, id).await?
+    } else if row.try_get::<String, _>("action")? == "external" {
+        let r = effects::receipt(conn, exec, id).await?;
+        if !matches!(
+            r["state"].as_str(),
+            Some("confirmed" | "failed" | "unknown")
+        ) {
+            return Err("original external receipt pending".into());
+        }
+        r
+    } else {
+        effects::apply(
+            conn,
+            &effects::Action::Local {
+                execution: exec.to_owned(),
+                actor: actor.to_owned(),
+                id: id.to_owned(),
+            },
+        )
+        .await?
+    };
+    let policy: Option<(i64, i64)> = sqlx::query_as(
+        "SELECT page_budget,storage_quota FROM execution_tool_views WHERE execution=?",
+    )
+    .bind(exec)
+    .fetch_optional(&mut *conn)
+    .await?;
+    let receipt = if let Some((budget, quota)) = policy {
+        crate::tools::results::present(
+            conn,
+            exec,
+            id,
+            receipt,
+            usize::try_from(budget)?.min(transport_limit.unwrap_or(usize::MAX)),
+            quota,
+        )
+        .await?
+    } else {
+        receipt
+    };
+    Ok(receipt)
+}
+
 async fn pair(conn: &mut SqliteConnection, logical: &str, ordinal: i64) -> Result<Value> {
     let row=sqlx::query("SELECT i.execution,i.operation_id,i.call_id,i.paired_receipt,coalesce(e.original_actor,e.origin) AS original_actor,o.action,o.target,o.state
         FROM model_tool_intents i JOIN executions e ON e.id=i.execution JOIN operations o ON o.namespace=i.execution AND o.operation_id=i.operation_id
@@ -431,50 +493,7 @@ async fn pair(conn: &mut SqliteConnection, logical: &str, ordinal: i64) -> Resul
         if earlier {
             return Err("earlier tool result has not been paired".into());
         }
-        let receipt = if row.try_get::<String, _>("action")? == "external"
-            && row.try_get::<String, _>("target")? == "history_query"
-            && row.try_get::<String, _>("state")? != "failed"
-        {
-            crate::history::query::material(conn, &exec, &actor, &id).await?
-        } else if row.try_get::<String, _>("action")? == "external" {
-            let r = effects::receipt(conn, &exec, &id).await?;
-            if !matches!(
-                r["state"].as_str(),
-                Some("confirmed" | "failed" | "unknown")
-            ) {
-                return Err("original external receipt pending".into());
-            }
-            r
-        } else {
-            effects::apply(
-                conn,
-                &effects::Action::Local {
-                    execution: exec.clone(),
-                    actor,
-                    id: id.clone(),
-                },
-            )
-            .await?
-        };
-        let policy: Option<(i64, i64)> = sqlx::query_as(
-            "SELECT page_budget,storage_quota FROM execution_tool_views WHERE execution=?",
-        )
-        .bind(&exec)
-        .fetch_optional(&mut *conn)
-        .await?;
-        let receipt = if let Some((budget, quota)) = policy {
-            crate::tools::results::present(
-                conn,
-                &exec,
-                &id,
-                receipt,
-                usize::try_from(budget)?,
-                quota,
-            )
-            .await?
-        } else {
-            receipt
-        };
+        let receipt = tool_receipt(conn, &exec, &actor, &id, None).await?;
         sqlx::query("UPDATE model_tool_intents SET paired_receipt=? WHERE logical=? AND ordinal=?")
             .bind(receipt.to_string())
             .bind(logical)
@@ -492,6 +511,11 @@ async fn pair(conn: &mut SqliteConnection, logical: &str, ordinal: i64) -> Resul
 async fn usage(conn: &mut SqliteConnection, root: &str) -> Result<Value> {
     let budget=sqlx::query("SELECT reserved_requests,reserved_units,max_requests,max_units FROM root_budgets WHERE root=?").bind(root)
         .fetch_one(&mut *conn).await?;
+    let tools: Option<(i64, Option<i64>)> =
+        sqlx::query_as("SELECT used_calls,max_calls FROM root_tool_budgets WHERE root=?")
+            .bind(root)
+            .fetch_optional(&mut *conn)
+            .await?;
     let attempts=sqlx::query("SELECT t.id,t.logical,t.ordinal,t.state,t.usage_json,t.status_code FROM model_attempts t JOIN model_requests r ON r.id=t.logical
         WHERE r.root=? ORDER BY t.logical,t.ordinal").bind(root).fetch_all(conn).await?;
     let mut receipts = Vec::new();
@@ -524,6 +548,7 @@ async fn usage(conn: &mut SqliteConnection, root: &str) -> Result<Value> {
     let micros = fields["billed_microusd"]["total"].as_i64();
     Ok(
         json!({"root":root,"reserved_requests":budget.try_get::<i64,_>("reserved_requests")?,"reserved_units":budget.try_get::<i64,_>("reserved_units")?,
+      "business_tool_calls":tools.as_ref().map(|t|t.0),"business_tool_limit":tools.and_then(|t|t.1),
       "max_requests":budget.try_get::<i64,_>("max_requests")?,"max_units":budget.try_get::<i64,_>("max_units")?,
       "attempts":receipts.len(),"usage_attempts":receipts.iter().filter(|r|r["usage"].is_object()).count(),
       "cost_usd":micros.map(|n|format!("{}.{:06}",n/1_000_000,n%1_000_000)),"fields":fields,"physical_receipts":receipts}),
@@ -536,7 +561,7 @@ pub async fn apply(conn: &mut SqliteConnection, action: &Action) -> Result<Value
             execution,
             slots,
             units,
-        } => execution::root(conn, execution, *slots, *units).await,
+        } => execution::root(conn, execution, *slots, *units, None).await,
         Action::Child { execution, parent } => execution::child(conn, execution, parent).await,
         Action::Activate {
             execution,

@@ -132,6 +132,11 @@ def run(ctx):
             try:
                 raw, reply = server.receive()
             except queue.Empty as error:
+                ctx.write("main-timeout.json", {
+                    table: rows("SELECT * FROM " + table)
+                    for table in ("executions", "main_turns", "main_segments",
+                                  "root_budgets", "model_requests", "budget_members")
+                })
                 # Capture the original state before Service.running closes the owner.
                 # These fixtures contain no external provider or user credentials.
                 with closing(sqlite3.connect(

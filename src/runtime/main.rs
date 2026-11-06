@@ -20,7 +20,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::watch;
-pub(crate) use transport::physical as physical_request;
+pub(crate) use transport::{dispatch_child, physical as physical_request};
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -46,6 +46,8 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code_tool: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result_page_budget: Option<usize>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result_storage_bytes: Option<i64>,
@@ -62,6 +64,8 @@ pub struct Config {
     pub name: String,
     pub merge_ms: i64,
     pub root_slots: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root_tool_calls: Option<i64>,
     pub max_input_units: i64,
     pub max_output: i64,
     #[serde(default)]
@@ -162,6 +166,7 @@ impl Config {
         if self.model.trim().is_empty()
             || !(0..=60000).contains(&self.merge_ms)
             || self.root_slots <= 0
+            || self.root_tool_calls.is_some_and(|n| n < 0)
             || self.max_output <= 0
             || self.max_input_units < self.max_output
         {
@@ -427,16 +432,13 @@ impl Runner {
             let id = exec.clone();
             let hub = self.hub.clone();
             let task = self.tasks.spawn(async move {
-                if transport::run(&store, &cfg, &client, &data, &id, rx, &hub)
-                    .await
-                    .is_err()
+                if let Err(error) =
+                    transport::run(&store, &cfg, &client, &data, &id, rx, &hub).await
                 {
-                    let _ = write(
-                        &store,
-                        &cfg,
-                        Change::Hold(id.clone(), "runner_failed".into()),
-                    )
-                    .await;
+                    let reason = error
+                        .downcast_ref::<crate::host::composition::Unavailable>()
+                        .map_or("runner_failed", |e| e.0);
+                    let _ = write(&store, &cfg, Change::Hold(id.clone(), reason.into())).await;
                 }
                 id
             });

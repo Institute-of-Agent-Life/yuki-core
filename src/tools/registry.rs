@@ -50,6 +50,9 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    if let Some(tool) = crate::history::query::contacts::declaration(name) {
+        return Some(tool);
+    }
     if let Some(tool) = crate::media::declaration(name) {
         return Some(tool);
     }
@@ -61,9 +64,6 @@ pub fn builtin(name: &str) -> Option<Tool> {
     }
     if let Some(tool) = crate::work::declaration(name) {
         return Some(tool);
-    }
-    if let Some(t) = crate::history::query::contacts::declaration(name) {
-        return Some(t);
     }
     if name == "web_search" {
         return Some(crate::model::search::declaration());
@@ -278,7 +278,7 @@ pub async fn pinned(
     if let Some((body,original))=sqlx::query_as::<_,(String,bool)>("SELECT m.body,v.code_projection FROM execution_tool_views v JOIN tool_manifests m USING(revision) WHERE v.execution=?").bind(exec).fetch_optional(&mut *conn).await?{
         return Ok((serde_json::from_str(&body)?,original));
     }
-    let code = cfg.code_projection;
+    let code = cfg.code_projection || cfg.code_tool.is_some();
     let mut tools: Vec<Tool> = Manifest::core().0.into_values().collect();
     if cfg.bridge_search {
         tools.push(crate::model::search::declaration());

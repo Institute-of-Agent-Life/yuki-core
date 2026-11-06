@@ -108,7 +108,14 @@ pub async fn operator(conn: &mut SqliteConnection, config: &Config, cmd: &Action
                 sqlx::query("INSERT INTO main_dependencies(execution,event) SELECT ?,event FROM main_dependencies WHERE execution=?")
                     .bind(&exec).bind(&parent).execute(&mut *conn).await?;
             } else {
-                execution::root(conn, &exec, config.root_slots, config.max_input_units).await?;
+                execution::root(
+                    conn,
+                    &exec,
+                    config.root_slots,
+                    config.max_input_units,
+                    config.root_tool_calls,
+                )
+                .await?;
             }
             Ok(json!({"execution":exec}))
         }
@@ -264,7 +271,14 @@ pub async fn admit_human(
         .bind(now + cfg.merge_ms)
         .execute(&mut *conn)
         .await?;
-        execution::root(conn, exec, cfg.root_slots, cfg.max_input_units).await?;
+        execution::root(
+            conn,
+            exec,
+            cfg.root_slots,
+            cfg.max_input_units,
+            cfg.root_tool_calls,
+        )
+        .await?;
         exec.to_string()
     };
     sqlx::query("INSERT INTO main_inputs(event,execution) VALUES(?,?)")

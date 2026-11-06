@@ -57,6 +57,7 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    ToolBudget(String, String, String),
     Personal(Box<crate::host::personal::Request>),
     Host(Box<crate::host::Change>),
     Tool(Box<crate::tools::Change>),
@@ -136,6 +137,9 @@ impl Driver for SqliteDriver {
     }
     async fn apply(&mut self, action: &Mutation) -> Result<Value> {
         let label = match action {
+            Mutation::ToolBudget(exec, actor, op) => {
+                return crate::tools::budget::charge(self.connection(), exec, actor, op).await;
+            }
             Mutation::SeedPausedGroup(namespace, group, stage) => {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;

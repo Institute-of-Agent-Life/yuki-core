@@ -414,6 +414,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
        INSERT INTO executions(id,source,original_actor,state) VALUES('run',1,'00000000-0000-4000-8000-000000000088','running')").execute(&mut *conn).await.unwrap();
     let install = Install {
         erasure_args: None,
+        composition: None,
         id: "fixture".into(),
         namespace: "history".into(),
         program: std::env::current_exe().unwrap(),
