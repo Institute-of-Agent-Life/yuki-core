@@ -300,7 +300,17 @@ pub async fn run(
             return Ok(());
         }
         let soul = std::fs::read_to_string(data.join("SOUL.md"))?;
-        let step = write(store, cfg, Change::Prepare(exec.to_owned(), soul)).await?;
+        let step = write(
+            store,
+            cfg,
+            Change::Prepare(exec.to_owned(), soul, store.work_segments),
+        )
+        .await?;
+        if step["segment_yielded"] == true {
+            #[cfg(test)]
+            crate::store::tests::commit_barrier("work-segment-yielded").await;
+            return Ok(());
+        }
         if step.is_null() {
             return Ok(());
         }
