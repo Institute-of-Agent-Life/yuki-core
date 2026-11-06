@@ -39,6 +39,20 @@ async def test_original_contest_pair(database):
     result={"before":before,"marked":same,"after_alternative":await snapshot(fid),"alternative":await snapshot(alt.new_fact_id),
             "mark_outcome":mark.outcome.value,"alternative_outcome":alt.outcome.value,
             "links":[{"type":r.relation_type,"source_is_alternative":r.source_fact_id==alt.new_fact_id,"target_is_original":r.target_fact_id==fid} for r in links]}
+    async def guarded(tag, source, destination, expected):
+        event=await old._event(ledger,message_id=tag,sender_user_id="1001",content="请将同一人的两条音乐记忆合并。")
+        request=MemoryMutationRequest(operation="merge",fact_id=source,merge_fact_id=destination,
+            target=target,expected_fact_state=expected,reason="user_requested_review")
+        return await service.mutate(request,old._context(event))
+    bad=await guarded("bad-state",alt.new_fact_id,fid,"active")
+    assert not bad.ok and bad.reason_code=="expected_fact_state_mismatch",bad
+    merged=await guarded("merge-disputed",alt.new_fact_id,fid,"contested")
+    assert merged.ok and merged.new_fact_id==fid,merged
+    former=await facts.get_fact(alt.new_fact_id)
+    retained=await facts.get_fact(fid)
+    result["merge_contested"]={"source_status":former.status.value,"source_conflict":former.conflict_state.value,
+        "kept_content":retained.content,"kept_status":retained.status.value,"mismatch":bad.reason_code,
+        "merge_outcome":merged.outcome.value}
     (Path(os.environ["YUKI_CONTEST_ORACLE_OUT"])/"original.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
 
 
