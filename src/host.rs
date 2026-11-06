@@ -6,7 +6,7 @@ pub(crate) mod configuration;
 mod control;
 pub(crate) mod domain;
 pub(crate) mod gateway_media;
-mod grants;
+pub(crate) mod grants;
 pub(crate) mod lifecycle;
 pub(crate) mod maintenance;
 mod media;
@@ -288,7 +288,27 @@ impl Hub {
             end.clone(),
         ));
         tokio::spawn(commands::serve(hub.clone(), store.clone(), qq, end));
-        for (id, slot) in hub.installed() {
+        let mut pending = hub.installed();
+        if grants::stable_base() {
+            // A gateway can produce its first inbound request immediately after initialize.
+            // Let independent tools finish their bounded handshakes before starting ingress.
+            let (tools, others) = pending.into_iter().partition::<Vec<_>, _>(|(_, slot)| {
+                slot.spec.grants.contains("tool.call")
+                    && !slot.spec.grants.contains("gateway.inbound")
+            });
+            let mut starting = tokio::task::JoinSet::new();
+            for (id, _) in tools {
+                let (hub, store) = (hub.clone(), store.clone());
+                starting.spawn(async move {
+                    let _ = hub.restart(&store, &id).await;
+                });
+            }
+            while let Some(joined) = starting.join_next().await {
+                joined?;
+            }
+            pending = others;
+        }
+        for (id, slot) in pending {
             if slot.spec.composition.is_some() {
                 // A discovered or disabled Code plugin must not block the owner from
                 // starting its control plane and holding the original paid execution.

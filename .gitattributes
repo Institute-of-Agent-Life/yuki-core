@@ -17,3 +17,6 @@ character/SOUL.md text eol=lf
 # Preserve upstream Vec1 source bytes in Windows checkouts.
 native/vec1/vec1.c -text whitespace=-trailing-space,-space-before-tab,-blank-at-eof
 native/vec1/sqlite3.h -text
+
+# Fixed Windows consumer acceptance, with original byte-level digests.
+fixtures/compat/ext-067/** -text -diff

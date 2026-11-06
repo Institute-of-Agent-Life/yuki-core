@@ -46,7 +46,7 @@ def binary_target(data):
     raise ValueError("unknown native release executable")
 
 
-def verify_signature(raw, signature_bytes, public_key):
+def verify_signature(raw, signature_bytes, public_key, *, namespace=NAMESPACE):
     with tempfile.TemporaryDirectory() as signing:
         signature = Path(signing) / "receipt.sig"
         signature.write_bytes(signature_bytes)
@@ -77,7 +77,7 @@ def verify_signature(raw, signature_bytes, public_key):
                 "-I",
                 "yuki-core",
                 "-n",
-                NAMESPACE,
+                namespace,
                 "-s",
                 str(signature),
             ],

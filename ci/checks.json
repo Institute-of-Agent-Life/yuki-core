@@ -297,6 +297,11 @@
       "rust": true,
       "capabilities": ["source-publication-fence", "durable-owner-erasure"]
     },
+    "CORE-044": {
+      "case": "tests/cases/CORE-044.py", "artifact": "frozen-wire.json",
+      "timeout_seconds": 300, "rust": true, "release": true,
+      "capabilities": ["witnessed-base-six-methods", "isolated-plugin-negotiation", "two-installed-stable-sdks"]
+    },
     "CORE-040": {
       "case": "tests/cases/CORE-040.py", "artifact": "slice-decision.json",
       "timeout_seconds": 180, "rust": true,

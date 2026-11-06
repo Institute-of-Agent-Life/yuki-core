@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "extension_repository": "https://github.com/Institute-of-Agent-Life/yuki-extensions",
+  "evidence_commit": "bc58ec7e703e691a7b00736673d068397646901b",
+  "evidence_directory": "artifacts/EXT-067/01/",
+  "consumer_source": "49f7b190406c59adb15b1a5fe70f442942addbb7",
+  "producer_candidate": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+  "witness_sha256": "d735e535b30c41c32fc62ade3b5ae3863c9cbf39404856f3401640b7544034e1",
+  "acceptance_manifest_sha256": "95559de9ff5564121122455bc190e481bf4c276db8aac35b24555770d77d600a",
+  "handshake_sha256": "b10819c5865917a0eb39fcdd06c7c2ad271ea5427581ee29e354360114158b10",
+  "methods": {
+    "gateway.dispatch_part": "a6215aa23261dd9bc32bee776daab79a9fef5e1855fce53f4ba94e2a6b4cd8ae",
+    "gateway.inbound": "3831354b3781b71b46667193c6c84f372de609340f2c44f8e761742c6440a33b",
+    "gateway.plan_send": "43d6a5a8c2ed83a3c0098233f477e30d524e287616a0c7323d7f9e0484318f8f",
+    "tool.call": "b1936a9198c152b4af382fc09f05436dd375e44f25b8375ede63d1fa5205db6e",
+    "tool.status": "012adfa0e30b8ad461826c219f7155eead2f36727ec672f8cda4f47b4acc8364"
+  },
+  "data_profile": "new installation; transient plugin payloads; persistent-source owner RPC excluded",
+  "windows_replay": {
+    "independent_consumer_evidence": "10a24f8d559e93b8369e398b6dcd983804fcfefe",
+    "original_host_replay_witness_sha256": "b238bb3ca06702f08691b9dcfbbf4206fe40be92e1a8a7348ef9836f471044ef",
+    "actions_artifacts": {
+      "telegram": "13523402982",
+      "web-fetch": "13524465074"
+    },
+    "executable_sha256": {
+      "telegram": "e49fac00669f9175814a1b06f6034626d4bc6514639576d23020817eb16b93b0",
+      "web-fetch": "90912616d2e50ffce88c82422ebe58740e8c28235b83365ac43e07ef413659b2"
+    }
+  }
+}

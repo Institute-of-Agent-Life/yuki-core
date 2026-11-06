@@ -1,0 +1,967 @@
+{
+  "status": "PASS",
+  "card_status": "JOINT_CANDIDATE_WITNESSED",
+  "formal_release": false,
+  "producer": "CORE-039",
+  "delivery": {
+    "repository": "Institute-of-Agent-Life/yuki-core",
+    "source_commit": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+    "index_sha256": "0fb4f75ff9a5a860e1db5d40b8d66b5905a8cb941e5f6987d88a30f48b6b2867",
+    "published": false,
+    "sdk": {
+      "rust": "1.0.0-alpha.14",
+      "python": "1.0.0a14"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "archive": "yuki-core-4a41470e89b4-darwin-arm64.zip",
+        "sha256": "065d920aefcae330ed7da7c8ce66a672ced7295a91f04aaf268c208bf71412b8",
+        "binary_sha256": "5d5b748024c3b676f508046fc871bf6d407fe5a586f48ef88bef436e5aaefdce",
+        "validation_manifest_sha256": "9e94c7a4ffe5256a396873f845fc00240ebc018012dca404c20d54abb6a6bab2",
+        "signed_manifest_sha256": "3a9e6f6393b8cc3a24f0a9c291880062ed85eb149ee8a779995e2399b0c468dc",
+        "signer": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEw9+SX8p46AwD4EGlp+jPmGm1txnQ3T4tkwr6VV+TtE huangjiawei@huangjiaweideMac-mini.local",
+        "signer_sha256": "859ffd8fe442d5ae89728b409581f76a28677c3a51f1d9514ad31fae4b6e8467",
+        "verified_members": 496
+      },
+      "linux-arm64": {
+        "archive": "yuki-core-4a41470e89b4-linux-arm64.zip",
+        "sha256": "2213810b662345efb0f91c8ec9405e942c8eaacb0f376e58667d8d2000a77382",
+        "binary_sha256": "a151d7f59582e4c105b06679a61adaf7fc2f4afad1f5b3068e6c36170ef1e28e",
+        "validation_manifest_sha256": "5999279db0ac9b55da052c9291dd49a6753c31d48a4dbb2aa07041c1e01cdea9",
+        "signed_manifest_sha256": "1742cff0b5043761503ad9ae8b9021993fdd9bccf2bfe29ab2fe4dc42df5e445",
+        "signer": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBwxFsSoinJPliwi7/I+VPyz1/w9Cwah7NbT+NkZEEhZ root@63667c989dbe",
+        "signer_sha256": "f9c4cf41175607c0979490801077a3174ef0c24d8aa3c5fb0c75c643832183ab",
+        "verified_members": 499
+      },
+      "windows-x86_64": {
+        "archive": "yuki-core-4a41470e89b4-windows-x86_64.zip",
+        "sha256": "47f8bddb37ca1ee4502bd12807d34172188d7287dc5e2f538e233d59b1c676fc",
+        "binary_sha256": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "validation_manifest_sha256": "cb89c8fd9d84d039e2d8cbfa1bfa107b612d934dacc5ca3d31a9f5b245c4d98a",
+        "signed_manifest_sha256": "6981e0d84fbf5e6f53f31eac487e81384914028f0786a35b4afcb3e40fd7d7d6",
+        "signer": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID4ltHyi03aOCwpoVglEc7uArFuy+FDsL7r/yDiti0Qg hilbert@hjw",
+        "signer_sha256": "61a95ec56ca8e375942d5db5c0043aaf59e187b8c90ee8eca1e2019cb72c40a9",
+        "verified_members": 508
+      }
+    },
+    "source_tree_sha256": "df00dc98a20667191f15b34732c172a49ed9b99d4f2cef3df75ab533b919d12d",
+    "rust_crate_sha256": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+    "schema_sha256": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+    "golden_sha256": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+    "fixtures_sha256": "2d986f7c2bf30d597fbf667f346d189a8aad9bf6194d1341fc13620e4907316e",
+    "methods": [
+      "command.invoke",
+      "forget.ack",
+      "forget.request",
+      "gateway.dispatch_part",
+      "gateway.inbound",
+      "gateway.media",
+      "gateway.part_status",
+      "gateway.plan_send",
+      "gateway.status",
+      "observer.event",
+      "terminal.bind",
+      "terminal.scope",
+      "tool.call",
+      "tool.status"
+    ]
+  },
+  "pinned_packages": {
+    "telegram": {
+      "version": "0.1.0-alpha.4",
+      "artifacts": {
+        "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+        "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+        "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+        "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+        "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+      },
+      "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+    },
+    "web-fetch": {
+      "version": "0.1.0-alpha.2",
+      "artifacts": {
+        "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+        "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+        "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+        "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+        "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+      },
+      "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+    }
+  },
+  "required_method_witnesses": {
+    "telegram": {
+      "initialize": {
+        "direction": "from_plugin",
+        "grant": null,
+        "schema_sha256": "b10819c5865917a0eb39fcdd06c7c2ad271ea5427581ee29e354360114158b10",
+        "cases": {
+          "confirmed": 2,
+          "lost-second": 2,
+          "swapped": 2,
+          "wrong-handle": 2,
+          "revoked": 2,
+          "missing-method": 2,
+          "erased-readback": 2
+        }
+      },
+      "gateway.inbound": {
+        "direction": "from_plugin",
+        "grant": "gateway.inbound",
+        "schema_sha256": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "cases": {
+          "confirmed": 1,
+          "lost-second": 1,
+          "swapped": 2,
+          "wrong-handle": 1,
+          "revoked": 1,
+          "missing-method": 1,
+          "erased-readback": 2
+        }
+      },
+      "gateway.plan_send": {
+        "direction": "from_host",
+        "grant": "gateway.send",
+        "schema_sha256": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "cases": {
+          "confirmed": 1,
+          "lost-second": 1,
+          "missing-method": 1
+        }
+      },
+      "gateway.dispatch_part": {
+        "direction": "from_host",
+        "grant": "gateway.send",
+        "schema_sha256": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "cases": {
+          "confirmed": 3,
+          "lost-second": 2
+        }
+      }
+    },
+    "web-fetch": {
+      "initialize": {
+        "direction": "from_plugin",
+        "grant": null,
+        "schema_sha256": "b10819c5865917a0eb39fcdd06c7c2ad271ea5427581ee29e354360114158b10",
+        "cases": {
+          "confirmed": 2,
+          "lost-second": 2,
+          "swapped": 2,
+          "wrong-handle": 2,
+          "revoked": 2,
+          "missing-method": 2,
+          "erased-readback": 2
+        }
+      },
+      "tool.call": {
+        "direction": "from_host",
+        "grant": "tool.call",
+        "schema_sha256": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "cases": {
+          "confirmed": 1,
+          "lost-second": 1,
+          "swapped": 1,
+          "wrong-handle": 1,
+          "revoked": 1,
+          "missing-method": 1,
+          "erased-readback": 1
+        }
+      },
+      "tool.status": {
+        "direction": "from_plugin",
+        "grant": "tool.call",
+        "schema_sha256": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "cases": {
+          "confirmed": 2,
+          "lost-second": 2,
+          "swapped": 2,
+          "wrong-handle": 2,
+          "revoked": 2,
+          "missing-method": 2,
+          "erased-readback": 2
+        }
+      }
+    }
+  },
+  "candidate_coverage": [
+    "gateway.dispatch_part",
+    "gateway.inbound",
+    "gateway.plan_send",
+    "initialize",
+    "tool.call",
+    "tool.status"
+  ],
+  "promoted_stable_methods": [],
+  "privacy": {
+    "profile": "new two-plugin installation with gateway.inbound, gateway.send and tool.call",
+    "inventory_after_kill": {
+      "confirmed": {
+        "state-telegram": {},
+        "state-web-fetch": {},
+        "cursor": {
+          "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+        }
+      },
+      "lost-second": {
+        "state-telegram": {},
+        "state-web-fetch": {},
+        "cursor": {
+          "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+        }
+      },
+      "swapped": {
+        "state-telegram": {},
+        "state-web-fetch": {},
+        "cursor": {
+          "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "101.offset": "877a8799041017f1719854e4e295c6dca56cd1cf1b1914d1bfed9281f7fc2686"
+        }
+      },
+      "wrong-handle": {
+        "state-telegram": {},
+        "state-web-fetch": {},
+        "cursor": {
+          "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+        }
+      },
+      "revoked": {
+        "state-telegram": {},
+        "state-web-fetch": {},
+        "cursor": {
+          "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+        }
+      },
+      "missing-method": {
+        "state-telegram": {},
+        "state-web-fetch": {},
+        "cursor": {
+          "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+        }
+      },
+      "erased-readback": {
+        "state-telegram": {},
+        "state-web-fetch": {},
+        "cursor": {
+          "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+        }
+      }
+    },
+    "persistent_source_private_data": false,
+    "remaining_files": "Telegram offset and empty process lock; original admitted records owned by Host",
+    "not_witnessed": [
+      "persistent-owner forget.request",
+      "persistent-owner forget.ack",
+      "upgrades of installations with existing private data"
+    ]
+  },
+  "inputs": {
+    "ci/base-witness.py": "cc3fb4ec027fdf24968c5df3012bdc860bea294ff9bbc84b26e48df78a26497c",
+    "ci/package.py": "ba1f071066f11ca8c15e5f639a65bb3119b34456d2663a0add4eba05a4560482",
+    "ci/handshake_cargo.py": "9f2ffc334472116d8f2c1ab8ff0194bc8a9eb2c6f82c13ceb82f4375d99fdfae",
+    "tests/cases/EXT-067.py": "1d7b37214603a1d041ebb318c26c3902378f651e79b1d47ef0f1883fa2763101",
+    "tests/peers/joint_base.py": "dc169bce19defcfd976612cb9ecd7ccd8b59ebaf4f21e11ffbf9991dbbb210bd",
+    "tests/peers/base_relay.py": "97c4db011a738c3e16a82da1b862b4813de40ee16d8798e6f9947ed025b59066",
+    "compat/base/source.lock.json": "3a6775a165865d31220f46a84fa744003bf212cbc83b30918d8bf8fc6d252319",
+    "compat/base/verify_dist.py": "fc040fe32698e4459e12caef1b694cdbffbe1a589c75f294da2e8be8fd0f2612",
+    "compat/base/host-preview.json": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+    "compat/base/handshake.schema.json": "b10819c5865917a0eb39fcdd06c7c2ad271ea5427581ee29e354360114158b10",
+    "compat/base/host-boundaries.json": "2d986f7c2bf30d597fbf667f346d189a8aad9bf6194d1341fc13620e4907316e",
+    "compat/base/handshake.ndjson": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+    "compat/base/yuki-plugin-sdk-1.0.0-alpha.14.crate": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+    "catalog/telegram.json": "81f57f6c2b80b09f3e68c06c6f45a329d1ee225998a145d76860d5b9ce69e263",
+    "plugins/telegram/Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+    "plugins/telegram/Cargo.toml": "12f4c1c088cf432da8d7a27a4474fbff1a9fb8bbccbf7918e13b37a289ae184f",
+    "plugins/telegram/LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+    "plugins/telegram/plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+    "plugins/telegram/README.md": "8541e689bdab22bcaffd566eee76038195ac90311c1e2f416b5f348a35a18728",
+    "plugins/telegram/rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+    "plugins/telegram/src/ingress.rs": "4b54cee0786dd5d6aec2737470ff4801b99c3d0f7596eabd00ce33c90733cd0f",
+    "plugins/telegram/src/main.rs": "ecce20e26d568232b57b9415d9d12fb0aab079dac2db09e46d86818cb37de22a",
+    "plugins/telegram/src/media.rs": "cb03132d32209dd27f620c2d315f4380044828eee603ed23219a22b6997c27bc",
+    "plugins/telegram/src/social.rs": "d9311840de108714d0a3d4916ef66be5b3cf73540b4e041648b885deec51e103",
+    "plugins/telegram/src/transport.rs": "0ea3d285718b0b1197023b74990a3e1fa348aaa903b4281ebd0f22c7e1fda2a8",
+    "catalog/web-fetch.json": "2ffc01f2c289ea69ab2d92c82f883bb47593824e8a9ab81c880bd76061410c84",
+    "plugins/web-fetch/Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+    "plugins/web-fetch/Cargo.toml": "787374b28c01a43c67815caf5e3c7cb9cf342b7876a81cfa1733e3cab952f2e4",
+    "plugins/web-fetch/LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+    "plugins/web-fetch/owner-disposition.json": "f70d2e289f35bb4ecf616d128e9103cdf056c749749f6801b2b07c4765768500",
+    "plugins/web-fetch/plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+    "plugins/web-fetch/README.md": "4ef68319edb6e16a2c44db7090ff369726298a927c1e4aa2af7ecbc956af29b3",
+    "plugins/web-fetch/rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+    "plugins/web-fetch/src/fetch.rs": "474f46b7fb497f15dc79bf5bdaf10770f5b1117654a1fe9f0ac3f3f5ca0e567f",
+    "plugins/web-fetch/src/main.rs": "2b430c4d4143e28313b1f118295e82521465de1bbc415ec95c98991076214180",
+    "plugins/web-fetch/src/policy.rs": "5e3c4b7a84850fa7e14bfa6adf4660302ffc5301955deb5a8e44942c06de708a"
+  },
+  "cases": {
+    "confirmed": {
+      "zip": "confirmed.zip",
+      "sha256": "7b1dc7545f6086777e4c11682ee0a0b745e5c2b9d4ded507fedb466e538c63ba",
+      "members": {
+        "model.json": "88034b09dc04c5e50aee91d0d0cc37177c31926e5b580c9fe25418c1c7182bca",
+        "native.json": "78a5f1d2637558c14708ff8aa8a167bb6a434ffc02ea057e8ebf46a32ac26cad",
+        "host.log": "9c2ce3c821ea1067f7183288fac89eaac2c7e872cdccec7958f70fcc3469b8b2",
+        "installed.json": "dcc4f0f073dd696019377ed8486274fa4dec37977b1739d227ed45b58124b377",
+        "result.json": "366ba45062adc8d7149ed86573f1043f9d1330c7e6e8841c5103fb78c6af03bc",
+        "telegram.jsonl": "7966d34ce83dd3a3f73266ddf3dd220a322acd5e01c9d55db580a62debe7381a",
+        "web-fetch.jsonl": "0af037bbca8ec2711dfe39e656045c0466b77cc65ed26b6e80b7ffa0ce525e43",
+        "telegram.killed": "c736a2d9599c2eeec93edfc3e0d26601a67e433c7c5ebc15d778c2178f7201d8",
+        "web-fetch.killed": "0abe1b008e37697d60391129deac748704d6105881949c60dff38453777ffb43"
+      },
+      "result": {
+        "case": "confirmed",
+        "status": "PASS",
+        "published": false,
+        "source": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+        "host": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "sdk": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+        "schema": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "packages": {
+          "telegram": {
+            "version": "0.1.0-alpha.4",
+            "artifacts": {
+              "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+            },
+            "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+          },
+          "web-fetch": {
+            "version": "0.1.0-alpha.2",
+            "artifacts": {
+              "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+            },
+            "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+          }
+        },
+        "event": 1,
+        "web_status_checks": 2,
+        "ack_offsets_after_original_receipt": [
+          52
+        ],
+        "original_pages": 4,
+        "page_bytes": 1582,
+        "page_sha256": "c0fd92af7f2b5956a38052a059a90695c3d9bab0e3390510048be378da9e008f",
+        "native_parts": [
+          {
+            "locator": "8:701",
+            "state": "confirmed"
+          },
+          {
+            "locator": "8:702",
+            "state": "confirmed"
+          },
+          {
+            "locator": "8:703",
+            "state": "confirmed"
+          }
+        ],
+        "confirmed_offset_after_restart": 52,
+        "redelivered_old_update": true,
+        "post_restart_effects": 0,
+        "live_private_directories": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": {
+              "bytes": 0,
+              "access": "process lock held"
+            },
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_kill": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_restart": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "killed_children": {
+          "telegram": 32464,
+          "web-fetch": 17952
+        }
+      }
+    },
+    "lost-second": {
+      "zip": "lost-second.zip",
+      "sha256": "7f0f6f6455dc3c753f5f8084afaf625364ccbf8091a35835e03688dd68f1bc6b",
+      "members": {
+        "model.json": "a9e575f286f354ed9e6d19951c2b19d32604f47c52c3e693f46a7bb8135b61c6",
+        "native.json": "d44355968892319530a292c86b90532c45c90c3f9d212c9f40ceda6c3417688d",
+        "host.log": "d39e540be2c536ea597448746cbddd3573d3708d055ca7ffd55b8e1554a5215c",
+        "installed.json": "dcc4f0f073dd696019377ed8486274fa4dec37977b1739d227ed45b58124b377",
+        "result.json": "aedf3ef3317c3a174d03e4c582f19953acf3d84ccb8150f56bc51b1293174c21",
+        "telegram.jsonl": "44684a338c8bcd65cb16eb9a81a3b4dde1eec92d3b9ff30f24bffc2e53ede00d",
+        "web-fetch.jsonl": "7689b14047dcf2fd9d9f9c6e0bb4bfb80bbd1658892045bed09ff52f12f49a41",
+        "telegram.killed": "8683608c0c518ba07e92d4a48159d86c664af4319b7c24a2effeba36e8024cf7",
+        "web-fetch.killed": "d97381b6a267e9599bef6a5a416aae19df3b1ad5362ee21ab7a43848bd551b03"
+      },
+      "result": {
+        "case": "lost-second",
+        "status": "PASS",
+        "published": false,
+        "source": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+        "host": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "sdk": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+        "schema": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "packages": {
+          "telegram": {
+            "version": "0.1.0-alpha.4",
+            "artifacts": {
+              "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+            },
+            "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+          },
+          "web-fetch": {
+            "version": "0.1.0-alpha.2",
+            "artifacts": {
+              "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+            },
+            "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+          }
+        },
+        "event": 1,
+        "web_status_checks": 2,
+        "ack_offsets_after_original_receipt": [
+          52
+        ],
+        "original_pages": 4,
+        "page_bytes": 1582,
+        "page_sha256": "baea385dbc9be5f92bb43de9e7c0f609b63e3be28488aea0f94aadc5f7487077",
+        "native_parts": [
+          {
+            "locator": "8:701",
+            "state": "confirmed"
+          },
+          {
+            "state": "unknown"
+          }
+        ],
+        "confirmed_offset_after_restart": 52,
+        "redelivered_old_update": true,
+        "post_restart_effects": 0,
+        "live_private_directories": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": {
+              "bytes": 0,
+              "access": "process lock held"
+            },
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_kill": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_restart": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "killed_children": {
+          "telegram": 20676,
+          "web-fetch": 28912
+        }
+      }
+    },
+    "swapped": {
+      "zip": "swapped.zip",
+      "sha256": "487db4470d4fdfc272505626fd03a285110734c77706706c0c6aaa64bac5221d",
+      "members": {
+        "model.json": "a43ef75436b31b622e8559e056e932e81c1ed786ed191ff6dfe647c07c803896",
+        "native.json": "6a6c9ce53ad21aa53fd68159a9b390d40111c6e61bcc5903c3d92696243ee016",
+        "host.log": "f5d2df0b6413975145061dac64f43f42c612b1f84dfc564680fd8936aaa55acf",
+        "installed.json": "dcc4f0f073dd696019377ed8486274fa4dec37977b1739d227ed45b58124b377",
+        "result.json": "b3c538d86d9f6fc667eb36b562f8e6b2f49ee2f313d79a0f42bebc1a965f233f",
+        "telegram.jsonl": "38c2c554137fc1a5b99890d7696a5ba022046499e1753e68b89488ae73e9e19f",
+        "web-fetch.jsonl": "e3f97987716e94d25cefbca13ec5d0b5e3421acacc14928d28535ce6fbc01ed5",
+        "telegram.killed": "904959b9b6c7d15070aeeca0263d3247182da678e0c64cab27d8b6ecf06b53bd",
+        "web-fetch.killed": "72c2a3e487faabc67ff675a2b1e0f5e282a0d26d17c67e4cb803f38d84fbe9a4"
+      },
+      "result": {
+        "case": "swapped",
+        "status": "PASS",
+        "published": false,
+        "source": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+        "host": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "sdk": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+        "schema": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "packages": {
+          "telegram": {
+            "version": "0.1.0-alpha.4",
+            "artifacts": {
+              "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+            },
+            "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+          },
+          "web-fetch": {
+            "version": "0.1.0-alpha.2",
+            "artifacts": {
+              "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+            },
+            "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+          }
+        },
+        "event": 1,
+        "web_status_checks": 2,
+        "ack_offsets_after_original_receipt": [
+          52,
+          53
+        ],
+        "original_pages": 0,
+        "page_bytes": 1582,
+        "page_sha256": "442b406ceb2465e50429e24804bb78c289a48b24b5ddd48de62aa7971a0bbcbd",
+        "native_parts": [],
+        "confirmed_offset_after_restart": 53,
+        "redelivered_old_update": true,
+        "post_restart_effects": 0,
+        "live_private_directories": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": {
+              "bytes": 0,
+              "access": "process lock held"
+            },
+            "101.offset": "877a8799041017f1719854e4e295c6dca56cd1cf1b1914d1bfed9281f7fc2686"
+          }
+        },
+        "private_directories_after_kill": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "877a8799041017f1719854e4e295c6dca56cd1cf1b1914d1bfed9281f7fc2686"
+          }
+        },
+        "private_directories_after_restart": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "877a8799041017f1719854e4e295c6dca56cd1cf1b1914d1bfed9281f7fc2686"
+          }
+        },
+        "killed_children": {
+          "telegram": 11824,
+          "web-fetch": 7808
+        }
+      }
+    },
+    "wrong-handle": {
+      "zip": "wrong-handle.zip",
+      "sha256": "aa0cfb30da4a7db56bbc342c61f308de8703216d83abd66a8fa20d7e49e2be3a",
+      "members": {
+        "model.json": "1789ca7beac112af0866eb84a6222d6af30c7da5aa953fcaaf7429baa985dea0",
+        "native.json": "12ae26d621c692e609314fc0c06f477582db243443213d138a1dcba5e5c997c9",
+        "host.log": "cf3e3350bd310b98ad8f506f67c1d54e761c01d8aa593e1afc35fa69a20b8f90",
+        "installed.json": "dcc4f0f073dd696019377ed8486274fa4dec37977b1739d227ed45b58124b377",
+        "result.json": "e572d34e81a864ecce8b58e04696a2b12503c872856625c9a363dc47e419fe4d",
+        "telegram.jsonl": "65e628eb1fd1871ac7e30712566bf57c88965b0b1ebac732dc95a191fc279f16",
+        "web-fetch.jsonl": "bb8768868da7a4dfd136c6e76926a2afad85a0f1b86b920c978babb2b7ff0b91",
+        "telegram.killed": "d883c4c40c5813aee26c040dd8aa37285bca943384abd4127f32dee9edd2b375",
+        "web-fetch.killed": "26cc435143c4926972d65ef8b6c331961613270cf4801a2ede45048e8d9a0012"
+      },
+      "result": {
+        "case": "wrong-handle",
+        "status": "PASS",
+        "published": false,
+        "source": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+        "host": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "sdk": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+        "schema": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "packages": {
+          "telegram": {
+            "version": "0.1.0-alpha.4",
+            "artifacts": {
+              "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+            },
+            "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+          },
+          "web-fetch": {
+            "version": "0.1.0-alpha.2",
+            "artifacts": {
+              "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+            },
+            "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+          }
+        },
+        "event": 1,
+        "web_status_checks": 2,
+        "ack_offsets_after_original_receipt": [
+          52
+        ],
+        "original_pages": 0,
+        "page_bytes": 1582,
+        "page_sha256": "2ab272d139c38790b46c2d91e1dfb5cdb231223ffd6807423050fbd4ea6bbec7",
+        "native_parts": [],
+        "confirmed_offset_after_restart": 52,
+        "redelivered_old_update": true,
+        "post_restart_effects": 0,
+        "live_private_directories": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": {
+              "bytes": 0,
+              "access": "process lock held"
+            },
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_kill": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_restart": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "killed_children": {
+          "telegram": 12304,
+          "web-fetch": 32560
+        }
+      }
+    },
+    "revoked": {
+      "zip": "revoked.zip",
+      "sha256": "c0dc3323fed5df8f2bfef8e34edfccdaeeed737dd90036df86cbf40f8166db65",
+      "members": {
+        "model.json": "7998f7ffbbb6b608c715fbe21b5fe110042b30cc3272bf7a10762cf12525caf0",
+        "native.json": "12ae26d621c692e609314fc0c06f477582db243443213d138a1dcba5e5c997c9",
+        "host.log": "e63429ad27a8732348be9b2df16d9bb730c11f92a5f6f2f5836beaa46ff0940d",
+        "installed.json": "dcc4f0f073dd696019377ed8486274fa4dec37977b1739d227ed45b58124b377",
+        "result.json": "c25b2859ba7c20716b8706353e4a3b6af7bf0ed7cad034791e0def750c120811",
+        "telegram.jsonl": "b2d289c7f94b96ee9835698e4b16140237a2ed8e8ac28453437bf0bc5d273cef",
+        "web-fetch.jsonl": "cbd837b319b5ddc2da4fbd8a71b4b8922ce52725c78857f254d4a3bb130b034c",
+        "telegram.killed": "89cf17426db0f2c59b4050900958e618b1fe8656cd0334368c165b0742a70b8f",
+        "web-fetch.killed": "a0a506ca864ee261b61ce3f557b5c7ec6e1a6307b1e347d4b1e1b5c1fd8c6164",
+        "erasure.json": "dd3a125a14443044f034e73418b165ced0a30f2251f89531f785706dd150bcda"
+      },
+      "result": {
+        "case": "revoked",
+        "status": "PASS",
+        "published": false,
+        "source": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+        "host": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "sdk": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+        "schema": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "packages": {
+          "telegram": {
+            "version": "0.1.0-alpha.4",
+            "artifacts": {
+              "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+            },
+            "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+          },
+          "web-fetch": {
+            "version": "0.1.0-alpha.2",
+            "artifacts": {
+              "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+            },
+            "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+          }
+        },
+        "event": 1,
+        "web_status_checks": 2,
+        "ack_offsets_after_original_receipt": [
+          52
+        ],
+        "original_pages": 0,
+        "page_bytes": 1582,
+        "page_sha256": "58f657cc6f9c70d66ea6d1f9ef8448374f6f744ef3915ecab93b11607042788b",
+        "native_parts": [],
+        "confirmed_offset_after_restart": 52,
+        "redelivered_old_update": true,
+        "post_restart_effects": 0,
+        "live_private_directories": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": {
+              "bytes": 0,
+              "access": "process lock held"
+            },
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_kill": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_restart": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "killed_children": {
+          "telegram": 16956,
+          "web-fetch": 23748
+        }
+      }
+    },
+    "missing-method": {
+      "zip": "missing-method.zip",
+      "sha256": "3505f8705024ef33a02f67460a2df87d6b6db6b1a1844ad73135bfce10e72f08",
+      "members": {
+        "model.json": "506c71340c9c47610da0b98b3e6d5f83e8ed30260d39f3b11faebf8f91e00ae1",
+        "native.json": "8a144f323bf82d26a40e40b5de3bfba43720345a66cf5108815f4b36321c8484",
+        "host.log": "d26f51cd4bd13c6062436d776d31d992dab729d2d6844d4cf84f5f5fa4a72c75",
+        "installed.json": "dcc4f0f073dd696019377ed8486274fa4dec37977b1739d227ed45b58124b377",
+        "result.json": "e3baafa75202cd25972ea349eb4f0bb85c10750b2e94235e4b9a1813a6d3dcc7",
+        "telegram.jsonl": "6112f7842c8ae33ac01d073ec8e929c35af5f9d2647f25c52a5bb9f9462ffcf2",
+        "web-fetch.jsonl": "af52519ca7f7c6291ca911bf81a0253cab28082610633e7fca9232c592ebc0f5",
+        "telegram.killed": "889a9dc131220e3fba1f1cc6ff13b557b48e692e21d7b5a9121162d299c72dc4",
+        "web-fetch.killed": "3919ea621056d864993069cfa401ecb22b7cc5037c2014abc591847f466511a7"
+      },
+      "result": {
+        "case": "missing-method",
+        "status": "PASS",
+        "published": false,
+        "source": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+        "host": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "sdk": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+        "schema": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "packages": {
+          "telegram": {
+            "version": "0.1.0-alpha.4",
+            "artifacts": {
+              "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+            },
+            "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+          },
+          "web-fetch": {
+            "version": "0.1.0-alpha.2",
+            "artifacts": {
+              "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+            },
+            "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+          }
+        },
+        "event": 1,
+        "web_status_checks": 2,
+        "ack_offsets_after_original_receipt": [
+          52
+        ],
+        "original_pages": 4,
+        "page_bytes": 1582,
+        "page_sha256": "cc5dafb9bc0735aadd0cc148a89c44659c755227d1e43f69b93a979c7af6fe14",
+        "native_parts": [],
+        "confirmed_offset_after_restart": 52,
+        "redelivered_old_update": true,
+        "post_restart_effects": 0,
+        "live_private_directories": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": {
+              "bytes": 0,
+              "access": "process lock held"
+            },
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_kill": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_restart": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "killed_children": {
+          "telegram": 16548,
+          "web-fetch": 30272
+        }
+      }
+    },
+    "erased-readback": {
+      "zip": "erased-readback.zip",
+      "sha256": "ea57bd8b31bc669828e797aeeeedc2d20ed9f157c03908a53986f5886eed1da5",
+      "members": {
+        "model.json": "483f4a17387264e9d997da06dba8d1899050d506ec6cad2be2af0c8d6f9f0aba",
+        "native.json": "6a6c9ce53ad21aa53fd68159a9b390d40111c6e61bcc5903c3d92696243ee016",
+        "host.log": "5912c67b7c16f9c599f110e047eacc1336cc955a8fa906357322ffad780871e6",
+        "installed.json": "dcc4f0f073dd696019377ed8486274fa4dec37977b1739d227ed45b58124b377",
+        "result.json": "beda4b3ae33ee5ec7af2ffc55ba4ee7a7f36180e0bff2856c06801bb2d012de4",
+        "telegram.jsonl": "d15c7001015a2b36745eb04a1efd37d838e21abb5cacabfc799e4a50e03ed07a",
+        "web-fetch.jsonl": "fddc8ddb0c4b6f61ded16e7e156613a5982a821f79206302083aaf4a8192c680",
+        "telegram.killed": "c4e2e9a17e38d281b86a468fabd6b9eed6b88a0f229eef8aeb3aaa5b640b0cba",
+        "web-fetch.killed": "624676d8a5a3a35c902dcc7f4045812cc6fe93546436a29aeb158883a9c33b9d",
+        "erasure.json": "dd3a125a14443044f034e73418b165ced0a30f2251f89531f785706dd150bcda"
+      },
+      "result": {
+        "case": "erased-readback",
+        "status": "PASS",
+        "published": false,
+        "source": "4a41470e89b4e4ac82ad7891d24bfdf604544598",
+        "host": "e7dba346ab1a8a3bad4529d674bc57e8d21e20ff2310723f40dee209fafb326c",
+        "sdk": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+        "schema": "5a9790642d0eb0ee2dfc15bcebc459c7b0bf9971260e6576e47da7e2e363fb9f",
+        "packages": {
+          "telegram": {
+            "version": "0.1.0-alpha.4",
+            "artifacts": {
+              "Cargo.lock": "48220d028b84338e07d47d3d4b7a4c8cf37d6eb8e76df532e147621e68e5e763",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "2bbeca542c94e4fecf993dfea52c8906e8d2662378d54bfbe55b2d4426aa22ad",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-telegram.exe": "a2fd50df791254cd70836d943899a13470b8f3156eb642ec66b0e9071b8463eb"
+            },
+            "manifest_sha256": "b7448e365c20fbc0fd041bab6e1e4514ca24d9427b83c4d655bf6e3be4290c89"
+          },
+          "web-fetch": {
+            "version": "0.1.0-alpha.2",
+            "artifacts": {
+              "Cargo.lock": "20609ae0ee4935d761204f1aec7618a95439e591e3bf6876cc5be9a61b5d94ba",
+              "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+              "plugin.toml": "116d0aa6cb5d635118d8abecdd405f5bef0d8a5eb475eae0217430f3c5bc20cd",
+              "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+              "yuki-web-fetch.exe": "cb10c9c12886bf83de2170e38bfcc2d63308dd3e71324eee2fed8b3d5c817a47"
+            },
+            "manifest_sha256": "f9f3e9960891161f753d8bb640078bdbfccd4d87ac396f8469d6aa8cc5e463b7"
+          }
+        },
+        "event": 1,
+        "web_status_checks": 2,
+        "ack_offsets_after_original_receipt": [
+          52,
+          53
+        ],
+        "original_pages": 0,
+        "page_bytes": 1582,
+        "page_sha256": "b778e616424e206153f06e52b76da976e52a563e2413fcd2f2d3a8cf36c70a56",
+        "native_parts": [],
+        "confirmed_offset_after_restart": 53,
+        "redelivered_old_update": true,
+        "post_restart_effects": 0,
+        "live_private_directories": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": {
+              "bytes": 0,
+              "access": "process lock held"
+            },
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_kill": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "6f3e559bbd93fa2f9b25cbd9b5f348a4b20c902d8e6498de5c28d73df8e2f571"
+          }
+        },
+        "private_directories_after_restart": {
+          "state-telegram": {},
+          "state-web-fetch": {},
+          "cursor": {
+            "101.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "101.offset": "877a8799041017f1719854e4e295c6dca56cd1cf1b1914d1bfed9281f7fc2686"
+          }
+        },
+        "killed_children": {
+          "telegram": 7756,
+          "web-fetch": 18776
+        }
+      }
+    }
+  }
+}
