@@ -46,7 +46,7 @@ def rust(out):
         folder = out / f"work-{i:02}"
         folder.mkdir()
         ctx = Context(ROOT, folder, lock)
-        with tempfile.TemporaryDirectory(prefix="yuki-work-matrix-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="yw-") as tmp:
             ctx.working = Path(tmp)
             try:
                 run(ctx, i)
