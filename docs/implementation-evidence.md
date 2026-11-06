@@ -738,3 +738,8 @@ Mac `connector-auth-mac-04` 369 項通過；真 HTTP、獨立安裝 SDK 與三�
 失敗記錄：mac-01 在同一秒配對與停用測試入口，碰到原 assignment 同時點衝突；mac-02 隨執行時間偶然通過，故保留失敗並改以原狀態時間加一，mac-03／04 通過。沒有刪除或放寬產品時序檢查。reader 46 新增授權表；Host 2／handshake 1 不變，新增可選方法分發 SDK alpha.12／a12。此為未發布核心生產者合同，真 EXT-011 消費仍待取得。
 
 打包自測 `artifacts/CORE-033/connector-auth-package-development-01/yuki-personal-preview-d9c798fa99aa-darwin-arm64.zip`，SHA-256 `b16f5bfe64a8dbc91c0d99133fc72a98d1b738b8768b38cc61ae0c1d2ef8ef63`；dirty source 僅自測，mac-05 仍為 369 項。乾淨三平台交接候選接續。
+
+三平台 Connector 候選來自乾淨提交 `c85a00b121d0277578292e8b60170b799e4ad6db`，tree `9572970cc3128d19dd34c417669435b3ea0c59fb245787aa028794a26c093028`。每個平台 369 項，安裝 SDK、乾淨 PATH 啟動、原 oracle、成員集合及每個成員 SHA-256 均通過。索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/connector-auth-handoff-final-02/verified-candidates.json` SHA-256 `750e7f878cfe0749dc01c0602a0d047c612554ab3e661dfa0e4dfbf85cea729e`；Windows 初次鎖定失敗回條仍留在 `connector-auth-handoff-final-01/windows-validation/`。清理快取的範圍與 132 個保留檔案的核對記錄在 `artifacts/CORE-033/hjw-cache-cleanup-01/receipt.json`。
+- macos：`678870e42acc0fb292adba0eeb98feb88f6e6eff232b7bfa0fd092c364aa3241`
+- linux：`fbd160a93818bca674cb4b95b07664b96bc4ceae53fde0b3f2bee5f4b7781f77`
+- windows：`6249cf5145c4f0ac2164724928c75879027894009d17760bbb1452ad581de17b`
