@@ -1,5 +1,16 @@
 # 核心實作進度
 
+截至本次整合，#43 已在三端各通過 39 卡並合併至 `main`（`82c14715e1bf`）。原始合併回執在 `artifacts/ci/local-pr/43/receipt.json`，SHA-256 為 `8555243c6019263958d4f8a472ae46d72972315f133b9b038f815dcd426244c6`。#85 的候選來源與最終合併 CI 分別留存，後者由 `ci/local_matrix.py` 驗證當下的兩個父提交。
+
+CORE-013（#85，`codex/core-013-file-send-receipt`，來源 `04139ad30742`）的三端候選均已打包。每端 CORE-013 通過 349 項、CORE-040 通過 152 項。Windows 檔案傳送回條和重放分別保存在 `windows/manifest.json`、`windows/related-core040/manifest.json`。候選可供擴展倉唯讀對拍，狀態為未發布，schema 51，Rust SDK 1.0.0-alpha.14，Python SDK 1.0.0a14。各包位於 `artifacts/CORE-013/file-caption-04139ad30742/<平台>/handoff/`，實含方法以包中清單為準。
+
+| 平台 | ZIP | SHA-256 |
+| --- | --- | --- |
+| macos | `yuki-social-preview-04139ad30742-darwin-arm64.zip` | `2e8064dcbb9cc77cf0640c49ba417905f5962b9bbc1273937e459f0e792041cf` |
+| linux | `yuki-social-preview-04139ad30742-linux-arm64.zip` | `d5cf02c45034ac3e97f5a5067bd34a24b78b9e42038fd1483bcba85693f81a17` |
+| windows | `yuki-social-preview-04139ad30742-windows-x86_64.zip` | `75f871ed9889c0ca13c4da2712448d0a277635d4f917bdf41dad886768af51b4` |
+
+三端清單 `artifacts/CORE-013/file-caption-04139ad30742/verified-candidates.json` 的 SHA-256 為 `561bdbfdf1bdc0bc1084803021496438b40a569123812002e14fc3de5ae6b708`。
 CORE-013 檔案加文字回條（`codex/core-013-file-send-receipt`）。已確認上傳和文字的原始事件分列，附件綁定原版本雜湊、檔名和大小。固定 v4 A/B 對照完整模型可見回條；先前 Rust 缺少 data，修正後 Mac CORE-040 152 項、CORE-013 348 項通過。預留下一模型請求之後移除原檔版本，實體派發次數維持六次；原三筆 QQ 效果無重送。產物 `artifacts/CORE-040/file-caption-wire-01/` 與 `artifacts/CORE-013/file-caption-withdrawal-01/`。
 
 日常 CI 已於 #83 合併 main `b2cfe37`，Mac mini、同機 Linux ARM64 容器與 HJW Windows 各驗 36 卡；#39 於 main `d74e70e` 各驗 37 卡。合併回執在 `artifacts/ci/local-pr/{83,39}/receipt.json`。Mac 清理已合併分支的舊增量及依賴編譯檔約 64.1 GiB，詳見 `artifacts/ci/cleanup-20261106/`。
