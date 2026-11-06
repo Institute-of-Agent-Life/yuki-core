@@ -115,6 +115,58 @@ def run(ctx):
                 _, q = o.wire(model)
                 finish(evt)
             b, c = participants
+            member_oracle = (ctx.root / "fixtures/memory/v4-selected-member.json").read_bytes()
+            original = json.loads(member_oracle)
+            ctx.equal("pinned v4 resolver selected each original Person in order",
+                      [original["first"], original["second"]], original["original_human_persons"])
+            ctx.equal("pinned v4 resolver rejects a speaker alias and another event's member",
+                      [original["speaker_as_mention"], original["another_event"]], [None, None])
+            first, second = [p for p in people if p != o.actor]
+            selected = dict(self_target, subject_ref="member_" + first)
+            arguments = {
+                "operation": "create", "target": selected, "new_content": "喜欢摄影",
+                "memory_key": "member-ref:photography", "category": "hobby",
+            }
+            evt = send("两位参加者谈摄影", [b, c])
+            member_wire, q = o.wire(model)
+            model_input = json.dumps(member_wire["messages"], ensure_ascii=False)
+            ctx.check("both original person IDs appear in the model input",
+                      first in model_input and second in model_input)
+            ctx.check("both event-bound accounts appear in the current message",
+                      all(participant["account"] in member_wire["messages"][-1]["content"]
+                          for participant in (b, c)))
+            ctx.write("selected-member-model.json", member_wire["messages"])
+            result = invoke("memory_change", arguments, "selected-original-member")["result"]
+            chosen = snapshot(result["fact_id"])
+            ctx.equal("exact first member is selected from two original people",
+                      [chosen["subject"], chosen["authority"], chosen["evidence"][0]["author"]],
+                      [people[first], "third_party", people[o.actor]])
+            second_target = dict(selected, subject_ref="member_" + second)
+            other = invoke("memory_change", dict(arguments, target=second_target),
+                           "selected-second-member")["result"]
+            chosen_second = snapshot(other["fact_id"])
+            ctx.equal("second original person remains selectable", chosen_second["subject"], people[second])
+            unchanged = state()
+            denials = {}
+            for label, invalid in [
+                ("speaker-as-member", dict(selected, subject_ref="member_" + o.actor)),
+                ("unknown-member-id", dict(selected, subject_ref="member_00000000-0000-4000-8000-00000000ffff")),
+                ("wrong-member-scope", dict(selected, scope_type="person")),
+            ]:
+                denied = invoke("memory_change", dict(arguments, target=invalid), label, "failed")
+                denials[label] = denied["result"]["error"]
+            ctx.equal("invalid member requests did not write", state(), unchanged)
+            finish(evt)
+            evt = send("发言人只提及另一位成员", [c])
+            _, q = o.wire(model)
+            denied = invoke("memory_change", arguments, "member-from-previous-event", "failed")
+            denials["prior-event"] = denied["result"]["error"]
+            ctx.equal("previous event grants no member write", state(), unchanged)
+            finish(evt)
+            ctx.write("selected-group-member.json", {
+                "selected": [chosen, chosen_second], "denials": denials,
+                "source_commit": original["source_commit"], "oracle_sha256": hashlib.sha256(member_oracle).hexdigest(),
+            })
             independent = send("Independent group only", group="5001")
             _, q = o.wire(model)
             ctrl = invoke(
@@ -202,10 +254,10 @@ def run(ctx):
             db.execute("DROP TRIGGER group_test_abort")
             db.commit()
         with o.svc.running():
-            moved_event = send("刚才那条其实说的是小明喜欢摄影", [b])
+            moved_event = send("刚才那条其实说的是小明喜欢摄影", [b, c])
             _, q = o.wire(model)
             read(n, "fresh-original")
-            m = invoke("memory_change", move, "reattribute")
+            m = invoke("memory_change", dict(move, target=selected), "reattribute")
             new = m["result"]["new_fact_id"]
             ex = o.rows("SELECT id FROM executions WHERE source=?", moved_event)[0][0]
             projection.update(

@@ -1,0 +1,14 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "module_sha256": "f017c8e69190c0b63292c5beb6a7f0ceadebc4f34935fc669d89bfa2c6cdf569",
+  "event": 3,
+  "speaker": "e1d6de1e-79bc-4172-a609-fc604264a6e5",
+  "original_human_persons": [
+    "e3984edc-b512-45d7-90da-080dea98cd75",
+    "8647feae-a79d-41ce-a241-d399e0e05ad2"
+  ],
+  "first": "e3984edc-b512-45d7-90da-080dea98cd75",
+  "second": "8647feae-a79d-41ce-a241-d399e0e05ad2",
+  "another_event": null,
+  "speaker_as_mention": null
+}
