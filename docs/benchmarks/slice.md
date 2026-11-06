@@ -6,7 +6,7 @@ CORE-040 的三個執行端共用同一份帶 SHA-256 的 QQ 封包。A 使用�
 
 以安裝了 psutil 的 Python 執行 `python bench/trials.py --source A --optimized B --python V4_PYTHON --library SQLITE_LIBRARY --core-manifest CORE039_MANIFEST --binary CORE_BINARY --out NEW_TRIALS`。預設兩次重複，每個條件 1,200 個測量事件。每次使用新的輸出目錄。再執行 `python bench/trial_report.py NEW_TRIALS NEW_REPORT.json`，由原始封包、日誌及各輪的回執重建報告。完整重放另需本地舊版依賴及相同的 SQLite library。
 
-在 macOS 上，用已驗來源 `b74a91582f22` 完成六次冷暖程序重放，24 個測量事件全部正確。既有十二輪的原始記錄重核得到 14,400／14,400 個正確效果，那批舊記錄缺少 C 執行檔的來源回執。兩批的 SQLite writer 設定一致；實際模型工具宣告仍有差異，速度比較與投資裁決待完整等功能資料。回執在 `artifacts/CORE-040/native-trials-smoke-02/{trial-report,historical-report}.json`。長 Work 與 Compact 的驗證另見同目錄下的專文。
+在 macOS arm64 上，A、B、C 各以冷、暖條件重複兩輪，每個新程序測量 1,200 個事件，14,400 個事件全部交付正確。C 的執行檔已綁定提交 `b74a91582f22a027c7c23d6dcafa8a7336800ba9` 與 CORE-039 manifest。逐輪資源用量及原始記錄雜湊在 `artifacts/CORE-040/native-cold-warm-bound-01/trial-report.json`，SHA-256 `f8ef9111edf8b00849ee9fdfdf3ab74affecc20bf29cf3c3d2b44f3a7ad21385`。A、B、C 的 SQLite writer 設定一致，模型的工具宣告不同，供應商帳單尚缺，速度比較及成本裁決仍待等功能資料。長 Work 與 Compact 的驗證另見同目錄下的專文。
 
 ## 既有環境插件的實際回條
 
