@@ -113,6 +113,29 @@ def event(owner, source, text="original review event"):
 
 
 def run(ctx):
+    # Persist phase boundaries before starting potentially slow operations. A job
+    # killed by the outer deadline can still identify its last unfinished case.
+    timings = []
+    def start(name):
+        timings.append({"name": name, "state": "running"})
+        ctx.write("aux-phase-timings.json", timings)
+        return time.monotonic()
+
+    def finish(started, state):
+        timings[-1].update(state=state, seconds=round(time.monotonic() - started, 3))
+        ctx.write("aux-phase-timings.json", timings)
+
+    def measured(name, fn, *args):
+        started = start(name)
+        try:
+            value = fn(*args)
+        except Exception:
+            finish(started, "failed")
+            raise
+        finish(started, "passed")
+        return value
+
+    started = start("sdk")
     sdk = ctx.working / "sdk"
     built = subprocess.run(
         [
@@ -130,6 +153,8 @@ def run(ctx):
     if built.returncode:
         ctx.write("sdk-failure.json", {"stderr": built.stderr})
     ctx.equal("both packaged SDKs negotiate auxiliary methods", built.returncode, 0)
+    finish(started, "passed")
+    started = start("normal")
     owner = Owner(ctx, "aux-normal", 29)
     with owner.svc.running():
         entry = owner.op(
@@ -237,18 +262,19 @@ def run(ctx):
                 [(1,)],
             )
             ctx.check("denied requests issue no HTTP", upstream.wires.empty())
+    finish(started, "passed")
     proofs = {
         "original": done,
         "page_sha256": page["sha256"],
         "consumer": "installed SDK fixture",
         "physical_attempts": 1,
-        "cuts": cuts(ctx, sdk),
-        "failures": failures(ctx, sdk),
-        "parent": parent_call(ctx, sdk),
-        "segment": parent_call(ctx, sdk, True),
-        "wires": protocols(ctx, sdk),
-        "media": media_input(ctx, sdk),
-        "changed_profile": changed_profile(ctx, sdk),
+        "cuts": measured("cuts", cuts, ctx, sdk),
+        "failures": measured("failures", failures, ctx, sdk),
+        "parent": measured("parent", parent_call, ctx, sdk),
+        "segment": measured("segment", parent_call, ctx, sdk, True),
+        "wires": measured("wires", protocols, ctx, sdk),
+        "media": measured("media", media_input, ctx, sdk),
+        "changed_profile": measured("changed_profile", changed_profile, ctx, sdk),
     }
     proofs["binary_sha256"] = hashlib.sha256(
         (

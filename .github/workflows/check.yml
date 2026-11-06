@@ -2,7 +2,9 @@ name: core-check
 
 on:
   push:
+    branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 permissions:
@@ -10,10 +12,16 @@ permissions:
 
 jobs:
   offline:
+    # Retargeting a stacked PR needs a fresh merge checkout. Title/body edits do not.
+    if: github.event.action != 'edited' || github.event.changes.base != null
+    concurrency:
+      group: core-check-${{ github.event.pull_request.number || github.run_id }}-${{ matrix.os }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-15-intel, ubuntu-latest]
+        # PRs exercise native Apple Silicon; main and manual candidate builds retain Intel.
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["windows-latest","macos-15","ubuntu-latest"]' || '["windows-latest","macos-15-intel","ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:

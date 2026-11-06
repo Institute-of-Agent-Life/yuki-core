@@ -451,3 +451,7 @@ CORE-035 已合入目前 CORE-036 參與策略前置；正常與故障驗證見 
 PR #47 已接入維護分支 d658db3 的 Work 與分發修正。macOS CORE-051、035、039 均通過：051=735, 035=303, 039=84 項；見 `artifacts/CORE-051/maintenance-work-segments-01/` 及 `artifacts/CORE-{035,039}/sessions-work-segments-01/`。依新 head 等六項 CI。
 
 PR #48 已接入 #47 的 Work 與分發修正 8a47f56。macOS 058=321, 051=735, 039=84 項均通過，詳見各卡 `sessions-058-work-main-01/`。等本 head 的六項 CI。
+
+CI 排隊修正（`codex/ci-pr-queue`）：檢查 40 個開放 PR 時，最新提交有 58 個 Intel macOS job 在排隊；16 個 PR 另有 45 個過期 run 仍列為 queued。改為每個 PR 只驗一次 GitHub 產生的合併版本；新提交取代同 PR 舊檢查，轉換基底時重驗。PR 跑 Windows、Linux、Apple Silicon macOS；main 推送、手動完整檢查及 Intel 候選流程保留 Intel Mac。所有原有卡片、斷言及時限不變。SQLite 歷史測試庫按 migration 連同 checksum 一起提交；本機 reader 5、20、29 的 schema／資料相同，注入壞 SQL 會回滾整個未完成 migration。診斷與實測：[本機紀錄](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/queue-triage-01/)。
+
+PR #48 CI：原 Windows PR job `127695758613` 的 CORE-050 在案例上限 360 秒中斷；同提交另一 Windows job 的該步為 210 秒。沿用歷史 migration 交易修正，九段案例現在各寫起迄，逾時也看得出停在哪一段。macOS 與 HJW 的同一來源樹 `8de4b1e2f9d3` 各通過 561 項，九段合計 34.3／54.9 秒（不含編譯），見 `artifacts/CORE-050/pr48-timeout-fix-{mac-02,windows-01}/`。原失敗保留，等新提交的 GitHub 三平台檢查。
