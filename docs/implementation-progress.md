@@ -1,5 +1,7 @@
 # 核心實作進度
 
+PR #44 已整合前置；Mac 005=36、050=561 項通過，回條在各卡 `aux-model-parent-nov06-03/manifest.json`。
+
 來源：任務書 v3.2 核心文檔補核版，ZIP SHA-256
 `79dfd2ba5a8b96f22dea4c5f72a94ca761b15f2e354e33b36c7ecdbedc3ec3ee`。
 舊行為基線：`329ca7c487414d2f54ddd98ff4727446ed2446cd`，舊倉只讀。
@@ -332,5 +334,7 @@ CORE-034 同步 Work 分段的冷 release 編譯預算及超時輸出保留 `e54
 PR #40 整合已合併的 Work 分段 main `ce66753`。Mac 回歸通過：CORE-038 118、CORE-016 184、CORE-012 163 項斷言，產物 `artifacts/CORE-038/segments-main-merge-01/`。推送整合提交後重新計算六項 CI。
 
 PR #43 整合最新前置 `codex/core-038-media`，Mac 回歸 CORE-016、CORE-034、CORE-038 已通過，見 `artifacts/CORE-034/segments-parent-merge-01/`。
+
+PR #43 的 Windows run 42147427157 在 crates.io HTTP/2 載入 siphasher 時出錯，PowerShell 接續準備 SDK，將第一個 cargo 的失敗隱藏，令離線 CORE-005 缺依賴。現在兩個鎖檔均須成功，準備階段使用非 multiplex HTTP，不改離線測試。Mac 驗證：`artifacts/CORE-005/code-locked-download-01/download-gate.json` 注入第一個錯誤後結束碼 16、第二個 fetch 沒執行；`code-locked-deps-owner-01/` 通過。原失敗 ZIP SHA-256 3fa1870cd09660b5102a44bdb740650563235251b9abd537e76b4a3cd8db1aa5，重等六項 CI。
 
 PR #44 最新前置整合後，Mac CORE-034、CORE-050 通過，具名回條在 `artifacts/CORE-050/segments-parent-merge-01/`。
