@@ -93,3 +93,5 @@ CORE-013 目標：`codex/core-013-send-entry`；[原 QQ 目標、時序及界線
 - 外部能力：EXT-004／006 附件授權與 fetch、EXT-020 gVisor/execd/PTY 旋轉、EXT-015 agent_target/附件/SSE、SnowLuma 映像 digest 與雙向包仍待真實方法、版本或證據。
 - 安裝與切換：CORE-043 等 EXT-041 與核心分發／移轉輸入；044 等 EXT-067 B0 實測；045 等 EXT-043 已發布 tuple 與 044；046 等 EXT-044／045 安裝證據；047、053、054 依各前置。CORE-041／042 等 CORE-040 等價切片判斷；不把未滿足前置的卡標完成。
 - 下一個可獨立工作：有效期間乾淨候選已完成；`codex/core-033-connector-auth` 已實作 EXT-011 明確要求的未選 Work 裝置認證，三平台候選已驗，待 EXT-011 對拍。這是核心生產者應補的入口，不列為等待擴展提供的方法。Client9 明選入口／會話已產出候選；接續原 Social Outbound 斷線續讀、附件與 send／workspace 的本倉責任；CORE-040 仍需完整等功能切片。擴展倉保持只讀。
+
+CORE-018 與 CORE-013 交叉驗證：排程私聊、SELF 群聊的文字送達，均對照原 QQ ACK 的操作 ID、事件、對話、Presence 及目的類型。PR #79 與 #81 原 CI 讀取舊回條欄位而失敗；Mac 已驗 103 項，見 `artifacts/CORE-018/schedule-model-receipt-01/manifest.json`。
