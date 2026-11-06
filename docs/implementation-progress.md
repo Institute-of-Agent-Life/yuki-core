@@ -1,5 +1,11 @@
 # 核心實作進度
 
+截至 2026-11-06 04:20（洛杉磯），main 已合併 #83、#39、#40（`5557e35`），三端逐次各驗 36、37、38 卡。回執在 `artifacts/ci/local-pr/{83,39,40}/receipt.json`。#43 的 Linux 回執已完成，仍待完整三端合併檢查。Mac 的舊原生編譯產物和內建 Docker 增量快取合計釋出約 85 GiB；驗證在 `artifacts/ci/cleanup-20261106/`。
+
+CORE-013 `04139ad30742` 檔案及文字回條在本地 Mac／Linux／HJW Windows 各通過 349 項，清單在 `artifacts/CORE-013/file-caption-04139ad30742/{macos,linux,windows}/manifest.json`。Mac、Linux 有本地候選；Windows 在後續 CORE-040 與打包期間中斷，三端候選組待齊。
+
+CORE-040 `a5b7fb71f55b`（`codex/core-040-long-work-matrix`），固定舊版 A／B 與 Rust C 各跑 20 個 Work。60 個 Work 共 360 次模型請求；20 組在初始 QQ 內容、原問題與手機回答的角色、檔案及文字回條等本輪觀察項目均相符。`artifacts/CORE-040/long-work-matrix-C-02/long-work-matrix.json` SHA-256 `78d37cc6547cb486fb3874c1dd92fe25869bab7efd377697d3ebe474ebc1188e`。這一組是 Mac 對照；CORE-040 全切片與效能裁決仍待驗。下一步為完成 #43 的本地合併檢查及 Windows 檔案回條候選。EXT-067 的 `base-consumer-witness.json` 仍是穩定協議凍結的必要輸入。
+
 CORE-013 檔案加文字回條（`codex/core-013-file-send-receipt`）。已確認上傳和文字的原始事件分列，附件綁定原版本雜湊、檔名和大小。固定 v4 A/B 對照完整模型可見回條；先前 Rust 缺少 data，修正後 Mac CORE-040 152 項、CORE-013 348 項通過。預留下一模型請求之後移除原檔版本，實體派發次數維持六次；原三筆 QQ 效果無重送。產物 `artifacts/CORE-040/file-caption-wire-01/` 與 `artifacts/CORE-013/file-caption-withdrawal-01/`。
 
 日常 CI 已於 #83 合併 main `b2cfe37`，Mac mini、同機 Linux ARM64 容器與 HJW Windows 各驗 36 卡；#39 於 main `d74e70e` 各驗 37 卡。合併回執在 `artifacts/ci/local-pr/{83,39}/receipt.json`。Mac 清理已合併分支的舊增量及依賴編譯檔約 64.1 GiB，詳見 `artifacts/ci/cleanup-20261106/`。
