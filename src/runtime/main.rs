@@ -472,7 +472,13 @@ impl Runner {
                 {
                     let reason = error
                         .downcast_ref::<crate::host::composition::Unavailable>()
-                        .map_or("runner_failed", |e| e.0);
+                        .map(|e| e.0)
+                        .or_else(|| {
+                            error
+                                .is::<crate::social::model_receipt::SourceChanged>()
+                                .then_some(crate::social::model_receipt::CHANGED)
+                        })
+                        .unwrap_or("runner_failed");
                     let _ = write(&store, &cfg, Change::Hold(id.clone(), reason.into())).await;
                 }
                 id

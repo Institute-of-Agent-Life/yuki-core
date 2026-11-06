@@ -8,6 +8,8 @@ CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux �
 
 CORE-040 同封包對拍（`codex/core-040-native-arrivals`）：[重現與故障時序](benchmarks/native-arrivals.md)。兩份固定原版與 Rust 各 4 筆輸入／8 次物理 Chat；同一 QQ 訊息的發言者、原始時區、提及、正文、靜態／runtime 提示與模型參數已對齊，修正 Rust 把自身提及顯示為未知成員。Mac 實測 `artifacts/CORE-040/native-arrival-check-03/slice-decision.json`；原 A/B 在 `artifacts/CORE-040/native-arrivals-04/`。尚缺 9 個工具、5 個額外工具、4 個宣告差異，以及原 send 回條；未作完整 E13 投資判斷。下一步補核模型實收的 Social 回條與真擴展工具視圖。
 
+CORE-013 單段文字送達回條（`codex/core-013-model-send-receipt`）：[模型可見字段與撤回競態](model-send-receipt.md)。原版 14 項通過。Mac CORE-013 通過 314 項；CORE-040 的 10 項包含真實第二次 Chat 與舊版實收欄位逐項對拍。CORE-011／012／016／023／014／038／039 各 117／166／184／225／667／318／148 項通過。證據 `artifacts/CORE-*/model-send-receipt-check-05/`。實測在正常預留後撤回正文，原邏輯請求零物理 attempt，沒有重發 QQ。多段和未知送達沿用原有物理狀態。
+
 ## 完成與進行中
 
 已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；CORE-016 分段 #42 已合併至 `ce66753`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。

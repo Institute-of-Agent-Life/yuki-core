@@ -144,10 +144,12 @@ pub(crate) async fn receipt<'a>(
     exec: &str,
     op: &str,
     original: &'a str,
-) -> Result<&'a str> {
-    if presentable(db, exec, op).await? {
-        Ok(original)
-    } else {
-        Ok(r#"{"unavailable":true,"reason":"selected_processor_scope_changed"}"#)
+) -> Result<std::borrow::Cow<'a, str>> {
+    if !presentable(db, exec, op).await? {
+        return Ok(r#"{"unavailable":true,"reason":"selected_processor_scope_changed"}"#.into());
     }
+    if let Some(text) = crate::social::model_receipt::confirmed_text(db, exec, op).await? {
+        return Ok(text.into());
+    }
+    Ok(original.into())
 }

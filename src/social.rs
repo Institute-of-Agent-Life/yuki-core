@@ -1,5 +1,6 @@
 pub mod content;
 pub(crate) mod destination;
+pub(crate) mod model_receipt;
 pub(crate) mod recall;
 pub mod send;
 pub mod split;

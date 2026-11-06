@@ -3,6 +3,8 @@ import hashlib
 import json
 import os
 import select
+import sqlite3
+from contextlib import closing
 from tests.harness.compact import Owner, call, reply
 from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer
@@ -13,6 +15,7 @@ def run(ctx):
     fixture = json.loads((ctx.root/'fixtures/social/v4-send-target.json').read_bytes())
     group = json.dumps(['qq','compact','700'], separators=(',',':'))
     results = []
+    proof = {}
     with Recorder() as model:
         owner.config(model)
         cfg = owner.svc.data/'yuki.toml'
@@ -48,10 +51,20 @@ def run(ctx):
                         qq.send({'status':'ok','retcode':0,'data':{'message_id':8600+len(results)},'echo':packet['echo']})
                     wire,answer=owner.wire(model)
                     observed=json.loads(next(m['content'] for m in wire['messages'] if m.get('tool_call_id')==key))
-                    ctx.equal('paired send receipt for '+key,observed['state'],'confirmed' if action else 'failed')
-                    if not action:
+                    if action:
+                        data=observed['data']
+                        expected=owner.rows("SELECT o.operation_id,d.event,p.entry,p.stage FROM model_tool_intents i JOIN operations o ON o.namespace=i.execution AND o.operation_id=i.operation_id JOIN social_plans p ON p.namespace=o.namespace AND p.operation_id=o.operation_id JOIN social_parts t ON t.namespace=p.namespace AND t.operation_id=p.operation_id JOIN social_outbound a ON a.namespace=t.namespace AND a.child=t.child JOIN personal_deliveries d ON d.outbound=a.id WHERE i.call_id=?", key)
+                        ctx.equal('original model-visible ACK and internal event for '+key,(data['operation_id'],data['original_event_id'],data['original_conversation_id'],data['presence_id']),expected[0])
+                        ctx.equal('actual delivered text, target and success on '+key,
+                                  [observed['ok'],observed['mutation_committed'],observed['retryable'],observed['tool_name'],observed['provider_id'],data['status'],data['action'],data['event_id'],data['target'],data['delivered_text_available'],data['delivered_text']],
+                                  [True,True,False,'send','core','succeeded','send_message',data['original_event_id'],{'kind':target['kind'],'id':target['target_id']},True,key])
+                        proof[key]=data
+                        state='confirmed'
+                    else:
+                        state=observed['state']
+                        ctx.equal('paired refusal for '+key,state,'failed')
                         ctx.equal('refused selection has no physical send',select.select([qq.socket],[],[],0)[0],[])
-                    results.append({'call':key,'target':target,'state':observed['state'],'action':action})
+                    results.append({'call':key,'target':target,'state':state,'action':action})
                 invoke('canonical-group',{'kind':'space','target_id':space,'conversation_id':public,'binding_id':unknown},'send_group_msg')
                 invoke('observed-private',{'kind':'person','target_id':owner.actor,'conversation_id':private,'binding_id':unknown},'send_private_msg')
                 invoke('observed-binding',{'kind':'person','target_id':owner.actor,'binding_id':owner.user['assignment']},'send_private_msg')
@@ -70,6 +83,39 @@ def run(ctx):
                 invoke('work-cannot-expand-group',{'kind':'space','target_id':alt_space,'conversation_id':alt_entry})
                 reply(answer);owner.until(lambda: owner.rows("SELECT id FROM executions WHERE id=? AND state='completed'",delegated))
                 ctx.equal('delegated Work acquired no physical parts',owner.rows('SELECT count(*) FROM social_parts WHERE namespace=?',delegated),[(0,)])
+                # After the provider has read a delivered line, a later paid request would
+                # copy that old tool output. A withdrawn line must stop before dispatch.
+                trigger=owner.human('Check an original text send after recall',group=group)
+                _,answer=owner.wire(model)
+                invoke('original-before-recall',{'kind':'space','target_id':space},'send_group_msg')
+                invoke('later-distinct-send',{'kind':'space','target_id':space},'send_group_msg')
+                captured=proof['original-before-recall'];later=proof['later-distinct-send']
+                execution=owner.rows('SELECT id FROM executions WHERE source=?',trigger)[0][0]
+                attempts=owner.rows('SELECT count(*) FROM model_attempts')[0][0]
+                # Interleave the withdrawal in the real reservation commit (no synthetic
+                # second reservation while a physical request is awaiting its response).
+                with closing(sqlite3.connect(owner.svc.data/'core.sqlite')) as lost:
+                    lost.execute("CREATE TABLE send_receipt_fault(execution TEXT, original_event INTEGER, reserved_logical TEXT)")
+                    lost.execute("INSERT INTO send_receipt_fault VALUES(?,?,NULL)",(execution,captured['original_event_id']))
+                    lost.executescript("""
+                    CREATE TRIGGER test_recall_between_reserve_and_dispatch AFTER INSERT ON model_requests
+                    WHEN NEW.activation=(SELECT 'main:'||execution FROM send_receipt_fault)
+                        AND (SELECT reserved_logical FROM send_receipt_fault) IS NULL
+                    BEGIN
+                      UPDATE social_outbound SET recalled=1,body='{}' WHERE id=(
+                          SELECT outbound FROM personal_deliveries WHERE event=(SELECT original_event FROM send_receipt_fault));
+                      UPDATE send_receipt_fault SET reserved_logical=NEW.id;
+                    END;
+                    """)
+                    lost.commit()
+                reply(answer,calls=[call('after-privacy-change','time_get_current',{})])
+                owner.until(lambda: owner.rows("SELECT diagnostic FROM main_turns JOIN executions x ON x.id=execution WHERE x.id=? AND x.state='held'", execution)==[('send_receipt_source_changed',)])
+                original_logical=owner.rows("SELECT reserved_logical FROM send_receipt_fault")[0][0]
+                ctx.check('normal admission reserved the logical request before the source was withdrawn',bool(original_logical))
+                ctx.equal('no physical attempt can be acquired by that reservation',owner.rows("SELECT count(*) FROM model_attempts WHERE logical=?",original_logical),[(0,)])
+                ctx.equal('old confirmed text cannot leave in a copied Chat body',owner.rows('SELECT count(*) FROM model_attempts'),[(attempts,)])
+                ctx.equal('later ACK is still attached only to its own content',owner.rows("SELECT json_extract(body,'$.message[0].data.text') FROM personal_live_deliveries WHERE event=?",later['original_event_id']),[('later-distinct-send',)])
+                ctx.equal('a held invocation did not redispatch the QQ send',select.select([qq.socket],[],[],0)[0],[])
             finally:
                 qq.close()
-    return {'source_commit':fixture['source_commit'],'oracle_sha256':hashlib.sha256((ctx.root/'fixtures/social/v4-send-target.json').read_bytes()).hexdigest(),'physical_calls':4,'zero_dispatch_refusals':5,'cases':results}
+    return {'source_commit':fixture['source_commit'],'oracle_sha256':hashlib.sha256((ctx.root/'fixtures/social/v4-send-target.json').read_bytes()).hexdigest(),'physical_calls':6,'model_send_receipt':{'schema':'v4-confirmed-single-text','original_anchor':captured['original_event_id'],'later_anchor':later['original_event_id'],'withdrawn_source_held':True,'reserved_dispatch_refused':True,'oracle_sha256':hashlib.sha256((ctx.root/'fixtures/social/v4-model-send-receipt.json').read_bytes()).hexdigest()},'zero_dispatch_refusals':5,'cases':results}

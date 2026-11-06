@@ -76,6 +76,8 @@ def run(ctx):
         "effective Chat options match both original applications",
         diff["request_knobs_equal"],
     )
+    ctx.equal("the actual confirmed text send envelope and data fields agree with the recorded original",
+              send_fields(result),original["original_send_shape"])
     return {
         "scope": original["scope"],
         "v4_source": original["source_commit"],

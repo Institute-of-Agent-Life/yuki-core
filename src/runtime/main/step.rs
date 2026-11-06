@@ -27,6 +27,9 @@ pub async fn prepare(
     ) {
         return Ok(Value::Null);
     }
+    if crate::social::model_receipt::stale(conn, exec, &actor).await? {
+        return hold(conn, exec, crate::social::model_receipt::CHANGED).await;
+    }
     super::segment::begin(conn, exec, policy).await?;
     if let Some(next) =
         crate::context::compact_public::job::recover(conn, cfg, exec, &actor).await?
@@ -120,7 +123,8 @@ pub async fn prepare(
                                 t.try_get("operation_id")?,
                                 t.try_get("paired_receipt")?,
                             )
-                            .await?,
+                            .await?
+                            .as_ref(),
                         )?;
                     }
                     for t in tools {

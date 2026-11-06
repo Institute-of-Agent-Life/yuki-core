@@ -224,7 +224,11 @@ async fn dispatch(conn: &mut SqliteConnection, logical: &str, attempt: &str) -> 
     }
     let meta=sqlx::query("SELECT a.execution,a.profile_contract,r.retry_unbilled,r.native_tools,r.request_json FROM model_requests r JOIN activations a ON a.id=r.activation WHERE r.id=?")
         .bind(logical).fetch_one(&mut *conn).await?;
-    execution::eligible(conn, meta.try_get("execution")?).await?;
+    let execution = meta.try_get("execution")?;
+    let actor = execution::eligible(conn, execution).await?;
+    if crate::social::model_receipt::stale(conn, execution, &actor).await? {
+        return Err(Box::new(crate::social::model_receipt::SourceChanged));
+    }
     let previous=sqlx::query("SELECT ordinal,state,retry_proof FROM model_attempts WHERE logical=? ORDER BY ordinal DESC LIMIT 1")
         .bind(logical).fetch_optional(&mut *conn).await?;
     let ordinal = if let Some(row) = previous {

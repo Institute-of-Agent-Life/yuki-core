@@ -1,0 +1,49 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "original_files": {
+    "src/yuki/social/service.py": "4e2db549b2778157f65a540145ca6ea28e70cc8145e4f75da697d5c9c4d3e7d7",
+    "src/yuki/social/models.py": "4dcd1fa0ded218dde954b506fc069851c81984580be176e012321196f6f22cca",
+    "tests/unit/test_social_receipt_original_anchor.py": "4177de8a0124fec20eb8d850d3f3b58fa3bbff724acf1247ba736b66f5a2078d",
+    "tests/unit/test_social_delivery_integrity.py": "64246fcee76240e2359949092d8e547767308c5a73c16be1019add9b95d4f33f",
+    "tests/integration/test_compact_delivery_e2e.py": "f5cfdac5022437838295a70a6bec140b9a7e0b196ffa0ac1b6e3cc0122c6a57d",
+    "tests/integration/test_canonical_social_history.py": "fe8727222539a1b7a9e8fe06fb54ab742fb72376713a3a7648a3d105e013c0ee"
+  },
+  "cases": [
+    "tests.unit.test_social_receipt_original_anchor::test_missing_original_keeps_receipt_and_cannot_read_next_send",
+    "tests.unit.test_social_delivery_integrity::test_strict_social_receipt_is_uncertain_without_resend_and_upload_stays_independent",
+    "tests.unit.test_social_delivery_integrity::test_receipt_content_projection_uses_internal_event_and_checks_ownership",
+    "tests.unit.test_social_delivery_integrity::test_historical_or_deleted_event_reference_never_reconstructs_content_or_resends",
+    "tests.unit.test_social_delivery_integrity::test_plugin_background_media_uses_only_real_target_without_actor",
+    "tests.unit.test_social_delivery_integrity::test_work_social_delivery_passes_seventeenth_message_and_split_without_replay",
+    "tests.unit.test_social_delivery_integrity::test_deferred_illustration_keeps_selected_target[space]",
+    "tests.unit.test_social_delivery_integrity::test_deferred_illustration_keeps_selected_target[person]",
+    "tests.integration.test_compact_delivery_e2e::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-finish]",
+    "tests.integration.test_compact_delivery_e2e::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[known-finish]",
+    "tests.integration.test_compact_delivery_e2e::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-batch]",
+    "tests.integration.test_compact_delivery_e2e::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-read_then_send]",
+    "tests.integration.test_compact_delivery_e2e::test_real_ordinary_send_keeps_receipt_and_replaces_public_prefix[unknown-p_refused]",
+    "tests.integration.test_canonical_social_history::test_receipt_and_delegated_history_keep_actual_source_grants"
+  ],
+  "junit_sha256": "db7b4b76040afb7b38756109df6d0d2e2b517e207fc7f5c8d620ad0347273497",
+  "succeeded_text_shape": {
+    "ok": "bool",
+    "data": [
+      "action",
+      "delivered_text",
+      "delivered_text_available",
+      "error_category",
+      "event_id",
+      "operation_id",
+      "original_conversation_id",
+      "original_event_id",
+      "presence_id",
+      "status",
+      "target",
+      "text_planned"
+    ],
+    "retryable": "bool",
+    "mutation_committed": "bool",
+    "provider_id": "str",
+    "tool_name": "str"
+  }
+}
