@@ -15,6 +15,18 @@ fn send(out: &mut impl Write, frame: Value) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut trace: Box<dyn Write> = match std::env::var_os("YUKI_HOST_TEST_RUST_STATE") {
+        Some(path) => Box::new(std::fs::File::create(path)?),
+        None => Box::new(io::sink()),
+    };
+    writeln!(trace, "started")?;
+    let status = run(&mut trace);
+    if let Err(error) = &status {
+        writeln!(trace, "peer error: {error}")?;
+    }
+    status
+}
+fn run(trace: &mut impl Write) -> Result<(), Box<dyn std::error::Error>> {
     let binding: Binding = serde_json::from_str(&std::env::var("YUKI_PLUGIN_BINDING")?)?;
     let offer = binding.offer();
     let mut handshake = Peer::new(binding)?;
@@ -30,6 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let reply: Value = serde_json::from_slice(&raw)?;
     let mut calls = Calls::negotiated(&reply["result"])?;
+    writeln!(trace, "negotiated")?;
     let mut waiting = HashMap::new();
     while let Some(raw) = read_frame(&mut stdin)? {
         match calls.receive(&raw)? {

@@ -36,7 +36,7 @@ def main():
                 raise CaseFailure("empty case")
             ctx.write(lock["cards"][args.card]["artifact"], artifact)
     except Exception as error:
-        result["failure"] = str(error)
+        result["failure"] = str(error) or type(error).__name__
         (args.output / "failure.txt").write_text(traceback.format_exc(), encoding="utf-8")
     ctx.write("case-result.json", result)
     return 1 if result["failure"] else 0

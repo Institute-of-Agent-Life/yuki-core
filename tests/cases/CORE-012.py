@@ -131,11 +131,35 @@ def run(ctx):
         def wire():
             try:
                 raw, reply = server.receive()
-            except queue.Empty:
+            except queue.Empty as error:
                 ctx.write("main-timeout.json", {
                     table: rows("SELECT * FROM " + table)
                     for table in ("executions", "main_turns", "main_segments",
                                   "root_budgets", "model_requests", "budget_members")
+                })
+                # Capture the original state before Service.running closes the owner.
+                # These fixtures contain no external provider or user credentials.
+                with closing(sqlite3.connect(
+                    (service.data / "core.sqlite").as_uri() + "?mode=ro", uri=True
+                )) as db:
+                    db.row_factory = sqlite3.Row
+                    diagnostic = {table: [dict(row) for row in db.execute("SELECT * FROM " + table)]
+                                  for table in ("executions", "main_turns", "operations", "model_attempts")}
+                ctx.write("main-wire-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT activation,id FROM model_requests"),
+                })
+                diagnostic["physical_deliveries"] = list(server.deliveries)
+                ctx.write("main-wire-timeout.json", diagnostic)
+                raise AssertionError("physical Main request not received; see main-wire-timeout.json") from error
+            except Exception:
+                ctx.write("main-wire-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT activation,id FROM model_requests"),
                 })
                 raise
             return raw, json.loads(raw), reply
