@@ -578,6 +578,8 @@ CORE-051 整合維護 `402a9aa` 與 main 分發鏈。Mac CORE-051 `maintenance-d
 
 CORE-048 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-048 `sessions-distribution-main-02/`、CORE-039 `profiles-sessions-distribution-main-02/` 通過。候選器保留模型設定 metadata、四協議與獨立 Search／Embedding 的原能力記錄；PR #49 按整合後 head 等六項 CI。前一份 `sessions-distribution-main-01/` 在錯誤的 CORE-049 工作樹執行而缺卡入口，已撤銷該處本輪 merge，未修改 CORE-049。
 CORE-058 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-058 `sessions-distribution-main-01/`、CORE-039 `notifications-sessions-distribution-main-01/` 通過。候選共用打包保留通知合同、SDK 版本及驗證來源，PR #48 按整合後 head 重驗六項 CI。
+
+
 ## CORE-037：實作與三平台候選已驗，PR #51 待 CI
 
 分支 `codex/core-037-control-integration`，實作提交 `1e7b89362b6f806aa11eed841b28071b22151e7e`，已推 [PR #51](https://github.com/Institute-of-Agent-Life/yuki-core/pull/51)。整合 CORE-048 與 CORE-058，Rust 共用控制服務涵蓋角色／SOUL、Person／Binding／Presence、Work、模型設定與單次探測、插件批准／啟停／發現／設定／觀察、trace、usage、原 outbox 安全重排及確定失敗回條。原 paid continuation 與未知效果不取得新重試權。
@@ -704,6 +706,8 @@ CORE-035 已合入目前 CORE-036 參與策略前置；正常與故障驗證見 
 
 PR #47 已接入維護分支 d658db3 的 Work 與分發修正。macOS CORE-051、035、039 均通過：051=735, 035=303, 039=84 項；見 `artifacts/CORE-051/maintenance-work-segments-01/` 及 `artifacts/CORE-{035,039}/sessions-work-segments-01/`。依新 head 等六項 CI。
 
+PR #48 已接入 #47 的 Work 與分發修正 8a47f56。macOS 058=321, 051=735, 039=84 項均通過，詳見各卡 `sessions-058-work-main-01/`。等本 head 的六項 CI。
+
 PR #49 已接入 #47 的 Work 與分發修正 8a47f56。macOS 048=624, 051=735, 039=84 項均通過，詳見各卡 `sessions-048-work-main-01/`。等本 head 的六項 CI。
 
 CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。
@@ -743,6 +747,10 @@ CI 排隊修正（[PR #83](https://github.com/Institute-of-Agent-Life/yuki-core/
 `python ci/suite.py --out <新目錄>` 從 `ci/checks.json` 取完整清單。每台先跑含 release 的卡、fmt、clippy、writer tests、debug／release build；兩個分開的程序執行其餘案例，同一工作內依來源與 SHA-256 綁定編譯證據。快取只供 Cargo 依賴及編譯中間物，仍執行本倉的編譯與測試。卡片的斷言、期限及具名輸出保留。失敗或未跑完時，`suite.json` 列出缺口，整體回非零。SQLite 歷史測試庫分 migration 提交；reader 5、20、29 的 schema／資料相同，注入錯誤可回滾。原 Mac CORE-032 曾等不到 Rust 回呼；兩段獨立案例現在等前一回合完成，失敗時保留操作與預算診斷。佇列與測試紀錄在 [artifacts/ci](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/)。
 
 
+
+PR #48 CI：原 Windows PR job `127695758613` 的 CORE-050 在案例上限 360 秒中斷；同提交另一 Windows job 的該步為 210 秒。沿用歷史 migration 交易修正，九段案例現在各寫起迄，逾時也看得出停在哪一段。macOS 與 HJW 的同一來源樹 `8de4b1e2f9d3` 各通過 561 項，九段合計 34.3／54.9 秒（不含編譯），見 `artifacts/CORE-050/pr48-timeout-fix-{mac-02,windows-01}/`。原失敗保留，等新提交的 GitHub 三平台檢查。
+
+PR #48 完整合併工作樹在 Mac 已驗 44/44 卡、6,520 項斷言，見 `artifacts/ci/pr48-suite-mac-01/suite.json`。此分支目前以 #47 為基底，GitHub 先跑 Linux；轉向 main 時重驗三平台。
 
 PR #79 整合新的 CI 入口。Mac 完整驗證通過 49 張卡，見 `artifacts/ci/pr79-suite-mac-02/suite.json`。第一次複測時 Rust 消費者離線，未取得當次退出原因。CORE-032 現在等待該消費者完成 SDK 握手，並保存握手狀態或退出錯誤。四次獨立啟動均完成實際工具呼叫，見 `artifacts/CORE-032/pr79-startup-probe-01/` 至 `04/`。同步採用 #77 驗過的 Windows Manager 回條讀取方式，HJW 原生 CORE-039 的 150 項驗證見 `artifacts/CORE-039/manager-ready-reader-windows-01/manifest.json`。
 
