@@ -15,6 +15,8 @@
 
 #85 受測合併樹另有三份 CORE-039 原生核心與 SDK 分發包。各端用獨立臨時金鑰驗簽，驗證原執行檔、能力清單、SDK 與依賴。索引在 `artifacts/CORE-039/pr85-02a8bcf9d7c8/verified-candidates.json`，SHA-256 `7e7666cc2674e05b6e8bcc6e1c200fd649d47bd1ca9a9a81becdabc7db2ffb64`。
 
+CORE-039 的獨立驗簽器在 HJW 的 Windows SSH 會話曾停住。已重現 OpenSSH 繼承的舊檔案描述符狀態與新 stdin pipe 衝突，並以原簽名和變造輸入驗證修正。回執在 `artifacts/CORE-039/pr85-02a8bcf9d7c8/{openssh-native-environment,signature-regression-windows}.json`。本次整合的三端回執統一保存於 `artifacts/ci/local-pr/92/`。
+
 **執行中的 CORE-040。** A/B 使用固定舊版和可重現的 B patch，C 走原生 QQ。來源已綁定的一輪冷暖測量共 24／24 個正確事件；舊十二輪重核共 14,400／14,400 個正確事件。完整來源綁定重放另存 `artifacts/CORE-040/native-cold-warm-bound-01/`。已安裝的真實 EXT-020 alpha.1 在 Linux 可回報原 Manager readiness，Mac 原 Manager 拒絕該請求。缺少 Manager 時兩端均續跑。原版的裝置授權及 Shell 查詢尚缺對應宣告。效果、工具集、成本分開記錄；完整等功能與 Rust 投資判斷仍開放。
 
 | 待辦卡 | 下一步需要的輸入 |

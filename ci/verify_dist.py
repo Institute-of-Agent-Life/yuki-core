@@ -61,6 +61,12 @@ def verify_signature(raw, signature_bytes, public_key):
         allowed.write_text(
             "yuki-core " + pub[0] + " " + pub[1] + "\n", encoding="ascii"
         )
+        env = None
+        if os.name == "nt":
+            # sshd can pass its own descriptor table to the session. This child
+            # must read the newly created stdin pipe containing the signed bytes.
+            env = os.environ.copy()
+            env.pop("C28FC6F98A2C44ABBBD89D6A3037D0D9_POSIX_FD_STATE", None)
         check = subprocess.run(
             [
                 "ssh-keygen",
@@ -77,6 +83,8 @@ def verify_signature(raw, signature_bytes, public_key):
             ],
             input=raw,
             capture_output=True,
+            env=env,
+            timeout=20,
         )
         if check.returncode:
             raise ValueError("candidate signature differs from trusted key")
