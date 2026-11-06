@@ -43,13 +43,12 @@ impl Hub {
         ) {
             return Ok(Some(parent));
         }
-        if !row.try_get::<bool, _>("enabled")?
-            || !row.try_get::<bool, _>("online")?
-            || !serde_json::from_str::<Vec<String>>(row.try_get("grants")?)?
-                .iter()
-                .any(|g| g == "gateway.send")
-        {
+        if !row.try_get::<bool, _>("enabled")? || !row.try_get::<bool, _>("online")? {
             return Err("original gateway delivery unavailable".into());
+        }
+        let grants: Vec<String> = serde_json::from_str(row.try_get("grants")?)?;
+        if !grants.iter().any(|g| g == "gateway.send") {
+            return Err(crate::social::destination::Refused("gateway_send_not_granted").into());
         }
         let message: Value = serde_json::from_str(row.try_get("payload")?)?;
         let group: Option<String> = row.try_get("space")?;
@@ -79,7 +78,6 @@ impl Hub {
             return Err("gateway media capability unavailable".into());
         }
         let selected = if let Some(id) = message["artifact_id"].as_str() {
-            let grants: Vec<String> = serde_json::from_str(row.get("grants"))?;
             if !grants.iter().any(|g| g == "media.open") {
                 return Err("original gateway lacks a selected media reader".into());
             }

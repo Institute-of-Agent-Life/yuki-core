@@ -6,7 +6,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from pathlib import Path
-from tests.harness.compact import Owner, reply
+from tests.harness.compact import Owner, call, reply
 from tests.peers.chat.recorder import Recorder
 
 
@@ -38,7 +38,7 @@ def run(ctx, sdk):
     def edit(stmt,*args):
         with closing(sqlite3.connect(o.svc.data/"core.sqlite")) as db:db.execute(stmt,args);db.commit()
     with Recorder() as model:
-        o.config(model)
+        o.config(model, binding=False)
         with o.svc.running():
             for folder,_,_,_ in peers.values():
                 o.until(lambda:(folder/"ready.json").is_file())
@@ -59,6 +59,18 @@ def run(ctx, sdk):
                 ctx.equal("inbound redelivery reuses the same event",submit(folder,target)["event"],event)
                 origin=o.rows("SELECT plugin,stage,json_extract(identity,'$.tenant'),json_extract(locator,'$.native_id') FROM gateway_media_origins WHERE event=?",event)
                 ctx.equal("committed original stage, tenant and native message",origin,[(name,bot,identity["tenant"],"native-message")])
+                if idx == 0:
+                    reply(q, calls=[call("send-without-grant", "send", {"text": "unauthorized outbound"})])
+                    wire, q = o.wire(model)
+                    refused = json.loads(next(m["content"] for m in wire["messages"]
+                                              if m.get("tool_call_id") == "send-without-grant"))
+                    ctx.equal("an ingress-only installation returns a final refusal to Main",
+                              (refused["state"], refused["result"]), ("failed", {"error": "gateway_send_not_granted"}))
+                    ctx.equal("a denied send creates no plan or physical dispatch handles",
+                              o.rows("SELECT count(*) FROM host_calls WHERE execution=? AND method IN ('gateway.plan_send','gateway.dispatch_part')", exec_id),
+                              [(0,)])
+                    ctx.equal("reading the original denied operation returns its immutable receipt",
+                              o.op("effect", "read", exec_id, refused["id"], o.actor)["result"], refused["result"])
                 pin(exec_id,event,0,"pin-good")
                 h=hashlib.sha256(data).hexdigest()
                 ctx.equal("original bound gateway returned selected bytes only",o.rows("SELECT state,digest,segment,acquired_via FROM media_sources WHERE event=? AND slot=0",event),[("cached",h,1,"gateway.media")])
@@ -107,6 +119,6 @@ def run(ctx, sdk):
                 if idx==0:o.finished(event)
                 observations.append({"plugin":name,"source_event":event,"native_sha256":h,"segment_index":first["segment_index"],"chunks":[first["offset"],second["offset"]]})
             ctx.check("same native key selects distinct bytes in two origins",observations[0]["native_sha256"]!=observations[1]["native_sha256"])
-    receipt={"original_oracle_sha256":hashlib.sha256((ctx.root/"fixtures/media/gateway-media-v4.json").read_bytes()).hexdigest(),"method":"gateway.media","grant":"gateway.media","sources":observations,"wrong_tenant_downloads":0,"expired_downloads":0,"changed_deployment_downloads":0,"late_publish":False}
+    receipt={"original_oracle_sha256":hashlib.sha256((ctx.root/"fixtures/media/gateway-media-v4.json").read_bytes()).hexdigest(),"method":"gateway.media","grant":"gateway.media","sources":observations,"wrong_tenant_downloads":0,"expired_downloads":0,"changed_deployment_downloads":0,"late_publish":False,"inbound_only_send":{"state":refused["state"],"result":refused["result"],"gateway_calls":0}}
     ctx.write("gateway-inbound-media.json",receipt)
     return receipt
