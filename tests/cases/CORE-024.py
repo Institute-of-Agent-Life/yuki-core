@@ -57,8 +57,8 @@ def owner(ctx, key):
     return svc, op, ex, human
 
 
-def cfg(peer, dialect, mode="native", strategy="bridge", namespace="search", ttl=600):
-    cfg = f'\n[search]\nmode="{mode}"\nstrategy="{strategy}"\nconnection_id="separate-model"\ncredential_namespace="{namespace}"\ncache_seconds={ttl}\n'
+def cfg(peer, dialect, mode="native", strategy="bridge", namespace="search", ttl=600, max_results=5):
+    cfg = f'\n[search]\nmode="{mode}"\nstrategy="{strategy}"\nconnection_id="separate-model"\ncredential_namespace="{namespace}"\ncache_seconds={ttl}\nmax_results={max_results}\n'
     if peer:
         cfg += f'[search.connection]\nprotocol="{dialect}"\nendpoint="{peer.url}"\nkey_env="YUKI_FIXTURE_SEARCH"\nmodel="fixture"\nname="Native"\nmerge_ms=0\nroot_slots=8\nmax_input_units=400000\nmax_output=1024\nnative_web_search=true\n'
     return cfg
@@ -317,11 +317,13 @@ def exercise(ctx, dialect, old):
 
 
 def normal_main(ctx):
+    from bench.native_arrivals import pack, sha
+
     svc, op, _, human = owner(ctx, "main-bridge")
     env = {**os.environ, "YUKI_FIXTURE_SEARCH": "synthetic-search-only"}
     with Recorder() as main, Recorder(PATHS["openai_responses"]) as native:
         with (svc.data / "yuki.toml").open("a") as f:
-            f.write(cfg(native, "openai_responses", mode="both", strategy="bridge"))
+            f.write(cfg(native, "openai_responses", mode="both", strategy="bridge", max_results=3))
             f.write(
                 f'\n[main]\nendpoint="{main.url}"\nbinding_endpoint="http://127.0.0.1:{main.server.server_port}/binding"\nmodel="main-chat"\nname="Yuki"\nmerge_ms=2\nroot_slots=5\nmax_input_units=400000\nmax_output=1024\n'
             )
@@ -335,39 +337,34 @@ def normal_main(ctx):
                 and sum(t["function"]["name"] == "web_search" for t in msg["tools"])
                 == 1,
             )
-            answer.put(
-                (
-                    {
-                        "choices": [
-                            {
-                                "finish_reason": "tool_calls",
-                                "message": {
-                                    "role": "assistant",
-                                    "content": None,
-                                    "tool_calls": [
-                                        {
-                                            "id": "lookup",
-                                            "type": "function",
-                                            "function": {
-                                                "name": "web_search",
-                                                "arguments": json.dumps(
-                                                    {"query": "tea"}
-                                                ),
-                                            },
-                                        }
-                                    ],
-                                },
-                            }
-                        ]
-                    },
-                    0,
-                )
-            )
+            declared = next(t for t in msg["tools"] if t["function"]["name"] == "web_search")
+            oracle = json.loads((ctx.root / "fixtures/oracle/v4/native-group-contract.json").read_bytes())
+            ctx.equal("configured bridge presents the original E13 search tool",
+                      sha(pack(declared)), oracle["original"]["tools"]["web_search"])
+            calls = [
+                {"id": call_id, "type": "function", "function": {
+                    "name": "web_search", "arguments": json.dumps(arguments),
+                }}
+                for call_id, arguments in [
+                    ("override", {"query": "extra", "max_results": 20}),
+                    ("lookup", {"query": "tea"}),
+                ]
+            ]
+            answer.put(({"choices": [{"finish_reason": "tool_calls", "message": {
+                "role": "assistant", "content": None, "tool_calls": calls,
+            }}]}, 0))
             isolated, answer = native.receive()
             ctx.check(
                 "normal search goes through independent model with no Main prompt",
                 SENTINEL not in isolated and json.loads(isolated)["model"] == "fixture",
             )
+            body = json.loads(isolated)
+            prompt = body["input"][0]["content"]
+            if isinstance(prompt, list):
+                prompt = prompt[0]["text"]
+            provider_query = json.loads(prompt.splitlines()[-1])
+            ctx.equal("only the allowed query reaches native search at the deployment limit",
+                      [provider_query["query"], provider_query["max_results"]], ["tea", 3])
             answer.put((source("openai_responses"), 0))
             raw, answer = main.receive()
             receipt = json.loads(
@@ -377,6 +374,16 @@ def normal_main(ctx):
                     if m.get("tool_call_id") == "lookup"
                 )
             )
+            refused = json.loads(next(
+                m["content"] for m in json.loads(raw)["messages"]
+                if m.get("tool_call_id") == "override"
+            ))
+            ctx.check("model override refused without a native search attempt",
+                      refused["state"] == "failed" and native.wires.empty())
+            ctx.write("search-tool-policy.json", {
+                "original_tool_sha256": sha(pack(declared)), "declared": declared,
+                "provider_request": body, "max_results": 3, "refused_override": refused,
+            })
             ctx.equal(
                 "paid Main continues on the native search receipt",
                 (receipt["state"], receipt["result"]["sources"][0]["url"]),

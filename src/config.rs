@@ -69,10 +69,12 @@ impl Config {
             // The old explicit native_web_search flag remains an opt-in when no search
             // deployment is configured. A configured global policy always bounds it.
             main.bridge_search = false;
+            main.bridge_search_limit = None;
             if let Some(search) = &config.search {
                 main.native_web_search &= search.inline();
                 main.bridge_search =
                     search.bridge() && !(main.protocol.is_messages() && main.native_web_search);
+                main.bridge_search_limit = main.bridge_search.then_some(search.max_results);
             }
             main.validate()?;
             if let Some(name) = &main.code_tool {
