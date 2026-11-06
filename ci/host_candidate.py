@@ -51,6 +51,7 @@ def tested_contents(receipt, profile, personal=False, media=False):
         "evidence/" + proof_name: proof,
         "LICENSE": (ROOT / "LICENSE").read_bytes(),
         "NOTICE": (ROOT / "NOTICE").read_bytes(),
+        "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
     if media:
@@ -128,7 +129,7 @@ def tested_contents(receipt, profile, personal=False, media=False):
         directory = Path(sandbox) / "data"
         for command in ("init", "doctor"):
             result = subprocess.run(
-                [str(exe), "--data", str(directory), command],
+                [str(exe), "--data", str(directory), command, *(["--memory-mode","lexical-only"] if command=="init" else [])],
                 cwd=sandbox,
                 env=env,
                 capture_output=True,

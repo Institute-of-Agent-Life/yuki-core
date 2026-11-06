@@ -113,6 +113,15 @@
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
     },
+    "CORE-029": {
+      "case":"tests/cases/CORE-029.py","artifact":"authorized-topk.json","timeout_seconds":300,"rust":true,
+      "capabilities":["authorized-exact-hybrid-ranking","scoped-result-freshness","event-time-memory-filter"]
+    },
+    "CORE-028": {
+      "case":"tests/cases/CORE-028.py", "artifact":"vector-coverage.json",
+      "timeout_seconds":240, "rust":true,
+      "capabilities":["profile-scoped-document-vectors","immutable-embedding-attempts","privacy-bounded-query-cache"]
+    },
     "CORE-027": {
       "case":"tests/cases/CORE-027.py","artifact":"extraction-batches.json","timeout_seconds":330,"rust":true,
       "capabilities":["scoped-live-extraction","paid-batch-recovery","atomic-extraction-watermark"]

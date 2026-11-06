@@ -35,7 +35,10 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Action {
-    Init,
+    Init {
+        #[arg(long, value_enum, default_value = "hybrid")]
+        memory_mode: memory::embedding::Mode,
+    },
     Migrate,
     Doctor,
     Run,
@@ -57,8 +60,13 @@ async fn ready(State(store): State<store::Store>) -> (StatusCode, Json<serde_jso
         Json(json!({"ready":ready})),
     )
 }
-async fn health(State(store): State<store::Store>) -> Json<store::Health> {
-    Json(store.health().await)
+async fn health(State(store): State<store::Store>) -> Json<serde_json::Value> {
+    let mut health = json!(store.health().await);
+    health["memory"] = match memory::embedding::status(&store).await {
+        Ok(v) => json!({"mode":v["mode"],"degraded":v["degraded"].as_bool().unwrap_or(false)}),
+        Err(_) => json!({"degraded":true}),
+    };
+    Json(health)
 }
 
 async fn close_writer(store: &store::Store) {
@@ -74,8 +82,8 @@ async fn close_writer(store: &store::Store) {
 async fn execute(args: Args) -> Result<()> {
     let data = args.data.ok_or("--data is required")?;
     match args.command {
-        Action::Init => {
-            let owner = config::init(&data)?;
+        Action::Init { memory_mode } => {
+            let owner = config::init(&data, memory_mode)?;
             let version = store::bootstrap(&owner.data).await?;
             println!(
                 "{}",
@@ -110,6 +118,7 @@ async fn execute(args: Args) -> Result<()> {
             store.work_segments = config.work_segments;
             store.media = Some(media::Runtime::open(&owner.data, config.media)?);
             media::recover(&store).await?;
+            let vectors = memory::embedding::start(&mut store, config.memory).await?;
             let extraction = memory::extract::start(store.clone(), config.extraction).await?;
             store.search = model::search::start(config.search)?;
             let qq = gateway::qq::Hub::new(store.clone(), config.qq, &owner.data).await?;
@@ -155,6 +164,10 @@ async fn execute(args: Args) -> Result<()> {
             }).await;
             if let Some(host) = &store.host {
                 host.stop().await;
+            }
+            if let Some(worker) = vectors {
+                worker.abort();
+                let _ = worker.await;
             }
             media.abort();
             let _ = media.await;

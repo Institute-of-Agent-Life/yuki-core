@@ -208,6 +208,87 @@
         ],
         "additionalProperties": false
       }
+    },
+    {
+      "name": "search_memory",
+      "description": "按自然语言搜索有来源的长期记忆。无 target 时搜索本次主体有权读取的全部历史人物、人物群、群及可见 SELF；当前群或提及不自动缩小范围。仅明确限定目标时填写 target，姓名和群名须精确；歧义先澄清，拒绝不换范围重试。结果有界且可能非穷尽，缺证据可改用不同查询补查。原始聊天用 query_chat_history(view=search)。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "person",
+                  "group",
+                  "self"
+                ]
+              },
+              "subject_ref": {
+                "type": "string",
+                "description": "本轮事件人物引用：current_speaker、member_{person_id} 或 replied_message_author"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "person_id": {
+                "type": "string"
+              },
+              "space_id": {
+                "type": "string"
+              },
+              "space_name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "background",
+              "continuation",
+              "recall",
+              "verify",
+              "correct"
+            ]
+          },
+          "start_at": {
+            "type": "string",
+            "description": "带时区 ISO-8601 起点（包含）。当地某一天从当地00:00开始；转换为 UTC 后不要保留原时区偏移。今天/昨天按当前时间上下文换算。"
+          },
+          "end_at": {
+            "type": "string",
+            "description": "带时区 ISO-8601 终点（不包含），例如次日零点"
+          },
+          "temporal_constraint": {
+            "type": "string",
+            "enum": [
+              "strict",
+              "soft"
+            ],
+            "description": "有时间边界默认 strict；明确日期必须严格，不混入旧经历或时间未知项。soft 仅用于宽泛偏好，空结果不得自动放宽。"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      }
     }
   ]
 }

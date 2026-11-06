@@ -28,7 +28,7 @@ def run(ctx):
     rows_seen = []
     for profile in ("mix", "no-mix", "local"):
         svc = Service(ctx, ctx.working / profile)
-        svc.command("init")
+        svc.command("init", "--memory-mode", "lexical-only")
 
         def op(*args):
             return svc.command("operator", *map(str, args))

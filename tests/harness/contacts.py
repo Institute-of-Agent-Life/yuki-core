@@ -23,7 +23,7 @@ def run(ctx):
             [(canonical,)],
         )
     svc = Service(ctx, ctx.working / "real-contacts")
-    svc.command("init")
+    svc.command("init", "--memory-mode", "lexical-only")
 
     def op(*args):
         return svc.command("operator", *map(str, args))

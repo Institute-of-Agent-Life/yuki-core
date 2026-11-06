@@ -66,7 +66,7 @@ def run(ctx):
             [(1, None, '{"verified":true}')],
         )
     service = Service(ctx, ctx.working / "data")
-    service.command("init")
+    service.command("init", "--memory-mode", "lexical-only")
     actor = "00000000-0000-4000-8000-000000000012"
 
     def op(*args, ok=True):
@@ -123,13 +123,40 @@ def run(ctx):
     with Recorder() as server:
         with (service.data / "yuki.toml").open("a") as cfg:
             cfg.write(
-                f'\n[main]\nendpoint="{server.url}"\nbinding_endpoint="{server.url.removesuffix("/v1/chat/completions")}/binding"\nmodel="fixture-chat"\nname="Yuki"\nmerge_ms=450\nroot_slots=6\nmax_input_units=100000\nmax_output=128\n'
+                f'\n[main]\nendpoint="{server.url}"\nbinding_endpoint="{server.url.removesuffix("/v1/chat/completions")}/binding"\nmodel="fixture-chat"\nname="Yuki"\nmerge_ms=450\nroot_slots=6\nmax_input_units=1000000\nmax_output=128\n'
             )
         soul = service.data / "SOUL.md"
         soul.write_text("hello {{name}}; literal {{other}}", encoding="utf-8")
 
         def wire():
-            raw, reply = server.receive()
+            try:
+                raw, reply = server.receive()
+            except queue.Empty as error:
+                # Capture the original state before Service.running closes the owner.
+                # These fixtures contain no external provider or user credentials.
+                with closing(sqlite3.connect(
+                    (service.data / "core.sqlite").as_uri() + "?mode=ro", uri=True
+                )) as db:
+                    db.row_factory = sqlite3.Row
+                    diagnostic = {table: [dict(row) for row in db.execute("SELECT * FROM " + table)]
+                                  for table in ("executions", "main_turns", "operations", "model_attempts")}
+                ctx.write("main-wire-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT activation,id FROM model_requests"),
+                })
+                diagnostic["physical_deliveries"] = list(server.deliveries)
+                ctx.write("main-wire-timeout.json", diagnostic)
+                raise AssertionError("physical Main request not received; see main-wire-timeout.json") from error
+            except Exception:
+                ctx.write("main-wire-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT activation,id FROM model_requests"),
+                })
+                raise
             return raw, json.loads(raw), reply
 
         with service.running():

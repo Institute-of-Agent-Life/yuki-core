@@ -30,6 +30,7 @@ fn options(data: &Path) -> SqliteConnectOptions {
 }
 
 pub async fn bootstrap(data: &Path) -> Result<i64> {
+    crate::memory::index::register()?;
     let mut connection = SqliteConnection::connect_with(
         &options(data)
             .create_if_missing(true)
@@ -61,6 +62,7 @@ pub enum Mutation {
     Tool(Box<crate::tools::Change>),
     Work(Box<crate::work::Call>),
     WorkSignal(crate::work::signal::Action),
+    Vector(Box<crate::memory::embedding::Change>),
     Media(Box<crate::media::Change>),
     Extraction(Box<crate::memory::extract::Change>),
     Memory(Box<crate::memory::Change>),
@@ -100,16 +102,22 @@ struct SqliteDriver {
     data: PathBuf,
     connection: Option<SqliteConnection>,
     close_uncertain: bool,
+    has_reference_index: bool,
 }
 impl SqliteDriver {
     async fn open(data: &Path) -> Result<Self> {
-        let connection = SqliteConnection::connect_with(
+        let mut connection = SqliteConnection::connect_with(
             &options(data)
                 .journal_mode(SqliteJournalMode::Wal)
                 .synchronous(SqliteSynchronous::Full),
         )
         .await?;
+        let has_reference_index =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM retrieval_profiles)")
+                .fetch_one(&mut connection)
+                .await?;
         Ok(Self {
+            has_reference_index,
             data: data.into(),
             connection: Some(connection),
             close_uncertain: false,
@@ -138,6 +146,13 @@ impl Driver for SqliteDriver {
             }
             Mutation::Host(change) => {
                 return crate::host::domain::apply(self.connection(), change).await;
+            }
+            Mutation::Vector(change) => {
+                if matches!(**change, crate::memory::embedding::Change::OpenReference(_)) {
+                    self.has_reference_index = true;
+                }
+
+                return crate::memory::embedding::apply(self.connection(), change).await;
             }
             Mutation::Extraction(change) => {
                 return crate::memory::extract::apply(self.connection(), change).await;
@@ -238,6 +253,9 @@ impl Driver for SqliteDriver {
         )
     }
     async fn commit(&mut self) -> Result<()> {
+        if self.has_reference_index {
+            crate::memory::index::sync(self.connection()).await?;
+        }
         #[cfg(test)]
         tests::commit_barrier("before").await;
         sqlx::query("COMMIT").execute(self.connection()).await?;
@@ -285,6 +303,7 @@ enum Command {
 pub struct Store {
     pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
+    pub vectors: Option<Arc<crate::memory::embedding::Engine>>,
     pub search: Option<Arc<crate::model::search::Engine>>,
     pub main: Option<Arc<crate::runtime::main::Config>>,
     pub work_segments: crate::runtime::main::segment::Config,
@@ -369,6 +388,7 @@ impl Store {
             let _ = driver.close().await;
         });
         Self {
+            vectors: None,
             media: None,
             search: None,
             main: None,

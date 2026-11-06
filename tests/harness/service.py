@@ -41,7 +41,7 @@ class Service:
 
 def previous_schema(ctx, data, version):
     data.mkdir()
-    (data / "yuki.toml").write_text('format_version = 1\nlisten = "127.0.0.1:0"\n')
+    (data / "yuki.toml").write_text('format_version = 1\nlisten = "127.0.0.1:0"\n[memory]\nmode="lexical-only"\n')
     with closing(sqlite3.connect(data / "core.sqlite")) as db:
         db.executescript("""
             CREATE TABLE _sqlx_migrations(version BIGINT PRIMARY KEY, description TEXT NOT NULL,
@@ -53,7 +53,9 @@ def previous_schema(ctx, data, version):
             if int(sequence) > version:
                 continue
             sql = file.read_bytes()
-            db.executescript(sql.decode())
+            # Install one historical migration and its checksum atomically.
+            # Without BEGIN each DDL statement flushes its own disk journal.
+            db.executescript("BEGIN;\n" + sql.decode())
             db.execute("INSERT INTO _sqlx_migrations(version,description,success,checksum,execution_time) VALUES(?,?,1,?,0)",
                        (int(sequence),description.replace("_"," "),hashlib.sha384(sql).digest()))
-        db.commit()
+            db.commit()

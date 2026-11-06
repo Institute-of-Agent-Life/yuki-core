@@ -1,4 +1,4 @@
-mod source;
+pub(super) mod source;
 mod writer;
 use crate::{
     Result,

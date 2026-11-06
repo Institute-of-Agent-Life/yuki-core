@@ -250,12 +250,14 @@ program={json.dumps(sys.executable)}
 args={argv("observer")}
 grants=["observe.metadata","tool.call"]
 """
-    cfg += f'\n[[plugins]]\nid="rust.sample"\nnamespace="rust.fixture"\nprogram={json.dumps(str(rust_binary))}\ngrants=["tool.call"]\n[[plugins.tools]]\nname="rust_host_probe"\ndescription="Probe installed Rust SDK."\nparallel_read=false\ncacheable=false\ncode_direct=true\nschema={{type="object",properties={{value={{type="string"}}}},required=["value"],additionalProperties=false}}\n'
+    rust_trace = ctx.output / "rust-peer-state.txt"
+    cfg += f'\n[[plugins]]\nid="rust.sample"\nnamespace="rust.fixture"\nprogram={json.dumps(str(rust_binary))}\nenv=["YUKI_HOST_TEST_RUST_STATE"]\ngrants=["tool.call"]\n[[plugins.tools]]\nname="rust_host_probe"\ndescription="Probe installed Rust SDK."\nparallel_read=false\ncacheable=false\ncode_direct=true\nschema={{type="object",properties={{value={{type="string"}}}},required=["value"],additionalProperties=false}}\n'
     environment = {
         **os.environ,
         "YUKI_HOST_QQ_TEST": "fixture-native-qq",
         "YUKI_PARENT_SENTINEL": "fixture-hidden",
         "YUKI_HOST_TEST_PUBLIC": "fixture-public",
+        "YUKI_HOST_TEST_RUST_STATE": str(rust_trace),
     }
     with Recorder() as peer:
         cfg += f'\n[main]\nendpoint="{peer.url}"\nmodel="fixture-host"\nname="Yuki"\nmerge_ms=0\nroot_slots=5\nmax_input_units=200000\nmax_output=128\n'
@@ -278,6 +280,8 @@ grants=["observe.metadata","tool.call"]
                     ready["allowlisted"],
                     "fixture-public" if who == "tg" else None,
                 )
+            until(lambda: rust_trace.is_file() and "negotiated" in rust_trace.read_text().splitlines(),
+                  "Rust consumer negotiated its installed SDK")
             first = frame("obs", "private source material", False)
             observation = record("tg", "gateway.inbound", first)["result"]
             same = record("tg", "gateway.inbound", first)["result"]
@@ -483,6 +487,10 @@ grants=["observe.metadata","tool.call"]
                 in record("tg", "tool.status", {"handle": handle, "admin": True}),
             )
             q.put((reply(), 0))
+            # Queueing an HTTP reply is not a commit. Each independent SDK scenario
+            # starts on a new turn, after the preceding owner has actually settled.
+            until(lambda: rows("SELECT id FROM executions WHERE source=? AND state='completed'", incoming["event"]),
+                  "original Python SDK turn settled")
             rust_source = record(
                 "tg",
                 "gateway.inbound",
@@ -490,11 +498,32 @@ grants=["observe.metadata","tool.call"]
             )["result"]
             ctx.check("original human admitted for Rust SDK", rust_source["accepted"])
             raw, q = peer.receive()
+            ctx.check("Rust probe answers the second original model request",
+                      "second independent consumer" in json.dumps(json.loads(raw)["messages"]))
             q.put((reply([tool("rust_host_probe", "rust-1", {"value": "rust"})]), 0))
-            follow, q = peer.receive()
-            rust_result = json.loads(json.loads(follow)["messages"][-1]["content"])[
-                "result"
-            ]["data"]
+            try:
+                follow, q = peer.receive()
+            except Exception:
+                ctx.write("host-rust-followup-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "intents": rows("SELECT * FROM model_tool_intents"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT id,root,estimated_input,max_output FROM model_requests"),
+                    "attempts": rows("SELECT id,state,diagnostic FROM model_attempts"),
+                    "calls": rows("SELECT method,state FROM host_calls"),
+                })
+                raise
+            rust_envelope = json.loads(json.loads(follow)["messages"][-1]["content"])
+            if "data" not in rust_envelope.get("result", {}):
+                ctx.write("host-rust-result-diagnostic.json", {
+                    "result": rust_envelope,
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "calls": rows("SELECT plugin,method,state FROM host_calls"),
+                    "plugins": rows("SELECT plugin,enabled,online,generation FROM host_installations"),
+                })
+            rust_result = rust_envelope["result"]["data"]
             ctx.check(
                 "installed Rust SDK handles interleaved opposite-direction status",
                 rust_result["rust_sdk"]
@@ -502,6 +531,8 @@ grants=["observe.metadata","tool.call"]
                 and rust_result["original"] == {"value": "rust"},
             )
             q.put((reply(), 0))
+            until(lambda: rows("SELECT id FROM executions WHERE source=? AND state='completed'", rust_source["event"]),
+                  "original Rust SDK turn settled")
             (areas["tg"] / "cut-second").touch()
             second = record("tg", "gateway.inbound", frame("send", "send test", True))[
                 "result"

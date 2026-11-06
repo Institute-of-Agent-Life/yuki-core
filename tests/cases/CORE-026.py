@@ -363,7 +363,7 @@ def paid_memory(ctx):
     from tests.peers.chat.recorder import Recorder
 
     svc = Service(ctx, ctx.working / "paid")
-    svc.command("init")
+    svc.command("init", "--memory-mode", "lexical-only")
     person = "00000000-0000-4000-8000-000000000426"
 
     def op(*args, ok=True):
