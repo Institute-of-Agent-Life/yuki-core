@@ -8,6 +8,8 @@ CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux �
 
 CORE-040 同封包對拍（`codex/core-040-native-arrivals`）：[重現與故障時序](benchmarks/native-arrivals.md)。兩份固定原版與 Rust 各 4 筆輸入／8 次物理 Chat；同一 QQ 訊息的發言者、原始時區、提及、正文、靜態／runtime 提示與模型參數已對齊，修正 Rust 把自身提及顯示為未知成員。Mac 實測 `artifacts/CORE-040/native-arrival-check-03/slice-decision.json`；原 A/B 在 `artifacts/CORE-040/native-arrivals-04/`。尚缺 9 個工具、5 個額外工具、4 個宣告差異，以及原 send 回條；未作完整 E13 投資判斷。下一步補核模型實收的 Social 回條與真擴展工具視圖。
 
+[PR #78](https://github.com/Institute-of-Agent-Life/yuki-core/pull/78) 固定來源 `8dfa2ae520dba4063ab80fb4d6e907b6eae369c5`：乾淨 HJW Windows、Mac、Linux 各 9 項；`artifacts/CORE-040/native-arrival-clean-01/verified-platforms.json` SHA-256 `786f796b6b9719c116ae39f9561d03f3c1ca1cc03f0826781e60df779d2231e5`。另以相同封包重跑完整 E13：A、B、C 各 1200 筆、2400 次實體 Chat、1200 段送達和 1200 筆原出站記錄。逐筆外部效果索引 `artifacts/CORE-040/native-e13-effects-01/external-effects.json` SHA-256 `fb3e6163cc2aca637cb03a90e6cb731021ac9fbe4f0f9865dfd1c778ac3c7c8b`；同時執行，只核效果。
+
 CORE-013 單段文字送達回條（`codex/core-013-model-send-receipt`）：[模型可見字段與撤回競態](model-send-receipt.md)。原版 14 項通過。Mac CORE-013 通過 314 項；CORE-040 的 10 項包含真實第二次 Chat 與舊版實收欄位逐項對拍。CORE-011／012／016／023／014／038／039 各 117／166／184／225／667／318／148 項通過。證據 `artifacts/CORE-*/model-send-receipt-check-05/`。實測在正常預留後撤回正文，原邏輯請求零物理 attempt，沒有重發 QQ。多段和未知送達沿用原有物理狀態。
 
 CORE-013 未發布候選（PR #79，來源 `9597513f82d3f42a4ababcb750362bf15326ac98`；schema 51，SDK alpha.14）：HJW Windows、macOS、Linux 各通過 314 項。交接清單 `artifacts/CORE-013/send-receipt-handoff-final-01/verified-candidates.json`，SHA-256 `e0fb3ed1562270cf8e75b8b796653b900e0063ee689105475c13f9aaed290bdc`；內含各 ZIP 的絕對路徑、SHA-256 及逐檔驗證記錄。
