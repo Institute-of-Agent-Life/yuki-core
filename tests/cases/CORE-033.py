@@ -1,5 +1,6 @@
 """Real owner HTTP and packaged local SDK. No contact with public QQ users or external services."""
 
+import errno
 import hashlib
 import json
 import os
@@ -52,9 +53,21 @@ class Plugin:
         )
         t.replace(path)
         output = self.folder / f"out-{self.seq}.json"
-        self.owner.until(output.is_file)
-        res = json.loads(output.read_bytes())
+        def read_response():
+            try:
+                return output.read_bytes()
+            except FileNotFoundError:
+                return None
+            except PermissionError as exc:
+                if os.name == "nt" and exc.errno == errno.EACCES:
+                    return None
+                raise
+
+        # A newly renamed reply may be visible but briefly unreadable on Windows.
+        # Wait for the same bytes. The original command has already been sent.
+        res = json.loads(self.owner.until(read_response))
         output.unlink()
+        self.owner.ctx.equal("SDK reply belongs to the original request", res["id"], self.seq)
         self.owner.ctx.equal(
             "SDK " + method + " " + ("accepted" if ok else "denied"),
             "result" in res,
