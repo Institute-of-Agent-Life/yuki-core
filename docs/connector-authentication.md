@@ -27,3 +27,5 @@ handle 有效 300 秒。消費者到期前重新交換 proof 並 `device.connect
 擴展在接受 catalog、派發／接收原 native 操作及處理異步回調前，用當前 handle 重新 check 並核本地綁定的 epoch。一次 check 只證明該時點的裝置授權，未授予未來任意業務效果；Work 回流仍以既有 Work handle／原操作鍵及 native ack 合同核驗。舊連線晚到的資料由擴展拒絕，核心不保存 instance／catalog。關閉已到期或舊 epoch 回拒絕，不能拿它關閉新連線。
 
 新增可選方法由 Rust SDK `1.0.0-alpha.12`、Python SDK `1.0.0a12` 分發；Host 2／handshake 1 保持相容，reader 46 僅新增授權表。原版 oracle 為八項實際身份測試；CORE-033 以獨立安裝 SDK、真 HTTP 憑據及三個子程序覆蓋上述正常／故障時序。正式 EXT-011 消費證據仍待擴展用此候選取得。
+
+首次乾淨來源 `3e4080d` 在 HJW 完成 369 項斷言，但打包後清理測試執行檔遇到 Windows sharing violation，沒有產出 Windows ZIP。修正保留系統回報的原始錯誤，只在清理時限內重試 WinError 32。HJW 持有真實不可刪除的檔案控制代碼，驗證釋放後可清理；持續鎖定和其他權限錯誤仍失敗。證據：`artifacts/CORE-039/portable-cleanup-windows-lock-01/file-lock.json` 及 `portable-cleanup-mac-01/manifest.json`。

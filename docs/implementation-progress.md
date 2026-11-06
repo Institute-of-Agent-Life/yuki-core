@@ -25,7 +25,7 @@ CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；�
 | CORE-026 metadata | PR #63，`f5855e5` | Windows／Linux／Mac 乾淨候選各 370 項；9 張相鄰卡、原版 7 項與逐 ZIP 成員檢查通過；reader 44，尚未發布。 |
 | CORE-026 selector | PR #64，`fed00d2` | Windows／Linux／Mac 乾淨候選各 823 項；原版 9 組、5 張相鄰卡及逐 ZIP 檢查通過，尚未發布。 |
 | CORE-026 有效期間 | PR #65，`6d47464`，`codex/core-026-memory-temporal` | Windows／Linux／Mac 各 1181 項；7 張相鄰卡、72 組原解析、8 步原修改及逐 ZIP 檢查通過。reader 45，尚未發布。 |
-| CORE-033 未選 Work 認證 | `codex/core-033-connector-auth`，本次提交 | Mac 369 項、原版 8 項與 6 張相鄰卡通過。reader 46，SDK alpha.12／a12；乾淨三平台候選接續。 |
+| CORE-033 未選 Work 認證 | PR #66，`3e4080d`，`codex/core-033-connector-auth` | 三平台各 369 項、原版 8 項與 6 張相鄰卡通過。首次 HJW 打包因 Windows 執行檔鎖失敗；已驗清理修正，三平台新候選待核。reader 46，SDK alpha.12／a12。 |
 | CORE-040 | #55 `400c9b8`，部分完成 | 12 次冷暖 A/B/C 各 1200 輸入已逐筆核效果；完整工具／DTO／Compact 等價與受控資源比較未完成，不判 Rust 勝出。 |
 
 每個 PR 均等其前置合併與最新 head 的 push／PR × Windows／Linux／Mac 六項檢查全通過才合併。待合併分支以 PR 的 head ref 為準；本地 worktree 在 `.cache/worktrees/`。不直接提交 main。

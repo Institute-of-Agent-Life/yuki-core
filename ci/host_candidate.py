@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import platform
+import shutil
 import subprocess
 import tempfile
 import time
@@ -31,11 +32,14 @@ def cleanup_workspace(cleanup, timeout=5):
 
 @contextmanager
 def portable_workspace():
-    workspace = tempfile.TemporaryDirectory(prefix="yuki-host-candidate-")
+    workspace = tempfile.mkdtemp(prefix="yuki-host-candidate-")
     try:
-        yield workspace.name
+        yield workspace
     finally:
-        cleanup_workspace(workspace.cleanup)
+        # TemporaryDirectory retries unlink via directory recursion, hiding a
+        # sharing violation on an executable behind Windows error 267. Keep
+        # the original rmtree error for our bounded, cleanup-only retry.
+        cleanup_workspace(lambda: shutil.rmtree(workspace))
 
 
 def tested_contents(receipt, profile, personal=False, card=None):
