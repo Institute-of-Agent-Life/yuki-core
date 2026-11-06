@@ -2,7 +2,7 @@
 
 2026-11-06。固定 v4 行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；任務書工作副本的 CORE-011 已採用 K05 的邏輯請求預留規則。下列證據路徑相對於 yuki-core 工作目錄。
 
-**48 張卡已完成，CORE-044 已通過三端驗收，正待公開發布。** CORE-001–039、048–052、055–058 已完成。CORE-040 有部分驗收；其餘 8 張的前置輸入見下表。[逐卡分支與原產物](https://github.com/Institute-of-Agent-Life/yuki-core/blob/8555755a439b0e67bdda6f00673eaed2ab7502a0/docs/implementation-progress.md)，[先前候選、回放與清理明細](https://github.com/Institute-of-Agent-Life/yuki-core/blob/e680fc23847c8460639294eef7448d27d465b79c/docs/implementation-progress.md)。
+**核心任務已完成 49／58 張。** CORE-001–039、044、048–052、055–058 已完成。CORE-040 已取得部分驗收證據，剩餘 9 張的交接條件見下表。[逐卡分支與原產物](https://github.com/Institute-of-Agent-Life/yuki-core/blob/8555755a439b0e67bdda6f00673eaed2ab7502a0/docs/implementation-progress.md)，[先前候選、回放與清理明細](https://github.com/Institute-of-Agent-Life/yuki-core/blob/e680fc23847c8460639294eef7448d27d465b79c/docs/implementation-progress.md)。
 
 | 已合併 PR | head | main 合併提交 | 本地 Mac／Linux／HJW Windows |
 |---|---|---|---|
@@ -16,16 +16,17 @@
 | #99 | `4860314c2e8e` | `c6bd0c75e387` | 各 50 卡 |
 | #100 | `681c22435609` | `f948f2b1cc7a` | 各 50 卡 |
 | #101 | `80de38b9183a` | `4c4ac2348e4d` | 各 50 卡 |
+| #102 | `5cfff6988eb4` | `459f845146c0` | 各 50 卡 |
 
-各 PR 的受測合併提交、三端逐卡雜湊在 `artifacts/ci/local-pr/<PR>/receipt.json`。#99 的回執 SHA-256 為 `5abbfe3d54fe3aea254dd96a9a9bc3ed2e61a108078d2c9ca204aea97a811969`。#100 的回執 SHA-256 為 `3da2d2ed7b847f79f437bf8aece3602dec77fd891dbf48140a9100c529a6feeb`。#101 的回執 SHA-256 為 `c40e5f62f60902adaf3d73b875bee00ae410644b9bfc1d1b608ba9f2452858ca`。41 個已整合的堆疊 PR 均逐一核對 head 已進入 main，並核驗 147 份清單；見 `artifacts/ci/pr-reconciliation-20261106/closed-41-confirmed.json`。
+各 PR 的受測合併提交、三端逐卡雜湊在 `artifacts/ci/local-pr/<PR>/receipt.json`。#99 的回執 SHA-256 為 `5abbfe3d54fe3aea254dd96a9a9bc3ed2e61a108078d2c9ca204aea97a811969`。#100 的回執 SHA-256 為 `3da2d2ed7b847f79f437bf8aece3602dec77fd891dbf48140a9100c529a6feeb`。#101 的回執 SHA-256 為 `c40e5f62f60902adaf3d73b875bee00ae410644b9bfc1d1b608ba9f2452858ca`。#102 的回執 SHA-256 為 `71aadf32e4ba5e60c7faa1ac1f1b32d7f3be1d37e746bc53f7c033f3025a22da`。41 個已整合的堆疊 PR 均逐一核對 head 已進入 main，並核驗 147 份清單；見 `artifacts/ci/pr-reconciliation-20261106/closed-41-confirmed.json`。
 
-**三端開發候選。** #101 原生 Host 來源 `9e0b6a039e5fc04c84a47dc031399418498821d0`，實際合併樹相同。資料庫 reader 54、握手 schema 1、Host schema 2、Rust SDK 1.0.0-alpha.14、Python SDK 1.0.0a14。共 14 個實作方法，完整包路徑與驗簽結果見 `artifacts/CORE-039/pr101/verified-candidates.json`（SHA-256 `7856006d4e6a52545aa8da36a38cc5e3261adc27aa17bcf84587b4590ad582e5`）。
+**三端開發候選（本地未發布）。** #102 原生 Host 來源 `c942da9d39e0e237908cf3a5b9345c6fb1239a2c`，實際合併樹相同。資料庫 reader 54、握手 schema 1、Host schema 2、Rust SDK 1.0.0-alpha.14、Python SDK 1.0.0a14。共 14 個實作方法，完整包路徑與驗簽結果見 `artifacts/CORE-039/pr102/verified-candidates.json`（SHA-256 `2a8a60fe14110e14d83693fc1e2a60721568fa282da86c89be724021ac4a9f93`）。
 
 | 平台 | 本地未發布 ZIP 的 SHA-256 |
 |---|---|
-| darwin / arm64 | `2ff5adf2be719677115360f521d14529e7dce70323b84d066453f59e9d94ebf2` |
-| linux / arm64 | `44fd1724bbf2aa01bfee3a4f37c626148e44c94a4dfe54b94d94c6ae12ba3e55` |
-| windows / x86_64 | `a978d1cd7f6be6c5860c58a4656ad1ffce40ae7f989d393cb9d2e1d915568e61` |
+| darwin / arm64 | `f198650d0a4ed3f48c8f63c209f1983e8917e9a9c430b689b2c2b7e69cee3fe6` |
+| linux / arm64 | `e1b1a828c8f15ad71bf792581f362998a740e934cb7c7d09c5556a7b184a6299` |
+| windows / x86_64 | `8b5d0fd40602296cb16c5a0a2b8b0166355b1cfcb96a2d8f51d92ac2f415c745` |
 
 公開的[握手預發布](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/handshake-preview-dd694a0db605)提供 `initialize`。
 
@@ -43,7 +44,9 @@
 
 Mac arm64、Linux arm64 與 HJW Windows x64 各做 14 次真插件重放，七種情境皆於冷重開後零重送。Windows 用擴展倉 #42 的原包先重跑舊簽署宿主的原版 EXT-067，再用完全相同的 EXE 驗基底。EXT-067 最早兩個本地 EXE 目前未找到；原清單及雜湊獨立保存在 `fixtures/compat/ext-067/`。
 
-本地待發布。42 例逐原包與原回條核對見 `artifacts/CORE-044/core044-main-c6bd0c75e387-1d0322/qualification/acceptance-index.json`（SHA-256 `33be23dca6127f85b129821fff1c14f2871fd774d7948e7517331e8ab785a604`）。三端逐檔簽署回執在 `artifacts/CORE-044/core044-main-c6bd0c75e387-1d0322/distribution/base-release.json`，SHA-256 `a98fb1e4d36f895f02db8614b88638ed73339f21d03bd42c76719ab54274dabc`。
+GitHub 已正式發布 `plugin-base-v1.0.0`。九個附件均已重新下載，逐檔大小與 SHA-256 相符，雜湊清單的 Ed25519 簽名通過驗證。驗簽公鑰 `signer.pub` 的 SHA-256 為 `b94f861a2d7a4a53ae689cea4990cbff6387ae9f019bba1780a1f832fadb8541`。[正式版下載](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/plugin-base-v1.0.0) · [簽署包清單](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/plugin-base-v1.0.0/base-release.json) · [逐檔雜湊](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/plugin-base-v1.0.0/SHA256SUMS)。
+
+本地發布回執在 `artifacts/CORE-044/core044-main-c6bd0c75e387-1d0322/distribution/published-receipt.json`。42 例逐原包與原回條核對見 `artifacts/CORE-044/core044-main-c6bd0c75e387-1d0322/qualification/acceptance-index.json`（SHA-256 `33be23dca6127f85b129821fff1c14f2871fd774d7948e7517331e8ab785a604`）。三端逐檔簽署回執在 `artifacts/CORE-044/core044-main-c6bd0c75e387-1d0322/distribution/base-release.json`，SHA-256 `a98fb1e4d36f895f02db8614b88638ed73339f21d03bd42c76719ab54274dabc`。
 
 | 交接包 | SHA-256 |
 |---|---|
@@ -57,7 +60,7 @@ Mac arm64、Linux arm64 與 HJW Windows x64 各做 14 次真插件重放，七�
 | 待辦 | 下一步與交接物 |
 |---|---|
 | CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；另需共同部署的搜尋設定。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
-| CORE-045 → 053 | 擴展倉 main `667fe99e4d5b` 已收到 #99 交接；待 EXT-043 的正式 Telegram 套件及 `extension-release-lock.json`，再以實際發布組合對拍。 |
+| CORE-045 → 053 | 核心基底 1.0.0 已可供 EXT-043 下載。核對擴展倉 `3b5976312853` 與 GitHub Releases，仍待正式 Telegram 套件及 `extension-release-lock.json`。取得兩者後執行 CORE-045 的版本組合驗收。 |
 | CORE-043 → 046 → 047 | 待 EXT-041 的 `extension-import-diff.json`、EXT-044 的 `desktop-package-matrix.json`、EXT-045 的 `install-restore-matrix.json` 及 EXT-042 的實物逐字稿。 |
 
 本輪 Mac 清理回執見 `artifacts/ci/cleanup-20261106/`。先前五個閒置 incremental 目錄合計回收 17.61 GiB，Telegram 建置後另清理約 130 MiB 的中間檔案。#98 的獨立 Mac 預驗再回收 4.39 GiB，保留核心、測試執行檔和回條並重驗 SHA-256（`pr98-mac-preflight-intermediates-verified.json`）。 #99 的專用編譯中間檔另回收 Mac 8.32 GiB、HJW 1.75 GiB；執行檔與保留記錄均已重驗（`core044-mac-build-verified.json` 和 `core044-windows-owned-build-verified.json`）。 #101 完成後另回收 0.57 GiB 已被替代的本機編譯快取，保留包及回條雜湊均相符（`core101-mac-superseded-verified.json`）。
