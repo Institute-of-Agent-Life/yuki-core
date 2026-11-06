@@ -33,6 +33,8 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           cargo fetch --locked
           cargo fetch --locked --manifest-path sdk/rust/Cargo.toml
+      - name: Replay shared native QQ packets and reject a missing send
+        run: python ci/check.py CORE-040 --out artifacts/CORE-040/ci
       - name: Verify retained usage fields and actual cache denominators
         run: python ci/check.py CORE-055 --out artifacts/CORE-055/ci
       - name: Verify original management authority with both installed SDKs
