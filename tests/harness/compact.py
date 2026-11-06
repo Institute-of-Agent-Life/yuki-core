@@ -114,10 +114,12 @@ class Owner:
             "ingress", "record", json.dumps(frame, ensure_ascii=False), "--accept"
         )["event"]
 
-    def config(self, http, extra=""):
+    def config(self, http, extra="", *, binding=True):
+        binding_line = (f'binding_endpoint="http://127.0.0.1:{http.server.server_port}/binding"\n'
+                        if binding else "")
         with (self.svc.data / "yuki.toml").open("a") as cfg:
             cfg.write(
-                f'\n[main]\nendpoint="{http.url}"\nbinding_endpoint="http://127.0.0.1:{http.server.server_port}/binding"\nmodel="fixture"\nname="Yuki"\nmax_output=128\nroot_slots=8\nmax_input_units=4000000\nmerge_ms=2\n'
+                f'\n[main]\nendpoint="{http.url}"\n{binding_line}model="fixture"\nname="Yuki"\nmax_output=128\nroot_slots=8\nmax_input_units=4000000\nmerge_ms=2\n'
                 + extra
             )
 

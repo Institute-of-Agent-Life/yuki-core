@@ -13,3 +13,5 @@ EXT-004 和 EXT-006 需要在本來的 Bot 或 app／tenant 取回 Telegram file
 在 `[[plugins]]` 核准 `gateway.inbound`、`gateway.media` 後，將同一安裝的 `[plugins.gateway_media]` 中的 `application` 設為 Bot 的 ID 字串，例如 `application = "101"`。測試使用真正的 Telegram 0.1.0-alpha.2 插件、原生核心與本機 Bot API 錄製端。Mac、Linux、HJW Windows 各自從入站 ACK 取得原 event，選取同一附件，經兩個 callback 取回 29,367 bytes。原 Bot 各收到一次 getFile 與一次檔案下載，第二次選取沿用已驗快取。將授權改為另一個 Bot ID 後，Host 回覆 -32003，沒有媒體 callback、原生下載或 offset 推進。
 
 核心來源 `4a41470e89b4`，插件來源 `5ad17ab4507b`，插件使用的 SDK 為 Rust 1.0.0-alpha.13。三份原生執行檔及逐幀記錄的雜湊均可從 `artifacts/CORE-038/telegram-5ad17ab-three-platform-01/consumer-receipts.json` 核對。出站逐段和穩定協議由各自的見證卡驗收。
+
+當安裝只授權收件與媒體時，Main 仍可呼叫其他已安裝的工具。若 Main 隨後要求這個安裝發送，Host 應在派發前記下本次拒絕，向原模型交還失敗回執。故障重放查核確認過的網頁回條仍在、發送計畫與原生發送均為零，並再次讀取同一筆拒絕回執。
