@@ -4,6 +4,8 @@ CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；�
 
 任務書 v3.2 ZIP SHA-256：`79dfd2ba5a8b96f22dea4c5f72a94ca761b15f2e354e33b36c7ecdbedc3ec3ee`。舊倉只讀，行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；K05 補正已套用工作副本，不增加 unknown 重試權。原提交、驗證、失敗診斷及完整交接雜湊見 [實作驗證記錄](implementation-evidence.md)。
 
+CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux 各 1052 項及超時診斷](control-fixture-timing.md)。
+
 ## 完成與進行中
 
 已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；目前 main `76cf762`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。
