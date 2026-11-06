@@ -220,6 +220,9 @@ def trials(args):
                     except Exception as exc:
                         row["status"] = "failed"
                         row["failure"] = str(exc)
+                    if row["status"] != "verified":
+                        log = directory / "process.log"
+                        row["failure_log_sha256"] = sha(log) if log.is_file() else None
                     journal.append(row)
                     (directory / "trial.json").write_text(
                         json.dumps(row, indent=2) + "\n"

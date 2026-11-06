@@ -26,6 +26,8 @@ CORE-039 的獨立驗簽器在 HJW 的 Windows SSH 會話曾停住。已重現 O
 
 CORE-026／040 的 `codex/core-040-memory-create-contract` 以固定 v4 實際寫入與拒絕回執核對七種記憶建立參數。Rust 拒絕缺少目標、內容、鍵或類別的請求；人物目標收到合法 SELF visibility 提示時仍只寫入原人物範圍。原版投影 SHA-256 `52f4d2657d902f34a7d03d2a92dbcfd817e926b43fc844146357350bfa65921f`，實跑對照在 `artifacts/CORE-026/{create-arguments-v4-01,create-arguments-before-01,create-arguments-after-02}/`。
 
+CORE-040 的 `codex/core-040-failed-trial-accounting` 修正失敗輪次在測量表中消失的問題。固定原生執行檔與故障 v4 環境共跑六輪，預定 12 個輸入、4 個驗證正確，4 個失敗程序也有實測資源及原因。見 `artifacts/CORE-040/failed-trial-accounting-01/mixed-report.json`，SHA-256 `59321a43abe43b097fd9158ee7e3dad967b814302706607d1ded36d005fa39cc`。
+
 EXT-020 alpha.1 在 Linux 可交付原 Manager 的 readiness，Mac 原 Manager 拒絕同一請求。兩端均有 Manager 離線時的回條。CORE-040 下一輪需要的已安裝方法、原授權範圍、版本與消費證據列在 `artifacts/CORE-040/installed-inputs-01/consumer-requirements.json`，SHA-256 `6b897f10dc111907a67bd6952ef6fbad74defe156ae525c3d4fbd37dde6f99d0`。
 
 | 待辦卡 | 下一步需要的輸入 |

@@ -8,6 +8,12 @@ CORE-040 的三個執行端共用同一份帶 SHA-256 的 QQ 封包。A 使用�
 
 在 macOS arm64 上，A、B、C 各以冷、暖條件重複兩輪，每個新程序測量 1,200 個事件，14,400 個事件全部交付正確。C 的執行檔已綁定提交 `b74a91582f22a027c7c23d6dcafa8a7336800ba9` 與 CORE-039 manifest。逐輪資源用量及原始記錄雜湊在 `artifacts/CORE-040/native-cold-warm-bound-01/trial-report.json`，SHA-256 `f8ef9111edf8b00849ee9fdfdf3ab74affecc20bf29cf3c3d2b44f3a7ad21385`。A、B、C 的 SQLite writer 設定一致，模型的工具宣告不同，供應商帳單尚缺，速度比較及成本裁決仍待等功能資料。長 Work 與 Compact 的驗證另見同目錄下的專文。
 
+## 失敗輪次的計量
+
+報告按每次啟動列出狀態、原定輸入數、退出碼及實測資源。程序退出前已量到的 CPU、RSS 和時間仍計入記錄，尚未取得的值保留為 null。效果不符時保留第一個差異。新失敗輪次在寫入日誌清單時一併記下 process.log 的 SHA-256；從舊記錄重建時會標明雜湊是在重建時取得。
+
+固定在提交 `eb0a7c49f3f3` 的 Rust 候選與兩個 v4 隔離副本進行了故障重放。為 A、B 選用系統 Python 後，兩者均因 SQLite 3.51.0 與釘選版 3.46.0 不符退出。冷暖合計六個程序、預定十二個測量輸入，Rust 的四個輸入交付正確，另外四個程序皆有退出碼、耗時、CPU 和原日誌雜湊。報告見 `artifacts/CORE-040/failed-trial-accounting-01/mixed-report.json`。同目錄的 `failed-history.json` 收錄另一次歷史實跑的全部十二個失敗輪次；`source-bound-replay.json` 由逐輪明細再次核實 14,400／14,400 個正確輸入。
+
 ## 既有環境插件的實際回條
 
 使用擴展倉的固定提交 `dfe8eb46d64ac12e68596a457fe5cc3554ce6acf` 在隔離副本建置 `env 0.1.0-alpha.1`。使用它選定的 Rust SDK `1.0.0-alpha.2`，crate SHA-256 為 `9408022bdf1322a8d6e07914685869771a5738280e36145e46da5c36facbfce0`。原版 Manager 的來源 ZIP 為 `c21901e0eca498be372507d3b600281ed2e43e221bc90744f762b8470cbdfab6`。用該插件的 manifest 啟動 Host，讓模型從實際宣告呼叫 `environment_status`。每次均錄得一筆派發、兩次同 handle 的 `tool.status` 與下一輪模型回條。
