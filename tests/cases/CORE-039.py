@@ -63,7 +63,7 @@ def run(ctx):
         else {"PATH": "/usr/bin:/bin"}
     )
     subprocess.run(
-        [exe, "--data", data, "init"],
+        [exe, "--data", data, "init", "--memory-mode", "lexical-only"],
         cwd=install,
         env=env,
         check=True,

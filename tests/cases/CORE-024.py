@@ -27,7 +27,7 @@ def rows(svc, sql, *values):
 
 def owner(ctx, key):
     svc = Service(ctx, ctx.working / key)
-    svc.command("init")
+    svc.command("init", "--memory-mode", "lexical-only")
 
     def op(*args, ok=True):
         return svc.command("operator", *map(str, args), accepted=ok)

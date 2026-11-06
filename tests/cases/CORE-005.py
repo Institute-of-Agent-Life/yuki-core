@@ -23,7 +23,7 @@ def run(ctx):
         ctx.equal("command outcome: " + " ".join(args), result.returncode == 0, success)
         return result
 
-    command("init")
+    command("init", "--memory-mode", "lexical-only")
     original = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in [data / "yuki.toml", data / "SOUL.md"]}
     command("init", success=False)
