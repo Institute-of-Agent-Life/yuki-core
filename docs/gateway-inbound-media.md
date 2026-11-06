@@ -17,3 +17,5 @@ EXT-004 和 EXT-006 需要在本來的 Bot 或 app／tenant 取回 Telegram file
 當安裝只授權收件與媒體時，Main 仍可呼叫其他已安裝的工具。若 Main 隨後要求這個安裝發送，Host 應在派發前記下本次拒絕，向原模型交還失敗回執。故障重放查核確認過的網頁回條仍在、發送計畫與原生發送均為零，並再次讀取同一筆拒絕回執。
 
 有發送權的網關收到未支援的媒體請求時，Main 可從原操作讀到 `gateway_media_unsupported`。選定附件另需安裝具備 `media.open`，缺少授權回傳 `gateway_media_read_not_granted`。版本不存在或原執行無權讀取都回傳 `gateway_artifact_unavailable`；可讀版本的類型與請求不同時回傳 `gateway_attachment_kind_mismatch`。這四種拒絕均發生在規劃與派發前。
+
+Telegram alpha.3 與 web-fetch 同時安裝時，三端 Host 均讀回固定網頁，再經原 Bot 發送三段文字。第二段遺失原生回應的案例保留 unknown，重啟後沒有新的平台呼叫 sendMessage。逐段定位、內容及二進位檔雜湊在 `artifacts/CORE-038/paired-consumers-pr97/consumer-receipts.json`。
