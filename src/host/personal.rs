@@ -4,6 +4,8 @@ pub(crate) mod credentials;
 mod domains;
 mod http;
 mod native;
+mod receipts;
+mod selection;
 mod views;
 mod work;
 use crate::{
@@ -38,6 +40,7 @@ pub enum Request {
     },
     Entry {
         token_hash: String,
+        selection: selection::Selection,
         purpose: Purpose,
         command: Command,
     },
@@ -83,10 +86,11 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
         } => credentials::pair(conn, code_hash, label, *purpose).await,
         Request::Entry {
             token_hash,
+            selection,
             purpose,
             command,
         } => {
-            let who = credentials::authenticate(conn, token_hash, *purpose).await?;
+            let who = selection::authenticate(conn, token_hash, *purpose, selection, true).await?;
             match command {
                 Command::ConnectionProof(plugin) if *purpose == Purpose::Connector => {
                     connector::proof(conn, &who, plugin).await
@@ -98,7 +102,25 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
                 }
                 _ if *purpose != Purpose::Chat => Err("unauthenticated".into()),
                 Command::Issue(op, p) => {
-                    credentials::issue(conn, &who.device, &who.owner, op, *p, None).await
+                    if receipts::find(conn, &who, op).await?.is_some() {
+                        return Err("request_conflict".into());
+                    }
+                    let scope = who.request_scope();
+                    let binding: String =
+                        sqlx::query_scalar("SELECT actor_stage FROM entries WHERE id=?")
+                            .bind(&who.entry)
+                            .fetch_one(&mut *conn)
+                            .await?;
+                    credentials::issue_with_scope(
+                        conn,
+                        &who.device,
+                        &who.request_person,
+                        op,
+                        *p,
+                        Some(&binding),
+                        Some(scope),
+                    )
+                    .await
                 }
                 Command::Revoke(id) => credentials::revoke(conn, id, Some(&who.root)).await,
                 Command::Work(id, v, cancel) => work::apply(conn, &who, id, v, *cancel).await,

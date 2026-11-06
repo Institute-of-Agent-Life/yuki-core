@@ -11,7 +11,7 @@ pub async fn action_event(
 ) -> Result<i64> {
     let entry = who.entry.as_deref().ok_or("chat_entry_required")?;
     let envelope = json!({"kind":"personal_action","action":kind}).to_string();
-    Ok(sqlx::query_scalar("INSERT INTO events(source_scope,source_key,entry_id,account_id,raw_actor,actor_stage,bot_stage,observed_at,envelope,mentions) SELECT ?1,?2,e.id,a.account_id,a.original_person,a.id,e.bot_stage,CAST(unixepoch('subsec')*1000 AS INTEGER),?3,'[]' FROM entries e JOIN assignments a ON a.id=e.actor_stage WHERE e.id=?4 AND a.original_person=?5 RETURNING id").bind(format!("personal:{entry}")).bind(key).bind(envelope).bind(entry).bind(&who.owner).fetch_one(conn).await?)
+    Ok(sqlx::query_scalar("INSERT INTO events(source_scope,source_key,entry_id,account_id,raw_actor,actor_stage,bot_stage,observed_at,envelope,mentions) SELECT ?1,?2,e.id,a.account_id,a.original_person,a.id,e.bot_stage,CAST(unixepoch('subsec')*1000 AS INTEGER),?3,'[]' FROM entries e JOIN assignments a ON a.id=e.actor_stage WHERE e.id=?4 AND a.original_person=?5 RETURNING id").bind(format!("personal:{entry}")).bind(key).bind(envelope).bind(entry).bind(&who.request_person).fetch_one(conn).await?)
 }
 pub async fn apply(
     conn: &mut SqliteConnection,
@@ -28,7 +28,6 @@ pub async fn apply(
     } else {
         "client.work_input"
     };
-    let entry = who.entry.as_deref().ok_or("chat_entry_required")?;
     let mut payload = if cancel {
         json!({"expected_revision":body["expected_revision"]})
     } else {
@@ -43,15 +42,7 @@ pub async fn apply(
         payload["agent_target"] = Value::Object(fields);
     }
     let digest = credentials::fingerprint(kind, id, &payload);
-    if let Some(old) = sqlx::query(
-        "SELECT digest,result FROM personal_receipts WHERE owner=? AND scope=? AND operation=?",
-    )
-    .bind(&who.owner)
-    .bind(entry)
-    .bind(key)
-    .fetch_optional(&mut *conn)
-    .await?
-    {
+    if let Some(old) = super::receipts::before_mutation(conn, who, key).await? {
         if old.get::<&str, _>("digest") != digest {
             return Err("request_conflict".into());
         }
@@ -63,12 +54,27 @@ pub async fn apply(
         return Ok(v);
     }
     let event = action_event(conn, who, key, kind).await?;
+    // Like the original Client9 message_key, private Work mail is named by the
+    // selected external account and (for ACP) conversation, never the raw UUID alone.
+    let external: String = sqlx::query_scalar(
+        "SELECT a.native FROM events e JOIN accounts a ON a.id=e.account_id WHERE e.id=?",
+    )
+    .bind(event)
+    .fetch_one(&mut *conn)
+    .await?;
+    let source = match &who.thread {
+        Some(_) => format!(
+            "client-input:{external}:{}:{key}",
+            who.entry.as_deref().ok_or("chat_entry_required")?
+        ),
+        None => format!("client-input:{external}:{key}"),
+    };
     let result = if cancel {
         domain::cancel(
             conn,
             id,
             &manager,
-            key,
+            &source,
             body["expected_revision"]
                 .as_i64()
                 .ok_or("validation_error")?,
@@ -87,11 +93,11 @@ pub async fn apply(
             super::native::bind(conn, who, id, target).await?;
             json!({"text":text,"agent_target":target}).to_string()
         };
-        domain::input(conn, id, &manager, key, event, &content).await?
+        domain::input(conn, id, &manager, &source, event, &content).await?
     };
     sqlx::query("INSERT INTO personal_receipts VALUES(?,?,?,?,?,?,?,?)")
-        .bind(&who.owner)
-        .bind(entry)
+        .bind(&who.request_person)
+        .bind(who.request_scope())
         .bind(key)
         .bind(kind)
         .bind(id)
@@ -103,15 +109,13 @@ pub async fn apply(
     Ok(result)
 }
 pub async fn receipt(conn: &mut SqliteConnection, who: &Principal, op: &str) -> Result<Value> {
-    let row =
-        sqlx::query("SELECT * FROM personal_receipts WHERE owner=? AND scope=? AND operation=?")
-            .bind(&who.owner)
-            .bind(&who.entry)
-            .bind(op)
-            .fetch_optional(&mut *conn)
-            .await?;
+    let row = super::receipts::find(conn, who, op).await?;
+    let code = credentials::code_receipt(conn, who, op).await?;
+    if row.is_some() && code.is_some() {
+        return Err("request_conflict".into());
+    }
     let Some(r) = row else {
-        return Ok(json!({"found":false}));
+        return Ok(code.unwrap_or(json!({"found":false})));
     };
     if let Some(id) = r.try_get::<Option<&str>, _>("target")? {
         match r.get::<&str, _>("class") {
@@ -131,8 +135,15 @@ pub async fn receipt(conn: &mut SqliteConnection, who: &Principal, op: &str) -> 
     if result.as_object().is_none_or(|m| m.is_empty()) {
         return Ok(json!({"found":false}));
     }
+    let conversation: String =
+        sqlx::query_scalar("SELECT entry_id FROM events WHERE id=? AND raw_actor=?")
+            .bind(r.get::<i64, _>("event"))
+            .bind(&who.request_person)
+            .fetch_optional(conn)
+            .await?
+            .ok_or("not_found")?;
     Ok(
-        json!({"found":true,"status":"accepted","operation_kind":r.get::<&str,_>("class"),"payload_hash":r.get::<&str,_>("digest"),"event_id":r.get::<i64,_>("event"),"result":result,"conversation_id":who.entry,"target":r.get::<Option<String>,_>("target")}),
+        json!({"found":true,"status":"accepted","operation_kind":r.get::<&str,_>("class"),"payload_hash":r.get::<&str,_>("digest"),"event_id":r.get::<i64,_>("event"),"result":result,"conversation_id":conversation,"target":r.get::<Option<String>,_>("target")}),
     )
 }
 pub async fn project(conn: &mut SqliteConnection, who: &Principal, id: &str) -> Result<Value> {
@@ -186,19 +197,13 @@ pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value)
         entry,
         &json!({"text":text,"attachments":[]}),
     );
-    if let Some((s, result)) = sqlx::query_as::<_, (String, String)>(
-        "SELECT digest,result FROM personal_receipts WHERE owner=? AND scope=? AND operation=?",
-    )
-    .bind(&who.owner)
-    .bind(entry)
-    .bind(key)
-    .fetch_optional(&mut *conn)
-    .await?
-    {
+    if let Some(row) = super::receipts::before_mutation(conn, who, key).await? {
+        let s: &str = row.get("digest");
+        let result: &str = row.get("result");
         if s != fp {
             return Err("request_conflict".into());
         }
-        let mut result: Value = serde_json::from_str(&result)?;
+        let mut result: Value = serde_json::from_str(result)?;
         if result["event_id"].is_null() {
             return Err("source_erased".into());
         }
@@ -213,7 +218,7 @@ pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value)
         account: row.get("account_id"),
         bot_stage: row.get("bot_stage"),
         space: None,
-        topic: None,
+        topic: who.thread.clone(),
         occurred: Some(at),
         observed: at,
         kind: admit::Kind::Message,
@@ -225,10 +230,18 @@ pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value)
     };
     let admitted = admit::from_gateway(conn, frame, true).await?;
     let event = admitted["event"].as_i64().ok_or("message_unavailable")?;
+    let original: (String, String) =
+        sqlx::query_as("SELECT entry_id,raw_actor FROM events WHERE id=?")
+            .bind(event)
+            .fetch_one(&mut *conn)
+            .await?;
+    if original.0 != entry || original.1 != who.request_person {
+        return Err("precondition_failed".into());
+    }
     let result = json!({"event_id":event,"conversation_id":entry,"replay":false});
     sqlx::query("INSERT INTO personal_receipts VALUES(?,?,?,'client.message',NULL,?,?,?)")
-        .bind(&who.owner)
-        .bind(entry)
+        .bind(&who.request_person)
+        .bind(who.request_scope())
         .bind(key)
         .bind(fp)
         .bind(result.to_string())

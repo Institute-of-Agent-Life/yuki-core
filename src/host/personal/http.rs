@@ -109,6 +109,7 @@ pub(super) async fn action(
         s,
         Request::Entry {
             token_hash: bearer(h)?,
+            selection: super::selection::Selection::headers(h)?,
             purpose,
             command: c,
         },
@@ -160,9 +161,19 @@ enum Read {
     Events(String, i64, Option<i64>, i64),
     Receipt(String),
 }
+async fn current(db: &mut sqlx::SqliteConnection, h: &HeaderMap) -> Result<credentials::Principal> {
+    super::selection::authenticate(
+        db,
+        &bearer(h)?,
+        Purpose::Chat,
+        &super::selection::Selection::headers(h)?,
+        false,
+    )
+    .await
+}
 async fn read(s: &Store, h: &HeaderMap, method: Read) -> Result<Value> {
     let mut tx = s.readers().begin().await?;
-    let who = credentials::authenticate(&mut tx, &bearer(h)?, Purpose::Chat).await?;
+    let who = current(&mut tx, h).await?;
     match method {
         Read::Facts(about, cursor, n) => {
             super::domains::list(&mut tx, &who, &about, cursor.as_deref(), n).await
@@ -346,7 +357,7 @@ async fn artifacts(
     reply(
         async {
             let mut tx = s.readers().begin().await?;
-            let who = credentials::authenticate(&mut tx, &bearer(&h)?, Purpose::Chat).await?;
+            let who = current(&mut tx, &h).await?;
             super::artifacts::list(
                 &mut tx,
                 &who,
@@ -372,7 +383,7 @@ async fn download(
 ) -> Response {
     let result = async {
         let mut tx = s.readers().begin().await?;
-        let who = credentials::authenticate(&mut tx, &bearer(&h)?, Purpose::Chat).await?;
+        let who = current(&mut tx, &h).await?;
         super::artifacts::download(&mut tx, &who, &id, &q.version).await
     }
     .await;

@@ -20,9 +20,9 @@ async fn reader(conn: &mut SqliteConnection, w: &Principal) -> Result<Reader> {
     Ok(Reader {
         archived_evidence: false,
         write_subject: None,
-        base: query::for_person(conn, &w.owner, home(w)?, false).await?,
+        base: query::for_person(conn, &w.request_person, home(w)?, false).await?,
         root: w.root.clone(),
-        actor: w.owner.clone(),
+        actor: w.request_person.clone(),
         delegated: false,
         admin: false,
     })
@@ -159,11 +159,11 @@ pub async fn correct(
     sqlx::query("INSERT INTO executions(id,source,original_actor,state) VALUES(?,?,?,'completed')")
         .bind(&exec)
         .bind(event)
-        .bind(&w.owner)
+        .bind(&w.request_person)
         .execute(&mut *conn)
         .await?;
     let r = reader(conn, w).await?;
-    facts::edit(conn, &r, &exec, &w.owner, op, &edit, false).await?;
+    facts::edit(conn, &r, &exec, &w.request_person, op, &edit, false).await?;
     let correct = body["action"] == "correct";
     let fresh = if correct {
         fact(conn, w, num).await?["revision"].clone()
@@ -180,19 +180,13 @@ async fn prior(
     op: &str,
     fp: &str,
 ) -> Result<Option<Value>> {
-    let pair: Option<(String, String)> = sqlx::query_as(
-        "SELECT digest,result FROM personal_receipts WHERE owner=? AND scope=? AND operation=?",
-    )
-    .bind(&w.owner)
-    .bind(home(w)?)
-    .bind(op)
-    .fetch_optional(conn)
-    .await?;
-    if let Some((old, raw)) = pair {
+    if let Some(row) = super::receipts::before_mutation(conn, w, op).await? {
+        let old: &str = row.get("digest");
+        let raw: &str = row.get("result");
         if old != fp {
             return Err("request_conflict".into());
         }
-        let mut v: Value = serde_json::from_str(&raw)?;
+        let mut v: Value = serde_json::from_str(raw)?;
         if v.as_object().is_none_or(|m| m.is_empty()) {
             return Err("source_erased".into());
         }
@@ -211,8 +205,8 @@ async fn record(
 ) -> Result<()> {
     let (class, target, fp) = binding;
     sqlx::query("INSERT INTO personal_receipts VALUES(?,?,?,?,?,?,?,?)")
-        .bind(&w.owner)
-        .bind(home(w)?)
+        .bind(&w.request_person)
+        .bind(w.request_scope())
         .bind(op)
         .bind(class)
         .bind(target)

@@ -738,3 +738,9 @@ Mac `connector-auth-mac-04` 369 項通過；真 HTTP、獨立安裝 SDK 與三�
 失敗記錄：mac-01 在同一秒配對與停用測試入口，碰到原 assignment 同時點衝突；mac-02 隨執行時間偶然通過，故保留失敗並改以原狀態時間加一，mac-03／04 通過。沒有刪除或放寬產品時序檢查。reader 46 新增授權表；Host 2／handshake 1 不變，新增可選方法分發 SDK alpha.12／a12。此為未發布核心生產者合同，真 EXT-011 消費仍待取得。
 
 打包自測 `artifacts/CORE-033/connector-auth-package-development-01/yuki-personal-preview-d9c798fa99aa-darwin-arm64.zip`，SHA-256 `b16f5bfe64a8dbc91c0d99133fc72a98d1b738b8768b38cc61ae0c1d2ef8ef63`；dirty source 僅自測，mac-05 仍為 369 項。乾淨三平台交接候選接續。
+
+## CORE-033 Client9 原入口與會話
+
+分支 `codex/core-033-entry-selection`。EXT-015 在 Windows 重現的 A token 明選 B 入口，現在由 Rust 在同一讀快照／寫交易重新授權。reader 47 保存所選的 Work 委派與原 native operation；原 App 按請求人物，ACP 按會話隔離。候選可見範圍與舊 NULL 規則見 [Client9 入口](client-entry-selection.md)。
+
+固定 v4 的 `artifacts/CORE-033/original-entry-selection-oracle-02/original-entry-selection.json` 為 15 組真實身份投影及原 NULL 回執的來源。Mac 全卡 558 項，加驗 CORE-006、007、026、030、032、037、035；回條在 `artifacts/CORE-033/entry-selection-adjacent-01/<卡號>/manifest.json`。開發 ZIP SHA-256 `27ad7bc25f022809ac4075dd6b445ee17fc5e00b37d07bfba0225e96c1b6039f`，此包取自工作樹，僅用於打包驗證。真 EXT-015 對拍尚待擴展；SSE 與原 Client9 上傳／一般消息 agent_target 不在這個包的驗證範圍。

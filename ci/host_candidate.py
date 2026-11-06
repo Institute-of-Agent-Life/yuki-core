@@ -260,6 +260,14 @@ def tested_contents(receipt, profile, personal=False, card=None):
         if digest(original)!=json.loads(proof)['original_oracle_sha256']:raise ValueError('connector identity oracle differs from validated input')
         files['evidence/connector-authentication.json']=proof
         files['evidence/connector-identity.json']=original
+        selected=receipt('client-entry-selection.json')
+        oracle=(ROOT/'fixtures/personal/entry-selection.json').read_bytes()
+        if digest(oracle)!=json.loads(selected)['original_oracle_sha256']:
+            raise ValueError('Client9 selection oracle differs from validated input')
+        files['evidence/client-entry-selection.json']=selected
+        files['evidence/entry-selection.json']=oracle
+        files['docs/client-entry-selection.md']=(ROOT/'docs/client-entry-selection.md').read_bytes()
+
         files['docs/connector-authentication.md']=(ROOT/'docs/connector-authentication.md').read_bytes()
         for index in (
             "protocol/personal/source.json",
@@ -523,6 +531,10 @@ def build(manifest_path, out, development=False):
         candidate["validation"]["real_extension_consumers"] = "pending EXT-049"
     if personal:
         candidate["personal_schema_revision"] = 1
+        selected=json.loads(receipt('client-entry-selection.json'))
+        candidate['validated_client_selection_headers']=selected['selected_headers']
+        candidate['client_selection_oracle_sha256']=selected['original_oracle_sha256']
+        candidate['database_schema_revision']=m['schema_version']
         candidate["personal_schema_sha256"] = data["personal_schema_sha256"]
         candidate["client_api_revision"] = 9
         candidate["connector_wire_revision"] = 4
