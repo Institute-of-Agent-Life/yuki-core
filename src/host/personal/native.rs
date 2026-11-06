@@ -25,11 +25,12 @@ pub async fn bind(
             .as_str()
             .ok_or("original_operation_required")?;
         sqlx::query_scalar::<_, String>(
-            "SELECT work FROM personal_native_operations WHERE device=? AND operation=? AND work=?",
+            "SELECT work FROM personal_native_operations WHERE device=? AND operation=? AND work=? AND coalesce(selected_entry,(SELECT entry FROM personal_devices WHERE id=chat_device))=?",
         )
         .bind(dev)
         .bind(op)
         .bind(work)
+        .bind(&who.entry)
         .fetch_optional(conn)
         .await?
         .ok_or("original_operation_required")?;
@@ -39,7 +40,7 @@ pub async fn bind(
         if operation.trim().is_empty() || operation.len() > 256 {
             return Err("invalid_operation".into());
         }
-        sqlx::query_scalar::<_,String>("INSERT INTO personal_native_operations VALUES(?,?,?,?) ON CONFLICT(device,operation) DO UPDATE SET operation=excluded.operation WHERE work=excluded.work AND chat_device IN(SELECT device_id FROM device_origins WHERE original_person=?) RETURNING operation").bind(dev).bind(operation).bind(work).bind(&who.device).bind(&who.owner).fetch_one(conn).await?;
+        sqlx::query_scalar::<_,String>("INSERT INTO personal_native_operations VALUES(?,?,?,?,?) ON CONFLICT(device,operation) DO UPDATE SET operation=excluded.operation WHERE work=excluded.work AND coalesce(selected_entry,(SELECT entry FROM personal_devices WHERE id=chat_device))=excluded.selected_entry AND chat_device IN(SELECT device_id FROM device_origins WHERE original_person=?) RETURNING operation").bind(dev).bind(operation).bind(work).bind(&who.device).bind(&who.entry).bind(&who.owner).fetch_optional(conn).await?.ok_or("request_conflict")?;
     }
     Ok(())
 }
@@ -71,7 +72,7 @@ pub async fn proof(
     }
     let raw = credentials::random::<32>()?;
     let expires = credentials::now()? + 60;
-    sqlx::query("INSERT INTO personal_proofs VALUES(?,?,?,?,?,?,?,NULL)")
+    sqlx::query("INSERT INTO personal_proofs VALUES(?,?,?,?,?,?,?,NULL,?)")
         .bind(credentials::hash(&raw))
         .bind(&who.device)
         .bind(plugin)
@@ -79,6 +80,7 @@ pub async fn proof(
         .bind(scope)
         .bind(work)
         .bind(expires)
+        .bind(&who.entry)
         .execute(conn)
         .await?;
     Ok(json!({"proof":raw,"expires_at":credentials::stamp(expires)?,"scope":scope}))
@@ -91,7 +93,7 @@ async fn redeem(
 ) -> Result<Value> {
     let h = credentials::hash(raw);
     let at = credentials::now()?;
-    let row=sqlx::query("UPDATE personal_proofs SET used=?1 WHERE hash=?2 AND plugin=?3 AND generation=?4 AND used IS NULL AND expires>?1 RETURNING device,scope,work").bind(at).bind(h).bind(plugin).bind(generation).fetch_optional(&mut *conn).await?.ok_or("proof_unavailable")?;
+    let row=sqlx::query("UPDATE personal_proofs SET used=?1 WHERE hash=?2 AND plugin=?3 AND generation=?4 AND used IS NULL AND expires>?1 RETURNING device,scope,work,selected_entry").bind(at).bind(h).bind(plugin).bind(generation).fetch_optional(&mut *conn).await?.ok_or("proof_unavailable")?;
     let native = row.get::<&str, _>("scope") == "native";
     super::super::domain::active(
         conn,
@@ -104,7 +106,7 @@ async fn redeem(
         },
     )
     .await?;
-    let who = credentials::device(
+    let who = super::selection::delegated(
         conn,
         row.get("device"),
         if native {
@@ -112,13 +114,15 @@ async fn redeem(
         } else {
             Purpose::Chat
         },
+        row.get("selected_entry"),
+        true,
     )
     .await?;
     let work: &str = row.get("work");
     domain::owner(conn, &who.root, work).await?;
     let handle = credentials::random::<32>()?;
     let expires = at + 300;
-    sqlx::query("INSERT INTO personal_sessions VALUES(?,?,?,?,?,?,?)")
+    sqlx::query("INSERT INTO personal_sessions VALUES(?,?,?,?,?,?,?,?)")
         .bind(credentials::hash(&handle))
         .bind(&who.device)
         .bind(plugin)
@@ -126,6 +130,7 @@ async fn redeem(
         .bind(row.get::<&str, _>("scope"))
         .bind(work)
         .bind(expires)
+        .bind(&who.entry)
         .execute(conn)
         .await?;
     Ok(json!({"handle":handle,"scope":row.get::<&str,_>("scope"),"expires_in":300}))
@@ -147,8 +152,8 @@ pub async fn callback(
         .await;
     }
     let native = method.starts_with("native.");
-    let row=sqlx::query("SELECT device,work FROM personal_sessions WHERE hash=? AND plugin=? AND generation=? AND scope=? AND expires>?").bind(credentials::hash(args["handle"].as_str().ok_or("handle_required")?)).bind(plugin).bind(generation).bind(if native{"native"}else{"work"}).bind(credentials::now()?).fetch_optional(&mut *conn).await?.ok_or("handle_unavailable")?;
-    let who = credentials::device(
+    let row=sqlx::query("SELECT device,work,selected_entry FROM personal_sessions WHERE hash=? AND plugin=? AND generation=? AND scope=? AND expires>?").bind(credentials::hash(args["handle"].as_str().ok_or("handle_required")?)).bind(plugin).bind(generation).bind(if native{"native"}else{"work"}).bind(credentials::now()?).fetch_optional(&mut *conn).await?.ok_or("handle_unavailable")?;
+    let who = super::selection::delegated(
         conn,
         row.get("device"),
         if native {
@@ -156,6 +161,8 @@ pub async fn callback(
         } else {
             Purpose::Chat
         },
+        row.get("selected_entry"),
+        method != "work.get",
     )
     .await?;
     let work_id: &str = row.get("work");
@@ -175,8 +182,10 @@ pub async fn callback(
         "native.notify" | "native.queryAck" => {
             let operation = args["operation"].as_str().ok_or("operation_required")?;
             let key = args["event_key"].as_str().ok_or("event_key_required")?;
-            let chat:String=sqlx::query_scalar("SELECT chat_device FROM personal_native_operations WHERE device=? AND work=? AND operation=?").bind(&who.device).bind(work_id).bind(operation).fetch_optional(&mut *conn).await?.ok_or("original_operation_required")?;
-            let authorized = credentials::device(conn, &chat, Purpose::Chat).await?;
+            let (chat,selected):(String,Option<String>)=sqlx::query_as("SELECT chat_device,selected_entry FROM personal_native_operations WHERE device=? AND work=? AND operation=?").bind(&who.device).bind(work_id).bind(operation).fetch_optional(&mut *conn).await?.ok_or("original_operation_required")?;
+            let authorized =
+                super::selection::delegated(conn, &chat, Purpose::Chat, selected.as_deref(), true)
+                    .await?;
             if authorized.root != who.root {
                 return Err("not_found".into());
             }

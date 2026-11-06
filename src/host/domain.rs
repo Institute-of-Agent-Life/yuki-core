@@ -19,7 +19,7 @@ pub async fn active(
     }
     Ok(())
 }
-async fn close(conn: &mut SqliteConnection, id: &str, generation: &str) -> Result<()> {
+pub(super) async fn close(conn: &mut SqliteConnection, id: &str, generation: &str) -> Result<()> {
     sqlx::query("UPDATE host_installations SET online=0 WHERE plugin=? AND generation=?")
         .bind(id)
         .bind(generation)
@@ -28,6 +28,8 @@ async fn close(conn: &mut SqliteConnection, id: &str, generation: &str) -> Resul
     sqlx::query("UPDATE host_calls SET state=CASE WHEN state='queued' THEN 'not_dispatched' ELSE 'unknown' END
         WHERE plugin=? AND generation=? AND state IN ('queued','dispatched')").bind(id).bind(generation).execute(&mut *conn).await?;
     sqlx::query("UPDATE operations SET state='unknown',result='null' WHERE (namespace,operation_id) IN(SELECT execution,operation FROM host_calls WHERE plugin=? AND generation=? AND state='unknown') AND state='dispatched'").bind(id).bind(generation).execute(&mut *conn).await?;
+    sqlx::query("UPDATE model_attempts SET state='unknown',ever_unknown=1 WHERE state='dispatched' AND logical IN(SELECT logical FROM host_aux_requests WHERE plugin=? AND dispatched_generation=?)")
+        .bind(id).bind(generation).execute(&mut *conn).await?;
     sqlx::query("UPDATE host_command_events SET state=CASE WHEN EXISTS(SELECT 1 FROM host_calls c WHERE c.execution=host_command_events.execution AND c.method='command.invoke' AND c.state='unknown') THEN 'unknown' ELSE 'unavailable' END WHERE plugin=? AND generation=? AND state='queued'").bind(id).bind(generation).execute(conn).await?;
     Ok(())
 }
@@ -40,6 +42,9 @@ async fn configure(conn: &mut SqliteConnection, installs: &[Install]) -> Result<
     for (id, generation) in previous {
         close(conn, &id, &generation).await?;
     }
+    sqlx::query("DELETE FROM core_meta WHERE key LIKE 'plugin-config-definition:%'")
+        .execute(&mut *conn)
+        .await?;
     sqlx::query(
         "UPDATE source_owners SET enabled=0 WHERE id IN(SELECT plugin FROM host_installations)",
     )
@@ -48,25 +53,69 @@ async fn configure(conn: &mut SqliteConnection, installs: &[Install]) -> Result<
     sqlx::query("DELETE FROM host_commands")
         .execute(&mut *conn)
         .await?;
+    super::plugin_sessions::start(conn).await?;
     let names: Vec<_> = installs.iter().map(|i| &i.id).collect();
+    sqlx::query("DELETE FROM core_meta WHERE key LIKE 'plugin-install:%' AND substr(key,16) NOT IN(SELECT value FROM json_each(?))").bind(serde_json::to_string(&names)?).execute(&mut *conn).await?;
     sqlx::query("UPDATE host_installations SET enabled=0 WHERE plugin NOT IN(SELECT value FROM json_each(?))").bind(serde_json::to_string(&names)?).execute(&mut *conn).await?;
     for install in installs {
-        super::composition::configure(conn, install).await?;
-        sqlx::query("INSERT INTO host_installations(plugin,namespace,platform,bot_stage,revision,grants,tools,enabled) VALUES(?,?,?,?,?,?,?,1)
-          ON CONFLICT(plugin) DO UPDATE SET namespace=excluded.namespace,platform=excluded.platform,bot_stage=excluded.bot_stage,revision=excluded.revision,grants=excluded.grants,tools=excluded.tools")
-          .bind(&install.id).bind(&install.namespace).bind(&install.platform).bind(&install.bot_stage).bind(install.revision()?).bind(serde_json::to_string(&install.grants)?).bind(serde_json::to_string(&install.tools)?).execute(&mut *conn).await?;
-        for path in &install.commands {
-            sqlx::query("INSERT INTO host_commands VALUES(?,?)")
-                .bind(path)
+        let approved = super::lifecycle::configure(conn, install).await?;
+        let enabled =
+            sqlx::query_scalar::<_, bool>("SELECT enabled FROM host_installations WHERE plugin=?")
                 .bind(&install.id)
-                .execute(&mut *conn)
-                .await?;
-        }
-        if install.grants.contains("forget.owner") {
-            sqlx::query("INSERT INTO source_owners(id,enabled) VALUES(?,1) ON CONFLICT(id) DO UPDATE SET enabled=(SELECT enabled FROM host_installations WHERE plugin=excluded.id)").bind(&install.id).execute(&mut *conn).await?;
-        }
+                .fetch_optional(&mut *conn)
+                .await?
+                .unwrap_or(install.enabled);
+        let decision =
+            crate::operator::domain::get(conn, &format!("plugin-approval:{}", install.id))
+                .await?
+                .ok_or("missing_approval")?;
+        register(
+            conn,
+            install,
+            &approved,
+            enabled && decision["approved"].is_array(),
+        )
+        .await?;
     }
     Ok(json!({"configured":names}))
+}
+pub(super) async fn register(
+    conn: &mut SqliteConnection,
+    install: &Install,
+    approved: &std::collections::BTreeSet<String>,
+    enabled: bool,
+) -> Result<()> {
+    crate::operator::domain::put(
+        conn,
+        &format!("plugin-install:{}", install.id),
+        &serde_json::to_value(install)?,
+    )
+    .await?;
+    sqlx::query("DELETE FROM host_commands WHERE plugin=?")
+        .bind(&install.id)
+        .execute(&mut *conn)
+        .await?;
+    super::configuration::configure(conn, install).await?;
+    super::aux_model::configure(conn, install).await?;
+    super::participation::configure(conn, install).await?;
+    super::maintenance::configure(conn, install).await?;
+    super::plugin_sessions::configure(conn, install).await?;
+    super::notification::configure(conn, install).await?;
+    super::composition::configure(conn, install).await?;
+    sqlx::query("INSERT INTO host_installations(plugin,namespace,platform,bot_stage,revision,grants,tools,enabled) VALUES(?,?,?,?,?,?,?,?)
+          ON CONFLICT(plugin) DO UPDATE SET namespace=excluded.namespace,platform=excluded.platform,bot_stage=excluded.bot_stage,revision=excluded.revision,grants=excluded.grants,tools=excluded.tools,enabled=excluded.enabled")
+          .bind(&install.id).bind(&install.namespace).bind(&install.platform).bind(&install.bot_stage).bind(install.revision()?).bind(serde_json::to_string(approved)?).bind(serde_json::to_string(&install.tools)?).bind(enabled).execute(&mut *conn).await?;
+    for path in &install.commands {
+        sqlx::query("INSERT INTO host_commands VALUES(?,?)")
+            .bind(path)
+            .bind(&install.id)
+            .execute(&mut *conn)
+            .await?;
+    }
+    if approved.contains("forget.owner") {
+        sqlx::query("INSERT INTO source_owners(id,enabled) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET enabled=excluded.enabled").bind(&install.id).bind(enabled).execute(&mut *conn).await?;
+    }
+    Ok(())
 }
 pub async fn route_command(
     conn: &mut SqliteConnection,
@@ -98,7 +147,7 @@ pub async fn route_command(
     {
         return Ok(());
     }
-    let binding:Option<(String,String,bool,Option<String>)>=sqlx::query_as("SELECT c.path,c.plugin,i.online AND i.enabled,i.generation FROM host_commands c JOIN host_installations i ON i.plugin=c.plugin WHERE c.path=? OR substr(?,1,length(c.path)+1)=c.path||'/' ORDER BY length(c.path) DESC LIMIT 1")
+    let binding:Option<(String,String,bool,Option<String>)>=sqlx::query_as("SELECT c.path,c.plugin,i.online AND i.enabled,i.generation FROM host_commands c JOIN host_installations i ON i.plugin=c.plugin WHERE (c.path=? OR substr(?,1,length(c.path)+1)=c.path||'/') AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='command.invoke') ORDER BY length(c.path) DESC LIMIT 1")
         .bind(token).bind(token).fetch_optional(&mut *conn).await?;
     if let Some((path, id, online, generation)) = binding {
         // Claim once under the original human. The Main scheduler excludes this source even when offline.
@@ -168,6 +217,13 @@ async fn inbound(
     if !bot_ok {
         return Err("gateway bot does not belong to this installed namespace".into());
     }
+    let previous: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_ingress WHERE plugin=? AND source=?)")
+            .bind(id)
+            .bind(&key)
+            .fetch_one(&mut *conn)
+            .await?;
+    let media = super::gateway_media::inbound_identity(conn, id, generation, p).await?;
     let account = new_id(conn).await?;
     sqlx::query("INSERT INTO accounts(id,platform,namespace,native) VALUES(?,?,?,?) ON CONFLICT(platform,namespace,native) DO NOTHING").bind(account).bind(&platform).bind(&namespace).bind(sender).execute(&mut *conn).await?;
     let account: String =
@@ -222,7 +278,18 @@ async fn inbound(
     };
     let result = admit::from_gateway(conn, frame, p["accept"].as_bool().unwrap_or(false)).await?;
     sqlx::query("INSERT INTO host_ingress VALUES(?,?,?,?) ON CONFLICT(plugin,source) DO UPDATE SET accepted=excluded.accepted WHERE host_ingress.event=excluded.event")
-       .bind(id).bind(key).bind(result["event"].as_i64()).bind(result["accepted"]==true).execute(conn).await?;
+       .bind(id).bind(key).bind(result["event"].as_i64()).bind(result["accepted"]==true).execute(&mut *conn).await?;
+    if let Some(identity) = media {
+        super::gateway_media::record(
+            conn,
+            id,
+            p,
+            &identity,
+            result["event"].as_i64().ok_or("missing gateway event")?,
+            previous,
+        )
+        .await?;
+    }
     Ok(result)
 }
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
@@ -239,8 +306,18 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 .await?;
             Ok(Value::Null)
         }
+        Change::FetchDispatch(gate, plugin, generation) => {
+            gate.check(conn, plugin, generation).await?;
+            Ok(Value::Null)
+        }
         Change::Configure(installs) => configure(conn, installs).await,
-        Change::Start(id, cleanup) => {
+        Change::Start(id, cleanup, declaration) => {
+            let install = crate::operator::domain::get(conn, &format!("plugin-install:{id}"))
+                .await?
+                .ok_or("plugin_not_installed")?;
+            if crate::memory::scope::hash(&install) != *declaration {
+                return Err("plugin installation changed".into());
+            }
             let pending: bool = sqlx::query_scalar(
                 "SELECT EXISTS(SELECT 1 FROM owner_erasures WHERE owner=? AND proof IS NULL)",
             )
@@ -281,6 +358,18 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             Ok(Value::Null)
         }
         Change::Enable(id, enabled) => {
+            if *enabled {
+                let approval = crate::operator::domain::get(conn, &format!("plugin-approval:{id}"))
+                    .await?
+                    .ok_or("precondition_failed")?;
+                if !approval["approved"].is_array()
+                    || crate::operator::domain::get(conn, &format!("plugin-install:{id}"))
+                        .await?
+                        .is_none()
+                {
+                    return Err("precondition_failed".into());
+                }
+            }
             let g: Option<String> =
                 sqlx::query_scalar("SELECT generation FROM host_installations WHERE plugin=?")
                     .bind(id)
@@ -294,8 +383,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 .bind(id)
                 .execute(&mut *conn)
                 .await?;
-            sqlx::query("UPDATE source_owners SET enabled=? WHERE id=?")
+            sqlx::query("UPDATE source_owners SET enabled=? AND EXISTS(SELECT 1 FROM host_installations,json_each(grants) WHERE plugin=? AND value='forget.owner') WHERE id=?")
                 .bind(enabled)
+                .bind(id)
                 .bind(id)
                 .execute(conn)
                 .await?;
@@ -305,6 +395,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             let def = grants::schema(method, "plugin_to_host", params)?;
             active(conn, id, instance, def["grant"].as_str().unwrap()).await?;
             let result = match method.as_str() {
+                "plugin.config.get" | "plugin.secrets.get" => {
+                    super::configuration::callback(conn, id, method, params).await
+                }
                 "gateway.inbound" | "gateway.status" => {
                     inbound(conn, id, instance, params, method == "gateway.status").await
                 }
@@ -318,11 +411,14 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     )
                     .await
                 }
+                "terminal.scope" | "terminal.bind" => {
+                    super::terminal_work::callback(conn, id, instance, method, params).await
+                }
                 "media.open" | "media.publish" => {
                     super::media::callback(conn, id, instance, method, params).await
                 }
-                "device.auth" | "work.get" | "work.input" | "work.cancel" | "native.notify"
-                | "native.queryAck" => {
+                "device.auth" | "device.connect" | "device.check" | "device.close" | "work.get"
+                | "work.input" | "work.cancel" | "native.notify" | "native.queryAck" => {
                     super::personal::callback(conn, id, instance, method, params).await
                 }
                 "forget.ack" => {
@@ -344,6 +440,11 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             }
             Ok(result)
         }
+        Change::PluginSession(change) => super::plugin_sessions::apply(conn, change).await,
+        Change::Notification(change) => super::notification::apply(conn, change).await,
+        Change::Maintenance(change) => super::maintenance::apply(conn, change).await,
+        Change::Participation(change) => super::participation::apply(conn, change).await,
+        Change::AuxModel(change) => super::aux_model::apply(conn, change).await,
         Change::Call(call) => super::calls::apply(conn, call).await,
         Change::Composition(change) => super::composition::apply(conn, change).await,
     }

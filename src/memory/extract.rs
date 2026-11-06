@@ -1,4 +1,4 @@
-pub(super) mod source;
+pub(crate) mod source;
 mod writer;
 use crate::{
     Result,
@@ -147,6 +147,9 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
     let Some(logical) = job["logical"].as_str() else {
         return Ok(());
     };
+    let mut profile: Profile = serde_json::from_value(job["profile"].clone())?;
+    crate::model::profile_store::runtime::ready(store, &mut profile)?;
+    let task: Task = serde_json::from_value(job["task"].clone())?;
     let attempt_id = format!("{logical}:http:0");
     let permit = attempt::invoke(
         store,
@@ -162,7 +165,7 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
     let raw = permit["request_raw"]
         .as_str()
         .ok_or("original extraction request missing")?;
-    let result = main::physical_request(client, &cfg.profile, raw).await;
+    let result = main::physical_request(client, &profile, raw).await;
     let Ok((status, bytes, complete)) = result else {
         attempt::invoke(
             store,
@@ -174,7 +177,7 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
         return Ok(());
     };
     let text = String::from_utf8_lossy(&bytes).to_string();
-    let p = cfg.profile.protocol;
+    let p = profile.protocol;
     let usage = p.usage(&text).to_string();
     if !complete {
         attempt::invoke(
@@ -205,13 +208,8 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
     } else {
         let parsed = serde_json::from_str(&text).unwrap_or(Value::Null);
         if !p.complete(&parsed)
-            || p.decode(
-                &text,
-                Some(&cfg.task()),
-                &cfg.profile,
-                &serde_json::from_str(raw)?,
-            )
-            .is_err()
+            || p.decode(&text, Some(&task), &profile, &serde_json::from_str(raw)?)
+                .is_err()
         {
             attempt::invoke(
                 store,
@@ -241,5 +239,22 @@ async fn dispatch(store: &Store, cfg: &Arc<Config>, client: &reqwest::Client) ->
             crate::store::tests::commit_barrier("extract-response-before-facts").await;
         }
     }
+    Ok(())
+}
+
+/// Shared original extraction metadata for online commits and reviewed subsets.
+pub(crate) async fn details(conn: &mut SqliteConnection, fact: &str, claim: &Value) -> Result<()> {
+    sqlx::query(
+        "INSERT INTO extract_fact_details VALUES(?,?,?,?,?,?,?) ON CONFLICT(fact) DO NOTHING",
+    )
+    .bind(fact)
+    .bind(claim["category"].as_str())
+    .bind(claim["kind"].as_str().unwrap_or("fact"))
+    .bind(claim["importance"].as_i64().unwrap_or(3))
+    .bind(claim["temporal_mode"].as_str().unwrap_or("persistent"))
+    .bind(claim["valid_from"].as_str())
+    .bind(claim["valid_until"].as_str())
+    .execute(conn)
+    .await?;
     Ok(())
 }

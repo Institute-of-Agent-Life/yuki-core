@@ -1,3 +1,5 @@
+pub(crate) mod config;
+pub(crate) mod domain;
 use crate::{
     Result,
     store::{Mutation, Store},
@@ -13,6 +15,14 @@ use tokio::task::{JoinHandle, JoinSet};
 
 #[derive(Subcommand)]
 pub enum Action {
+    Control {
+        #[command(subcommand)]
+        command: domain::Action,
+    },
+    Profiles {
+        #[command(subcommand)]
+        command: crate::model::profile_store::Action,
+    },
     Personal {
         #[command(subcommand)]
         command: crate::host::personal::Operator,
@@ -93,6 +103,12 @@ pub enum Action {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    Control {
+        command: domain::Action,
+    },
+    Profiles {
+        command: crate::model::profile_store::Action,
+    },
     Personal {
         command: crate::host::personal::Operator,
     },
@@ -180,6 +196,10 @@ async fn handle(
     let request: Request = serde_json::from_str(&line)?;
     let shutdown = matches!(request, Request::Shutdown);
     let result = match request {
+        Request::Control { command } => domain::operator(&store, command).await,
+        Request::Profiles { command } => {
+            crate::model::profile_store::operator(&store, command).await
+        }
         Request::Person { command } => crate::identity::person::invoke(&store, command).await,
         Request::Account { command } => crate::identity::assignment::invoke(&store, command).await,
         Request::Entry { command } => crate::identity::entry::invoke(&store, command).await,
@@ -241,6 +261,8 @@ async fn send(stream: impl AsyncRead + AsyncWrite + Unpin, request: Request) -> 
 
 pub async fn invoke(data: &Path, action: Action) -> Result<()> {
     let request = match action {
+        Action::Control { command } => Request::Control { command },
+        Action::Profiles { command } => Request::Profiles { command },
         Action::Person { command } => Request::Person { command },
         Action::Account { command } => Request::Account { command },
         Action::Entry { command } => Request::Entry { command },

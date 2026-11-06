@@ -5,6 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 import hashlib, json, os, struct, subprocess, sys, zlib
 from pathlib import Path
 from tests.harness.compact import Owner, call, reply
+from tests.harness.gateway_media import run as gateway_inbound
+from tests.harness.selected_processor import run as selected_processor
 from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer
 from contextlib import closing
@@ -27,10 +29,12 @@ def png(pixel):
     )
 
 
-def installed(ctx, o, folders, sdk, model=None, visual=False, gateway=None):
+def installed(ctx, o, folders, sdk, model=None, visual=False, gateway=None, processor=None):
     text = ""
     if model:
         text += f'\n[main]\nendpoint="{model.url}"\nmodel="fixture"\nname="Yuki"\nmax_output=512\nroot_slots=8\nmax_input_units=1200000\nmerge_ms=1\nvision_input={str(visual).lower()}\n'
+    if model and processor:
+        text += "attachment_processor="+json.dumps(processor)+"\n"
     if model:
         text += (
             "\n[media]\ngateway_transfer_directory="
@@ -567,6 +571,8 @@ def run(ctx):
             if m.startswith("media.")
         ),
         "gateway_delivery": gateway_delivery(ctx, sdk, paper),
+        "gateway_inbound": gateway_inbound(ctx, sdk),
+        "selected_processor": selected_processor(ctx,sdk,installed,ready,png),
         "original_digest": digest,
         "physical_reader": capture,
         "foreign_handle_denied": True,

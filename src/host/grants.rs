@@ -2,12 +2,31 @@ use crate::{Result, tools::registry::Tool};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeSet, path::PathBuf};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::PathBuf,
+};
 use yuki_plugin_sdk::{Binding, Declaration};
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Install {
+    #[serde(default = "initially_enabled", skip_serializing_if = "is_enabled")]
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configuration: Option<super::configuration::Definition>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notifications: Option<super::notification::Policy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gateway_media: Option<super::gateway_media::Identity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sessions: Option<super::plugin_sessions::Policy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maintenance: Option<super::maintenance::Policy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub participation: Option<super::participation::Policy>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub aux_routes: BTreeMap<String, super::aux_model::Route>,
     pub id: String,
     pub namespace: String,
     pub program: PathBuf,
@@ -30,6 +49,12 @@ pub struct Install {
     #[serde(default)]
     pub tools: Vec<Tool>,
 }
+fn initially_enabled() -> bool {
+    true
+}
+fn is_enabled(value: &bool) -> bool {
+    *value
+}
 pub fn methods() -> &'static Value {
     static IDL: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
     IDL.get_or_init(|| {
@@ -38,9 +63,15 @@ pub fn methods() -> &'static Value {
         ))
         .expect("gateway IDL");
         for schema in [
+            include_str!("../../protocol/plugin/control/methods.json"),
             include_str!("../../protocol/plugin/personal/methods.json"),
             include_str!("../../protocol/plugin/media/methods.json"),
             include_str!("../../protocol/plugin/composition/methods.json"),
+            include_str!("../../protocol/plugin/aux-model/methods.json"),
+            include_str!("../../protocol/plugin/participation/methods.json"),
+            include_str!("../../protocol/plugin/maintenance/methods.json"),
+            include_str!("../../protocol/plugin/sessions/methods.json"),
+            include_str!("../../protocol/plugin/notifications/methods.json"),
         ] {
             let group: Value = serde_json::from_str(schema).expect("host extension IDL");
             for (name, method) in group["methods"].as_object().expect("extension methods") {
@@ -65,6 +96,48 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if self.grants.contains("terminal.work")
+            && !["tool.call", "forget.owner"]
+                .iter()
+                .all(|g| self.grants.contains(*g))
+        {
+            return Err("terminal.work requires tool.call and forget.owner".into());
+        }
+        if self.grants.contains("gateway.media") != self.gateway_media.is_some()
+            || self
+                .gateway_media
+                .as_ref()
+                .is_some_and(|i| !i.valid() || !self.grants.contains("gateway.inbound"))
+        {
+            return Err("gateway.media requires an inbound installation with an explicit application identity".into());
+        }
+        if let Some(policy) = &self.notifications {
+            policy.validate(self)?;
+        }
+        if let Some(definition) = &self.configuration {
+            definition.validate()?;
+        }
+        if let Some(policy) = &self.sessions {
+            policy.validate(self)?;
+        }
+        if let Some(policy) = &self.maintenance {
+            policy.validate(self)?;
+        }
+        if let Some(policy) = &self.participation {
+            policy.validate(self)?;
+        }
+        for (name, route) in &self.aux_routes {
+            if !identifier(name)
+                || !["llm.complete", "llm.result", "forget.owner"]
+                    .into_iter()
+                    .all(|g| self.grants.contains(g))
+            {
+                return Err(
+                    "auxiliary routes require explicit model and source-owner grants".into(),
+                );
+            }
+            route.validate()?;
+        }
         if !identifier(&self.id) || !identifier(&self.namespace) || !self.program.is_absolute() {
             return Err("invalid plugin identity or executable".into());
         }
@@ -138,11 +211,35 @@ impl Install {
         Ok(())
     }
     pub fn revision(&self) -> Result<String> {
-        let mut value = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
-        if let Some(runtime) = &self.composition {
-            value["composition"] = serde_json::to_value(runtime)?;
+        let mut identity = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if let Some(media) = &self.gateway_media {
+            identity["gateway_media"] = serde_json::to_value(media)?;
         }
-        Ok(format!("{:x}", Sha256::digest(serde_json::to_vec(&value)?)))
+        if let Some(policy) = &self.notifications {
+            identity["notifications"] = serde_json::to_value(policy)?;
+        }
+        if let Some(definition) = &self.configuration {
+            identity["configuration"] = serde_json::to_value(definition)?;
+        }
+        if let Some(policy) = &self.sessions {
+            identity["sessions"] = serde_json::to_value(policy)?;
+        }
+        if let Some(policy) = &self.maintenance {
+            identity["maintenance"] = serde_json::to_value(policy)?;
+        }
+        if let Some(policy) = &self.participation {
+            identity["participation"] = serde_json::to_value(policy)?;
+        }
+        if !self.aux_routes.is_empty() {
+            identity["aux_routes"] = serde_json::to_value(&self.aux_routes)?;
+        }
+        if let Some(runtime) = &self.composition {
+            identity["composition"] = serde_json::to_value(runtime)?;
+        }
+        Ok(format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&identity)?)
+        ))
     }
     pub fn binding(&self) -> Result<Binding> {
         let declarations = self
@@ -204,7 +301,15 @@ mod tests {
     #[test]
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
+            gateway_media: None,
+            notifications: None,
+            enabled: true,
+            configuration: None,
+            sessions: None,
+            maintenance: None,
+            participation: None,
             erasure_args: None,
+            aux_routes: BTreeMap::new(),
             composition: None,
             id: "p".into(),
             namespace: "qq.native".into(),

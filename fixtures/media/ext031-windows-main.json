@@ -1,0 +1,89 @@
+{
+  "core": "0ef956a9c6d90fae79c0d4488296c064ccf29f54",
+  "tree": "d72198db8c055f78149dc933a56c4cad7e16ade8c1a441c7c1a653bba94301cb",
+  "sdk_versions": {
+    "python": "1.0.0a13",
+    "rust": "1.0.0-alpha.13"
+  },
+  "core_archive_sha256": "a81c49a722b9e1e420d5084856f7a13aed116865f7ca0a4c1304ac10881c62f3",
+  "consumer_unit": "EXT-031",
+  "consumer_snapshot_sha256": "fd7fb275dae5aa500f4249a077b858bbbdfa5982643b97aaae4a5e918fc8cd90",
+  "consumer_binary_sha256": "2d0e7e9b910789bf34b8d263475c71a720a2ee650628fc88a3292a64e26d454c",
+  "ffmpeg_sha256": "2ce797a0f88d7f067180338fb227f7b1928ea727bd9a4d7a1d022f7c52af71a3",
+  "cases": {
+    "pdf": {
+      "input_sha256": "753e25b038830e03768f05449dab4b8f05ef0534927abb9282eab60f4c5ecf42",
+      "event": 1,
+      "slot": 1,
+      "execution": "3650840c-119f-4ad1-b033-087d738065c3",
+      "model_attempts": 2,
+      "physical_processor_calls": 1,
+      "http_frame_sha256": [],
+      "receipt": {
+        "kind": "pdf",
+        "source": {
+          "event": 1,
+          "slot": 1
+        },
+        "state": "read",
+        "text": "\n[page 1]\nSelected page one\n[page 2]\nSelected page two\n[PDF text extraction only; embedded images were not read.]\n",
+        "total_units": 2,
+        "truncated": false,
+        "units_read": 2,
+        "version": "753e25b038830e03768f05449dab4b8f05ef0534927abb9282eab60f4c5ecf42"
+      },
+      "http_request_sha256": "e62273add9d554ec53f491bec82a822023fb56cd1f3e8411196c15f4f6e87e87"
+    },
+    "video": {
+      "input_sha256": "c07d7e011bc253f0e6ad6d8a958093abf6bb04fe0afee7f14536e6091a0fd1b9",
+      "event": 1,
+      "slot": 1,
+      "execution": "6bac3ca7-b63d-4099-af1e-ad5e7fc35c06",
+      "model_attempts": 2,
+      "physical_processor_calls": 1,
+      "http_frame_sha256": [
+        "62218f03a1a02acf72d2136af6c6d0f2c399a8afe27df68063f2c97d85c5fd7d",
+        "62218f03a1a02acf72d2136af6c6d0f2c399a8afe27df68063f2c97d85c5fd7d"
+      ],
+      "receipt": {
+        "frames": [
+          {
+            "index": 0,
+            "seconds": 0.0,
+            "sha256": "62218f03a1a02acf72d2136af6c6d0f2c399a8afe27df68063f2c97d85c5fd7d"
+          },
+          {
+            "index": 1,
+            "seconds": 5.0,
+            "sha256": "62218f03a1a02acf72d2136af6c6d0f2c399a8afe27df68063f2c97d85c5fd7d"
+          }
+        ],
+        "images": [
+          {
+            "artifact_id": "ac45a530-34e7-4e37-8039-5702579026d9",
+            "ordinal": 0,
+            "state": "ready"
+          },
+          {
+            "artifact_id": "e8d4545a-f4f6-4833-84b5-53f89562d994",
+            "ordinal": 1,
+            "state": "ready"
+          }
+        ],
+        "kind": "video",
+        "limit_frames": 8,
+        "limit_seconds": 600,
+        "source": {
+          "event": 1,
+          "slot": 1
+        },
+        "state": "read",
+        "version": "c07d7e011bc253f0e6ad6d8a958093abf6bb04fe0afee7f14536e6091a0fd1b9"
+      },
+      "http_request_sha256": "8966cc2ad86a307841d2000d6f89fa86d04237c18b9ee0092a0779fe45a49bd3"
+    }
+  },
+  "published": false,
+  "live_gateway": false,
+  "paid_requests": 0
+}

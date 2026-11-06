@@ -1,0 +1,13 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/services/agent_runner.py": "1e199c0a29297417961553087885507eb6472963ee1e5363346a36f917d1d807",
+    "src/yuki/capabilities/validation.py": "103d9d5aaf73202ca7d980d5fb7cd4b49f5940292e1e56762373ac1f5b54ea32"
+  },
+  "cases": [
+    "tests/unit/test_plugin_result_access.py::test_scheduled_main_does_not_redeclare_retired_raw_tool_for_admin",
+    "tests/integration/test_subagent_common_capabilities.py::test_child_executes_main_business_tools_with_own_receipts"
+  ],
+  "pytest_exit": 0,
+  "scope": "Original undeclared call rejects without dispatch and continuation can complete; not a Rust acceptance result"
+}

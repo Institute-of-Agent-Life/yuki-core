@@ -1,5 +1,7 @@
 pub mod batch;
 pub(crate) mod budget;
+mod original_views;
+pub(crate) mod permissions;
 pub mod registry;
 pub mod results;
 pub mod transient;
@@ -16,6 +18,7 @@ pub struct Change {
     actor: String,
     op: String,
     prepared: std::result::Result<Value, String>,
+    artifact_version: Option<String>,
 }
 
 pub(crate) async fn settle(
@@ -31,6 +34,7 @@ pub(crate) async fn settle(
             actor: actor.into(),
             op: op.into(),
             prepared: value.map_err(|e| e.to_string()),
+            artifact_version: None,
         })))
         .await?;
     Ok(())
@@ -42,15 +46,27 @@ pub async fn reject(
     op: &str,
     reason: String,
 ) -> Result<()> {
+    reject_receipt(store, exec, actor, op, reason).await?;
+    Ok(())
+}
+
+/// Return the writer's actual receipt: only an unclaimed intent may become a refusal.
+pub(crate) async fn reject_receipt(
+    store: &Store,
+    exec: &str,
+    actor: &str,
+    op: &str,
+    reason: String,
+) -> Result<Value> {
     store
         .write(Mutation::Tool(Box::new(Change {
             exec: exec.into(),
             op: op.into(),
             actor: actor.into(),
             prepared: Err(reason),
+            artifact_version: None,
         })))
-        .await?;
-    Ok(())
+        .await
 }
 pub async fn perform(
     store: &Store,
@@ -82,14 +98,19 @@ pub async fn perform(
     } else {
         None
     };
+    let mut artifact_version = None;
     let result = if let Some(original) = cached {
         Ok(serde_json::from_str(&original)?)
     } else {
         match name {
-            "lookup_tools" => manifest.lookup(&args, cfg.try_get("code_projection")?),
+            "get_my_capabilities" => permissions::read(&mut tx, exec, actor, &args).await,
+            "lookup_tools" => manifest.model_lookup(&args, cfg.try_get("code_projection")?),
             "time_get_current" => transient::clock(transient::now()?, &timezone),
             "update_short_state" => Ok(Value::Null),
             "history_directory" => history::query::directory(&mut tx, exec, actor).await,
+            "get_group_members" => {
+                history::query::members::read(&mut tx, exec, actor, &args, false).await
+            }
             "find_contacts" | "find_conversations" => {
                 history::query::contacts::read(&mut tx, exec, actor, name, &args).await
             }
@@ -99,12 +120,13 @@ pub async fn perform(
                 let input = results::load(&mut tx, exec, actor, &args).await;
                 drop(tx);
                 match input {
-                    Ok(raw) => {
+                    Ok(snapshot) => {
+                        artifact_version = Some(snapshot.hash.clone());
                         let mut shell = initial;
                         shell["state"] = json!("confirmed");
                         let overhead = shell.to_string().chars().count().saturating_sub(4);
                         tokio::task::spawn_blocking(move || {
-                            results::page(&raw, &args, budget.saturating_sub(overhead))
+                            snapshot.page(&args, budget.saturating_sub(overhead))
                         })
                         .await?
                     }
@@ -120,6 +142,7 @@ pub async fn perform(
             op: op.into(),
             actor: actor.into(),
             prepared: result.map_err(|e| e.to_string()),
+            artifact_version,
         })))
         .await?;
     Ok(())
@@ -131,16 +154,26 @@ pub async fn apply(conn: &mut SqliteConnection, call: &Change) -> Result<Value> 
         actor,
         op,
         prepared,
+        artifact_version,
     } = call;
-    finish_prepared(conn, exec, actor, op, prepared.clone()).await
+    finish_guarded(
+        conn,
+        exec,
+        actor,
+        op,
+        prepared.clone(),
+        artifact_version.as_deref(),
+    )
+    .await
 }
 
-pub(crate) async fn finish_prepared(
+pub(crate) async fn finish_guarded(
     conn: &mut SqliteConnection,
     exec: &str,
     actor: &str,
     op: &str,
     prepared: std::result::Result<Value, String>,
+    artifact_version: Option<&str>,
 ) -> Result<Value> {
     effects::authorize(conn, exec, actor, true).await?;
     let row=sqlx::query("SELECT target,payload,state FROM operations WHERE namespace=? AND operation_id=? AND action='external'").bind(exec).bind(op).fetch_one(&mut *conn).await?;
@@ -152,6 +185,11 @@ pub(crate) async fn finish_prepared(
     let mut output = prepared;
     if output.is_ok() {
         match name.as_str() {
+            "get_my_capabilities" => {
+                output = permissions::read(conn, exec, actor, &args)
+                    .await
+                    .map_err(|e| e.to_string());
+            }
             "search_memory" => {
                 output = crate::memory::search_tool::confirm(conn, exec, actor, &args, &output?)
                     .await
@@ -159,6 +197,11 @@ pub(crate) async fn finish_prepared(
             }
             "update_short_state" => {
                 output = Ok(transient::update(conn, exec, &args, transient::now()?).await?);
+            }
+            "get_group_members" => {
+                output = history::query::members::read(conn, exec, actor, &args, true)
+                    .await
+                    .map_err(|e| e.to_string());
             }
             "find_contacts" | "find_conversations" => {
                 output = history::query::contacts::read(conn, exec, actor, &name, &args)
@@ -179,7 +222,9 @@ pub(crate) async fn finish_prepared(
                     exec,
                     actor,
                     args["handle"].as_str().ok_or("missing handle")?,
-                    args["version"].as_str().ok_or("missing version")?,
+                    artifact_version
+                        .or_else(|| args["version"].as_str())
+                        .ok_or("missing artifact read version")?,
                 )
                 .await
                 {
@@ -202,6 +247,7 @@ pub(crate) async fn finish_prepared(
         }
     }
     let (state, result) = match output {
+        Ok(v) if name == "lookup_tools" && v["ok"] == false => ("failed", v),
         Ok(v) => ("confirmed", v),
         Err(e) => ("failed", json!({"error":e})),
     };
@@ -245,13 +291,12 @@ pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
             args,
         } => {
             let params: Value = serde_json::from_str(&args)?;
-            if !jsonschema::validator_for(&registry::builtin("read_tool_artifact").unwrap().schema)?
-                .is_valid(&params)
-            {
+            if !jsonschema::validator_for(&results::operator_schema())?.is_valid(&params) {
                 return Err("invalid artifact request".into());
             }
             let mut tx = store.readers().begin().await?;
-            let raw = results::load(&mut tx, &execution, &actor, &params).await?;
+            let snapshot = results::load(&mut tx, &execution, &actor, &params).await?;
+            let version = snapshot.hash.clone();
             let budget: i64 = sqlx::query_scalar(
                 "SELECT page_budget FROM execution_tool_views WHERE execution=?",
             )
@@ -260,17 +305,16 @@ pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
             .await?;
             drop(tx);
             let selection = params.clone();
-            let result = tokio::task::spawn_blocking(move || {
-                results::page(&raw, &selection, budget as usize)
-            })
-            .await??;
+            let result =
+                tokio::task::spawn_blocking(move || snapshot.page(&selection, budget as usize))
+                    .await??;
             let mut final_read = store.readers().begin().await?;
             results::authorize(
                 &mut final_read,
                 &execution,
                 &actor,
                 params["handle"].as_str().unwrap(),
-                params["version"].as_str().unwrap(),
+                &version,
             )
             .await?;
             Ok(result)

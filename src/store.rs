@@ -57,6 +57,15 @@ async fn read_pool(data: &Path) -> Result<SqlitePool> {
 }
 
 pub enum Mutation {
+    Control(
+        Arc<crate::operator::domain::Service>,
+        Box<crate::operator::domain::Request>,
+    ),
+    ProfileConfig(
+        Arc<crate::model::profile_store::Service>,
+        Box<crate::model::profile_store::Request>,
+    ),
+    ParticipationQq(Vec<String>, Vec<(String, String, String, bool)>),
     ToolBudget(String, String, String),
     Personal(Box<crate::host::personal::Request>),
     Host(Box<crate::host::Change>),
@@ -91,6 +100,7 @@ pub enum Mutation {
 }
 
 trait Driver: Send + 'static {
+    fn info(&mut self) -> impl Future<Output = Result<Value>> + Send;
     fn begin(&mut self) -> impl Future<Output = Result<()>> + Send;
     fn apply(&mut self, action: &Mutation) -> impl Future<Output = Result<Value>> + Send;
     fn commit(&mut self) -> impl Future<Output = Result<()>> + Send;
@@ -129,6 +139,35 @@ impl SqliteDriver {
     }
 }
 impl Driver for SqliteDriver {
+    async fn info(&mut self) -> Result<Value> {
+        let version: String = sqlx::query_scalar("SELECT sqlite_version()")
+            .fetch_one(&mut *self.connection())
+            .await?;
+        let compile_options: Vec<String> = sqlx::query_scalar("PRAGMA compile_options")
+            .fetch_all(&mut *self.connection())
+            .await?;
+        let foreign_keys: i64 = sqlx::query_scalar("PRAGMA foreign_keys")
+            .fetch_one(&mut *self.connection())
+            .await?;
+        let journal_mode: String = sqlx::query_scalar("PRAGMA journal_mode")
+            .fetch_one(&mut *self.connection())
+            .await?;
+        let schema_version: Option<i64> =
+            sqlx::query_scalar("SELECT MAX(version) FROM _sqlx_migrations")
+                .fetch_one(&mut *self.connection())
+                .await?;
+        let synchronous: i64 = sqlx::query_scalar("PRAGMA synchronous")
+            .fetch_one(self.connection())
+            .await?;
+        let busy_timeout: i64 = sqlx::query_scalar("PRAGMA busy_timeout")
+            .fetch_one(self.connection())
+            .await?;
+        Ok(
+            json!({"sqlite_version":version,"compile_options":compile_options,"foreign_keys":foreign_keys,
+            "journal_mode":journal_mode,"synchronous":synchronous,"busy_timeout_ms":busy_timeout,"observed_connection":"writer","schema_version":schema_version,"minimum_reader":schema_version}),
+        )
+    }
+
     async fn begin(&mut self) -> Result<()> {
         sqlx::query("BEGIN IMMEDIATE")
             .execute(self.connection())
@@ -137,6 +176,30 @@ impl Driver for SqliteDriver {
     }
     async fn apply(&mut self, action: &Mutation) -> Result<Value> {
         let label = match action {
+            Mutation::ParticipationQq(receivers, groups) => {
+                sqlx::query("DELETE FROM participation_qq_receivers")
+                    .execute(self.connection())
+                    .await?;
+                sqlx::query("DELETE FROM participation_qq_groups")
+                    .execute(self.connection())
+                    .await?;
+                for stage in receivers {
+                    sqlx::query("INSERT INTO participation_qq_receivers VALUES(?)")
+                        .bind(stage)
+                        .execute(self.connection())
+                        .await?;
+                }
+                for (namespace, group, stage, enabled) in groups {
+                    sqlx::query("INSERT INTO participation_qq_groups VALUES(?,?,?,?)")
+                        .bind(namespace)
+                        .bind(group)
+                        .bind(stage)
+                        .bind(enabled)
+                        .execute(self.connection())
+                        .await?;
+                }
+                return Ok(Value::Null);
+            }
             Mutation::ToolBudget(exec, actor, op) => {
                 return crate::tools::budget::charge(self.connection(), exec, actor, op).await;
             }
@@ -144,6 +207,13 @@ impl Driver for SqliteDriver {
                 sqlx::query("INSERT INTO recovered_groups(namespace,native_group,stage,enabled,revision) VALUES(?,?,?,0,1) ON CONFLICT DO NOTHING")
                     .bind(namespace).bind(group).bind(stage).execute(self.connection()).await?;
                 return Ok(Value::Null);
+            }
+            Mutation::ProfileConfig(service, request) => {
+                return crate::model::profile_store::apply(self.connection(), service, request)
+                    .await;
+            }
+            Mutation::Control(service, request) => {
+                return crate::operator::domain::apply(self.connection(), service, request).await;
             }
             Mutation::Personal(change) => {
                 return crate::host::personal::apply(self.connection(), change).await;
@@ -299,12 +369,17 @@ struct Signals {
 }
 
 enum Command {
+    Inspect(oneshot::Sender<Result<Value>>),
     Write(Mutation, oneshot::Sender<Result<Value>>),
     Shutdown(oneshot::Sender<Result<()>>),
 }
 
 #[derive(Clone)]
 pub struct Store {
+    pub(crate) draining_http: tokio::sync::watch::Sender<bool>,
+    pub(crate) active_turns: crate::runtime::main::activity::Active,
+    pub(crate) profile_files: Option<Arc<crate::model::profile_store::Service>>,
+    pub(crate) control: Option<Arc<crate::operator::domain::Service>>,
     pub media: Option<Arc<crate::media::Runtime>>,
     pub host: Option<Arc<crate::host::Hub>>,
     pub vectors: Option<Arc<crate::memory::embedding::Engine>>,
@@ -335,6 +410,7 @@ impl Store {
         let mut driver = SqliteDriver::open(data).await?;
         crate::model::attempt::recover_unanswered(driver.connection()).await?;
         crate::social::send::recover(driver.connection()).await?;
+        crate::work::management::recover(driver.connection()).await?;
         Ok(Self::start(driver, read_pool(data).await?))
     }
     fn start(mut driver: impl Driver, readers: SqlitePool) -> Self {
@@ -349,6 +425,11 @@ impl Store {
         tokio::spawn(async move {
             while let Some(command) = queue.recv().await {
                 match command {
+                    Command::Inspect(reply) => {
+                        if !reply.is_closed() {
+                            let _ = reply.send(driver.info().await);
+                        }
+                    }
                     Command::Shutdown(reply) => {
                         state.accepting.store(false, Ordering::SeqCst);
                         let _ = reply.send(driver.close().await);
@@ -392,6 +473,10 @@ impl Store {
             let _ = driver.close().await;
         });
         Self {
+            draining_http: tokio::sync::watch::channel(false).0,
+            active_turns: Default::default(),
+            profile_files: None,
+            control: None,
             vectors: None,
             media: None,
             search: None,
@@ -439,26 +524,12 @@ impl Store {
         }
     }
     pub async fn database_info(&self) -> Result<Value> {
-        let version: String = sqlx::query_scalar("SELECT sqlite_version()")
-            .fetch_one(&self.readers)
-            .await?;
-        let compile_options: Vec<String> = sqlx::query_scalar("PRAGMA compile_options")
-            .fetch_all(&self.readers)
-            .await?;
-        let foreign_keys: i64 = sqlx::query_scalar("PRAGMA foreign_keys")
-            .fetch_one(&self.readers)
-            .await?;
-        let journal_mode: String = sqlx::query_scalar("PRAGMA journal_mode")
-            .fetch_one(&self.readers)
-            .await?;
-        let schema_version: Option<i64> =
-            sqlx::query_scalar("SELECT MAX(version) FROM _sqlx_migrations")
-                .fetch_one(&self.readers)
-                .await?;
-        Ok(
-            json!({"sqlite_version":version,"compile_options":compile_options,"foreign_keys":foreign_keys,
-            "journal_mode":journal_mode,"schema_version":schema_version,"minimum_reader":schema_version}),
-        )
+        let (reply, result) = oneshot::channel();
+        self.commands
+            .send(Command::Inspect(reply))
+            .await
+            .map_err(|_| "writer stopped")?;
+        result.await?
     }
     pub async fn shutdown(&self) -> Result<()> {
         let (reply, result) = oneshot::channel();

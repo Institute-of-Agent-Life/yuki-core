@@ -117,8 +117,38 @@ pub(crate) async fn authorize(
     actor: &str,
     dispatch: bool,
 ) -> Result<String> {
-    if dispatch && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM executions x JOIN work_suspensions s ON s.work=x.work_id WHERE x.id=?)").bind(execution).fetch_one(&mut *conn).await?{return Err("Work independently suspended".into());}
-    let erased:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=?)").bind(execution).fetch_one(&mut *conn).await?;
+    authorize_run(conn, execution, actor, dispatch, false).await
+}
+
+/// Resume checks the same source and route as dispatch, while allowing the
+/// suspension that this management action will atomically remove.
+pub(crate) async fn authorize_resume(
+    conn: &mut SqliteConnection,
+    execution: &str,
+) -> Result<String> {
+    let actor: String =
+        sqlx::query_scalar("SELECT coalesce(original_actor,origin) FROM executions WHERE id=?")
+            .bind(execution)
+            .fetch_one(&mut *conn)
+            .await?;
+    authorize_run(conn, execution, &actor, true, true).await
+}
+
+async fn authorize_run(
+    conn: &mut SqliteConnection,
+    execution: &str,
+    actor: &str,
+    dispatch: bool,
+    resuming: bool,
+) -> Result<String> {
+    if dispatch {
+        crate::host::participation::authorize(conn, execution).await?;
+        crate::host::maintenance::authorize(conn, execution).await?;
+        crate::host::plugin_sessions::authorize(conn, execution).await?;
+        crate::host::notification::authorize(conn, execution).await?;
+    }
+    if dispatch && !resuming && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM executions x JOIN work_suspensions s ON s.work=x.work_id WHERE x.id=?)").bind(execution).fetch_one(&mut *conn).await?{return Err("Work independently suspended".into());}
+    let erased = crate::privacy::source::execution_erased(conn, execution, None).await?;
     if erased {
         return Err("execution source erased".into());
     }
@@ -134,6 +164,7 @@ pub(crate) async fn authorize(
         {
             return Err("original extraction scope unavailable".into());
         }
+        let maintenance = crate::host::maintenance::is_background(conn, execution).await?;
         // Resolve every registered parent afresh. A delegated run never substitutes the
         // current owner of a transferred human account for its original actor.
         let allowed:bool=sqlx::query_scalar("WITH RECURSIVE family(id) AS(
@@ -143,10 +174,10 @@ pub(crate) async fn authorize(
             LEFT JOIN events e ON e.id=x.source LEFT JOIN entries route ON route.id=coalesce(e.entry_id,o.conversation)
             LEFT JOIN persons p ON p.id=x.original_actor LEFT JOIN persons r ON r.id=coalesce(p.current_root,p.id)
             LEFT JOIN assignments a ON a.id=e.actor_stage LEFT JOIN assignments b ON b.id=e.bot_stage
-            WHERE (x.origin IS NOT NULL AND (NOT o.enabled OR route.closed_at IS NOT NULL)) OR (x.source IS NOT NULL AND (NOT p.enabled OR NOT r.enabled))
+            WHERE (x.origin IS NOT NULL AND (NOT o.enabled OR (route.closed_at IS NOT NULL AND NOT ?5))) OR (x.source IS NOT NULL AND (NOT p.enabled OR NOT r.enabled))
             OR EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=x.source OR i.source IN(SELECT event FROM main_dependencies WHERE execution=x.id))
-            OR (?4 AND (x.cancelled OR route.closed_at IS NOT NULL OR (x.source IS NOT NULL AND (a.status!='active' OR b.status!='active')))))")
-          .bind(execution).bind(&origin).bind(actor).bind(dispatch).fetch_one(conn).await?;
+            OR (?4 AND (x.cancelled OR (route.closed_at IS NOT NULL AND NOT ?5) OR (x.source IS NOT NULL AND (a.status!='active' OR b.status!='active')))))")
+          .bind(execution).bind(&origin).bind(actor).bind(dispatch).bind(maintenance).fetch_one(conn).await?;
         return if allowed {
             Ok(origin)
         } else {

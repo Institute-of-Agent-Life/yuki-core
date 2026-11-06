@@ -135,7 +135,10 @@ def observe(ctx, specs, routes, wire):
                 ("upload_private_file", content),
             )
             get(path, a["token"], 404)
-            peer.send({"echo": sent["echo"], "status": "ok", "retcode": 0, "data": {}})
+            from tests.harness.client_stream import observe as observe_stream
+            ctx.write("client-outbound-stream.json",observe_stream(ctx,o,wire,pair,a,foreign,work,event,
+                lambda:peer.send({"echo": sent["echo"], "status": "ok", "retcode": 0, "data": {}})))
+            routes.add("GET /client/v1/stream")
             _, q = o.wire(model)
             listing = get("/client/v1/artifacts?kind=document&limit=1", a["token"])
             row = listing["items"][0]
@@ -319,6 +322,19 @@ def observe(ctx, specs, routes, wire):
                 get("/client/v1/artifacts", b["token"])["items"],
                 [],
             )
+        # Keep one HTTP stream open across a real owner shutdown. Graceful drain
+        # must release it even if no later database commits are made.
+        from tests.harness.client_stream import Stream
+        held=None
+        try:
+            with o.svc.running(environment=env):
+                held=Stream(o.svc.address,foreign)
+                ctx.check("subscriber is active before owner drain",held.frame()[0]=="sync")
+            while held.frame() is not None:
+                pass
+            ctx.check("owner shutdown closes live SSE connection",True)
+        finally:
+            if held:held.close()
     return {
         "artifact": fid,
         "version": digest,

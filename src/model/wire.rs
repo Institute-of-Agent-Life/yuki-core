@@ -1,3 +1,4 @@
+use super::tool_rejection::{self, Rejection};
 use super::{
     chat::{self, Task, Turn},
     gemini, messages, responses,
@@ -5,6 +6,7 @@ use super::{
 use crate::{Result, runtime::main::Config};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::collections::HashMap;
 
 #[derive(Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -28,17 +30,19 @@ impl Protocol {
         self == Self::AnthropicMessages
     }
     pub fn request(self, layout: Value, cfg: &Config, task: Option<&Task>) -> Result<Value> {
-        if self.is_gemini() {
-            return gemini::request(layout, cfg, task);
-        }
-        if self.is_chat() {
-            Ok(layout)
+        let mut body = if self.is_gemini() {
+            gemini::request(layout, cfg, task)?
+        } else if self.is_chat() {
+            layout
         } else if self.is_messages() {
-            messages::request(layout, cfg, task)
+            messages::request(layout, cfg, task)?
         } else {
-            responses::request(layout, cfg, task)
-        }
+            responses::request(layout, cfg, task)?
+        };
+        super::profile_store::wire::configure(cfg, &mut body)?;
+        Ok(body)
     }
+
     pub fn decode(
         self,
         raw: &str,
@@ -53,14 +57,32 @@ impl Protocol {
         if self.is_gemini() {
             return gemini::decode(&response, task, paid);
         }
-        self.check_declarations(&response, paid)?;
-        if self.is_chat() {
-            chat::decode(raw, task)
-        } else {
-            responses::decode(raw, task, cfg)
+        let errors = self.check_declarations(&response, paid)?;
+        if task.is_some() && !errors.is_empty() {
+            return Err("invalid structured tool declaration or arguments".into());
         }
+        let mut turn = if self.is_chat() {
+            chat::decode(raw, task)?
+        } else {
+            responses::decode(raw, task, cfg)?
+        };
+        for intent in turn
+            .intents
+            .as_array_mut()
+            .ok_or("missing decoded tool batch")?
+        {
+            if let Some(error) = intent["call_id"].as_str().and_then(|id| errors.get(id)) {
+                tool_rejection::mark(intent, *error);
+            }
+        }
+        Ok(turn)
     }
-    fn check_declarations(self, response: &Value, paid: &Value) -> Result<()> {
+    fn check_declarations(
+        self,
+        response: &Value,
+        paid: &Value,
+    ) -> Result<HashMap<String, Rejection>> {
+        let mut errors = HashMap::new();
         let declared = paid["tools"]
             .as_array()
             .map(Vec::as_slice)
@@ -92,26 +114,33 @@ impl Protocol {
                 .iter()
                 .filter(|d| d["type"] == "function")
                 .map(|d| if self.is_chat() { &d["function"] } else { d })
-                .find(|d| d["name"] == name)
-                .ok_or("function absent from original paid request")?;
+                .find(|d| d["name"] == name);
             let choice = &paid["tool_choice"];
             let selected = choice["function"]["name"]
                 .as_str()
                 .or(choice["name"].as_str());
-            if choice == "none" || selected.is_some_and(|required| required != name) {
-                return Err("function violates original tool selection".into());
-            }
-            let args: Value = serde_json::from_str(
-                call["arguments"]
-                    .as_str()
-                    .ok_or("missing original arguments")?,
+            let raw = call["arguments"]
+                .as_str()
+                .ok_or("missing original arguments")?;
+            let parsed = serde_json::from_str::<Value>(raw);
+            let args = tool_rejection::arguments(raw);
+            let error = tool_rejection::validate(
+                original.map(|d| &d["parameters"]),
+                &args,
+                choice != "none" && selected.is_none_or(|required| required == name),
             )?;
-            if !jsonschema::validator_for(&original["parameters"])?.is_valid(&args) {
-                return Err("arguments violate originally paid schema".into());
+            let error =
+                error.or_else(|| parsed.is_err().then_some(Rejection::InvalidToolArguments));
+            if let Some(error) = error {
+                let id = item[if self.is_chat() { "id" } else { "call_id" }]
+                    .as_str()
+                    .ok_or("missing original call ID")?;
+                errors.insert(id.into(), error);
             }
         }
-        Ok(())
+        Ok(errors)
     }
+
     pub fn complete(self, body: &Value) -> bool {
         if self.is_gemini() {
             return gemini::complete(body);
@@ -199,9 +228,23 @@ impl Protocol {
 mod tests {
     use super::*;
     #[test]
+    fn invalid_arguments_and_choices_keep_their_original_call_ids() {
+        let mut paid = json!({"tools":[{"type":"function","function":{"name":"get","parameters":{"type":"object","properties":{"target":{"type":"string"}},"required":["target"]}}}]});
+        let answer = json!({"choices":[{"message":{"tool_calls":[{"id":"bad","function":{"name":"get","arguments":"{\"target\":7}"}},{"id":"good","function":{"name":"get","arguments":"{\"target\":\"key\"}"}}]}}]});
+        let rejected = Protocol::Chat.check_declarations(&answer, &paid).unwrap();
+        assert_eq!(rejected.len(), 1);
+        assert_eq!(rejected["bad"], Rejection::InvalidToolArguments);
+        paid["tool_choice"] = json!({"type":"function","function":{"name":"put"}});
+        let rejected = Protocol::Chat.check_declarations(&answer, &paid).unwrap();
+        assert_eq!(rejected["good"], Rejection::ToolChoiceMismatch);
+    }
+    #[test]
     fn new_history_tool_cannot_enter_an_existing_paid_activation() {
         let paid = json!({"tools":[{"type":"function","function":{"name":"get","parameters":{"type":"object"}}}]});
-        let answer = json!({"choices":[{"message":{"tool_calls":[{"function":{"name":"history_query","arguments":"{}"}}]}}]});
-        assert!(Protocol::Chat.check_declarations(&answer, &paid).is_err());
+        let answer = json!({"choices":[{"message":{"tool_calls":[{"id":"original","function":{"name":"history_query","arguments":"{}"}}]}}]});
+        assert_eq!(
+            Protocol::Chat.check_declarations(&answer, &paid).unwrap()["original"],
+            Rejection::ToolNotDeclared
+        );
     }
 }

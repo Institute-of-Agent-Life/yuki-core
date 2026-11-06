@@ -1,0 +1,30 @@
+{
+  "baseline_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "ci_commit": "9138a528872bb9775b9ac05ddb38b5c1de6d7df2",
+  "archive_sha256": "44ee180125e155fb7de2e2d06c4d59c4be3b62e514b11d71e9a4aebc23cb1189",
+  "current_fixed_oracle_tests": 22,
+  "oracle_path": "/Users/huangjiawei/.cache/yuki-core/model-config-oracle-01",
+  "members": {
+    "settings-defaults.json": "80aca053161e7ee134d35b1b34c1f6318c764fea9f492c205672c0f78fcf4d39",
+    "existing-segments.json": "75d92936bf63463321663aa6b751ea7c77ba5db7986aaed726668257102794e6",
+    "explicit-defaults-absent.json": "da776796810c67e591d4578106c801a62d364e8a2ba2b878be5b7f37175742ca",
+    "explicit-dotenv-absent.json": "aedc6cfd0e3048198f73bb17829dedc52bb55a016b88c82b3438b7ab5d448376",
+    "explicit-dotenv-global.json": "bf697009a9f550766748bacce812c0f5f9a9434e8cba475ffff9ede003407a83",
+    "explicit-dotenv-null.json": "f062db84ac2780900f3508700968ba1a72b9e0e43bce7ae875f063f93c8664e4",
+    "explicit-process-absent.json": "5c86f8384c6070c0944d06983eee59481826d74c09c619d02333ff90c46051e9",
+    "explicit-process-global.json": "415bf6836dbbe829f2ab8483a7cc29a4a0c136ff704a8f482ce233fb2050f2f3",
+    "explicit-process-null.json": "7ab87b94e64f5248109836a378e832782d4e3f2d61c66dbccfe11d77a531acca",
+    "explicit-sources-retired.json": "74022534646e8194c8ee8b54f1ad3e9bd0bd911d9b8d3e166ab3c02a408c32d8",
+    "global-777.json": "b8b13bf85fdccea001fee7fb967d47c754b3da67c30a6e8ad9112aa7932fd1ca",
+    "global-None.json": "21448efbcd82e0bab86b4c96128a8942bf37726078760c0539ec0864be27ab0a",
+    "main-profile-defaults.json": "06535f1ea1442de6130303ffeae872dd5629a2fcdbad2b8a520d583150fc3f6c",
+    "no-empty-key.json": "38977b4f21861d4e9e0f59cae651b7260a6d56ab09a27d52fc2989d26980a01d",
+    "no-partial-write.json": "290f4f42747004f8bb270259b1418e2cd9c9b7bb5d0792db0556dba5c0a2b22a",
+    "offline-effective.json": "132cf82970a72d11cdb78984f4ecaa0ec342c8ab872ac973fa2cd083ee80c751",
+    "persisted-model-source.json": "46e624ab5d04d267553af7afab17a7c001d036c16955ee25f75fb0adcbd0a2b2",
+    "retirement-partial.json": "ad06b7ccc35123822d77514c7d9e539e03414b7d3307d3406d7cab79ad1b2a30",
+    "search-mode-both.json": "35f3c6998f46b5875cda107cd70fce22cbd818c1bb782edc56e84527f1f56b69",
+    "search-mode-native.json": "82c3dd32eaee7affb3c11f60fd769846f25edb3356ef2241a738d220c0069100",
+    "search-mode-tavily.json": "75239af694f37cdc5862ca3b931e6a551449ddea043246c77482561c0fcbdea0"
+  }
+}

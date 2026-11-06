@@ -1,0 +1,163 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/client_api/http.py": "a6990f67a2fb616dd58368540ec905b84b42daa4953c83f5e5a0d35ed283869c",
+    "src/yuki/client_api/identity.py": "0c30ce251f4c5bbfd18e1acbf491be600da2771b7e6ce1c5b06999bd15a1a5cb",
+    "src/yuki/client_api/requests.py": "2a309fe63976d72ea7d66806a2bf70333b7ee3ba6f12af42ec4594903969517b",
+    "src/yuki/client_api/sessions.py": "c8ff92215cc1b888483daed3a6b2d9e88f6314d1e9dcda4ec4aecba80c1dbf65",
+    "tests/unit/test_acp_sessions.py": "5ab77188fd95d3fa08da042f18c2b0d0300e5bdca74fa031387399a773bec467"
+  },
+  "scenarios": [
+    {
+      "name": "default-before",
+      "result": {
+        "person_id": "A",
+        "source_person_id": "A",
+        "request_person_id": "A",
+        "binding_id": "A.app",
+        "conversation_id": "A.home",
+        "request_scope": "A",
+        "request_conversation_id": null,
+        "thread_id": null,
+        "platform": "app"
+      }
+    },
+    {
+      "name": "foreign-app-before",
+      "result": {
+        "error": "unauthenticated"
+      }
+    },
+    {
+      "name": "foreign-acp-before",
+      "result": {
+        "error": "not_found"
+      }
+    },
+    {
+      "name": "default-after",
+      "result": {
+        "person_id": "B",
+        "source_person_id": "A",
+        "request_person_id": "A",
+        "binding_id": "A.app",
+        "conversation_id": "A.home",
+        "request_scope": "A",
+        "request_conversation_id": null,
+        "thread_id": null,
+        "platform": "app"
+      }
+    },
+    {
+      "name": "selected-app",
+      "result": {
+        "person_id": "B",
+        "source_person_id": "A",
+        "request_person_id": "B",
+        "binding_id": "B.app",
+        "conversation_id": "B.home",
+        "request_scope": "B",
+        "request_conversation_id": null,
+        "thread_id": null,
+        "platform": "app"
+      }
+    },
+    {
+      "name": "selected-acp",
+      "result": {
+        "person_id": "B",
+        "source_person_id": "A",
+        "request_person_id": "B",
+        "binding_id": "B.acp",
+        "conversation_id": "B.thread",
+        "request_scope": "B.thread",
+        "request_conversation_id": "B.thread",
+        "thread_id": "thread",
+        "platform": "acp"
+      }
+    },
+    {
+      "name": "matched-acp",
+      "result": {
+        "person_id": "B",
+        "source_person_id": "A",
+        "request_person_id": "B",
+        "binding_id": "B.acp",
+        "conversation_id": "B.thread",
+        "request_scope": "B.thread",
+        "request_conversation_id": "B.thread",
+        "thread_id": "thread",
+        "platform": "acp"
+      }
+    },
+    {
+      "name": "mismatched-binding",
+      "result": {
+        "error": "not_found"
+      }
+    },
+    {
+      "name": "app-as-acp",
+      "result": {
+        "error": "not_found"
+      }
+    },
+    {
+      "name": "acp-binding-alone",
+      "result": {
+        "error": "unauthenticated"
+      }
+    },
+    {
+      "name": "missing-binding",
+      "result": {
+        "error": "unauthenticated"
+      }
+    },
+    {
+      "name": "empty-binding",
+      "result": {
+        "error": "unauthenticated"
+      }
+    },
+    {
+      "name": "paused-default-app",
+      "result": {
+        "person_id": "B",
+        "source_person_id": "A",
+        "request_person_id": "A",
+        "binding_id": "A.app",
+        "conversation_id": "A.home",
+        "request_scope": "A",
+        "request_conversation_id": null,
+        "thread_id": null,
+        "platform": "app"
+      }
+    },
+    {
+      "name": "paused-source-selected-app",
+      "result": {
+        "person_id": "B",
+        "source_person_id": "A",
+        "request_person_id": "B",
+        "binding_id": "B.app",
+        "conversation_id": "B.home",
+        "request_scope": "B",
+        "request_conversation_id": null,
+        "thread_id": null,
+        "platform": "app"
+      }
+    },
+    {
+      "name": "revoked",
+      "result": {
+        "error": "unauthenticated"
+      }
+    }
+  ],
+  "legacy_null_receipt": {
+    "original_source": true,
+    "merged_root": false,
+    "acp": false
+  }
+}

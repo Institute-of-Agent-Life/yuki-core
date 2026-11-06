@@ -1,5 +1,6 @@
 """Real owner HTTP and packaged local SDK. No contact with public QQ users or external services."""
 
+import errno
 import hashlib
 import json
 import os
@@ -22,9 +23,9 @@ def key():
     return str(uuid.uuid4())
 
 
-def wire(address, path, token=None, body=None, method=None):
+def wire(address, path, token=None, body=None, method=None, *, selected=None):
     raw = json.dumps(body, ensure_ascii=False).encode() if body is not None else None
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", **(selected or {})}
     if token:
         headers["Authorization"] = "Bearer " + token
     req = Request("http://" + address + path, data=raw, headers=headers, method=method)
@@ -52,9 +53,21 @@ class Plugin:
         )
         t.replace(path)
         output = self.folder / f"out-{self.seq}.json"
-        self.owner.until(output.is_file)
-        res = json.loads(output.read_bytes())
+        def read_response():
+            try:
+                return output.read_bytes()
+            except FileNotFoundError:
+                return None
+            except PermissionError as exc:
+                if os.name == "nt" and exc.errno == errno.EACCES:
+                    return None
+                raise
+
+        # A newly renamed reply may be visible but briefly unreadable on Windows.
+        # Wait for the same bytes. The original command has already been sent.
+        res = json.loads(self.owner.until(read_response))
         output.unlink()
+        self.owner.ctx.equal("SDK reply belongs to the original request", res["id"], self.seq)
         self.owner.ctx.equal(
             "SDK " + method + " " + ("accepted" if ok else "denied"),
             "result" in res,
@@ -359,6 +372,7 @@ def run(ctx):
             req = key()
             request = {"request_id": req, "text": "私下補充 令狐"}
             before = o.rows("SELECT count(*) FROM root_budgets")[0][0]
+            mail_before = o.rows("SELECT count(*) FROM work_mail WHERE work=?",work)[0][0]
             http(
                 work_url + "/inputs",
                 a["token"],
@@ -369,7 +383,7 @@ def run(ctx):
                 "injected failure rolls back action, mailbox and personal receipt",
                 (
                     o.rows(
-                        "SELECT count(*) FROM work_mail WHERE source_key=?", rejected
+                        "SELECT count(*) FROM work_mail WHERE work=?", work
                     ),
                     o.rows("SELECT count(*) FROM events WHERE source_key=?", rejected),
                     o.rows(
@@ -377,7 +391,7 @@ def run(ctx):
                         rejected,
                     ),
                 ),
-                ([(0,)], [(0,)], [(0,)]),
+                ([(mail_before,)], [(0,)], [(0,)]),
             )
             with ThreadPoolExecutor(max_workers=2) as pool:
                 first = pool.submit(
@@ -410,7 +424,7 @@ def run(ctx):
             ctx.equal(
                 "one private mailbox, no App normal admission, original budget only",
                 (
-                    o.rows("SELECT count(*) FROM work_mail WHERE source_key=?", req),
+                    o.rows("SELECT count(*) FROM work_mail m JOIN work_wait_mail w ON w.mail=m.id WHERE m.work=? AND w.source_event=?",work,receipt["event_id"]),
                     o.rows(
                         "SELECT count(*) FROM main_inputs WHERE event=?",
                         receipt["event_id"],
@@ -630,6 +644,13 @@ def run(ctx):
     from tests.harness.personal_files import observe
 
     delivered_files = observe(ctx, docs, routes, wire)
+    from tests.harness.connector_auth import run as connector_auth
+    connector=connector_auth(ctx,sdk,Plugin,wire)
+    ctx.write("connector-authentication.json",connector)
+    from tests.harness.entry_selection import run as entry_selection
+    ctx.write("client-entry-selection.json",entry_selection(ctx,wire,sdk,Plugin))
+    from tests.harness.client_uploads import run as client_uploads
+    ctx.write("client-upload-handoff.json",client_uploads(ctx,wire,routes))
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     return {
         "binary_sha256": sha(
@@ -662,7 +683,7 @@ def run(ctx):
             },
         },
         "wire4_ack_replay": connector_wires,
-        "negotiated_methods": caps["methods"],
+        "negotiated_methods": sorted(set(caps["methods"])|set(connector['methods'])),
         "client_revision": 9,
         "connector_revision": 4,
     }

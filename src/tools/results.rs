@@ -1,3 +1,5 @@
+mod legacy;
+mod ordered;
 use crate::{Result, identity::new_id, runtime::effects};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -60,6 +62,7 @@ pub async fn present(
     }
     if let Some(h) = handle {
         out["result"]["artifact"] = json!({"handle":h,"version":hash,"path":"/result","offset":0});
+        out["result"]["read_more"] = json!({"handle":h,"operation":"get","path":[],"offset":0});
     }
     let text = original.get("result").unwrap_or(&original).to_string();
     out["result"]["preview"] = json!("");
@@ -108,25 +111,51 @@ pub async fn authorize(
     }
     Ok(owner)
 }
+pub struct Snapshot {
+    pub raw: String,
+    pub hash: String,
+    pub tool: String,
+}
+impl Snapshot {
+    pub fn page(&self, args: &Value, budget: usize) -> Result<Value> {
+        let mut args = args.clone();
+        args["_tool_name"] = json!(self.tool);
+        page(&self.raw, &args, budget)
+    }
+}
 pub async fn load(
     conn: &mut SqliteConnection,
     exec: &str,
     actor: &str,
     args: &Value,
-) -> Result<String> {
+) -> Result<Snapshot> {
     let handle = args["handle"].as_str().ok_or("missing handle")?;
-    let hash = args["version"].as_str().ok_or("missing artifact version")?;
-    authorize(conn, exec, actor, handle, hash).await?;
-    let row = sqlx::query(
-        "SELECT body FROM tool_artifacts WHERE handle=? AND version=? AND body IS NOT NULL",
-    )
-    .bind(handle)
-    .bind(hash)
-    .fetch_one(conn)
-    .await?;
-    Ok(row.try_get("body")?)
+    // Resolve once in the same read transaction; the final writer checks this
+    // exact version again after decoding, even when the original API omits it.
+    let row = sqlx::query("SELECT a.body,a.version,o.target FROM tool_artifacts a JOIN operations o ON o.namespace=a.execution AND o.operation_id=a.operation WHERE a.handle=? AND a.body IS NOT NULL")
+        .bind(handle).fetch_optional(&mut *conn).await?.ok_or("artifact unavailable")?;
+    let hash: String = row.try_get("version")?;
+    if args
+        .get("version")
+        .is_some_and(|requested| requested.as_str() != Some(&hash))
+    {
+        return Err("artifact version unavailable".into());
+    }
+    authorize(conn, exec, actor, handle, &hash).await?;
+    let raw: String = row.try_get("body")?;
+    if version(&raw) != hash {
+        return Err("artifact integrity check failed".into());
+    }
+    Ok(Snapshot {
+        raw,
+        hash,
+        tool: row.try_get("target")?,
+    })
 }
 pub fn page(raw: &str, args: &Value, budget: usize) -> Result<Value> {
+    if !args["version"].is_string() {
+        return legacy::page(raw, args, budget);
+    }
     let root: Value = serde_json::from_str(raw)?;
     let path = args["path"].as_str().unwrap_or("/result");
     let value = root.pointer(path).ok_or("artifact path does not exist")?;
@@ -166,4 +195,10 @@ pub fn page(raw: &str, args: &Value, budget: usize) -> Result<Value> {
         return Err("page metadata exceeds tool result budget".into());
     }
     Ok(out)
+}
+
+/// Operator compatibility also accepts cursors issued before the original v4 API was restored.
+pub fn operator_schema() -> Value {
+    json!({"oneOf":[super::registry::builtin("read_tool_artifact").unwrap().schema,
+        {"type":"object","properties":{"handle":{"type":"string"},"version":{"type":"string"},"path":{"type":"string"},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":8000}},"required":["handle","version"],"additionalProperties":false}]})
 }

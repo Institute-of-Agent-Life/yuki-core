@@ -3,6 +3,8 @@ use serde_json::Value;
 use sqlx::{Row, SqliteConnection};
 
 pub struct Reader {
+    pub archived_evidence: bool,
+    pub write_subject: Option<super::facts::Subject>,
     pub base: query::Scope,
     pub root: String,
     pub actor: String,
@@ -31,6 +33,8 @@ impl Reader {
             );
         }
         Ok(Self {
+            archived_evidence: false,
+            write_subject: None,
             base,
             root,
             actor: actor.into(),
@@ -67,8 +71,27 @@ pub async fn visible(
     Ok(rows)
 }
 pub async fn writable(conn: &mut SqliteConnection, r: &Reader, id: &str) -> Result<()> {
-    let row=sqlx::query("SELECT f.kind,coalesce(p.current_root,p.id) AS owner FROM memory_facts f LEFT JOIN persons p ON p.id=f.person WHERE f.id=? AND f.status='active'").bind(id).fetch_one(&mut *conn).await?;
-    if !r.admin
+    writable_state(conn, r, id, "active").await
+}
+pub(super) async fn writable_state(
+    conn: &mut SqliteConnection,
+    r: &Reader,
+    id: &str,
+    state: &str,
+) -> Result<()> {
+    let row=sqlx::query("SELECT f.kind,f.person,f.space,f.visibility,f.visibility_entry,coalesce(p.current_root,p.id) AS owner FROM memory_facts f LEFT JOIN persons p ON p.id=f.person WHERE f.id=? AND f.status=?").bind(id).bind(state).fetch_one(&mut *conn).await?;
+    if let Some(granted) = &r.write_subject {
+        let subject = super::facts::Subject {
+            kind: row.get("kind"),
+            person: row.get("person"),
+            space: row.get("space"),
+            visibility: Some(row.get("visibility")),
+            entry: row.get("visibility_entry"),
+        };
+        if !same_subject(conn, granted, &subject).await? {
+            return Err("fact outside installed maintenance subject".into());
+        }
+    } else if !r.admin
         && (row.try_get::<String, _>("kind")? != "person"
             || row.try_get::<Option<String>, _>("owner")?.as_deref() != Some(&r.root))
     {
@@ -84,4 +107,33 @@ pub async fn writable(conn: &mut SqliteConnection, r: &Reader, id: &str) -> Resu
 pub fn hash(v: &Value) -> String {
     use sha2::{Digest, Sha256};
     format!("{:x}", Sha256::digest(v.to_string().as_bytes()))
+}
+
+/// Maintenance carries an operator-installed exact subject independently of administrator roles.
+pub(crate) async fn same_subject(
+    conn: &mut SqliteConnection,
+    allowed: &super::facts::Subject,
+    actual: &super::facts::Subject,
+) -> Result<bool> {
+    if allowed.kind != actual.kind
+        || allowed.space != actual.space
+        || allowed.entry != actual.entry
+        || allowed.visibility.as_deref().unwrap_or("subject")
+            != actual.visibility.as_deref().unwrap_or("subject")
+    {
+        return Ok(false);
+    }
+    let left: Option<String> =
+        sqlx::query_scalar("SELECT coalesce(current_root,id) FROM persons WHERE id=? AND enabled")
+            .bind(&allowed.person)
+            .fetch_optional(&mut *conn)
+            .await?;
+    let right: Option<String> =
+        sqlx::query_scalar("SELECT coalesce(current_root,id) FROM persons WHERE id=? AND enabled")
+            .bind(&actual.person)
+            .fetch_optional(conn)
+            .await?;
+    Ok(allowed.person.is_some() == actual.person.is_some()
+        && left == right
+        && (left.is_some() || allowed.person.is_none()))
 }

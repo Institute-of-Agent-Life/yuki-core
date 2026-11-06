@@ -1,4 +1,4 @@
-pub(super) mod profile;
+pub(crate) mod profile;
 mod writer;
 use crate::{
     Result,
@@ -91,13 +91,26 @@ pub async fn query(store: &Store, exec: &str, actor: &str, op: &str, text: &str)
 }
 async fn run(store: &Store, id: &str) -> Result<Value> {
     let engine = engine(store)?;
-    let p = &engine.profile;
+    transport(store, &engine.profile, &engine.client, id).await
+}
+pub(crate) async fn run_scoped(store: &Store, profile: Arc<Profile>, id: &str) -> Result<Value> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(20))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()?;
+    transport(store, &profile, &client, id).await
+}
+async fn transport(
+    store: &Store,
+    p: &Arc<Profile>,
+    client: &reqwest::Client,
+    id: &str,
+) -> Result<Value> {
     let next = write(store, Change::Dispatch(p.clone(), id.into())).await?;
     if next["dispatch_now"] != true {
         return Err("embedding attempt already dispatched; no duplicate call".into());
     }
-    let mut req = engine
-        .client
+    let mut req = client
         .post(p.endpoint())
         .header("content-type", "application/json")
         .body(
@@ -106,7 +119,11 @@ async fn run(store: &Store, id: &str) -> Result<Value> {
                 .ok_or("missing original embedding request")?
                 .to_owned(),
         );
-    if let Some(key) = &p.key_env {
+    if let Some(key) = &p.credential {
+        req = req.bearer_auth(key.as_str());
+    } else if p.credential_hash.is_some() {
+        return Err("original_embedding_credentials_unavailable".into());
+    } else if let Some(key) = &p.key_env {
         req = req.bearer_auth(std::env::var(key)?);
     }
     let outcome = match req.send().await {
@@ -185,4 +202,14 @@ pub(super) async fn open_reference(store: &Store) -> Result<bool> {
     .fetch_one(store.readers())
     .await?;
     Ok(ready || write(store, Change::OpenReference(p)).await? == true)
+}
+
+pub(crate) async fn prepare_scoped(
+    conn: &mut SqliteConnection,
+    profile: &Profile,
+    fact: &str,
+    revision: i64,
+    parent: &str,
+) -> Result<Value> {
+    writer::selected_document(conn, profile, fact, revision, parent).await
 }

@@ -1,0 +1,153 @@
+{
+  "schema_revision": 1,
+  "status": "unpublished_candidate",
+  "methods": {
+    "plugin.config.get": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "plugin.config.read",
+      "params": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "plugin.secrets.get": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "plugin.secrets.read",
+      "params": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "plugin.observe": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "plugin.observe",
+      "params": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "cursor",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    },
+    "control.read": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "control.invoke",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "args": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "method",
+          "args"
+        ],
+        "additionalProperties": false
+      },
+      "result": {}
+    },
+    "control.write": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "control.invoke",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "body": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "method",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "result": {}
+    }
+  }
+}

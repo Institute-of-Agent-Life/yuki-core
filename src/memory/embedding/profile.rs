@@ -51,6 +51,10 @@ pub struct Profile {
     pub base_url: String,
     pub dimensions: usize,
     pub key_env: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential_hash: Option<String>,
+    #[serde(skip)]
+    pub credential: Option<std::sync::Arc<String>>,
     #[serde(default = "batch")]
     pub batch_size: usize,
     #[serde(default = "limit")]
@@ -95,28 +99,38 @@ impl Profile {
             return Err("invalid embedding route, model, dimensions or batch limits".into());
         }
         if let Some(key) = &self.key_env
-            && (key.is_empty() || std::env::var(key).ok().is_none_or(|value| value.is_empty()))
+            && (key.is_empty()
+                || self
+                    .credential
+                    .as_ref()
+                    .map(|v| v.as_str())
+                    .filter(|v| !v.is_empty())
+                    .is_none()
+                    && std::env::var(key).ok().is_none_or(|value| value.is_empty()))
         {
             return Err("configured embedding credential unavailable".into());
         }
         Ok(())
     }
     pub fn identity(&self) -> String {
-        digest(
-            json!([
-                self.provider,
-                self.model,
-                self.base_url.trim_end_matches('/'),
-                self.dimensions,
-                "dense",
-                1,
-                self.max_characters,
-                self.query_instruction,
-                self.key_env
-            ])
-            .to_string()
-            .as_bytes(),
-        )
+        let mut values = json!([
+            self.provider,
+            self.model,
+            self.base_url.trim_end_matches('/'),
+            self.dimensions,
+            "dense",
+            1,
+            self.max_characters,
+            self.query_instruction,
+            self.key_env
+        ]);
+        if let Some(hash) = &self.credential_hash {
+            values
+                .as_array_mut()
+                .expect("identity array")
+                .push(json!(hash));
+        }
+        digest(values.to_string().as_bytes())
     }
     pub fn endpoint(&self) -> String {
         format!(

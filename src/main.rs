@@ -40,6 +40,7 @@ enum Action {
         memory_mode: memory::embedding::Mode,
     },
     Migrate,
+    ImportModels(model::profile_store::legacy::Options),
     Doctor,
     Run,
     Operator {
@@ -66,6 +67,14 @@ async fn health(State(store): State<store::Store>) -> Json<serde_json::Value> {
         Ok(v) => json!({"mode":v["mode"],"degraded":v["degraded"].as_bool().unwrap_or(false)}),
         Err(_) => json!({"degraded":true}),
     };
+    if store
+        .profile_files
+        .as_ref()
+        .is_some_and(|service| service.connections_suspended())
+    {
+        health["memory"]["degraded"] = json!(true);
+        health["memory"]["reason"] = json!("original_configuration_pending_restart");
+    }
     Json(health)
 }
 
@@ -90,6 +99,13 @@ async fn execute(args: Args) -> Result<()> {
                 json!({"status":"initialized","schema_version":version})
             );
         }
+        Action::ImportModels(options) => {
+            let result = model::profile_store::legacy::run(&data, options).await?;
+            println!("{}", result);
+            if result["ok"] != true {
+                std::process::exit(1);
+            }
+        }
         Action::Migrate => {
             config::Config::read(&data)?;
             let owner = config::Owner::acquire(&data)?;
@@ -107,15 +123,51 @@ async fn execute(args: Args) -> Result<()> {
         }
         Action::Operator { command } => operator::invoke(&data, command).await?,
         Action::Run => {
-            let config = config::Config::read(&data)?;
+            let mut config = config::Config::read(&data)?;
             let owner = config::Owner::acquire(&data)?;
             #[cfg(unix)]
             let mut terminate =
                 tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let mut store = store::Store::open(&owner.data).await?;
-            store.main = config.main.map(Arc::new);
+            store.main = config.main.clone().map(Arc::new);
+            store.control = Some(operator::domain::Service::open(
+                &owner.data,
+                config.operator_registry_file.as_deref(),
+                config
+                    .main
+                    .as_ref()
+                    .map(|c| c.name.as_str())
+                    .unwrap_or("Yuki"),
+                &config.bot_aliases,
+            )?);
+            operator::domain::invoke(&store, operator::domain::Request::Start).await?;
             store.work_segments = config.work_segments;
+            if let Some(path) = &config.model_profiles_file {
+                let baseline = store
+                    .main
+                    .as_deref()
+                    .cloned()
+                    .ok_or("model profiles require Main runtime policy")?;
+                store.profile_files = Some(model::profile_store::Service::open(
+                    &owner.data,
+                    path,
+                    config.operator_registry_file.as_deref(),
+                    baseline,
+                )?);
+                let pending: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM core_meta WHERE key='model-profile-active-operation')")
+                    .fetch_one(store.readers()).await?;
+                Arc::get_mut(
+                    store
+                        .profile_files
+                        .as_mut()
+                        .ok_or("profile_service_unavailable")?,
+                )
+                .ok_or("profile_service_already_shared")?
+                .configure_connections(&mut config, pending)?;
+                model::profile_store::invoke(&store, model::profile_store::Request::Start).await?;
+                store.main = model::profile_store::runtime::current(&store).await?;
+            }
             store.media = Some(media::Runtime::open(&owner.data, config.media)?);
             media::recover(&store).await?;
             let vectors = memory::embedding::start(&mut store, config.memory).await?;
@@ -149,17 +201,35 @@ async fn execute(args: Args) -> Result<()> {
                 .route("/healthz", get(health))
                 .with_state(store.clone())
                 .merge(qq.router())
-                .merge(host::personal::router(store.clone()));
+                .merge(host::personal::router(store.clone()))
+                .merge(model::profile_store::http::router(store.clone()));
+            let router = router.merge(operator::domain::http::router(store.clone()));
             let media = media::start(store.clone());
             let memory = memory::start(store.clone(), qq.clone());
             let runner = runtime::main::start(store.clone(), owner.data.clone(), qq.clone())?;
             let history = history::start(store.clone());
+            if let Some(domain) = &store.control {
+                for name in ["work", "automation", "subagents"] {
+                    domain.worker(name, store.main.is_some(), runner.as_ref());
+                }
+                domain.worker("history", true, Some(&history));
+                domain.worker("media", true, Some(&media));
+                domain.worker("memory_delivery", true, Some(&memory));
+                domain.worker(
+                    "memory_extraction",
+                    extraction.is_some(),
+                    extraction.as_ref(),
+                );
+                domain.worker("memory_vectors", vectors.is_some(), vectors.as_ref());
+            }
             let signal = stop.clone();
+            let draining = store.draining_http.clone();
             let service = axum::serve(listener, router).with_graceful_shutdown(async move {
                 #[cfg(unix)]
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {}, _ = terminate.recv() => {} }
                 #[cfg(windows)]
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
+                draining.send_replace(true);
                 qq.shutdown();
             }).await;
             if let Some(host) = &store.host {

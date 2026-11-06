@@ -1,4 +1,6 @@
 pub(crate) mod contacts;
+pub(crate) mod members;
+pub(crate) mod original;
 use super::{Change, index, normalize};
 use crate::{
     Result,

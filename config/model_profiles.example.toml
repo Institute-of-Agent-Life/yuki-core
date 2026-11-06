@@ -1,0 +1,26 @@
+schema_version = 3
+
+# Set model_profiles_file in yuki.toml to a deployment-owned copy of this file.
+# Main's existing root budget, network permission and tool policy stay in yuki.toml.
+# The environment supplies endpoint/model values and the initial credential.
+[profiles.primary]
+provider = "openai_compatible"
+protocol = "chat_completions"
+base_url_env = "YUKI_PROFILE_BASE_URL"
+api_key_env = "YUKI_PROFILE_API_KEY"
+model_env = "YUKI_PROFILE_MODEL"
+timeout_seconds = 120.0
+max_retries = 0
+default_temperature = 0.7
+default_max_output_tokens = 8192
+thinking_mode = "configurable"
+structured_output_mode = "function_tool"
+capabilities = ["tools"]
+
+[routes]
+chat_agent = "primary"
+memory_extraction = "primary"
+memory_self_reflection = "primary"
+memory_dream = "primary"
+plugin_agent_session = "primary"
+utility_structured = "primary"

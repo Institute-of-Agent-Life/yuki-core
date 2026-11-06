@@ -26,8 +26,27 @@ pub(crate) async fn physical(
     if cfg.protocol.is_messages() {
         request = request.header("anthropic-version", "2023-06-01");
     }
-    if let Some(key) = &cfg.key_env {
-        let secret = std::env::var(key).map_err(|_| "provider credential unavailable")?;
+    let secret = if let Some(binding) = &cfg.profile_binding {
+        let credentials = cfg
+            .credentials
+            .as_ref()
+            .ok_or("original_provider_credential_unavailable")?;
+        for (name, value) in &credentials.headers {
+            request = request.header(name, value);
+        }
+        request = request.timeout(std::time::Duration::from_secs_f64(
+            binding.profile["timeout_seconds"]
+                .as_f64()
+                .ok_or("validation_error")?,
+        ));
+        credentials.key.clone()
+    } else {
+        cfg.key_env
+            .as_ref()
+            .map(|key| std::env::var(key).map_err(|_| "provider credential unavailable"))
+            .transpose()?
+    };
+    if let Some(secret) = secret {
         request = if cfg.protocol.is_messages() {
             request.header("x-api-key", secret)
         } else if cfg.protocol.is_gemini() {
@@ -152,6 +171,19 @@ impl Dispatch {
             "web_search" if cfg.bridge_search => {
                 crate::model::search::tool(&store, &exec, &actor, &id, &t.payload).await?
             }
+            "query_chat_history" => {
+                if let Err(error) = crate::history::query::original::run(
+                    &store,
+                    &exec,
+                    &actor,
+                    &t.payload,
+                    Some(&id),
+                )
+                .await
+                {
+                    crate::tools::reject(&store, &exec, &actor, &id, error.to_string()).await?;
+                }
+            }
             "history_query" => {
                 if let Err(error) =
                     crate::history::query::run(&store, &exec, &actor, &t.payload, Some(&id)).await
@@ -159,24 +191,49 @@ impl Dispatch {
                     crate::tools::reject(&store, &exec, &actor, &id, error.to_string()).await?;
                 }
             }
-            "lookup_tools" | "time_get_current" | "history_directory" | "find_contacts"
-            | "find_conversations" | "update_short_state" | "read_tool_artifact" => {
+            "lookup_tools"
+            | "time_get_current"
+            | "history_directory"
+            | "get_group_members"
+            | "find_contacts"
+            | "find_conversations"
+            | "update_short_state"
+            | "get_my_capabilities"
+            | "read_tool_artifact" => {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }
+            "recall_own_message" => {
+                crate::social::recall::perform(&store, &hub, &exec, &actor, &id).await?;
+            }
             "send" if cfg.binding_endpoint.is_none() => {
-                if let Some(host) = &store.host
-                    && host.deliver(&store, &exec, &actor, &id).await?.is_some()
-                {
-                    return Ok(());
-                }
+                let delivery: Result<()> = async {
+                    if let Some(host) = &store.host
+                        && host.deliver(&store, &exec, &actor, &id).await?.is_some()
+                    {
+                        return Ok(());
+                    }
 
-                crate::media::prepare_host_delivery(&store, &exec, &actor, &t.payload).await?;
-                let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
-                if !matches!(
-                    result["state"].as_str(),
-                    Some("confirmed" | "failed" | "unknown")
-                ) {
-                    return Err("original social receipt pending".into());
+                    crate::media::prepare_host_delivery(&store, &exec, &actor, &t.payload).await?;
+                    let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
+                    if !matches!(
+                        result["state"].as_str(),
+                        Some("confirmed" | "failed" | "unknown")
+                    ) {
+                        return Err("original social receipt pending".into());
+                    }
+                    Ok(())
+                }
+                .await;
+                if let Err(err) = delivery {
+                    if !err.is::<crate::social::destination::Refused>() {
+                        return Err(err);
+                    }
+                    let receipt =
+                        crate::tools::reject_receipt(&store, &exec, &actor, &id, err.to_string())
+                            .await?;
+                    if receipt["state"] != "failed" {
+                        return Err(err);
+                    }
                 }
             }
             _ => {
@@ -429,6 +486,9 @@ pub async fn run(
         }
         let logical = step["logical"].as_str().ok_or("missing logical request")?;
         let task: Option<Task> = serde_json::from_value(step["task"].clone())?;
+        if cfg.profile_binding.is_some() && cfg.credentials.is_none() {
+            return Err("original_provider_credential_unavailable".into());
+        }
         let attempt_id = format!("{logical}:http:0");
         let permit = attempt::invoke(
             store,
@@ -561,6 +621,8 @@ pub async fn run(
                         },
                     )
                     .await?;
+                    #[cfg(test)]
+                    crate::store::tests::commit_barrier("profile-paid-response").await;
                     #[cfg(test)]
                     if step["compact"] == true {
                         crate::store::tests::commit_barrier(if step["private_compact"] == true {

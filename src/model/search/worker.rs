@@ -284,7 +284,8 @@ pub async fn run(store: &Store, exec: &str, actor: &str, op: &str, q: Query) -> 
         .into());
     }
     let q = q.normalize()?;
-    let cfg = &eng.cfg;
+    let selected = crate::model::profile_store::runtime::search(store, exec, &eng.cfg).await?;
+    let cfg = &selected;
     let profile = cfg
         .connection
         .as_ref()

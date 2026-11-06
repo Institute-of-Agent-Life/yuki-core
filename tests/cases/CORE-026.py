@@ -5,6 +5,8 @@ import json
 import os
 import sqlite3
 import time
+import subprocess
+import sys
 from contextlib import closing
 from tests.harness.service import Service, previous_schema
 from tests.peers.onebot.peer import Peer
@@ -296,7 +298,8 @@ def run(ctx):
                         "message": [{"type": "text", "data": {"text": text}}],
                     }
                 )
-                for _ in range(12):
+                received=[]
+                for _ in range(64):
                     wire = peer.receive()
                     if wire["action"] == "send_private_msg":
                         peer.send(
@@ -304,10 +307,23 @@ def run(ctx):
                                 "echo": wire["echo"],
                                 "status": "ok",
                                 "retcode": 0,
-                                "data": {"message_id": mid + 1000},
+                                "data": {"message_id": 100000 + mid*100 + len(received)},
                             }
                         )
-                        return str(wire["params"]["message"])
+                        received.append("".join(segment["data"]["text"] for segment in wire["params"]["message"] if segment["type"]=="text"))
+                        original=rows("SELECT o.payload,c.event FROM memory_command_events c JOIN operations o ON o.namespace=c.execution AND o.operation_id='memory-reply:'||c.event JOIN event_locators l ON l.event_id=c.event WHERE l.native_id=?",str(mid))
+                        ctx.equal("QQ reply belongs to this original command",len(original),1)
+                        expected=json.loads(original[0][0])["text"]
+                        combined="".join(received)
+                        ctx.check("QQ command parts cannot exceed original reply",len(combined)<=len(expected))
+                        if len(combined)==len(expected):
+                            ctx.equal("QQ command delivers every original character",combined,expected)
+                            settle(lambda:rows("SELECT reply_state FROM memory_command_events WHERE event=?",original[0][1])==[("confirmed",)])
+                            if mid==811:
+                                ctx.check("metadata list crosses actual QQ text part boundary",len(received)>1)
+                                ctx.write("qq-memory-list-parts.json",{"parts":received,"original":expected})
+                            return combined
+                        continue
                     peer.send(
                         {
                             "echo": wire.get("echo"),
@@ -318,12 +334,19 @@ def run(ctx):
                     )
                 raise AssertionError("missing QQ memory reply")
 
+            text = cmd(808, "/ai memory restore " + fid)
+            ctx.equal("QQ command restores the same withdrawn original fact",rows("SELECT status FROM memory_facts WHERE id=?",fid),[("active",)])
+            restored_version=rows("SELECT revision FROM memory_facts WHERE id=?",fid)
+            ctx.check("QQ restore returns actual receipt","revision" in text)
+            cmd(809, "/ai memory restore " + fid)
+            ctx.equal("QQ repeated new restore cannot modify active fact",rows("SELECT revision FROM memory_facts WHERE id=?",fid),restored_version)
             text = cmd(810, "/ai memory add person-controlled entry")
             ctx.check(
                 "actual private command returns immutable fact receipt",
                 "revision" in text,
             )
             text = cmd(811, "/ai memory list")
+            ctx.write("qq-memory-list-wire.json",{"complete_reply":text,"original_replies":rows("SELECT o.payload FROM operations o WHERE o.operation_id LIKE 'memory-reply:%' ORDER BY o.rowid")})
             ctx.check(
                 "private command lists structured facts",
                 "person-controlled entry" in text and "Private tea quote" not in text,
@@ -346,7 +369,27 @@ def run(ctx):
                 )
             }
         )
+    from tests.harness.memory_restore import run as restore
+    restored=restore(ctx)
+    ctx.write("memory-restore.json",restored)
+    from tests.harness.memory_metadata import run as metadata
+    metadata_result=metadata(ctx)
+    ctx.write("memory-metadata.json",metadata_result)
+    from tests.harness.memory_selectors import run as selectors
+    selector_result=selectors(ctx)
+    ctx.write("memory-selectors.json",selector_result)
+    from tests.harness.memory_temporal import run as temporal
+    ctx.write("memory-temporal.json",temporal(ctx))
+    built=subprocess.run([sys.executable,str(ctx.root/"ci/publish-contract.py"),"build","--out",str(ctx.output/"sdk-distributions"),"--verify-work",str(ctx.working/"memory-sdk")],capture_output=True,text=True,timeout=120)
+    ctx.write("memory-sdk-build.json",{"exit_code":built.returncode,"stderr":built.stderr})
+    ctx.equal("memory candidate has independently verified SDK packages",built.returncode,0)
+    binary=ctx.root/"target/debug"/("yuki-core.exe" if os.name=="nt" else "yuki-core")
     return {
+        "binary_sha256":hashlib.sha256(binary.read_bytes()).hexdigest(),
+        "host_idl_sha256":hashlib.sha256((ctx.root/"sdk/rust/src/host-preview.json").read_bytes()).hexdigest(),
+        "restore":restored,
+        "metadata":metadata_result,
+        "selectors":selector_result,
         "cases": {"R16": notes},
         "paid_tools": paid_memory(ctx),
         "replay": first,

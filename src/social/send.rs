@@ -15,6 +15,12 @@ pub struct Route {
 }
 pub async fn route(conn: &mut SqliteConnection, exec: &str, actor: &str) -> Result<Route> {
     effects::authorize(conn, exec, actor, true).await?;
+    if let Some(route) = crate::host::notification::qq_route(conn, exec).await? {
+        return Ok(route);
+    }
+    if let Some(route) = crate::host::participation::self_group_route(conn, exec).await? {
+        return Ok(route);
+    }
     if let Some(route) = crate::work::schedule::due::self_group_route(conn, exec).await? {
         return Ok(route);
     }
@@ -99,12 +105,6 @@ async fn prepare(
     }
     let mut msg: content::Message = serde_json::from_str(op.try_get("payload")?)?;
     msg.text = content::outbound_text(&msg.text);
-    if let Some(target) = &msg.target
-        && ((r.group && (target.kind != "space" || target.id != r.entry))
-            || (!r.group && (target.kind != "person" || target.id != r.person)))
-    {
-        return Err("target differs from the authorized original conversation".into());
-    }
     let mut parts = content::plan(conn, exec, r, &msg, limits).await?;
     if let Some(source) = msg.reply_to_event_id {
         let locator:String=sqlx::query_scalar("SELECT l.native_id FROM event_locators l JOIN events e ON e.id=l.event_id WHERE e.id=? AND l.receiver=? AND e.entry_id=?
@@ -189,7 +189,7 @@ pub async fn next(
             return Ok(json!({"receipt":receipt}));
         }
     }
-    let route = route(conn, exec, actor).await?;
+    let (route, source) = super::destination::select(conn, exec, actor, id).await?;
     if let Some(row) = frozen {
         if row.try_get::<String, _>("stage")? != route.stage
             || row.try_get::<String, _>("entry")? != route.entry
@@ -201,6 +201,13 @@ pub async fn next(
             return Err("original frozen social route changed".into());
         }
     } else {
+        if let Some(event) = source {
+            sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
+                .bind(exec)
+                .bind(event)
+                .execute(&mut *conn)
+                .await?;
+        }
         if let Err(error) = prepare(conn, exec, id, actor, &route, limits).await {
             if !error.is::<content::UnavailableVersion>() {
                 return Err(error);
@@ -366,6 +373,11 @@ pub async fn recover(conn: &mut SqliteConnection) -> Result<()> {
     sqlx::query("UPDATE social_recalls SET state='unknown' WHERE state='dispatched'")
         .execute(&mut *tx)
         .await?;
+    let recalls: Vec<(String,String,String)> = sqlx::query_as("SELECT DISTINCT r.namespace,r.child,r.state FROM social_recalls r JOIN model_recalls m ON m.original_execution=r.namespace AND m.child=r.child JOIN operations o ON o.namespace=m.execution AND o.operation_id=m.operation WHERE o.state IN ('dispatched','unknown')")
+        .fetch_all(&mut *tx).await?;
+    for (execution, child, state) in recalls {
+        super::recall::settle(&mut tx, &execution, &child, &state).await?;
+    }
     tx.commit().await?;
     Ok(())
 }

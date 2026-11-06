@@ -23,10 +23,25 @@ impl Event {
     }
 }
 pub async fn load(conn: &mut SqliteConnection, id: i64, zone: &str) -> Result<Option<Event>> {
+    load_inner(conn, id, zone, false).await
+}
+pub(crate) async fn load_reviewed(
+    conn: &mut SqliteConnection,
+    id: i64,
+    zone: &str,
+) -> Result<Option<Event>> {
+    load_inner(conn, id, zone, true).await
+}
+async fn load_inner(
+    conn: &mut SqliteConnection,
+    id: i64,
+    zone: &str,
+    historical: bool,
+) -> Result<Option<Event>> {
     let row=sqlx::query("SELECT e.*,d.space,d.scope,a.native FROM events e JOIN entries d ON d.id=e.entry_id JOIN assignments s ON s.id=e.actor_stage
         JOIN assignments bot ON bot.id=e.bot_stage JOIN accounts a ON a.id=e.account_id JOIN persons p ON p.id=e.raw_actor JOIN persons root ON root.id=coalesce(p.current_root,p.id)
-        WHERE e.id=? AND s.original_person=e.raw_actor AND s.kind='person' AND s.status='active' AND bot.status='active' AND d.closed_at IS NULL AND p.enabled AND root.enabled
-        AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)").bind(id).fetch_optional(&mut *conn).await?;
+        WHERE e.id=? AND s.original_person=e.raw_actor AND s.kind='person' AND (?2 OR (s.status='active' AND bot.status='active' AND d.closed_at IS NULL)) AND p.enabled AND root.enabled
+        AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)").bind(id).bind(historical).fetch_optional(&mut *conn).await?;
     let Some(row) = row else { return Ok(None) };
     let raw: Value = serde_json::from_str(row.try_get("envelope")?)?;
     if raw["kind"] != "message" {

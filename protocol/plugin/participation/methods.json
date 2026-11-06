@@ -1,0 +1,329 @@
+{
+  "status": "candidate",
+  "revision": 1,
+  "methods": {
+    "participation.sources": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "participation.sources",
+      "params": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "after": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "properties": {
+                "event": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "preview": {
+                  "type": "string",
+                  "maxLength": 512
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "event",
+                "preview",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "next": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "entry",
+          "items",
+          "next"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "participation.source": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "participation.source",
+      "params": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "cursor": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "version": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string",
+            "maxLength": 10924
+          },
+          "next": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "event",
+          "version",
+          "data",
+          "next",
+          "size",
+          "complete"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "participation.promote": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "participation.promote",
+      "params": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "accepted": {
+            "const": true
+          },
+          "newly_accepted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "event",
+          "accepted",
+          "newly_accepted"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "participation.self_propose": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "participation.self_propose",
+      "params": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxItems": 64,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "entry",
+          "key",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "execution": {
+            "type": "string"
+          },
+          "newly_accepted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "execution",
+          "newly_accepted"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "participation.feedback": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "participation.feedback",
+      "params": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "event"
+            ]
+          },
+          {
+            "required": [
+              "key"
+            ]
+          }
+        ]
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "const": "original_execution"
+          },
+          "executions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "execution": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "cancelled": {
+                  "type": "boolean"
+                },
+                "quiet": {
+                  "type": "boolean"
+                },
+                "sends": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "operation": {
+                        "type": "string"
+                      },
+                      "state": {
+                        "type": "string"
+                      },
+                      "confirmed_parts": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "operation",
+                      "state",
+                      "confirmed_parts"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "execution",
+                "state",
+                "cancelled",
+                "quiet",
+                "sends"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "executions"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

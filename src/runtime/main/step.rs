@@ -15,7 +15,10 @@ pub async fn prepare(
     soul: &str,
     policy: &super::segment::Config,
 ) -> Result<Value> {
+    crate::model::profile_store::runtime::pin(conn, exec, cfg).await?;
     let actor = execution::eligible(conn, exec).await?;
+    let original_soul = crate::operator::domain::original_soul(conn, exec, soul).await?;
+    let soul = original_soul.as_str();
     let turn=sqlx::query("SELECT t.material,t.conversation,t.window,t.rowid,t.origin,x.state FROM main_turns t JOIN executions x ON x.id=t.execution WHERE x.id=?")
         .bind(exec).fetch_one(&mut *conn).await?;
     if !matches!(
@@ -23,6 +26,9 @@ pub async fn prepare(
         "pending" | "running"
     ) {
         return Ok(Value::Null);
+    }
+    if crate::social::model_receipt::stale(conn, exec, &actor).await? {
+        return hold(conn, exec, crate::social::model_receipt::CHANGED).await;
     }
     super::segment::begin(conn, exec, policy).await?;
     if let Some(next) =
@@ -90,7 +96,10 @@ pub async fn prepare(
         match result {
             Ok(parsed) => {
                 let original: Value = serde_json::from_str(&raw)?;
-                cfg.protocol.replay(&mut body, &original)?;
+                cfg.protocol.replay(
+                    &mut body,
+                    &crate::model::profile_store::wire::replay(cfg, &original),
+                )?;
                 continue_turn |=
                     cfg.protocol.is_messages() && original["stop_reason"] == "pause_turn";
                 if !parsed.intents.as_array().unwrap().is_empty() {
@@ -108,7 +117,14 @@ pub async fn prepare(
                         cfg.protocol.output(
                             &mut body,
                             t.try_get("call_id")?,
-                            t.try_get("paired_receipt")?,
+                            crate::host::selected_processor::receipt(
+                                conn,
+                                exec,
+                                t.try_get("operation_id")?,
+                                t.try_get("paired_receipt")?,
+                            )
+                            .await?
+                            .as_ref(),
                         )?;
                     }
                     for t in tools {

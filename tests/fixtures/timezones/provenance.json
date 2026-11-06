@@ -1,0 +1,26 @@
+{
+  "python_distribution": "tzdata",
+  "version": "2023.3",
+  "iana_version": "2023c",
+  "source": "installed tzdata 2023.3 package",
+  "purpose": "independent calendar fixtures, not runtime timezone data",
+  "members": {
+    "Asia/Shanghai": {
+      "sha256": "bf8b7ed82fe6e63e6d98f8cea934eeac901cd16aba85eb5755ce3f8b4289ea8a",
+      "bytes": 393
+    },
+    "America/Sao_Paulo": {
+      "sha256": "fa2ceb222f065c0289f3997ff0c54ba05a74a599b4522870fa86a96e24e18891",
+      "bytes": 952
+    },
+    "America/Los_Angeles": {
+      "sha256": "200d05754f6d83a371cf408d7085125797657b3b0bebeba1e508cffe86a3e5c8",
+      "bytes": 1294
+    },
+    "America/New_York": {
+      "sha256": "d7f2206b3a45989fc9ad63d558922532fa7352280d5f87176bf1db79cb1d1fa9",
+      "bytes": 1744
+    }
+  },
+  "license_source": "tzdata-2023.3.dist-info/LICENSE"
+}

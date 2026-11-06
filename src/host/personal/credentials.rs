@@ -60,15 +60,37 @@ impl Purpose {
 pub struct Principal {
     pub device: String,
     pub owner: String,
+    pub request_person: String,
+    pub thread: Option<String>,
     pub root: String,
     pub admin: bool,
     pub entry: Option<String>,
 }
+impl Principal {
+    pub(super) fn request_scope(&self) -> &str {
+        if self.thread.is_some() {
+            self.entry.as_deref().expect("ACP thread has an entry")
+        } else {
+            &self.request_person
+        }
+    }
+}
 pub async fn device(conn: &mut SqliteConnection, id: &str, purpose: Purpose) -> Result<Principal> {
-    let row=sqlx::query("SELECT d.id,a.original_person,r.id AS root,r.admin,d.entry FROM personal_devices d JOIN device_origins a ON a.device_id=d.id JOIN persons p ON p.id=a.original_person AND p.enabled JOIN persons r ON r.id=coalesce(p.current_root,p.id) AND r.enabled LEFT JOIN entries e ON e.id=d.entry LEFT JOIN assignments h ON h.id=e.actor_stage LEFT JOIN assignments b ON b.id=e.bot_stage WHERE d.id=? AND d.revoked IS NULL AND d.purpose=? AND (d.entry IS NULL OR (e.closed_at IS NULL AND h.status='active' AND b.status='active' AND h.original_person=a.original_person))").bind(id).bind(purpose.name()).fetch_optional(conn).await?.ok_or("unauthenticated")?;
+    subject(conn, id, purpose, true).await
+}
+/// The selection layer must validate the chosen route before using a subject.
+pub(super) async fn subject(
+    conn: &mut SqliteConnection,
+    id: &str,
+    purpose: Purpose,
+    require_default_route: bool,
+) -> Result<Principal> {
+    let row=sqlx::query("SELECT d.id,a.original_person,r.id AS root,r.admin,d.entry FROM personal_devices d JOIN device_origins a ON a.device_id=d.id JOIN persons p ON p.id=a.original_person AND p.enabled JOIN persons r ON r.id=coalesce(p.current_root,p.id) AND r.enabled LEFT JOIN entries e ON e.id=d.entry LEFT JOIN assignments h ON h.id=e.actor_stage LEFT JOIN assignments b ON b.id=e.bot_stage WHERE d.id=? AND d.revoked IS NULL AND d.purpose=? AND (d.entry IS NULL OR (h.original_person=a.original_person AND (? OR (e.closed_at IS NULL AND h.status='active' AND b.status='active'))))").bind(id).bind(purpose.name()).bind(!require_default_route).fetch_optional(conn).await?.ok_or("unauthenticated")?;
     Ok(Principal {
         device: row.get("id"),
         owner: row.get("original_person"),
+        request_person: row.get("original_person"),
+        thread: None,
         root: row.get("root"),
         admin: row.get("admin"),
         entry: row.get("entry"),
@@ -79,15 +101,21 @@ pub async fn authenticate(
     hash: &str,
     purpose: Purpose,
 ) -> Result<Principal> {
-    let id: String = sqlx::query_scalar(
-        "SELECT id FROM personal_devices WHERE token_hash=? AND revoked IS NULL",
-    )
-    .bind(hash)
-    .fetch_optional(&mut *conn)
-    .await?
-    .ok_or("unauthenticated")?;
+    let id = token_device(conn, hash).await?;
     device(conn, &id, purpose).await
 }
+pub(super) async fn token_device(conn: &mut SqliteConnection, hash: &str) -> Result<String> {
+    Ok(
+        sqlx::query_scalar(
+            "SELECT id FROM personal_devices WHERE token_hash=? AND revoked IS NULL",
+        )
+        .bind(hash)
+        .fetch_optional(conn)
+        .await?
+        .ok_or("unauthenticated")?,
+    )
+}
+
 pub fn uuid(key: &str) -> Result<()> {
     let bytes = key.as_bytes();
     if bytes.len() != 36
@@ -105,6 +133,54 @@ pub fn uuid(key: &str) -> Result<()> {
     }
     Ok(())
 }
+fn storage_key(scope: Option<&str>, op: &str) -> String {
+    scope
+        .map(|s| format!("client:{s}:{op}"))
+        .unwrap_or_else(|| op.to_owned())
+}
+async fn prior_code(
+    db: &mut SqliteConnection,
+    issuer: &str,
+    owner: &str,
+    op: &str,
+    scope: Option<&str>,
+) -> Result<Option<sqlx::sqlite::SqliteRow>> {
+    let stored = storage_key(scope, op);
+    // Old device-issued rows have the raw UUID and no selection. They belong
+    // only to the issuing device’s original person and default App scope.
+    let mut prior=sqlx::query("SELECT * FROM personal_codes WHERE (?3 IS NULL AND issuer=?1 AND operation=?2) OR (?3 IS NOT NULL AND owner=?4 AND issuer IN(SELECT id FROM personal_devices) AND (operation=?2 OR (?3=?4 AND operation=?5 AND EXISTS(SELECT 1 FROM device_origins WHERE device_id=issuer AND original_person=?4)))) LIMIT 2")
+        .bind(issuer).bind(&stored).bind(scope).bind(owner).bind(op).fetch_all(db).await?;
+    if prior.len() > 1 {
+        return Err("request_conflict".into());
+    }
+    Ok(prior.pop())
+}
+pub(super) async fn code_receipt(
+    db: &mut SqliteConnection,
+    who: &Principal,
+    op: &str,
+) -> Result<Option<Value>> {
+    let Some(row) = prior_code(
+        db,
+        &who.device,
+        &who.request_person,
+        op,
+        Some(who.request_scope()),
+    )
+    .await?
+    else {
+        return Ok(None);
+    };
+    let id: &str = row.get("id");
+    let purpose: &str = row.get("purpose");
+    let mut payload = json!({"source_binding_id":row.get::<Option<&str>,_>("source_stage")});
+    if purpose != "chat" {
+        payload["purpose"] = json!(purpose);
+    }
+    Ok(Some(
+        json!({"found":true,"status":"succeeded","operation_kind":"client.link_code","target":id,"payload_hash":fingerprint("client.link_code",&who.request_person,&payload),"result":{"code_id":id,"expires_at":stamp(row.get("expires"))?,"purpose":purpose},"problem":null,"problem_code":null}),
+    ))
+}
 pub async fn issue(
     conn: &mut SqliteConnection,
     issuer: &str,
@@ -113,7 +189,19 @@ pub async fn issue(
     purpose: Purpose,
     source: Option<&str>,
 ) -> Result<Value> {
+    issue_with_scope(conn, issuer, owner, op, purpose, source, None).await
+}
+pub(super) async fn issue_with_scope(
+    conn: &mut SqliteConnection,
+    issuer: &str,
+    owner: &str,
+    op: &str,
+    purpose: Purpose,
+    source: Option<&str>,
+    scope: Option<&str>,
+) -> Result<Value> {
     uuid(op)?;
+    let stored = storage_key(scope, op);
     sqlx::query_scalar::<_,String>("SELECT p.id FROM persons p JOIN persons r ON r.id=coalesce(p.current_root,p.id) WHERE p.id=? AND p.enabled AND r.enabled").bind(owner).fetch_optional(&mut *conn).await?.ok_or("person_unavailable")?;
     if let Some(stage) = source {
         sqlx::query_scalar::<_, String>(
@@ -125,15 +213,13 @@ pub async fn issue(
         .await?
         .ok_or("source_binding_unavailable")?;
     }
-    if let Some(r) = sqlx::query("SELECT * FROM personal_codes WHERE issuer=? AND operation=?")
-        .bind(issuer)
-        .bind(op)
-        .fetch_optional(&mut *conn)
-        .await?
-    {
+    if let Some(r) = prior_code(conn, issuer, owner, op, scope).await? {
         if r.get::<&str, _>("owner") != owner
             || r.get::<&str, _>("purpose") != purpose.name()
-            || r.get::<Option<&str>, _>("source_stage") != source
+            || (r.get::<Option<&str>, _>("source_stage") != source
+                && !(scope.is_some()
+                    && r.get::<&str, _>("operation") == op
+                    && r.get::<Option<&str>, _>("source_stage").is_none()))
         {
             return Err("request_conflict".into());
         }
@@ -147,7 +233,7 @@ pub async fn issue(
     sqlx::query("INSERT INTO personal_codes VALUES(?,?,?,?,?,?,?,?,NULL)")
         .bind(&id)
         .bind(issuer)
-        .bind(op)
+        .bind(stored)
         .bind(owner)
         .bind(purpose.name())
         .bind(source)

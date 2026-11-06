@@ -1,0 +1,63 @@
+{
+  "document": {
+    "schema_version": 3,
+    "profiles": {
+      "main": {
+        "provider": "fake",
+        "protocol": "chat_completions",
+        "model": "fake-model",
+        "base_url": "https://test.invalid/v1",
+        "api_key_env": "",
+        "timeout_seconds": 60.0,
+        "max_retries": 1,
+        "default_temperature": 0.21,
+        "default_max_output_tokens": 301,
+        "capabilities": [
+          "reasoning",
+          "structured_output",
+          "tools"
+        ]
+      }
+    },
+    "search_backend": null,
+    "search_connection": null,
+    "routes": {
+      "chat_agent": "main",
+      "memory_extraction": "main",
+      "memory_self_reflection": "main",
+      "memory_dream": "main",
+      "plugin_agent_session": "main",
+      "utility_structured": "main"
+    },
+    "embedding": {
+      "enabled": false,
+      "base_url": "http://127.0.0.1:43575/v1",
+      "api_key_env": "",
+      "model": "qwen3.7-text-embedding",
+      "provider": "qwen_dashscope",
+      "dimensions": 1024,
+      "output_type": "dense",
+      "document_template_version": 1,
+      "query_instruct": "Retrieve personal memory facts relevant to the conversational query."
+    },
+    "vision": {
+      "enabled": false,
+      "base_url": "http://127.0.0.1:43575/v1",
+      "api_key_env": "",
+      "model": "legacy-vision-model",
+      "protocol": "chat_completions"
+    },
+    "asr": {
+      "enabled": false,
+      "base_url": "",
+      "api_key_env": "",
+      "model": "legacy-asr-model",
+      "protocol": "audio_transcriptions"
+    },
+    "search": {
+      "mode": "disabled",
+      "tavily_api_key_env": ""
+    }
+  },
+  "sidecar_created": false
+}

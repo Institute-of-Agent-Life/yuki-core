@@ -83,10 +83,12 @@ pub async fn tick(
                 hold(conn,&id,"original_extraction_scope_unavailable").await?;
                 return Ok(Value::Null);
             }
-            if r.get::<String,_>("contract")!=cfg.profile.contract(){
-                hold(conn,&id,"extraction_profile_changed").await?;return Ok(Value::Null);
+            let frozen:Value=serde_json::from_str(r.get("task"))?;
+            let profile:crate::runtime::main::Config=serde_json::from_value(frozen["profile"].clone())?;
+            if r.get::<String,_>("contract")!=profile.contract(){
+                return Err("original_extraction_profile_unavailable".into());
             }
-            return Ok(json!({"logical":logical}));
+            return Ok(json!({"logical":logical,"profile":profile,"task":frozen["task"]}));
         };
         if !matches!(payment.as_str(),"paired"|"response"){
             hold(conn,&id,&format!("paid_{payment}")).await?;return Ok(Value::Null);
@@ -98,6 +100,18 @@ pub async fn tick(
         commit(conn,&id,profile.timezone.as_deref().unwrap_or("Asia/Shanghai"),&output.result).await?;
         return Ok(Value::Null);
     }
+    let mut selected = cfg.clone();
+    let task = cfg
+        .profile
+        .profile_task
+        .as_deref()
+        .unwrap_or("memory_extraction");
+    selected.profile =
+        crate::model::profile_store::runtime::select(conn, &cfg.profile, task).await?;
+    selected.mode =
+        crate::model::profile_store::runtime::structured_mode(&selected.profile, &cfg.mode)?;
+    selected.validate()?;
+    let cfg = &selected;
     let ready = ready_owner(conn, cfg, now, foreground).await?;
     let Some(ready) = ready else {
         return Ok(Value::Null);
@@ -194,7 +208,7 @@ pub async fn tick(
         }),
     )
     .await?;
-    Ok(json!({"logical":logical}))
+    Ok(json!({"logical":logical,"profile":profile,"task":task}))
 }
 async fn hold(conn: &mut SqliteConnection, id: &str, reason: &str) -> Result<()> {
     sqlx::query(
@@ -274,16 +288,7 @@ async fn commit(conn: &mut SqliteConnection, id: &str, zone: &str, result: &Valu
                     let fid = facts::insert_fact(conn, &exec, &subject, "subject", key).await?;
                     evidence::attach(conn, &fid, proof).await?;
                     sqlx::query("INSERT INTO memory_versions(fact,revision,body,confidence,execution) VALUES(?,1,?,?,?)").bind(&fid).bind(body).bind(claim["confidence"].as_f64().unwrap_or(0.8)).bind(&exec).execute(&mut *conn).await?;
-                    sqlx::query("INSERT INTO extract_fact_details VALUES(?,?,?,?,?,?,?)")
-                        .bind(&fid)
-                        .bind(claim["category"].as_str())
-                        .bind(claim["kind"].as_str().unwrap_or("fact"))
-                        .bind(claim["importance"].as_i64().unwrap_or(3))
-                        .bind(claim["temporal_mode"].as_str().unwrap_or("persistent"))
-                        .bind(claim["valid_from"].as_str())
-                        .bind(claim["valid_until"].as_str())
-                        .execute(&mut *conn)
-                        .await?;
+                    super::details(conn, &fid, claim).await?;
                     fact = Some(fid);
                     "created"
                 }

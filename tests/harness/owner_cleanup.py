@@ -1,4 +1,4 @@
-import json, subprocess, sys
+import json, subprocess, sys, uuid
 from tests.harness.compact import Owner
 
 
@@ -85,6 +85,17 @@ def exercise(ctx):
             + "\n"
         )
     with o.svc.running():
+        # The cleanup entry changes the installed executable declaration. Approval
+        # must be renewed before either the cleanup or business program can start.
+        state = o.op('control', 'read', 'plugin.get', '{"plugin_id":"retained"}')
+        ctx.equal('changed cleanup declaration starts unapproved', state['status'], 'discovered')
+        ctx.equal('unapproved cleanup declaration cannot touch retained data', phases(), [])
+        o.op('control', 'write', 'plugin.approve', json.dumps({
+            'plugin_id':'retained', 'request_id':str(uuid.uuid4()),
+            'expected_revision':state['revision'],
+        }))
+        # This real process deliberately exits after deletion and before its ACK.
+        o.svc.command('operator', 'host', 'enable', 'retained', 'true', accepted=False)
         o.until(lambda: any(p["event"] == "erased" for p in phases()))
         ctx.equal(
             "crash after managed removal before ACK retains obligation",

@@ -1,64 +1,153 @@
 # 核心實作進度
 
+截至本次整合，#43 已在三端各通過 39 卡並合併至 `main`（`82c14715e1bf`）。原始合併回執在 `artifacts/ci/local-pr/43/receipt.json`，SHA-256 為 `8555243c6019263958d4f8a472ae46d72972315f133b9b038f815dcd426244c6`。#85 的候選來源與最終合併 CI 分別留存，後者由 `ci/local_matrix.py` 驗證當下的兩個父提交。
+
+CORE-013（#85，`codex/core-013-file-send-receipt`，來源 `04139ad30742`）的三端候選均已打包。每端 CORE-013 通過 349 項、CORE-040 通過 152 項。Windows 檔案傳送回條和重放分別保存在 `windows/manifest.json`、`windows/related-core040/manifest.json`。候選可供擴展倉唯讀對拍，狀態為未發布，schema 51，Rust SDK 1.0.0-alpha.14，Python SDK 1.0.0a14。各包位於 `artifacts/CORE-013/file-caption-04139ad30742/<平台>/handoff/`，實含方法以包中清單為準。
+
+| 平台 | ZIP | SHA-256 |
+| --- | --- | --- |
+| macos | `yuki-social-preview-04139ad30742-darwin-arm64.zip` | `2e8064dcbb9cc77cf0640c49ba417905f5962b9bbc1273937e459f0e792041cf` |
+| linux | `yuki-social-preview-04139ad30742-linux-arm64.zip` | `d5cf02c45034ac3e97f5a5067bd34a24b78b9e42038fd1483bcba85693f81a17` |
+| windows | `yuki-social-preview-04139ad30742-windows-x86_64.zip` | `75f871ed9889c0ca13c4da2712448d0a277635d4f917bdf41dad886768af51b4` |
+
+三端清單 `artifacts/CORE-013/file-caption-04139ad30742/verified-candidates.json` 的 SHA-256 為 `561bdbfdf1bdc0bc1084803021496438b40a569123812002e14fc3de5ae6b708`。
+CORE-013 檔案加文字回條（`codex/core-013-file-send-receipt`）。已確認上傳和文字的原始事件分列，附件綁定原版本雜湊、檔名和大小。固定 v4 A/B 對照完整模型可見回條；先前 Rust 缺少 data，修正後 Mac CORE-040 152 項、CORE-013 348 項通過。預留下一模型請求之後移除原檔版本，實體派發次數維持六次；原三筆 QQ 效果無重送。產物 `artifacts/CORE-040/file-caption-wire-01/` 與 `artifacts/CORE-013/file-caption-withdrawal-01/`。
+
+日常 CI 已於 #83 合併 main `b2cfe37`，Mac mini、同機 Linux ARM64 容器與 HJW Windows 各驗 36 卡；#39 於 main `d74e70e` 各驗 37 卡。合併回執在 `artifacts/ci/local-pr/{83,39}/receipt.json`。Mac 清理已合併分支的舊增量及依賴編譯檔約 64.1 GiB，詳見 `artifacts/ci/cleanup-20261106/`。
+
+CORE-040 本地對拍交接包 `artifacts/CORE-040/work-question-b5bc5fd0a5a7/yuki-core-work-replay-evidence-b5bc5fd0a5a7.zip`，SHA-256 `a6c7245177c5543b728294b6fa581d26c8593b6fe81e9705477556e846164b70`。來源 `b5bc5fd0a5a7`，schema 51，SDK alpha.14；三端各 150 項。包內含原始雙臂的六次請求、三平台清單及修正結果，未發布。
+
+CORE-040 跨裝置續接（`codex/core-040-work-replay`）。固定 v4 A/B 各重放同一個 Work 的六次實際模型請求。Mac 修正前連續三次遺失已確認的提問，修正後兩次冷啟動均保留原問題與手機答案，撤回原問題則停止下一次派發。Mac 150 項斷言見 `artifacts/CORE-040/work-question-fixed-01/manifest.json`。本卡仍待完整等功能與效能判定。正常與故障時序見 [Work replay](benchmarks/work-replay.md)。
+
+CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；明示 64,000 容量並放大必要未觀察輪，保留硬上限拒絕並加驗恰好一次物理 attempt。Windows／Mac／Linux 全卡通過；詳見 [故障與修正證據](compact-capacity-fixture.md)。
+
+任務書 v3.2 ZIP SHA-256：`79dfd2ba5a8b96f22dea4c5f72a94ca761b15f2e354e33b36c7ecdbedc3ec3ee`。舊倉只讀，行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；K05 補正已套用工作副本，不增加 unknown 重試權。原提交、驗證、失敗診斷及完整交接雜湊見 [實作驗證記錄](implementation-evidence.md)。
+
+CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux 各 1052 項及超時診斷](control-fixture-timing.md)。
+
+CORE-040 同封包對拍（`codex/core-040-native-arrivals`）：[重現與故障時序](benchmarks/native-arrivals.md)。兩份固定原版與 Rust 各 4 筆輸入／8 次物理 Chat；同一 QQ 訊息的發言者、原始時區、提及、正文、靜態／runtime 提示與模型參數已對齊，修正 Rust 把自身提及顯示為未知成員。Mac 實測 `artifacts/CORE-040/native-arrival-check-03/slice-decision.json`；原 A/B 在 `artifacts/CORE-040/native-arrivals-04/`。尚缺 9 個工具、5 個額外工具、4 個宣告差異，以及原 send 回條；未作完整 E13 投資判斷。下一步補核模型實收的 Social 回條與真擴展工具視圖。
+
+[PR #78](https://github.com/Institute-of-Agent-Life/yuki-core/pull/78) 固定來源 `8dfa2ae520dba4063ab80fb4d6e907b6eae369c5`：乾淨 HJW Windows、Mac、Linux 各 9 項；`artifacts/CORE-040/native-arrival-clean-01/verified-platforms.json` SHA-256 `786f796b6b9719c116ae39f9561d03f3c1ca1cc03f0826781e60df779d2231e5`。另以相同封包重跑完整 E13：A、B、C 各 1200 筆、2400 次實體 Chat、1200 段送達和 1200 筆原出站記錄。逐筆外部效果索引 `artifacts/CORE-040/native-e13-effects-01/external-effects.json` SHA-256 `fb3e6163cc2aca637cb03a90e6cb731021ac9fbe4f0f9865dfd1c778ac3c7c8b`；同時執行，只核效果。
+
+CORE-013 單段文字送達回條（`codex/core-013-model-send-receipt`）：[模型可見字段與撤回競態](model-send-receipt.md)。原版 14 項通過。Mac CORE-013 通過 314 項；CORE-040 的 10 項包含真實第二次 Chat 與舊版實收欄位逐項對拍。CORE-011／012／016／023／014／038／039 各 117／166／184／225／667／318／148 項通過。證據 `artifacts/CORE-*/model-send-receipt-check-05/`。實測在正常預留後撤回正文，原邏輯請求零物理 attempt，沒有重發 QQ。多段和未知送達沿用原有物理狀態。
+
+CORE-013 未發布候選（PR #79，來源 `9597513f82d3f42a4ababcb750362bf15326ac98`；schema 51，SDK alpha.14）：HJW Windows、macOS、Linux 各通過 314 項。交接清單 `artifacts/CORE-013/send-receipt-handoff-final-01/verified-candidates.json`，SHA-256 `e0fb3ed1562270cf8e75b8b796653b900e0063ee689105475c13f9aaed290bdc`；內含各 ZIP 的絕對路徑、SHA-256 及逐檔驗證記錄。
+
+CORE-040 連續兩次公開 Compact（`codex/core-040-compact-replay`）：[共同輸入及重現方式](benchmarks/compact-replay.md)。正常／第二份摘要帶禁用工具兩條時序，A／B／Rust 各 30 次實體 Chat；逐次核對哪些原文、摘要及當前問題真正進入模型。第二份失敗時第一份摘要仍有效，沒有送出 QQ，沒有補買。舊版原始回條 `artifacts/CORE-040/compact-two-{a,b}-03/`；Rust `artifacts/CORE-040/compact-replay-check-01/slice-decision.json`。此處只驗公開手動壓縮，E13 的自動 P/E、長 Work 工具與等資源比較仍待核對。
+
+[PR #81](https://github.com/Institute-of-Agent-Life/yuki-core/pull/81) 固定來源 `d8a10ba67270b8d2ff2c936ade3e267c0d9e9fbe`，HJW Windows、Linux、macOS 各 84 項通過；三平台實際模型時序、公開摘要及費用帳本索引 `artifacts/CORE-040/compact-replay-clean-01/verified-platforms.json`，SHA-256 `bb518eec24eea3f7c8126b69fe4edaf41214161e11c0f8e06c6fd394f9710b53`。
+
+PR #71：Windows CI 的 Rust SDK 測試讀取完整 JSON 時，寫入端可能尚未關檔。兩個 SDK 的測試現在先關閉暫存檔，再原子交給獨立程序；逾時會記錄卡住的方法與程序狀態。Mac、HJW 同一工作樹 d839315809be 各通過 CORE-037 全部 1052 項。回條：`artifacts/CORE-037/client-stream-atomic-inbox{,-hjw}-01/manifest.json`。
+
+PR #51 已整合前置；Mac 037=977、048=663、039=84 項通過，回條在各卡 `control-integrated-parent-nov06-03/manifest.json`。
+
+PR #44 已整合前置；Mac 005=36、050=561 項通過，回條在各卡 `aux-model-parent-nov06-03/manifest.json`。
+
 來源：任務書 v3.2 核心文檔補核版，ZIP SHA-256
 `79dfd2ba5a8b96f22dea4c5f72a94ca761b15f2e354e33b36c7ecdbedc3ec3ee`。
 舊行為基線：`329ca7c487414d2f54ddd98ff4727446ed2446cd`，舊倉只讀。
 已依總書 K05 修正工作副本 CORE-011 第 2 步，不增加 unknown 重試權。
 
-| 任務 | 狀態 | 分支／提交 | 驗證及產物 |
+## 完成與進行中
+
+已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；CORE-016 分段 #42 已合併至 `ce66753`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。
+
+| 任務 | 目前實作／PR | 狀態與驗證 |
+|---|---|---|
+| CORE-028、029、030 | #35 `3765d21`、#37 `87a07f9`、#39 `b745a9d` | 向量、檢索、忘記已實作及產證；等待前置與最新六項 CI。 |
+| CORE-038 | #40 `7cd4e42` | 媒體 broker 已實作；候選及 EXT-038 實測證據見記錄。 |
+| CORE-016 分段、034 Code | #42 `e542c27`、#43 `9258e35` | 本地三平台候選已驗；真 Monty 原 feed 補修需擴展再測。 |
+| CORE-050、036、035 | #44 `c26e6c4`、#45 `8368392`、#46 `402a9aa` | 輔助模型、參與判斷、維護合同已實作；待前置及 CI。 |
+| CORE-051、058、048 | #47 `671d8c5`、#48 `f5f961b`、#49 `8915b3f` | 隔離會話、通知、Profile 已驗；未知通知不重送。 |
+| CORE-037、055、057 | #51 `9bb02fc`、#52 `e087e88`、#54 `b63d111` | 管理、用量、離線模型移轉已實作；三平台候選見下表。 |
+| CORE-014、015 補核 | #53 `77c85c4`、#56 `bc551a0` | 原歷史查詢、Artifact 模型合同已驗；Code peer 整合回歸 387 項通過。 |
+| CORE-013 補核 | #57 `bf121e5`、#58 `47fae2a` | 原群目錄與撤回；撤回來源 `266e9aa` 三平台各 252 項通過。 |
+| CORE-037 權限目錄 | #59 `a638fab`，`codex/core-037-permission-directory` | 247 個原 descriptor、16 組結果；Mac／Linux／HJW Windows 乾淨候選各 1052 項通過，索引見下表。 |
+| CORE-015 工具視圖 | PR #60 `cf14cc6`，`codex/core-015-original-tool-views` | 原宣告、Code 核心可見性、lookup 多詞搜尋與回條補核；50 組原對拍；三平台乾淨候選各 127 項，五張相鄰回歸通過。 |
+| CORE-015 逐項拒絕 | #61 `969fb62` | Windows／Linux／Mac 各 363 斷言，八張相鄰卡及固定原版四項測試通過；等待前置與最新六項 CI。 |
+| CORE-026 原事實恢復 | #62，`806d160`／候選 `d107b18` | Windows／Linux／Mac 各 226 項、六張相鄰卡及原版 7 項通過；GitHub 重試推送已成功，等待最新六項 CI。 |
+| CORE-026 metadata | PR #63，`f5855e5` | Windows／Linux／Mac 乾淨候選各 370 項；9 張相鄰卡、原版 7 項與逐 ZIP 成員檢查通過；reader 44，尚未發布。 |
+| CORE-026 selector | PR #64，`fed00d2` | Windows／Linux／Mac 乾淨候選各 823 項；原版 9 組、5 張相鄰卡及逐 ZIP 檢查通過，尚未發布。 |
+| CORE-026 有效期間 | PR #65，`6d47464`，`codex/core-026-memory-temporal` | Windows／Linux／Mac 各 1181 項；7 張相鄰卡、72 組原解析、8 步原修改及逐 ZIP 檢查通過。reader 45，尚未發布。 |
+| CORE-033 未選 Work 認證 | PR #66，`3e4080d`，`codex/core-033-connector-auth` | 三平台各 369 項、原版 8 項與 6 張相鄰卡通過。首次 HJW 打包因 Windows 執行檔鎖失敗；清理修正後三平台乾淨候選各 369 項且 ZIP 成員已驗。reader 46，SDK alpha.12／a12。 |
+| CORE-033 Client9 明選 | PR #67，`389d586`，`codex/core-033-entry-selection` | A→B／既有 ACP、舊 NULL、原 Work mailbox 與 Host 授權；[方法與失敗時序](client-entry-selection.md)。reader 47；乾淨 Windows／Mac／Linux 各 558 項、7 張相鄰卡通過。 |
+| CORE-033 Client9 出站串流 | PR #71，來源 d8bf54c | [提交提示、快照與按事件續讀](client-stream.md)。Mac、HJW Windows、Linux 各 581 項，候選索引見下。 |
+| CORE-033 Client9 上傳 | codex/core-033-client-uploads | [回執與有序附件](client-upload-receipts.md)。PR #72，來源 c616cf3；Windows／macOS／Linux 各 666 項、原版 15 項與 7 張相鄰卡通過。 |
+| CORE-038／025 原 gateway 取件 | codex/core-038-inbound-media | [原 Bot、app 與租戶取件](gateway-inbound-media.md)；SDK alpha.13／a13，reader 49。三平台各 207 項、固定原版 18 項及 7 張相鄰卡通過；索引見下，待 EXT-004／006。 |
+| CORE-040 | #55 `400c9b8`，部分完成 | 12 次冷暖 A/B/C 各 1200 輸入已逐筆核效果；完整工具／DTO／Compact 等價與受控資源比較未完成，不判 Rust 勝出。 |
+
+每個 PR 均等其前置合併與最新 head 的 push／PR × Windows／Linux／Mac 六項檢查全通過才合併。待合併分支以 PR 的 head ref 為準；本地 worktree 在 `.cache/worktrees/`。不直接提交 main。
+
+## 可供擴展倉只讀消費
+
+除 initialize 預發布外，候選均未發布。索引含各 ZIP 絕對路徑、來源 commit/tree、reader／Host／SDK 版本、實含能力、逐成員 SHA-256 及三平台驗證。不同候選驗證的能力不可拼成一次全棧驗收。
+
+| 候選 | 來源 commit | 索引 | 索引 SHA-256 |
 |---|---|---|---|
-| CORE-004 | 完成，已進 main | `codex/core-004-qq-keys` | `artifacts/CORE-004/{mac-02,windows-01}/qq-key-decision.json`。提交 `aa2dca0`、[PR #5](https://github.com/Institute-of-Agent-Life/yuki-core/pull/5) 三平台 CI 通過，合併 `2bc490c`。現場僅見 QQ，指定唯一接收端；同秒同文、亂序、回聲與重連雙收 fixture 是合成對照。 |
-| CORE-001 | 完成，已進 main | `c85bf8ee182d5075c1abaa8b1a56f51e16b0a196`；分支 `codex/rust-core-v3-2` | [三平台 CI 41818720821](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/41818720821) 全過；`artifacts/CORE-001/` 保留正常、故障與修正證據 |
-| CORE-005 | 完成，已進 main | `codex/core-005-owner`，PR head `f13b29d`，合併 `d98b02e` | Windows、macOS、Linux [CI 通過](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/41825696747)。實機 `artifacts/CORE-005/windows-05/`、`windows-sid/`、`mac-sigterm-green/` 與 `linux-container-01/` |
-| CORE-002 | 完成，已進 main | `codex/core-002-oracle` | `artifacts/CORE-002/capture-mac-01/{first,second}/` 各 5 個原版情境，Windows 實機重放兩次也一致。Windows 實機完整 A 線同樣通過，見 `artifacts/CORE-002/v4-oracle-979bac82/load/`。提交 `89f15db`，[PR #2](https://github.com/Institute-of-Agent-Life/yuki-core/pull/2) 三平台 CI 通過並合併 `2ea4477`。A 線 `load-mac-01/` 為 1,200 條逐筆送達與 20 個原 Work。三平台入口均為 `python ci/check.py CORE-002 --out <新目錄>` |
-| CORE-003 | 完成，已進 main | `codex/core-003-inventory` | `artifacts/CORE-003/` 的 `mac-02/`、`windows-01/` 均通過，提交 `9c77e56`、[PR #3](https://github.com/Institute-of-Agent-Life/yuki-core/pull/3) 三平台全過並合併 `83d8583`，另留 red、WAL、缺 blob、拒絕路徑逸出證據 |
-| CORE-006 | 完成，已進 main | `codex/core-006-person` | `artifacts/CORE-006/mac-02/`、`windows-01/` 中的 `person-before-after.json` 保留舊庫升級、原人物與停用兩端的授權結果。[PR #4](https://github.com/Institute-of-Agent-Life/yuki-core/pull/4) 三平台通過，head `541ee01`，合併 `69acc507`。 |
-| CORE-007 | 完成，已進 main | `codex/core-007-assignments` | `artifacts/CORE-007/mac-02/` 與 `windows-01/` 的 `assignment-timeline.json`；原生時間可信區間、轉回、關閉私聊和重試在真 SQLite 上驗證。[PR #6](https://github.com/Institute-of-Agent-Life/yuki-core/pull/6) 三平台通過，head `9da1673`、合併 `0783298`。 |
-| CORE-049 | 完成，已進 main | `codex/core-049-profile-evidence` | `artifacts/CORE-049/{mac-02,windows-01}/endpoint-evidence-grid.json` 與原 adapter 7 個通過的案例。外網模型呼叫 0，實際供應商能力待驗。提交 `b4de4e5`、[PR #7](https://github.com/Institute-of-Agent-Life/yuki-core/pull/7) 三平台通過，合併 `2a680e3`。 |
-| CORE-008 | 完成，已進 main | `codex/core-008-ingress` | `artifacts/CORE-008/{mac-03,windows-02}/ingress-barriers.json` 留有實際程序在 commit 前、commit 後 ACK 前終止及冷啟重投的結果。[PR #8](https://github.com/Institute-of-Agent-Life/yuki-core/pull/8) 三平台通過，head `3b8b6c5`、合併 `ff7122a`。 |
-| CORE-009 | 完成，已進 main | `codex/core-009-onebot` | `artifacts/CORE-009/{mac-07,windows-02}/qq-frames.json` 保留原提及、實收 locator、回聲及分段打字時序。合成雙端證據只適用該測試部署。[PR #9](https://github.com/Institute-of-Agent-Life/yuki-core/pull/9) 三平台通過，head `9f59267`、合併 `a2e9bfa`。 |
-| CORE-010 | 完成，已進 main | `codex/core-010-effects` | `artifacts/CORE-010/{mac-03,windows-02}/effects-ledger.json` 記錄兩次本地 commit 中斷、原結果及三段外部實收。[PR #10](https://github.com/Institute-of-Agent-Life/yuki-core/pull/10) 三平台通過，head `4458777`、合併 `bf912a6`。 |
-| CORE-031 | 完成，已進 main | `codex/core-031-handshake` | `artifacts/CORE-031/{mac-03,windows-02}/sdk-crosswire.json`。schema 1、Rust `1.0.0-alpha.1`、Python `1.0.0a1`；兩端的預覽 ZIP 逐位元相符。[PR #11](https://github.com/Institute-of-Agent-Life/yuki-core/pull/11) 三平台通過，head `cfbff5b`、合併 `dd694a0`。 |
-| CORE-011 | 完成，已進 main | `codex/core-011-budget` | `artifacts/CORE-011/{mac-05,windows-03}/` 的 `paid-boundaries.json` 與 `usage-denominator.json`。根競爭、原回應保存、重試實收與 unknown 分母均以實際 SQLite／loopback 驗證。[PR #13](https://github.com/Institute-of-Agent-Life/yuki-core/pull/13) 三平台通過，head `208fc63`、合併 `ed971f0`。 |
-| CORE-052 | 完成，已進 main | `codex/core-052-source-fence` | `artifacts/CORE-052/{mac-02,windows-01}/source-erasure-obligations.json`，各 94、94 項斷言。CORE-011 回歸 117 項通過。[PR #14](https://github.com/Institute-of-Agent-Life/yuki-core/pull/14) 三平台通過，head `555b6c9`、合併 `8493625`。 |
-| CORE-056 | 完成，已進 main | `codex/core-056-group-recovery` | `artifacts/CORE-056/{mac-03,windows-02}/native-group-recovery.json`。兩端各 55 項斷言；CORE-009 的 49 項入站回歸通過。[PR #15](https://github.com/Institute-of-Agent-Life/yuki-core/pull/15) 三平台通過，head `3ae3b37`、合併 `fb57fcf`。`artifacts/CORE-056/{mac-proof-01,windows-proof-01}/` 另驗畸形群號及回應指向另一個群，均通過。 |
-| CORE-012 | 完成，已進 main | `codex/core-012-main` | `artifacts/CORE-012/{mac-08,windows-03}/` 下的 `main-wire.json` 及 H01、H02、H03、H16、H20 回條。Mac／Windows 各 162 項斷言。以 HTTP recorder、合成工具接收程序及實際 writer 測試。CORE-008、010、011、052 回歸通過。[PR #17](https://github.com/Institute-of-Agent-Life/yuki-core/pull/17) 三平台通過，實作 `37a4f42`、最終 head `bce43bc`、合併 `dfaba17`。 |
-| CORE-013 | 三平台 CI 通過，已合併 aa67bed | `codex/core-013-social` | `artifacts/CORE-013/{mac-09,windows-03}/social-parts.json`。[PR #18](https://github.com/Institute-of-Agent-Life/yuki-core/pull/18)，head `d2942ef`。兩端各 108 項斷言，另有固定舊版分段對拍。兩次 macOS ARM 託管作業未取得 runner；已改用標準 macOS Intel runner 執行同一組檢查，本機 Mac ARM 結果另列。三段送達、轉移後 ACK、原生定位撤回與配圖中斷均有回條。 |
-| CORE-019 | 三平台 CI 通過，已合併 0687bb6 | `codex/core-019-responses` | `artifacts/CORE-019/{mac-03,windows-02}/responses-dialect.json`。[PR #19](https://github.com/Institute-of-Agent-Life/yuki-core/pull/19)，head `d15c942`。兩端各 154 項斷言；舊版兩個 adapter 的真 HTTP 回條與現行文件聲明分開，三種方言的 Rust 測試均用 loopback。 |
-| CORE-014 | 三平台 CI 通過，已合併 ff3644a | `codex/core-014-history` | `artifacts/CORE-014/{mac-06,windows-02}/literal-search-gold.json`，兩端各 96 項斷言。固定舊版字面 gram、簡繁、ASR 邊界、舊庫升級、刪除後翻頁與模型下一次請求的原來源均有回條。`artifacts/CORE-014/linux-container-03/linux-history.json` 是 linux/arm64 斷網非 root 實測。提交 `40e008b`，[PR #20](https://github.com/Institute-of-Agent-Life/yuki-core/pull/20)。CORE-008、011、012、013、019、052 回歸通過。初次遠端打包查出 SDK 的 NOTICE 未同步；同步後 CORE-031 42 項通過，`linux-context-04/manifest.json` 記錄以本倉入口另一次構建的 Linux 映像。 |
-| CORE-015 | 三平台 CI 通過，已合併 5c3b494 | `codex/core-015-tools` | `artifacts/CORE-015/{mac-04,windows-02}/{frozen-views,read-barriers,tool-result-pages}.json`，兩端各 105 項斷言。另以具名 Rust 測試驗證兩讀同時進入、隱藏 schema 改版、午夜、短槽到期及解碼後撤權。CORE-005、010、011、012、013、014、019、031、052 回歸均通過。 |
-| CORE-020 | 三平台 CI 通過，已合併 00e1f9f | `codex/core-020-messages` | `artifacts/CORE-020/{mac-02,windows-02}/{messages-wire,messages-choice-pause}.json`，兩端各 163 項斷言。固定舊版四次 HTTP 對拍覆蓋 thinking 開關與具名／必選；Rust 驗過簽名原序、失敗工具原 ID、伺服器工具錯誤，以及 pause_turn 用盡根額度。CORE-011、012、014、019 回歸通過。 |
-| CORE-032 | 三平台 CI 通過，已合併 `30a5ea7` | `codex/core-032-host` | `artifacts/CORE-032/{mac-08,windows-04}/host-delegation.json`。獨立安裝的 Rust、Python SDK 回呼同一宿主。涵蓋分段失答、離線命令與冷啟、撤權、觀察背壓、刪除回條。握手 v1、Host 業務 schema v2、Rust 1.0.0-alpha.2、Python 1.0.0a2。 |
-| CORE-021 | 三平台 CI 通過，已合併 7fd1002 | `codex/core-021-gemini` | `artifacts/CORE-021/{mac-02,windows-02}/{gemini-wire,gemini-parts}.json`，各 100 項斷言。舊版兩次真 HTTP 錄製包含有／無原生 ID 的平行回條。Rust 驗過簽名位置、原生搜尋失敗、來源引用、媒體、拒絕混用及傳輸中斷；CORE-011、012、019、020 回歸通過。 |
-| CORE-039 | Mac ARM64、HJW Windows x86_64、Linux ARM64 各通過 81 項，Linux 最小 OCI 亦通過 | `codex/core-039-dist` | `artifacts/CORE-039/{mac-04,windows-03,linux-arm64-03}/candidate-manifest.json` 和 `oci-dev-02/oci-candidate.json`。release 執行檔、兩 SDK、IDL、fixture、Cargo 依賴與授權按來源簽名。空目錄啟動，錯來源、錯架構、錯金鑰、錯 fixture、路徑逸出、連結及額外檔案均拒絕。 |
-| CORE-016 | Mac 與 HJW Windows 各通過 56 項 | `codex/core-016-work` | `artifacts/CORE-016/{mac-06,windows-03}/{work-tree,settlement-tail,work-action-matrix}.json`。H04 在真收件後殺程序，重啟補原回條，維持一次送達、兩次模型請求。H10 核對中立前景、派生 worker 與跨樹權限。另驗私有問答、同批取消與遲到回條、空 final 及 unknown 後的新業務輸入。11 張相鄰卡回歸通過，見各卡 `work-regression-01/`。 |
-| CORE-026 | Mac、HJW Windows 各通過 118 項；已驗 13 張相鄰卡 | `codex/core-026-facts` | `artifacts/CORE-026/{mac-04,windows-02}/fact-evidence-acl.json`。共同群可讀結構化事實而不可讀來源私聊；原 R1 重放不覆寫 R2，原證據換列後舊 proof 被拒。實測 QQ 本人命令、原模型 read_memory／memory_change、撤回、工具／run 原件及 forget。 |
-| CORE-017 | macOS 與 HJW Windows 已驗，待三平台 CI | `codex/core-017-wait` | `artifacts/CORE-017/{mac-11,windows-02}/wait-{match,before-settle,parent-questions,plugin-events}.json`。原批結算後才掛起；原定位與身份命中後一次啟動，保留 all 的部分私有輸入。十次提示與重放均不增購；父工作終止後不復活。App／ACP 明確目標按核心入口驗證，實際擴展消費仍待交接。CORE-015 工具摘要及相鄰 13 張回歸通過。 |
-| CORE-022 | macOS 與 HJW Windows 各通過 214 項，待 CI | `codex/core-022-compact` | `artifacts/CORE-022/{mac-07,windows-02}/{compact-public-next-wire,native-public-wires,compact-public-faults}.json`。送後跨 96k，只換公開前綴；保留原工具配對與未覆蓋尾。實際強殺後重用原已付回應；刪除、重置或撤管理權後舊 P 無法發布。三種原生協議均驗下一筆實際請求與 opaque 重放。 |
-| CORE-018 | macOS、HJW Windows 實機已驗，待 CI | `codex/core-018-schedule` | `artifacts/CORE-018/{mac-03,windows-01}/schedule-occurrences.json`。H08 強殺接納後的 writer，重啟以原 goal 與原 QQ 私聊收件端完成；兩次到期有獨立根執行，重掃不重購。SELF 經指定群接收階段實際送達。R14 驗編輯、暫停、漏過多次到期、已完成次數，以及轉移後拒送。五種原規則、另加 cron 與舊時鐘對拍。18 張相鄰卡回歸通過。 |
-| CORE-023 | Mac、HJW Windows 各通過 223 項，待 CI | `codex/core-023-private` | `artifacts/CORE-023/{mac-06,windows-01}/{compact-exec-next-wire,partial-native-next,native-E-P-next,next-normal-unknown}.json`。同一批在配對後與 E 回應落庫後各強殺一次，下一普通請求仍有原參數及效果鍵。原生 QQ 部分送達保留三段狀態、已送 locator 與出站 ID。另驗 E→P 換鏈、P 拒絕轉 E、來源失效、不可容納及 Work 喚醒。固定舊版 `v4-oracle-01/junit.xml` 的 21 項通過。 |
-| CORE-025 | Mac 與 HJW Windows 各通過 83 項，待 CI | `codex/core-025-media` | `artifacts/CORE-025/{mac-03,windows-02}/media-versions.json`、`paid-image-wire.json`、`paid-messages-image.json`。原 QQ 段與引用、不可變交付、替換路徑、Windows junction、硬連結、忘記在途來源、TTL、無視覺能力均已實測。Mac 22 張卡回歸通過，見各卡 `media-regression-02/`。 |
-| CORE-033 | Mac、HJW Windows 各通過 187 項，待 CI | `codex/core-033-personal` | `artifacts/CORE-033/{mac-08,windows-03}/personal-handoff.json`。Client 9 本人入站、分頁、原 QQ Work 私有輸入及取消、事實更正與排程暫停。兩台設備同 UUID 僅留一筆；在 mailbox 之後注入失敗會整筆回滾。SDK 子程序冷啟後重新兌換憑證；獨立 wire4 假設備遺失 ACK 後重投，同 event 與 watermark。26 張相鄰卡回歸通過。 |
-| CORE-027 | HJW Windows、Mac 各通過 172 項，待 CI | `codex/core-027-extract` | `artifacts/CORE-027/{mac-04,windows-01}/{extraction-batches,extraction-wire}.json`。按原事件數、字數、等待年齡選批；上下文只消歧。真實前景執行先行，提取使用專屬 schema。原文／ASR、三種事實分域、同 key、零結果、強殺與寫庫故障均驗過。未保存回應、SELF 偽造、來源刪除都不能推進水位。 |
-| CORE-028 | Mac 與 HJW Windows 各通過 93 項，待 CI | `codex/core-028-vectors` | `artifacts/CORE-028/{mac-03,windows-01}/{vector-coverage,physical-embedding-wire}.json`。標準 hybrid 要求有效配置；純詞法須明選。實測相同維度不同模型、部分批次只補缺項、在途改文和 forget、查詢共用與斷線未知不重購。25 張卡回歸通過，見各卡 `vector-regression-01/`。 |
+| CORE-013 | `266e9aa23e13` | [recall-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/recall-handoff-final-01/verified-candidates.json) | `d7b86f0244ca8064e13e67cd78ad96256d9879bd35444bd4b68a2add1e73ebe2` |
+| CORE-014 | `43b67d35d996` | [handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-014/handoff-final-01/verified-candidates.json) | `c8d373992ec7e286337a4d79deb2caec81e79ee8fca5c22a3cd1f1330edc7c4c` |
+| CORE-015 | `cf14cc6d45b7` | [views-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/views-handoff-final-01/verified-candidates.json) | `302ade325eed2927def6135cb9ba3047e150d48f6d20971b6a0b5bd939053170` |
+| CORE-037 | `a638fab4066b` | [permissions-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-037/permissions-handoff-final-01/verified-candidates.json) | `e485af6cee3c586469e5665a3eef61b2496bce238ebd47d48934578f1b5d8ca3` |
+| CORE-055 | `214197a1a8d3` | [handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-055/handoff-final-01/verified-candidates.json) | `cda5ff398b353784f013fef7d39e7b72d1d9a219a834c18846db8672a53b26f5` |
+| CORE-057 | `4dfb1c026a7f` | [handoff-final-02](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-057/handoff-final-02/verified-candidates.json) | `6a1c274e4002cd0b96b43870a80c5a478af997143f0df31ab81fe2cf09bab2b7` |
 
-**擴展交接。** EXT-007、EXT-019 可讀 CORE-002 執行產物
-`v4-oracle-candidate.zip`；本地路徑 `artifacts/CORE-002/handoff-89f15db/v4-oracle-candidate.zip`，
-SHA-256 `ccdefae10242b19d2f1a201fcd59f5567c08395fd0c051c3d4e92282f6434df0`。
-同目錄 `v4-oracle-index.json` 記錄來源提交。
-內容含 Client9、Admin OpenAPI、Connector 0.4.3 的 wire4 錄製、舊 Main 和 Work 行為及 A 線。
-此包未發布。擴展提交 `9d1e8a8` 釘住相同 ZIP；EXT-007 對拍 124 個訊框、EXT-019 核對 Desktop 原始呼叫點。見[擴展來源鎖](https://github.com/Institute-of-Agent-Life/yuki-extensions/blob/9d1e8a8a8978b0da66a66e40a6a81c8da0116f75/compat/core-002/source.lock.json)、[使用端交接需求](https://github.com/Institute-of-Agent-Life/yuki-extensions/blob/9d1e8a8a8978b0da66a66e40a6a81c8da0116f75/docs/core-interface-requests.md)。
-Rust 插件的 B0 尚缺同版宿主與真正插件的消費證據。
+CORE-015 逐項拒絕候選：[isolation-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/isolation-handoff-final-01/verified-candidates.json)；索引 SHA-256 `1e2e368f0f2996e024f3d0afba92c9fee199af4781e6de3cff4482932cf7614b`。來源 `969fb62`，三平台各 363 項；原 batch 各 call 單獨拒絕，六協議均保留合法後續效果；尚未發布。
 
-**EXT-002 握手交接。** 合併來源 `dd694a0db605bfe13b0d72663bef01599560230b`，
-本地包 `artifacts/CORE-031/handoff-dd694a0db605/handshake-preview/yuki-handshake-preview.zip`，
-SHA-256 `6e2ca1040f6d1eac2f70b0ff363887faf662782f72a7acd367d4a52a17b2caa2`。
-Rust SDK 1.0.0-alpha.1、Python SDK 1.0.0a1、schema revision 1。兩個乾淨來源的 Mac／Windows 重建相同；
-各檔雜湊及驗證在同目錄的 candidate.json 和 sdk-verification.json。僅提供 initialize、方法索引、
-golden 和獨立 stdio peer。原包於 GitHub 預發布，重新下載的 ZIP 與回條均通過校驗。見[固定發布頁](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/handshake-preview-dd694a0db605)、[ZIP](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/handshake-preview-dd694a0db605/yuki-handshake-preview.zip)、[發布回條](https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/handshake-preview-dd694a0db605/release-receipt.json)。擴展 `87bc88d` 的 Windows 預覽回條 `artifacts/EXT-002/preview-03/handshake-preview.json` SHA-256 `e34b86d7919a97524c4c737e0402bdeb6ef8575060e5551dcd0ce9c5d0b47f3b`，manifest `368556e4872e697a865983cc4a2fa0a051dfa572ba542a2cd4610433b6170469`。擴展 `2b961bd` 已用發布 URL 在 Windows 重新下載、驗 digest 與安裝。正式 `artifacts/EXT-002/01/published-sdk.json` SHA-256 `5c5d944f126b2866760e7684b7d5f0a8b512fb0bb54b20ee503bc6fb57daf6c4`，manifest `5c1137b8cf5a0a5d91243d33a0826da218f521cf72b870756e9875f46b5e22b8`，兩者 PASS。已合併為 `969a059`。見[擴展 PR #10](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/10)。
+CORE-026 原事實恢復候選：[restore-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/restore-handoff-final-01/verified-candidates.json)；索引 SHA-256 `9778d445446d3b69d9118e2860441da220dc7f071c05142320029419d377f298`。來源 `d107b18`，三平台各 226 項，已驗原 fact 版本、實際 QQ／Main、FTS、冷啟與忘記後拒絕。尚未發布。
 
-CORE-017 可從已驗 CORE-016 開始。CORE-032 正等正式 Telegram、web-fetch 的相同版本回條；EXT-047 尚缺具名、已核准的 QQ 原生動作。CORE-020 已合併 `00e1f9f`，見 [PR #21](https://github.com/Institute-of-Agent-Life/yuki-core/pull/21)。歷史搜尋的 DJ 校準尚缺目標語料。
-缺目標 SnowLuma 映像 digest 和去識別雙端封包；部署預設採指定 ingress。
+CORE-026 metadata 候選：[metadata-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/metadata-handoff-final-01/verified-candidates.json)；索引 SHA-256 `5282ee47d50e31f8877683850ecb654c79c33a5223dd8b6c5660f4a8054ef4a9`。來源 `f5855e5`，三平台各 370 項；含 update_metadata、reader 43→44 原回執升級、歷史清除及完整 QQ 分段。尚未發布。
+
+CORE-026 selector 候選：[selectors-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-handoff-final-01/verified-candidates.json)；索引 SHA-256 `bb483640d365bfd755831c8ef53910aa44db125d76685737f9f4154438c62c56`。來源 `fed00d2`，三平台各 823 項；含本人精確定位、第 129 筆分頁、歧義候選來源依賴與原恢復。尚未發布。
+
+CORE-026 有效期間候選：[temporal-handoff-final-01](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-handoff-final-01/verified-candidates.json)；索引 SHA-256 `fe110e66e41cc41ea0155ea81c2ba82207610fa224f2053f865e4f580d943c13`。來源 `6d47464`，三平台各 1181 項；原期間解析、替換規則、reader 44→45 清除及原回執已驗。尚未發布。
+
+CORE-037 權限目錄候選根目錄：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-037/permissions-handoff-final-01/`，來源 `a638fab4066b2913a2d4f00171ba0b4fe78a5e83`、tree `61a8622b8c3f84b88743b096e36804aed5a4f22ce2164ba16600654db2c2181f`；三平台 ZIP 與逐成員雜湊已驗，Host 2／reader 43／SDK alpha.11、a11；候選尚未發布。其他 Host／Code／媒體／Profile／分發候選的固定路徑與簽章見 [實作驗證記錄](implementation-evidence.md)。
+
+唯一已授權並完成的發布：[handshake-preview-dd694a0db605](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/handshake-preview-dd694a0db605)，僅 initialize；ZIP SHA-256 `6e2ca1040f6d1eac2f70b0ff363887faf662782f72a7acd367d4a52a17b2caa2`。EXT-002 兩 SDK Windows 消費已通過。
+
+CORE-033 未選 Work 認證：[乾淨三平台候選](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/connector-auth-handoff-final-02/verified-candidates.json)，來源 `c85a00b`、索引 SHA-256 `750e7f878cfe0749dc01c0602a0d047c612554ab3e661dfa0e4dfbf85cea729e`。Host 2、reader 46、SDK alpha.12／a12；僅本地未發布候選。
+
+CORE-033 Client9 明選：[三平台索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/entry-selection-handoff-final-01/verified-candidates.json)，SHA-256 `11123ac0502c2f86a74dc31c52ca81f05e50b6cd0b561db1377d86853650e080`；含所選人物、binding、會話、事件與拒絕前後計數。未發布，待 EXT-015 對拍。
+
+CORE-033 Client9 出站續讀：[三平台索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-handoff-final-01/verified-candidates.json)，SHA-256 739ecae7768f860e4d7a4e9801a5d7c51e38eac623e155a88cacd3e6f8cd08c1。來源 d8bf54c1174741a23fdfad0d99b516a2bb584218；Windows、macOS、Linux 各通過 581 項檢查；未發布，待 EXT-015。
+
+PR #72 已整合原版客戶端對拍及 SDK 測試修正 `df3670b`。Mac CORE-033 666 項、CORE-037 1052 項通過：各卡 `uploads-independent-client-01/manifest.json`。
+
+CORE-033／真 EXT-015：HJW 以原插件 `5b890f5e8244` 消費 `d8bf54c11747`。配對、一次 QQ 派發後的 REST 游標續讀及撤權 401 通過。直連宿主收到 SSE 初始同步、ACK 提示及重連；同一宿主及憑證經原插件的首訂閱／重連各 10 秒均未收到 HTTP 標頭，明選標頭由該插件回 503。SSE 跨倉驗收未過。[原始回條](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-real-ext015-02/real-client-stream.json) SHA-256 `f11cfe5de0a657ff373a09a429111f23224beb255ce63736718a1f958ba6a664`。[重現程式](../ci/consume-ext015.py) 對照兩端，回條分項記錄，請 EXT-015 核對代理的首包刷新及明選轉發。
+
+CORE-033 Client9 上傳：[三平台完整性索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-uploads-handoff-final-01/verified-candidates.json)，SHA-256 4da11e14c4118f087c6535de7b973d60b195cb98eade2ed3a45b4d2404f2900c。未發布，待 EXT-015／016。
+
+CORE-038 入站附件：來源 `b99b01a92443`，Windows、macOS、Linux 各通過 207 項。[候選包與逐平台 SHA-256](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/inbound-gateway-handoff-final-01/verified-candidates.json)，索引 SHA-256 `ad9f55a0434d54e3b8adc74c26f1e0a29d699621588eed9e668b5c48764585bb`。SDK alpha.13／a13、reader 49，供 EXT-004／006 重放原收件與過期案例；尚未發布。
+
+CORE-038 Main 選讀：[PR #74](https://github.com/Institute-of-Agent-Life/yuki-core/pull/74)，來源 `0ef956a9c6d9`，Windows、macOS、Linux 各 318 項。[三平台候選索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/main-selected-handoff-final-01/verified-candidates.json)，SHA-256 `49437652505a0881fc14576502036101412042542d642f7eeea4f98bbdc7c459`。reader 50／SDK alpha.13、a13。原 PDF 頁文和兩張影格到達同一 Main，未額外派發模型請求。未發布。HJW 已用原 EXT-031 Rust 插件解出 PDF 兩頁與兩幀，並核對同一 Main 的實際 HTTP；[消費回條](../fixtures/media/ext031-windows-main.json)。
+
+CORE-032 終端：`codex/core-032-terminal-work`，[原 Work／run 時序](terminal-work-scope.md)。SDK alpha.14／a14、reader 51。Mac CORE-032 127 項、CORE-039 release 146 項及 6 張相鄰卡通過；Linux 固定舊版 16 個原 Manager／Work 回歸全過。來源 `61999b662f1ead1cfd526efdb9b163b02d389cdf`，Mac、Linux、HJW 各 127 項。未發布[三平台候選索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/terminal-work-handoff-final-01/verified-candidates.json) SHA-256 `336944538562ae4683efc6015427532d3da9c6ad74341cdaef9c1f436b7ae1f5`；各 ZIP 完整雜湊及路徑在索引。尚缺 EXT-020 真 Manager／execd／PTY 消費證據。
+
+CORE-013 目標：`codex/core-013-send-entry`；[原 QQ 目標、時序及界線](social-send-entry.md)。固定舊版四例、Rust Mac 013=296、014=667、032=129、015=363、023=225、026=1181 項通過。四條實際 QQ 動作、五個零派發拒絕（含委派 Work），原網關亦驗證錯誤選擇不抵達插件。Mac 及固定源回條在各卡 `canonical-send-delegation-01`、`send-entry-integration-01` 與 `artifacts/CORE-013/original-send-entry-oracle-01`。來源 `fece2511985036e6e349c43e1b437562dd4fac42`，Mac、Linux、HJW 各 296 項；[未發布候選及各包 SHA-256](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/send-entry-handoff-final-01/verified-candidates.json)，索引 `79f6db0b19318987d2a300dc0ec789e35830feba5e6226cb4384d20464d85c9f`。
+
+## 缺少輸入與下一步
+
+- 真擴展消費：EXT-023 需對已修的原 feed ACK 再測；EXT-022／037／038／039／049 需消費最新管理、權限與用量候選。未取得回條，不凍結穩定協議。
+- 外部能力：EXT-004／006 附件授權與 fetch、EXT-020 gVisor/execd/PTY 旋轉、EXT-015 agent_target/附件/SSE、SnowLuma 映像 digest 與雙向包仍待真實方法、版本或證據。
+- 安裝與切換：CORE-043 等 EXT-041 與核心分發／移轉輸入；044 等 EXT-067 B0 實測；045 等 EXT-043 已發布 tuple 與 044；046 等 EXT-044／045 安裝證據；047、053、054 依各前置。CORE-041／042 等 CORE-040 等價切片判斷；不把未滿足前置的卡標完成。
+- 下一個可獨立工作：有效期間乾淨候選已完成；`codex/core-033-connector-auth` 已實作 EXT-011 明確要求的未選 Work 裝置認證，三平台候選已驗，待 EXT-011 對拍。這是核心生產者應補的入口，不列為等待擴展提供的方法。Client9 明選入口／會話已產出候選；接續原 Social Outbound 斷線續讀、附件與 send／workspace 的本倉責任；CORE-040 仍需完整等功能切片。擴展倉保持只讀。
+CORE-018 與 CORE-013 交叉驗證：排程私聊、SELF 群聊的文字送達，均對照原 QQ ACK 的操作 ID、事件、對話、Presence 及目的類型。PR #79 與 #81 原 CI 讀取舊回條欄位而失敗；Mac 已驗 103 項，見 `artifacts/CORE-018/schedule-model-receipt-01/manifest.json`。
+
+- 下一個可獨立工作：有效期間乾淨候選已完成；`codex/core-033-connector-auth` 已實作 EXT-011 明確要求的未選 Work 裝置認證，三平台候選已驗，待 EXT-011 對拍。這是核心生產者應補的入口，不列為等待擴展提供的方法。其後補原 Client9 明選入口／會話及 send／workspace 的本倉責任；CORE-040 仍需完整等功能切片。擴展倉保持只讀。
+
+- 下一個可獨立工作：有效期間乾淨候選已完成；`codex/core-033-connector-auth` 已開始處理 EXT-011 明確要求的未選 Work 裝置認證，原版 8 項身份測試通過。這是核心生產者應補的入口，不列為等待擴展提供的方法。其後補原 Client9 明選入口／會話及 send／workspace 的本倉責任；CORE-040 仍需完整等功能切片。擴展倉保持只讀。
+
+- 下一個可獨立工作：metadata 候選已完成；selector 候選亦已完成；在 `codex/core-026-memory-temporal` 補 valid_from／valid_until 的原版語義，再續其他狀態、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
+
+- 下一個可獨立工作：metadata 候選已完成，繼續補原 memory_change 的 selector／其他狀態、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
+
+- 下一個可獨立工作：繼續補原 memory_change 的 metadata／selector／其他狀態、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
+
+- 下一個可獨立工作：補原 memory_change、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
+
+- 下一個可獨立工作：完成 CORE-015 模型批內 schema 錯誤逐項續跑的回歸及三平台候選，再補原 memory_change、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
+
+- 下一個可獨立工作：完成 CORE-015 工具視圖三平台驗證與候選，再補模型批內 schema 錯誤逐項續跑及原 memory_change、send／workspace 參數的本倉責任；推進 CORE-040 完整原切片與冷暖對照。擴展倉保持只讀。
 
 **CORE-032 開發候選，尚未發布。** 來源 `199dff095be0bc87c9713beaa0419400cb424a7c` 已推 [PR #24](https://github.com/Institute-of-Agent-Life/yuki-core/pull/24)。握手 revision 1，業務 revision 2，業務 schema SHA-256 `4822f19fb937eba524e475b35c0753a713587f48feee87ae6bd7b53ccab06cba`。雙 SDK、宿主執行檔及方法清單均在包內。兩端各通過 65 項及隔離 PATH 啟動，逐成員雜湊已複驗。
 - HJW Windows x86_64：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-032/handoff-199dff095be0/windows-validation/handoff/yuki-host-preview-199dff095be0-windows-x86_64.zip`，SHA-256 `d3ef0f3ce8a7dedd175b6aa3392a22c744504cf6bea70eadc22d5408642e634c`。
@@ -157,6 +246,7 @@ CORE-040 Rust 六請求長 Work 已由正常執行檔跑通兩次冷啟、原私
 CORE-030 在 `codex/core-030-forget` 增補同人族與歷史私聊清除、原管理路由、可續 GC，以及有待清義務時的獨立插件清除入口。Mac `artifacts/CORE-030/mac-11/forget-canaries.json` 已驗 115 項；先前 HJW `windows-02` 驗過同一核心清除劇本，後續 raw-method gate 補強會隨新來源重驗。固定 v4 七項測試在 `artifacts/CORE-030/v4-oracle-01/`。25 張相鄰卡通過各卡 `family-forget-01/`，包括 ASR、附件、兩種 Compact、提取、向量、歷史及 Host 的實際遲到來源斷言。原人物 ID、付費計數和防重放鍵保留；去內容及實體回收分欄。可繼續 CORE-041 的資料交接準備；其跨倉部分仍須對方 owner 的公開見證。啟動配置與外部邊界見 `docs/owner-erasure.md`。
 最終 `artifacts/CORE-030/mac-12/` 與 `windows-04/` 各 115 項，來源 `f290cb757a66d82361fa610819f4a0338f00d3316e2d0a3cf9c348fba39a2b83`。清除世代的底層 raw method gate 也已反驗；CORE-032、033、052 重跑 `family-forget-03/` 通過。
 
+CORE-050 在 `codex/core-050-aux-model` 實作已配置的輔助模型路由。原 call ID、用途、來源／原 handle、Profile 與根預留一起固定，HTTP attempt 使用既有帳本。已驗並發同鍵、未知不重購、三個實際 kill 點、改 Profile、跨插件 handle、最後額度、取消晚返、插件關閉及重啟、來源擦除、六種文字協議、圖片／WAV／原 handle 下的轉換音訊。Work 段計數納入輔助及 embedding 請求。Mac `artifacts/CORE-050/mac-15/`、HJW `windows-01/` 同源通過，來源樹 `96f216fb9a8256cba304bfd9b79fcfd69e8de6074a476be2266b68991a10b02e`；23 張相鄰卡回歸見 `artifacts/CORE-050/regression-summary-01.json`。具名產物 `aux-attempts.json`，aux revision 1，Rust SDK `1.0.0-alpha.6`、Python `1.0.0a6`。待接入 Code 與最新 main 後，從乾淨提交生成三平台候選。真 EXT-025／030／032／033／035 消費尚待提供。
 CORE-034 在 `codex/core-034-code` 完成核心候選實作。Mac `artifacts/CORE-034/mac-11/` 與 HJW Windows `artifacts/CORE-034/windows-04/` 各通過 381 項，來源 tree `40314f82d4e36d1463ea749e66811d7558514187305174be097f241e72e2ead8`。原子 VM checkpoint／子 intent、四個實際 kill 點、真 HTTP 未知、共用根額度、32 步、八層插件鏈、A→B→A 拒絕、來源清除、取消及 runtime 變更均有回條。24 張相鄰卡回歸見 `artifacts/CORE-034/regression-summary-01.json`。最終 Windows 曾因 D 槽滿而編譯失敗，回收本次已驗測試的編譯快取後，用原來源重跑通過。SDK Rust `1.0.0-alpha.5`、Python `1.0.0a5`，composition revision 1。具名產物為 `nested-boundary.json` 及 `vm-recovery-cuts.json`。真 Monty EXT-023／024 消費證據待提供，協議保持候選。下一步從乾淨 commit 產三平台包，等待 CI 後合併 main。
 
 CORE-040 的 Mac `C-long-functional-20-01` 與 HJW Windows `C-long-windows-20-01` 各完成 20 個六請求長 Work、800 項功能斷言，原件在 `artifacts/CORE-040/`。來源為 CORE-016 分段修正的已驗執行檔。工具宣告差異、完整 Compact 長分支及同口徑 A/B/C 資源量測仍待完成。
@@ -238,6 +328,64 @@ CORE-038 已接入個人入口 `c979a2e` 的搜尋整合。媒體自動 owner �
 
 CORE-034 已接入媒體 `4004abf` 的自動 owner 回條及搜尋整合。Code、媒體、搜尋與工具 registry 通過 `artifacts/CORE-{034,038,024,015}/code-owner-integration-02/`。原 `f3f3723` 三平台候選保留固定來源，PR #43 等最新 CI。
 
+CORE-050 實作 `8359146` 已推 [PR #44](https://github.com/Institute-of-Agent-Life/yuki-core/pull/44)。Code `d28d369` 接入後，CORE-050、034、016、024、038、031、011、030 八卡通過 `aux-code-integration-01/`。同一 SDK alpha.6 同時保留 Code、媒體及輔助模型方法。下一步封裝與補上下文多來源的擦除綁定。
+
+CORE-050 多來源上下文補核通過 Mac `mac-18` 與 HJW `windows-02`，各 561 項，來源樹 `55f34d1393141e95115338b5ece6c965648e76860a3d0f3bc07d44961ab329fd`。`llm.complete.sources` 在原根額度預留前綁定實際依賴，僅接納原來源、原呼叫依賴或同入口已持有來源。額外來源擦除會封鎖晚返結果，原來源保持有效。未持有來源與跨入口來源拒絕，重送維持原請求身份。具名證據為兩目錄的 `aux-attempts.json`。下一步以乾淨提交製作三平台未發布候選。
+
+## CORE-050 未發布候選包
+
+來源 `952954d86166c6bb8ef1cec0683480df28787970`，來源樹 `b6eabdfbab78382368f8264d2e9d96bcf3e167209d64d8e38aee4af694c40a7a`。Mac、HJW Windows、Linux arm64 各 561 項與獨立路徑啟動通過。握手 1、Host 2、aux-model 1、Rust SDK `1.0.0-alpha.6`、Python `1.0.0a6`。實含 `llm.complete`、`llm.result`、六種文字 wire、Chat 圖片／音訊及多來源擦除。原根額度與物理 attempt 沿用共同帳本。真 EXT-025、030、032、033、035 消費待回傳。
+
+Windows 首次封裝遇暫存執行檔清理 WinError 32，同一固定來源與驗證 manifest 在新 sandbox 重試成功。證據與 ZIP 成員核驗位於交接根目錄的 `windows-pack-recovery.json`、`handoff-verification.json`。
+
+| 平台 | 路徑 | SHA-256 |
+|---|---|---|
+| Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/linux-arm64/candidate/yuki-aux-model-preview-952954d86166-linux-arm64.zip` | `800bff7da32c81bb7173c9411c6edd898c32a2934dbf496a491dbca5d04023ee` |
+| macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/macos-arm64/yuki-aux-model-preview-952954d86166-darwin-arm64.zip` | `a4b05689a35b4fec34fea2657c187507611e71e6d079f75ab629ddcff55e7fb8` |
+| Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-050/handoff-952954d86166/windows-validation/handoff-retry-02/yuki-aux-model-preview-952954d86166-windows-x86_64.zip` | `ec0088c957caf21ca11b344cb69db539e22085f4aa8520c56feb19b272f29fe4` |
+
+## CORE-036 群聊參與核心
+
+`codex/core-036-participation` 完成原 event 提升、原場景 SELF、窄來源頁與實際 send／quiet 反饋。規則與兩次邀請競爭仍只有一個接納，提升可續原 Work；SELF 使用自己的 origin、root 與明確接收 Bot。QQ 啟動配置、當前安裝和原來源在派發前重核。外部網關共用原發送帳本，分段未知保留既有確認，冷啟不重發。
+
+Mac `mac-06` 與 HJW `windows-01` 各通過 128 項，來源樹 `0c5c2a018ddf9356b274a196e453c477e3517a5f43bcdb2b659f1cf5676c1838`。兩端的 `promotion-vs-self.json` 包含原 Work、來源、SELF 身份與物理發送回條。11 張相鄰卡均通過，彙總為 `artifacts/CORE-036/regression-summary-01.json`。候選 schema 1、SDK alpha.7，真 EXT-025 消費待回傳。先前失敗 fixture／gateway 綁定案例保留於 `mac-01`、`mac-03`、`mac-04`。
+
+兩端已驗開發封裝屬未提交工作樹來源。下一步從本卡乾淨提交重新封裝三平台候選。CORE-035 已建立正常與故障時序，將接續維護授權與審閱寫入。CORE-050 的來源補核另通過 CORE-011、016、030、052 四卡 `aux-sources-regression-01/`。
+
+## CORE-036 未發布候選包
+
+實作 `9f9c3d0eaace08c2abe59e0a6ca229c9293dd8e1` 已推 [PR #45](https://github.com/Institute-of-Agent-Life/yuki-core/pull/45)。Mac、HJW Windows、Linux arm64 各 128 項通過，來源樹 `7fc0d1a8f2a15257589776606608c86c18bab0f2a596650d610209e3764dcaa1`。三端均完成獨立路徑啟動與 ZIP 成員雜湊核驗，交接根目錄附 `handoff-verification.json`。握手 1、Host 2、participation 1、Rust SDK `1.0.0-alpha.7`、Python `1.0.0a7`。五個公開方法涵蓋來源頁、來源分段、真人提升、SELF 提案及實際回饋。真 EXT-025 消費待回傳，候選均未發布。
+
+| 平台 | 路徑 | SHA-256 |
+|---|---|---|
+| Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/linux-arm64/candidate/yuki-participation-preview-9f9c3d0eaace-linux-arm64.zip` | `127847f6cab2d7cb8c3378068701ffd51d6610467a0d7ef4c42d0affb5d1174a` |
+| macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/macos-arm64/yuki-participation-preview-9f9c3d0eaace-darwin-arm64.zip` | `c438c7f23c4549210b13e9d77bd3ed5360e853fd47164854ec4d74cac0de4584` |
+| Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-036/handoff-9f9c3d0eaace/windows-validation/handoff/yuki-participation-preview-9f9c3d0eaace-windows-x86_64.zip` | `6c2d5f22416836ac0c489b3fe1bb308e8f79b813e21c9ca321d4ec619eb59f1f` |
+
+## CORE-035 維護授權與已付審閱
+
+`codex/core-035-maintenance` 已完成十二個維護 RPC、加法遷移 33、SDK alpha.8／a8。包含原來源與 fact／工具回執版本綁定、已付 preview、核准子集與原鍵回放、歷史入口重建、限定 Reembed、來源審計及 FTS 重建。大內容與依賴以原 SHA-256 分頁。工具證據保留真實 Work 子任務與原人物來源，私聊上下文限原 SELF 範圍。
+
+Mac `artifacts/CORE-035/tool-map-mac-06/maintenance-grants.json` 通過 303 項，來源樹 `02e537febf439d9e4f39754f421120d8334d2cc032d8847c1d297f2f2fb8e401`。實機 HJW Windows `windows-01` 同來源亦通過 303 項。CORE-007、011、016、026、027、028、029、030、033、036、050、052 十二卡 `maintenance-regression-01/` 全部通過。前幾輪 fixture、合同分支與 SDK 版本不一致的失敗回條保留。
+
+CORE-028 已知 usage 擦除補修隨此工作樹驗過，獨立修正已推向量 PR #35。真 EXT-033、034、035、036、048 的候選消費證據仍待交接。實作 `0cdd9dffe07c` 已推 PR #46。CORE-051 已在獨立 `codex/core-051-sessions` 分支開始正常／故障時序與隔離資料模型，持續接續 Rust 實作。
+
+## CORE-035 未發布候選包
+
+來源 `0cdd9dffe07c18949990492fd2a9944919c455d3`，來源樹 `991bafb2f70c4571da5ae956be9cc903adc00d237670961ab23d99a456e9f1c5`。Mac、HJW Windows、Linux ARM64 各 303 項及乾淨 PATH 啟動通過。maintenance schema 1、Host 2、握手 1、Rust SDK `1.0.0-alpha.8`、Python `1.0.0a8`。十二個實含方法、全部 ZIP 成員與雜湊已核對，證據為交接目錄 `handoff-verification.json`。PR #46 等最新 CI 與前置合併，真擴展消費仍待回傳。
+
+| 平台 | 可交接路徑 | SHA-256 |
+|---|---|---|
+| Linux-6.12.54-linuxkit-aarch64-with-glibc2.36 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/linux-arm64/candidate/yuki-maintenance-preview-0cdd9dffe07c-linux-arm64.zip` | `04c13a21ea2d42a84d11b285d93c46dafa98f20270bf3b285dcd2d48afb8011c` |
+| macOS-26.6.2-arm64-arm-64bit | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/macos-arm64/yuki-maintenance-preview-0cdd9dffe07c-darwin-arm64.zip` | `3060058a12b5b10efc9fc78f1dd5d6ddcd8fe820dd72f353885c8248f067079c` |
+| Windows-11-10.0.22000-SP0 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-035/handoff-0cdd9dffe07c/windows-validation/handoff/yuki-maintenance-preview-0cdd9dffe07c-windows-x86_64.zip` | `e2b964e87a30d5c230fbb0805a9de973cb91160b6e8b52606b363ca0fd77a152` |
+
+## CORE-051 隔離插件會話
+
+`codex/core-051-sessions` 已實作八個 Session RPC、遷移 34、雙 SDK alpha.9／a9，接入共同邏輯請求與物理 attempt 帳本。原插件 namespace、Person／群組範圍、已付重啟恢復、持久／暫存生命週期、來源分頁、擦除與晚返使用量均有實際 Host 路徑。
+
+Mac `recovery-overlap-mac-01/` 通過 730 項，來源樹 `b1e1bd809386e297e3e77807a90aa6d866117cac89e15a8f8fd9add9e05aa674`。17 張相鄰卡回歸已通過，見 `artifacts/CORE-051/regression-summary-02.json`。先前遷移漏掉兩種既有 origin，現已保留七種並以已有執行與費用資料升級驗證。Windows 第二輪重啟測試失敗的原證據保留於 `windows-02/`。第三輪 `windows-03/` 同一來源通過 730 項。重播可先得到原 `prepared` 回條，測試沿原鍵等待持久結果；各 cut 的中間狀態另存 `session-cut-receipt-*.json`。Mac `recovery-overlap-mac-02/` 再加入確定性同鍵併發，735 項通過，來源樹 `3d249134c993533596bca6135503fd0c82d58855dcf58d016d7e97fc34528b96`。接著以乾淨提交完成三平台同源候選。真 EXT-047 消費及 CORE-054 舊會話導入另列後續。
+
 ## CORE-034 原生 feed 確認補修
 
 真 EXT-023 回條 `core034-consumer-01/native-feed-ack.json`（SHA-256 `6b8fc8a5029880d68d7c15285de33a36e57d05003b58779740b9eae303060f11`）證實 Monty 同一 feed 可有兩個相繼呼叫。核心確認現在接受相同 feed，仍核原 child／engine call、checkpoint、snapshot 與已知回執，拒絕倒退和改寫重播。
@@ -251,6 +399,95 @@ Mac 與 HJW Windows 各 383 項通過，來源樹 `bf43b16e03c308a6cf43c6526664e
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/linux-arm64/candidate/yuki-code-preview-f74ecdd86b73-linux-arm64.zip`，SHA-256 `7a2a68e2e2be6009962948b2015b266ab613f233790111765f345163b6e05da2`。
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/macos-arm64/yuki-code-preview-f74ecdd86b73-darwin-arm64.zip`，SHA-256 `4f65192f02e234e7c2146f8eebb3c472e3656b41fabeac89dde7d05c4a7a99b1`。
 - `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-034/handoff-f74ecdd86b73/windows-validation/handoff/yuki-code-preview-f74ecdd86b73-windows-x86_64.zip`，SHA-256 `4d073b6f15f5d10c0c8594064c568555671e90c49394f7da64ff1d9568b7ec2e`。
+
+CORE-051 實作 `b176a7e` 已推 [PR #47](https://github.com/Institute-of-Agent-Life/yuki-core/pull/47)。現已整合 CORE-034 `befb666` 的原生 feed 確認補修及三平台交接記錄。整合後 CORE-034、051、050 分別通過 `sessions-feed-integration-01/`、`native-feed-integration-01/`、`sessions-feed-integration-01/`，接著製作同時含兩項能力的三平台乾淨候選。
+
+### CORE-051 三平台未發布候選
+
+來源 `9db8b3f073e34a6b86c8f93e878c2de09f0e25ba`，來源樹 `8bfe544d695eb64813fadd6d7ddba27a7e43b8da97edd940d6b7f8c3e260d785`。Mac、HJW Windows、Linux arm64 各 735 項與獨立 PATH 啟動通過，ZIP 成員雜湊核驗回條位於交接根目錄。Session 1、Host 2、握手 1、Rust SDK `1.0.0-alpha.9`、Python `1.0.0a9`。八個公開方法、六種文字 wire、原 Work 根額度與來源擦除均有實際重放，亦含 CORE-034 相同 feed 補修。真 EXT-047 消費待回傳，全部候選未發布。
+
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/linux-arm64/candidate/yuki-session-preview-9db8b3f073e3-linux-arm64.zip`，SHA-256 `326325c842984e88ec80e94056b86afdab280e62968d9b22aceaa809ce281a99`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/macos-arm64/yuki-session-preview-9db8b3f073e3-darwin-arm64.zip`，SHA-256 `3c2dab0738d434db26cd145e82d29a7e79773d4d9713649a1ef04b58949a32e9`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-051/handoff-9db8b3f073e3/windows-validation/handoff/yuki-session-preview-9db8b3f073e3-windows-x86_64.zip`，SHA-256 `1e0d5856740899539c9f4adac2b4c6ce6d01aff6d7697597203d37f2d87d7f56`。
+
+下一個已就緒核心任務是 CORE-058，工作分支 `codex/core-058-notifications`，已從本候選建立正常與故障時序。CORE-048、CORE-014 原歷史適配及 CORE-040 完整長 Work 對拍仍有本倉工作。
+
+## CORE-058 通知與原目標授權
+
+`codex/core-058-notifications` 已實作六個公開入口 `notification.publish/read/sources/grant_target/revoke_target/status`。migration 35、Host 2、notifications 1、SDK alpha.10／a10。Mac `artifacts/CORE-058/legacy-gateway-mac-02/notification-publication.json` 的 318 項通過，來源樹 `0cbb8333febc0bff62bc8832c640ffae5fec8c88e4df6c0979426bff95ea6705`。HJW Windows `artifacts/CORE-058/windows-01/notification-publication.json` 同樹 318 項通過。
+
+同插件原鍵、UTC／manifest、雙插件隔離、媒體順序／過期／未知雜湊、commit 後失答、未知投遞、QQ／外部 gateway 實收、Main 靜默、真人及插件原 Work 喚醒、動態目標撤權、來源清除均有具名回條。真管理員從原 Host call 的執行鏈取得，固定 v4 訂閱插件所用的 `grant_target.conversation_id` 與 `status` 已對照；舊授權回條重投不撤銷後來的 revoke。舊 media 句柄案例使用明示降級 fixture，未聲稱已導入 v4 資料庫。
+
+CORE-007、010、011、013、016、017、025、030、032、034、036、038、050、051、052 的 `notification-regression-01/` 共 2,948 項全部通過，彙總 `artifacts/CORE-058/regression-summary-01.json`。三平台候選位置見下表，真 EXT-027／047 消費待回傳。下一個已就緒任務為 CORE-048，工作分支 `codex/core-048-profiles` 位於 `.cache/worktrees/profile-config`。
+
+CORE-014 聯絡人補核 PR #41 已合併 main `0ded0dd`。CORE-023 PR #32 最新 push／PR 六項 CI 通過後合併 `e01cd30`，核驗回條 `artifacts/CORE-023/main-merge-b0dab43835c2.json`。CORE-034 feed 修正已接入 CORE-050 並以 `94ee5c3` 推送，CORE-034／050 的 `aux-feed-integration-01/` 均通過。
+
+### CORE-058 未發布候選包
+
+來源 `cb02f74ea48b85c6b6932423b93e6332b97f2871`，來源樹 `fa1d772ed399ac5e2f98cb7649cced89dee4822f8745c881eb955ea1ba49199c`。Mac、HJW Windows、Linux arm64 各 318 項與獨立 PATH 啟動通過。notifications 1、Host 2、握手 1、SDK alpha.10／a10，六個通知方法均已驗。各 ZIP 的 13／16 個成員均逐項核 SHA-256，回條 `artifacts/CORE-058/handoff-cb02f74ea48b/handoff-verification.json`。真 EXT-027／047 可只讀消費這組候選並回傳方法與實收證據。候選尚未發布，PR #48 等最新 CI 及前置進入 main。
+
+| 平台 | 只讀交接路徑 | SHA-256 |
+|---|---|---|
+| macos-arm64 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-058/handoff-cb02f74ea48b/macos-arm64/yuki-notification-preview-cb02f74ea48b-darwin-arm64.zip` | `eb4794b29db562b5fc12cde284474d61bf17ac9cba608d3f1ecd5c7dfed48f77` |
+| linux-arm64 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-058/handoff-cb02f74ea48b/linux-arm64/candidate/yuki-notification-preview-cb02f74ea48b-linux-arm64.zip` | `34739495bb1bd35555a3016c1d01b8c49d9c1e335461329fbaf2a1c4ff226828` |
+| windows-x86_64 | `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-058/handoff-cb02f74ea48b/windows-validation/handoff/yuki-notification-preview-cb02f74ea48b-windows-x86_64.zip` | `dea4b90f5008e466f6385ceea1d0833574dcf10a5a079f8ac639b7a4be4c542c` |
+
+CORE-034 的真 Monty 修正版重跑尚待消費端提供可執行環境。此 SSH 身份 `hjw\hilbert` 執行既有 WSL 清單命令回「拒绝访问」，紀錄 `artifacts/CORE-034/native-consumer-wsl-access-01.json`，原 Runtime 未變更。核心三平台補修候選已齊備，其驗證不受此消費重跑阻塞。
+CORE-050 已接入 CORE-034 的真 Monty 同 feed 確認補修 `befb666`。Mac CORE-034 的 383 項與 CORE-050 的 561 項通過，證據分別位於 `artifacts/CORE-{034,050}/aux-feed-integration-01/`。PR #44 以整合後 head 等待三平台 CI。
+
+CORE-036 已接入 CORE-050 `94ee5c3` 的同 feed 修正。CORE-034、036 分別通過 `participation-feed-integration-01/`，保留原 SELF 與真人授權邊界。PR #45 以整合後 head 重驗三平台 CI。
+
+CORE-035 已整合 CORE-036 `adaa111` 的同 feed 確認修正，CORE-034 與 CORE-035 的 `maintenance-feed-integration-01/` 通過。PR #46 按整合後 head 重驗三平台 CI。
+
+CORE-051 已接入維護分支 `d772ed2` 的合併歷史，實作檔案與已驗版本相同，僅更新進度記錄。PR #47 等此最新 head 的 CI。
+
+### CORE-058 CI 回條檔案交接修補
+
+PR #48 head `58e53f5` 的原 CI 失敗 ZIP、雜湊與位置保留在 `artifacts/CORE-058/ci-failure-58e53f5.json`。Windows 命中回條檔案 PermissionError，Linux 的 CORE-050 原 media.process 呼叫超時。共享測試 peer 改為有界讀取同一回條，涵蓋半寫入 JSON 和 Windows 真實 sharing lock；持續畸形 JSON 仍失敗。CORE-050 超時時另留原 Host calls／operations 診斷。
+
+Mac CORE-058 的 `file-receipts-mac-01/` 通過 321 項，HJW `file-receipts-windows-01/` 通過 324 項，含三個 Windows 鎖定檢查。同一來源樹 `32f477e6cc94d0cf870e9d282a97b93d20c2f4e8f8130cc61ca36b2f43e4ac65` 的 Linux ARM64 CORE-058／050／051 分別通過 321／561／735 項，位於 `artifacts/CORE-058/file-receipts-linux-01/`；Mac 的 CORE-050／051 `notification-file-receipts-01/` 亦通過。實際 Mac Host binary 與 `cb02f74` 候選逐位元相同，原候選仍按其固定來源與 318 項回條交接。
+
+已接入 CORE-051 `aa0f52d` 的合併歷史，較上述驗證只改進度記錄。PR #48 等修補後最新 head 的三平台 CI。
+
+PR #48 head `8007173` 的 Windows CI 已通過 CORE-058 324 項及 CORE-050 561 項，後於 CORE-034 結束後的新 child 拒絕探針等待檔案回條超時。原 ZIP SHA-256 `bf833847112c33ec61c7b32eeb63bb76cf498a395c5083dec02f6b4e96391763` 和失敗位置保存在 `artifacts/CORE-058/ci-failure-8007173.json`。Code peer 與探針讀者也沿同一檔案作有界讀取，新增 parent 結算斷言及執行緒／原 Host calls 診斷。Mac、HJW Windows 的 `artifacts/CORE-034/code-probe-files-{mac,windows}-01/` 同樹 `6708d16ffa66418132770a5cd96a39652090dea772cbf615529541e1e115d526` 均通過 384 項。核心 Runtime 與逾時、授權條件均沿用原值，等待修補後最新 CI。
+CORE-035 最新 head `d772ed2` 的 macOS PR 工作 `127225319602` 在多個案例通過後被 45 分鐘整體 job 上限截斷。GitHub annotation 明確記錄超時，診斷為 `artifacts/CORE-035/macos-ci-timeout-01.json`。整體 job 窗口改為 90 分鐘，全部案例、斷言和各卡 timeout 保留，推送後按最新 head 重驗三平台。
+
+CORE-051 的 macOS PR 工作 `127228529052` 同樣被 45 分鐘 job 上限截斷，沿用同一份 timeout 診斷。接入 CORE-035 `13e64dd` 後使用 90 分鐘整體窗口，全部檢查保留。
+
+CORE-058 已接入 CORE-051 `fa1fddb` 的 90 分鐘 CI job 窗口。全部執行步驟及各卡驗證條件保留，原 runtime 未變；PR #48 按整合後 head 重驗。
+PR #47 `fa1fddb` 的 Linux CORE-027 冷恢復案例提早送出 ingress：extraction_policy.enabled 在 operator IPC 綁定前就已提交。失敗 ZIP SHA-256 `84c71110f7e19aad2b614abfd64afe0e35562f748eb11974ac860f4e914700da`，診斷 `artifacts/CORE-051/ci-failure-fa1fddb.json`。fixture 改等同一子程序的正常 ready JSON，不重送命令、不延長 timeout；Mac CORE-027 `session-owner-readiness-01/` 通過，提交後重驗 CI。
+
+
+## CORE-048 本地完成，PR #49 等待 CI 與前置合併
+
+分支 `codex/core-048-profiles`，工作目錄 `.cache/worktrees/profile-config`，基底 `e913c81`。前置 CORE-024、033 已有本地驗證。新增精確依賴 `toml_edit =0.23.7`；v3 TOML／原 Admin DTO 保未知欄位、註釋、旁檔密鑰和聯合 revision。
+
+已接入 OS／受限 bearer／真 chat 設備、原三個模型 HTTP 入口、兩階段保存和原回執恢復。Main／Work／child、提取及已批准輔助 task route 保原 Profile；獨立搜尋封存原連接，embedding 連接在重啟後生效。額度、purpose、來源與網路權限仍受原部署政策限制。原資格撤銷、同 revision 衝突、外部內容 hash 衝突、已付回應冷恢復和三個 rename 中止點都有具名測例。使用說明見 `docs/model-profiles.md`。
+
+| 同一來源樹 `176707309b2a4015855b92139b8cef1b8cecac782a6003d0511d67fba041c4c2` | 驗證結果 | 產物位置 |
+|---|---|---|
+| Mac ARM64 | 624 項通過 | `artifacts/CORE-048/complete-mac-15/` |
+| HJW Windows x86_64 | 621 項通過 | `artifacts/CORE-048/complete-windows-04/` |
+| Linux ARM64，含真 readonly mount | 645 項通過 | `artifacts/CORE-048/complete-linux-03/` |
+| Mac 18 張受影響核心卡 | 4283 項通過 | `artifacts/CORE-048/profile-regressions-02.json`、`regression-02-<卡號>/` |
+
+Windows 首次實際 rename 發現 Win32 錯誤 87，已用同一根 handle 的原生 NtSetInformationFile 修正並在 HJW 重驗；證據 `windows-rename-probe-01/`、`windows-rename-02/`。固定 SHA 隔離舊版 oracle 的 operator／v3 profile 測試 17 項、退役 route 1 項通過；原 ZIP 未修改。全部測試均無付費模型呼叫。
+
+實作提交 `d33ae32`、整合提交 `b30eec4d31c316e6307281ef0cef8ca02594bf38` 已推送，[PR #49](https://github.com/Institute-of-Agent-Life/yuki-core/pull/49) 以 sessions 為前置，等最新 head 的三平台 CI，僅合併 main。
+
+乾淨提交 `b30eec4d31c316e6307281ef0cef8ca02594bf38`／來源樹 `73e4e2402f39b49aa4cfd0391f122aef1f4222f0bb2626c8b5cd59af36c72d2a` 的三平台候選已驗。Host schema 2、Profile schema 3、Python SDK `1.0.0a9`／Rust SDK `1.0.0-alpha.9`；實含三個 Admin 模型入口、六個 task route、獨立搜尋與重啟 embedding。Mac／Windows／Linux 分別通過 625/621/645 項；候選都從乾淨 PATH 啟動，ZIP 成員逐項 SHA-256 核對通過。所有候選仍為 unpublished-development-candidate；真實 EXT-049 消費證據尚缺。
+
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-048/handoff-b30eec4/linux-arm64/candidate/yuki-profile-preview-b30eec4d31c3-linux-arm64.zip`，SHA-256 `eedb6a027d6b16caed8ec89135e5b22ebc374149ea028b208547800394e210bc`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-048/handoff-b30eec4/macos-arm64/candidate/yuki-profile-preview-b30eec4d31c3-darwin-arm64.zip`，SHA-256 `90085f29f823f6056d521713718831c8d4ff221a757bc0204a5651b802651649`。
+- `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-048/handoff-b30eec4/windows-x86_64/handoff/yuki-profile-preview-b30eec4d31c3-windows-x86_64.zip`，SHA-256 `1eec0bbfedb81e6bc4a47c1e5fabe9d2737faffe152b8a4e836f26cc63d9502e`。
+
+完整交接索引為 `artifacts/CORE-048/handoff-b30eec4/verified-candidates.json`。較早 `development-package-01/` 的 dirty source ZIP 僅保留作開發證據。
+
+
+CI 修正沿用已驗 `002a10d` 的 CORE-027 owner ready 回條，以及 `0f723ad` 的原檔案有界讀取；不重送 mutation、不改原 timeout 或接受條件。下一個已就緒核心任務是 CORE-037；真實 EXT-049 消費回條尚待對方，79 個固定 capability 宣告不等於全部管理方法已實作，候選不標為已發布。
+
+CORE-037 已在 `codex/core-037-control`／`.cache/worktrees/control` 開始實作，先驗固定 Admin 角色及 SOUL 合同、原付費鏈和中斷保存；尚未完成或提交。CORE-014 原歷史 API 在隔離舊版取得 14 個實際查詢回條，`/Users/huangjiawei/.cache/yuki-core/original-history-oracle-01/original-history.json`，SHA-256 `75c6e389ddb5bfebab6ace552a14f882f7f612c69cf712b626cf936d8aaea6d0`；原歷史適配仍進行中。
+CORE-058 接入 CORE-051 `002a10d` 的真 owner ready 同步修正。Mac CORE-027 `notifications-owner-readiness-01/` 通過；PR #48 按整合後 head 重驗三平台。
 CORE-016 分段補核已接入個人入口 `c979a2e` 的搜尋整合。分段、搜尋、原聯絡人工具回歸通過 `artifacts/CORE-{016,024,014}/segments-search-integration-01/`。PR #42 等最新三平台 CI。
 已接入 main `30a5ea7` 的 Host 合併提交。實作樹與上一輪驗證相同，PR 已轉向 main 並重新執行 CI。
 
@@ -311,7 +548,123 @@ CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自
 
 CORE-034 同步媒體 `7cd4e42` 及 Work 分段 `e357ab6`。祖先整合保留 memory 配置驗證；Work 分段自動合併造成聯絡人註冊遺漏，已恢復並由 CORE-014／015 `code-segment-main-01/` 驗證。最新修正 head 通過 CI 前不合併。
 
+CORE-050 接入 Code `6615b29`，包含 main 分發、清除、檢索、媒體及 Work 分段的已驗整合。Mac CORE-050、039 均通過 `artifacts/CORE-050/code-distribution-main-01/`、`artifacts/CORE-039/aux-code-distribution-main-01/`。共用候選打包器保留 auxiliary schema／SDK 能力與 debug／release 二進位選擇。PR #44 按新 head 重驗六項 CI，原候選仍按原來源標記。
+
+CORE-036 整合輔助模型 `3de48dc` 與 main 分發鏈。Mac CORE-036、039 通過 `artifacts/CORE-036/aux-distribution-main-01/`、`artifacts/CORE-039/participation-aux-distribution-main-01/`。組合候選打包器保留 participation 方法與各卡驗證來源，PR #45 按新 head 重驗三平台。
+CORE-035 整合參與邊界 `2290520` 與 main 分發鏈。Mac CORE-035、039 通過 `artifacts/CORE-035/participation-distribution-main-01/`、`artifacts/CORE-039/maintenance-participation-distribution-main-01/`；共用候選打包器保留 maintenance grants 與實際二進位 profile。PR #46 按新 head 重驗六項 CI，通過前不合併。
+
+CORE-051 整合維護 `402a9aa` 與 main 分發鏈。Mac CORE-051 `maintenance-distribution-main-01/`、CORE-039 `sessions-maintenance-distribution-main-02/` 通過。第一次 CORE-039 的 Rust 工具結果缺少 data，原因尚未定位，失敗回條保留；補上失敗時完整結果與原執行狀態診斷後，release Host 另連續三次 65 項斷言通過於 `artifacts/CORE-032/sessions-release-diagnostic-{01,02,03}/`。未將重跑通過當成根因修復，PR #47 仍依最新 head 六項 CI 驗證。
+
+CORE-048 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-048 `sessions-distribution-main-02/`、CORE-039 `profiles-sessions-distribution-main-02/` 通過。候選器保留模型設定 metadata、四協議與獨立 Search／Embedding 的原能力記錄；PR #49 按整合後 head 等六項 CI。前一份 `sessions-distribution-main-01/` 在錯誤的 CORE-049 工作樹執行而缺卡入口，已撤銷該處本輪 merge，未修改 CORE-049。
+CORE-058 接入隔離會話 `671d8c5` 與 main 分發鏈，Mac CORE-058 `sessions-distribution-main-01/`、CORE-039 `notifications-sessions-distribution-main-01/` 通過。候選共用打包保留通知合同、SDK 版本及驗證來源，PR #48 按整合後 head 重驗六項 CI。
+## CORE-037：實作與三平台候選已驗，PR #51 待 CI
+
+分支 `codex/core-037-control-integration`，實作提交 `1e7b89362b6f806aa11eed841b28071b22151e7e`，已推 [PR #51](https://github.com/Institute-of-Agent-Life/yuki-core/pull/51)。整合 CORE-048 與 CORE-058，Rust 共用控制服務涵蓋角色／SOUL、Person／Binding／Presence、Work、模型設定與單次探測、插件批准／啟停／發現／設定／觀察、trace、usage、原 outbox 安全重排及確定失敗回條。原 paid continuation 與未知效果不取得新重試權。
+
+Mac ARM64、HJW Windows x86_64、Linux ARM64 在同一乾淨來源樹 `f58b344f4da4d4bf36c5a7a2dc20a67f6d752a373e8d362f3891d562a3bd22bf` 各通過 977 項。兩種實際安裝 SDK 執行 Host 管理呼叫；故障包含 SOUL／discovery 寫入後真 kill、CAS、撤權、冷啟、成功／失敗原回條及 UUID 大小寫重放。CORE-048 663 項、CORE-058 326 項與相鄰整合回歸亦通過。
+
+**候選未發布。** 交接索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-037/handoff-final-01/verified-candidates.json`，SHA-256 `8519f27ea2c10a9f692ac6b34e47e8a92bf3751b871b07dcaf02f9597e5b946b`；內含絕對路徑、來源提交、逐成員驗證、實含能力與各平台回條。握手 1、Host 2、control 1、reader 41，Rust SDK `1.0.0-alpha.11`／Python `1.0.0a11`。
+
+| 平台 | ZIP SHA-256 |
+|---|---|
+| Mac ARM64 | `37945f2a6abda16c54fd024271471a0adaa78343b093fae3fac7313867ee9e9c` |
+| Linux ARM64 | `673662bd73e0a89418c8aeb2740a00c34c491ea3da56c735b0bb7f6540f5b625` |
+| HJW Windows x86_64 | `cfad9951aa18cb1e0a9677b8d6e042d84dafdc6e6b13ba95feb4ab943fd9a4e6` |
+
+PR #51 等 #48／#49 進 main 後，按最新 head 的三平台 push／PR 六項 CI 合併。真 EXT-022／037／038／039／049 消費證據仍缺，穩定協議未凍結。下一個可獨立任務 CORE-055 已開始；CORE-014 原歷史工具與 CORE-040 原 wire 等價對拍仍待補齊。
+
+## CORE-055：逐欄用量驗證
+
+`codex/core-055-usage` 以 CORE-037 `1e7b893` 為前置。先設六次呼叫含失敗、零／缺欄位、47/110 同報分母、分離 attempt 欄位、紐約 DST、跨午夜重試與四種當前資格。`coverage-red-03/` 在跨 attempt 分母案例確實失敗；修正唯讀投影後 `coverage-mac-01/` 136 項通過；加入 SDK 包後 `coverage-mac-02/` 138 項、CORE-037 `usage-regression-01/` 977 項通過。原 provider/model/profile、邏輯呼叫計數與 DTO 保留，依實際 attempt 派發時間選欄位；無新增 writer／估價／重試權。
+
+實作 `0efe249`，整合來源 `214197a1a8d3bebbc3364d3566a65ea81bab09a6`，已推 [PR #52](https://github.com/Institute-of-Agent-Life/yuki-core/pull/52)。Mac ARM64、HJW Windows x86_64、Linux ARM64 同一乾淨樹 `37472cf77eecc810a2ca5b4d3cf663cb26dc2accf79ae27ec410654aa3ead666` 各 138 項通過；原 DTO `protocol/control/usage.json`、兩種 SDK 包及空 PATH 候選啟動均已驗證。握手 1、Host 2、usage 1、reader 41，SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`。
+
+**候選未發布。** 交接索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-055/handoff-final-01/verified-candidates.json`，SHA-256 `cda5ff398b353784f013fef7d39e7b72d1d9a219a834c18846db8672a53b26f5`；內含絕對路徑、來源及逐成員雜湊驗證。ZIP 雜湊如下：
+
+| 平台 | SHA-256 |
+|---|---|
+| Mac ARM64 | `b7ca70569b4fc6f536caad15134fd332a23aea5436c8b57ce3d9b1775c67dcb1` |
+| Linux ARM64 | `d09aa148ba767db66019fb231fe2b6ce25d755e1eef74643b8a9d91819c51530` |
+| HJW Windows x86_64 | `83e473a6ddb750b5b5de7e1febddffdeecec1bc0d4e344be8848c6f10c9cf1f8` |
+
+PR #52 待 #51 進 main 後按最新 head 六項 CI 合併。缺 EXT-049 對當版候選的實際管理 HTTP 消費，穩定協議未凍結。初次 `coverage-red-01/` 為 Mac 系統碟滿、`-02/` 為 fixture ordinal 衝突，失敗產物保留。下一個可執行工作為 CORE-014 原歷史查詢 wire，供 CORE-040 原腳本等價對拍使用。
+
+## CORE-057：Rust 離線模型設定移轉
+
+分支 `codex/core-057-model-import`。新增 `import-models --inspect`、原 revision 的 apply 與 `--resume`。停寫副本以原 Application OS lock 互斥，固定 schema 0156、實際 TOML／sidecar／環境檔與 WAL 雜湊；依原來源優先序保存 null／false、停用 Search 與完整 ASR 憑證對。逐用途比較實際輸出 TOML 的有效參數，僅真差異分流共享 Profile，保留私有 headers、未知 operator 欄位及原檔權限。來源檔案不變；只在新 bundle 讀回確認後按原行 ID／鍵／scope／version／值雜湊做 SQL 原子清退。
+
+先保留缺入口 `import-red-01/`；`artifacts/CORE-057/import-mac-05/` 功能檢查與 dirty 開發包的乾淨 PATH 啟動通過。固定 SHA 329ca7c 的隔離 oracle 22 項通過於 `/Users/huangjiawei/.cache/yuki-core/model-config-oracle-01/`；另驗原 CI 9138a528 的 20 份 model-legacy 證據。真 kill 覆蓋寫檔後／SQL commit 後，另驗非空分群拒絕、修改版本／目的檔拒絕、SQL 後筆失敗整筆回滾、舊 Application 鎖及 WAL-only 參數。首輪功能全過但缺 native SQLite build 回條，已補實際匯入連線查詢；未將該輪標為完成。
+
+Windows／Linux 與乾淨來源候選待整合驗證；先前 dirty 包不作發布交接。此卡未啟動 owner／gateway／plugin／provider，不修改任意 .env，不修改舊倉。下一個可執行工作為 CORE-040；CORE-043 仍需 EXT-041 的實際安裝交接輸入。
+
+## CORE-014 原歷史查詢入口補齊
+
+分支 `codex/core-014-history-wire`。Rust `query_chat_history` 沿用固定 v4 宣告及共享 canonical event ID；recent/search/around、原 send receipt、source 交集、逐欄字面搜尋、當前 ASR、正數 keyset 分頁、上下文和公開外部事件已接實際 Main 工具 continuation。Reader 42 加可清除的逐來源結果快照；已刪除游標不重排，撤權／遺忘後不能重讀正文。舊 `history_query` 原入口保留。
+
+先保留缺入口失敗 `original-wire-red-02/`，正常及故障檢查於 `artifacts/CORE-014/original-wire-mac-07/` 667 項通過；CORE-015、033、058 相鄰回歸均通過 `history-wire-regression-01/`。固定 SHA `329ca7c487414d2f54ddd98ff4727446ed2446cd` 隔離 oracle 的 14 個原查詢案例 SHA-256 `75c6e389ddb5bfebab6ace552a14f882f7f612c69cf712b626cf936d8aaea6d0`；大型分頁 201+29、原 provider call ID、通知 publisher、遺忘刪除結果正文均有回條。另兩次補充 fixture 因未設定 QQ 路由及用人類 erase 刪 plugin 事件被正確拒絕，失敗回條保留。
+
+Windows／Linux 原生候選待本提交快照驗證；先前 dirty Mac 包僅打包自測，非交接發布。真擴展消費及 CORE-040 全量 wire 等價尚待；本補充不宣稱所有原 DTO 值已逐位相等。下一步依序產候選，繼續 CORE-057 離線模型設定移轉與 CORE-040。
+
+CORE-037／030 CI 修復：Windows Python 缺少系統 tzdb，現以附來源版本、SHA-256 與授權的 IANA 2023c 固定 TZif 作獨立日曆測試輸入；不更動 Rust 時區計算。CORE-030 清除案例在改動 executable 宣告後，先驗證未審批不可執行，再由真 operator 按原 revision 批准，保留刪除後 ACK 前崩潰情境。Mac、Linux ARM64、HJW Windows 各自通過 CORE-030 120 項、CORE-037 977 項；回條位於 artifacts/CORE-030/approved-cleanup-{mac,windows}-01/、artifacts/CORE-037/pinned-calendar-{mac,windows}-01/ 與 artifacts/CORE-037/ci-recovery-linux-01/。源樹 e7d3d4982ab0679daead7202453e3f9a4801c74e17ed84027317425ead6870e2，PR #51 推新 head 後重新等六項 CI。
+
+CORE-055 整合 CORE-037 CI 修復 `98816c2`，用相同固定 IANA fixture 驗 DST；schema 回條改讀實際 SQLite reader，避免後續可加遷移仍報 41。`artifacts/CORE-055/pinned-calendar-mac-01/` 138 項通過，原候選來源不變；PR #52 重驗最新 head。
+
+CORE-014 三平台交接已驗：來源 `43b67d35d996ab6185507931a77e189677e9a1d6`，乾淨樹 `723429f67a5b67e8c498bba201fede6b21ec626c0e5842edd1e40d285cb66503`，Mac ARM64／Linux ARM64／HJW Windows x86_64 各 667 項與乾淨 PATH 啟動通過。reader 42、Host 2、SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`。原生 ZIP、manifest 及逐成員雜湊已核對，索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-014/handoff-final-01/verified-candidates.json`，SHA-256 `c8d373992ec7e286337a4d79deb2caec81e79ee8fca5c22a3cd1f1330edc7c4c`。候選未發布，真擴展消費待補。
+
+- macos ZIP SHA-256 `c5780e4c4346e1a378e6e5074d100cb184885126278acb9f9fb104b926a4142a`。
+- linux ZIP SHA-256 `1cd0cabae64ea714c41cd11e443a0b200d01c563eb0de7522fc884716fbac233`。
+- windows ZIP SHA-256 `18d65b272e547002ac980dc516f84c08ce9cdd2e9e83c185b58066dd99c30d7c`。
+
+已推 PR #53；等待 #52 及最新 head 三平台 push／PR 六項 CI，通過後合併 main。
+
+CORE-057 跨平台封裝補正：Linux `handoff-final-01/linux-validation-02/` 查出 provenance 誤收 ExFAT 的 AppleDouble `._` 中繼資料；移除非來源成員後，仍逐一驗 20 份原 CI JSON 與 defaults 的 SHA-256。`provenance-mac-01/` 通過，先前 Mac 212 項包含 21 項中繼資料檢查，修正後為 192 項（新增來源集合檢查）。原失敗及舊候選保留，未列入交接；將從本提交重做三平台候選。
+
+CORE-005／040 量測補核：`database-info` 改從原 SQLite writer 佇列查詢，公開實際 synchronous、busy_timeout_ms 及 observed_connection，避免用 reader 的 PRAGMA 當 writer 設定。`artifacts/CORE-005/writer-info-mac-01/` 通過。CORE-040 最新 Rust release 的 `c-current-1200-02/` 逐筆 1200 輸入／1200 送達相符，20 組長 Work 正在跑；工具集合與提示差異仍在核對，未完成投資裁決。先前 C attempt 01 因未顯式選 lexical-only 啟動失敗，保留原紀錄。
+
+CORE-020 整合回歸：PR #53 Linux run 42107381636 與 `history-pause-mac-01/02` 均在第 4 次 pause 前 held。原回條顯示 3 次預留共 154875 units；完整新工具宣告令下一次超過原測試 200000 units，尚未觸及待驗的 4-request 邊界。僅把該 fixture 的獨立 units 額度改為 1000000，新增「4 次全預留且 units 尚未耗盡」斷言；`history-pause-mac-03/` 通過。保留超時時的原 execution／request／budget 記錄，worker 對空字串異常保留類型，避免錯報缺 artifact。無產品預算或重試語義變更，Windows／Linux 由最新 CI 再驗。
+
+CORE-012／040 提示補核：固定 v4 Main 與最新 Rust 的 system prefix 只差 Memory grounding 段。已從 `329ca7c` 的 `src/yuki/memory/context.py::MEMORY_GROUNDING_RULE` 提取原文並附來源雜湊，放在 SOUL 與原 Main 程式段之間。實際 HTTP 的 `CORE-012/original-memory-prompt-mac-01/` 及 CORE-020／022 同名回歸通過。CORE-040 `c-current-long-20-01/` 20 組、800 項功能斷言全過，原歷史名稱存在；此批 timing 仍不作跨臂比較。
+
+CORE-057 三平台候選已驗：乾淨來源 `4dfb1c026a7f8e046c504484f6e7738494a866a5`，tree `e09b81dbe090adc713eb6500a2cf5d5287e87edf682facb086429888854e872b`。macOS ARM64、Linux ARM64、HJW Windows x86_64 各 192 項，均驗 inspect／匯入／原 revision resume、實際中斷、SQL 回滾、原鎖及 WAL。SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`，Host 2／握手 1，輸入 legacy schema `0156`；本卡未啟動 owner，新資料庫 schema 不冒記為已驗。
+
+**未發布交接索引：** `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-057/handoff-final-02/verified-candidates.json`，SHA-256 `6a1c274e4002cd0b96b43870a80c5a478af997143f0df31ab81fe2cf09bab2b7`。索引含絕對路徑、逐成員驗證及 native manifest。
+
+- macOS ZIP `44ec44e6fa8875b95743ab226917cc2aaa06aff6cd030a229c8e28435ea13cf2`。
+- Linux ZIP `a9f2da713fc6c96cb17523d01cb81ba58668c69a47854ff271748afe1b0486d6`。
+- Windows ZIP `a60fc52ed9bbf2840244e23163a6ba0db7c4115cb42b5b37b96add9f05fcd5bb`。
+
+原 failed／aborted 回條保留：第一輪缺舊 compiler cache；第二輪誤收 AppleDouble；`handoff-final-02/linux-validation/` 因發現並行共用編譯輸出而主動中止。最後 `linux-validation-02/` 在前一程序退出後順序重驗通過。PR #54 已加 CORE-057 三平台 CI，待 #53 與最新 head 六項全綠後合併 main；不發布或部署本候選。CORE-043 尚缺 EXT-041 真實安裝交接輸入，下一個本倉工作是 CORE-040 原切片差異補核。
+
+CORE-037 整合 CI 時序修復：CORE-050 變更 aux Profile 宣告後先按實際 revision 重新批准；CORE-058 先確認離線通知已以 bot_unavailable 結算，再接上 QQ 發起另一個通知，不依賴偶然連線時序。Mac `approved-profile-mac-01`／`refused-receiver-mac-01` 與 Linux `CORE-037/ci-lifecycle-linux-02/{CORE-050,CORE-058}` 分別通過 566／330 項；HJW 的 `CORE-050/approved-profile-windows-01` 566 項通過，CORE-058 原生回歸續跑中。源樹 `9b08b55f460f89a3d6a280f52c655851dc9292eac25ab304b1a1051019b7abee`。保留原 CI 失敗；只修 fixture 的明確批准／派發時序，無放寬產品授權、通知狀態或等待上限。PR #51 最新 head 重新跑六項 CI 後才合併。
+
+CORE-015 原 Artifact 工具補核（codex/core-015-artifact-wire）：新增原 handle／operation／陣列 path 的 inspect、get、search、text，JSON 的 image 保持明確拒絕。保留舊版顯式版本 operator 游標；讀取時核正文 SHA-256，解碼後核同版本及來源，無版本參數不能繞過晚返校驗。23 組固定 SHA 舊版 oracle 的輸入順序與回條已複驗；新 Main 工具宣告逐欄相同，既有逐項效果外層保留。Mac `artifacts/CORE-015/original-pages-mac-04` 117 項及 28 項 Rust 測試通過；mac-01 為測試尚未轉接 Snapshot 型別的編譯失敗，已保留並修正。新增候選打包入口，待乾淨 commit 三平台建包及回歸，不宣稱 CORE-040 整體等價或穩定跨倉驗收。
+
+CORE-058 冷恢復補正（codex/core-037-control-integration）：Windows 原回條 `artifacts/CORE-058/refused-receiver-windows-01` 顯示恢復後 QQ 尚未在線，原投遞已安全拒絕，測試仍等待自動發送而逾時。改為先核持久 failed／bot_unavailable 與零物理投遞，再經 plugin.outbox.retry 的版本比較恢復同一原始操作；未知回執仍不重試。所有新 QQ 發布先等核心觀測 online。Mac `artifacts/CORE-058/cold-recovery-mac-02` 通過；首次 mac-01 把合法建立的物理子操作也誤當根身份變動，已改為核根操作，保留失敗回條。Windows cold-recovery-windows-02 及 Linux CORE-037/cold-recovery-linux-03 正在跑，未標通過。
+
+CORE-015 三平台乾淨候選已驗：來源 `c61f45c6e831f69cd4dc7b9cefb93c778b7d2e1a`，tree `b83992480f2a9fa72f310476f8a1de6307a9b3cad3aaefd8e4c02d3a4b70b092`。Mac ARM64、Linux ARM64、HJW Windows x86_64 各 117 項及獨立乾淨 PATH 啟動通過；CORE-012／020／022／026 相鄰回歸全過（`artifacts/CORE-015/adjacent-regression-01/`）。Reader 42、Host 2、握手 1，SDK Rust `1.0.0-alpha.11`／Python `1.0.0a11`。實含 JSON／text Artifact 的 inspect、get、search、text 與 JSON image 拒絕；不宣稱 native image Artifact 驗收。
+
+未發布交接索引：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-015/handoff-final-01/verified-candidates.json`，SHA-256 `da8b01c6762e7555622d63503c10822f2bd6deb7e977a802af75e43ed9cad67a`；內含三個 ZIP 絕對路徑、逐成員驗證與來源 manifest。
+
+- Mac ZIP `49bafba2a09ec2bab6f237c8de2eed15d2ad7a344c7f2fa3c575af77d7cd0e81`。
+- Linux ZIP `5517250b51c40c4acefce7d949f749de94f319a068ecbd27a10879b0750ea467`。
+- Windows ZIP `b136a092ca206c53ab38cd48cea68589523dc4fa53d95c798df2ece3e51d8cf4`。
+
+PR #56 等 #55 及最新 head 六項 CI；真擴展消費與 CORE-040 全切片等價待補。下一個獨立工作是 CORE-013 原 `get_group_members` 讀取接線。
+
+CORE-058 冷恢復三平台完成：來源修正 `5081c5d`、tree `ca3a329a86cd1d483d38c51038a72201de1a95935ae9fb005a3e60907b579acb`，Mac `artifacts/CORE-058/cold-recovery-mac-02/` 341 項、Linux `artifacts/CORE-037/cold-recovery-linux-03/CORE-058/` 341 項及 HJW `artifacts/CORE-058/cold-recovery-windows-02/` 344 項通過。核原 failed／bot_unavailable 回條後，顯式按 revision 重試同一根操作；未知投遞仍不重試。
+
+CORE-013 原群成員目錄補核（`codex/core-013-observed-members`）：Rust `get_group_members` 接原模型宣告、UUID keyset 分頁、同人多帳號、目前 assignment／Person／Presence、未知 mention 和來源撤銷。實際讀取只含原授權入口的已觀察帳號，群暫停或 QQ 離線仍可讀；不借發送路由、不查平台完整名冊。Mac `artifacts/CORE-013/observed-members-mac-07/` 175 項與 Rust 測試通過；CORE-009／014／015／036 四項相鄰回歸均通過 `adjacent-regression-01/`。舊版 oracle 三個原用例重跑通過，fixture SHA-256 `72a7d9c67f7e26a7c09897dc04d103d13eee45f68d6142508aece6c5c32a37a5`。
+
+失敗保留：mac-01 在暫停前未先取得觀察；mac-03／04 發現 Main 派發漏接，已補實際原生呼叫。mac-02 誤在 root 舊 main 執行，結果不作本接線證據。mac-06 的 development-package 只供打包自測；待乾淨 commit 產 Windows／Mac／Linux 正式本地候選。reader 42、Host 2、SDK alpha.11／a11；尚未發布，未宣稱 CORE-040 全功能等價。下一個核心缺口為原 `recall_own_message`／權限目錄的 Main 接線。
+CORE-048／039 CI 編譯診斷：PR #49 的兩個 Mac Intel run（42085724620、42085715264）均在 release 冷編譯 600 秒截止，尚未執行發布驗證案例。回移 CORE-037 已使用的編譯階段處理：只有 release build 使用 1200 秒編譯預算，超時仍失敗並保存部分編譯輸出和 stage 回條；其他編譯及所有功能、故障、啟動與分發驗收時間不變。原失敗保留。此處不因其他平台通過而跳過 Mac，需最新 head 三平台六項 CI 全通過才合併。
+
+本地 Mac `artifacts/CORE-039/profile-compiler-mac-01/` 81 項分發驗證通過，source tree `a8a009014eb8f64a246d94279914c8611a5904f9443a60ae5e203837a94dc57f`；原功能驗收完整執行。
 PR #43 Windows CI `42080468945` 的 CORE-039 在原命令通過後，清理臨時執行檔時遇到 WinError 32；失敗 ZIP `.cache/code-ci-13440917770.zip`，SHA-256 `4ca3d7b740a9a3c141ed87c4c2132f6c688d50dea830a08fbb424b893b15630f`。候選器僅對自建目錄的 sharing violation 最多重試五秒，持續鎖定及其他權限錯誤仍失敗，不重跑原命令。Mac CORE-039 `code-windows-cleanup-01/` 通過，HJW `code-windows-cleanup-native-01/` 正在驗證；最新提交六項 CI 完成前不合併。
+
+CORE-050 同步 Code 的 Windows 臨時執行檔清理修正 `4448a06`。Mac CORE-039 `aux-windows-cleanup-01/` 通過；上游同份修正在 HJW 通過 `artifacts/CORE-039/code-windows-cleanup-native-01/`，該回條來源為 `6615b29` 工作樹 `4936d7b65e47d4579b9380b6436c6491d89425eaaebf0e7927df66dd9fc6671e`，不是新發布候選。PR #44 以新 head 重新檢查。
+
+CORE-036 同步輔助模型 `c26e6c4` 與已驗 Windows 清理修正，Mac CORE-039 `participation-windows-cleanup-01/` 通過；實作未改參與授權或 SELF 額度。PR #45 以整合 head 重新驗證最新三平台 CI。
+
 PR #42 macOS Intel CI `42071266030` 在 CORE-039 冷 release 編譯達 600 秒上限，尚未進入產品案例；原 artifact `.cache/segments-ci-13441839430.zip`，SHA-256 `6546648675809170fcb363d0797ccd2b86dc547bfcf6323e673b77ca35affdf5`。編譯器 release 階段獨立給 1200 秒，其他命令及案例期限不變，所有編譯超時現在保留 stdout／stderr 和 timed_out 回條。Mac CORE-039 `segments-release-build-budget-01/` 通過；注入超時 `segments-release-timeout-evidence-01/` 正確失敗並保留兩路輸出。PR #42 按新 head 重驗三平台，未把原失敗標為通過。
 
 CORE-034 同步 Work 分段的冷 release 編譯預算及超時輸出保留 `e542c27`，Mac CORE-039 `code-release-build-budget-01/` 通過。既有 Windows 清理修正已在 HJW 通過 `code-windows-cleanup-native-01/`。本輪取消的 14 組 CI 均已由同分支的新 head 取代，核對與取消回條在 `.cache/superseded-ci-{candidates,cancellations}-01.json`；最新 head 的所有檢查仍須通過才合併。
@@ -322,9 +675,56 @@ PR #43 整合最新前置 `codex/core-038-media`，Mac 回歸 CORE-016、CORE-03
 
 PR #43 的 Windows run 42147427157 在 crates.io HTTP/2 載入 siphasher 時出錯，PowerShell 接續準備 SDK，將第一個 cargo 的失敗隱藏，令離線 CORE-005 缺依賴。現在兩個鎖檔均須成功，準備階段使用非 multiplex HTTP，不改離線測試。Mac 驗證：`artifacts/CORE-005/code-locked-download-01/download-gate.json` 注入第一個錯誤後結束碼 16、第二個 fetch 沒執行；`code-locked-deps-owner-01/` 通過。原失敗 ZIP SHA-256 3fa1870cd09660b5102a44bdb740650563235251b9abd537e76b4a3cd8db1aa5，重等六項 CI。
 
+PR #44 最新前置整合後，Mac CORE-034、CORE-050 通過，具名回條在 `artifacts/CORE-050/segments-parent-merge-01/`。
+
+PR #45 已整合最新 CORE-050；參與與輔助模型兩張卡的 Mac 回歸通過，見 `artifacts/CORE-036/segments-parent-merge-01/`。
+
+CORE-035 已合入目前 CORE-036 參與策略前置；正常與故障驗證見 `artifacts/CORE-035/segments-parent-merge-01/{CORE-035,CORE-036}/manifest.json`。兩套均通過。
+
+PR #47 已接入維護分支 d658db3 的 Work 與分發修正。macOS CORE-051、035、039 均通過：051=735, 035=303, 039=84 項；見 `artifacts/CORE-051/maintenance-work-segments-01/` 及 `artifacts/CORE-{035,039}/sessions-work-segments-01/`。依新 head 等六項 CI。
+
+PR #49 已接入 #47 的 Work 與分發修正 8a47f56。macOS 048=624, 051=735, 039=84 項均通過，詳見各卡 `sessions-048-work-main-01/`。等本 head 的六項 CI。
+
+CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。
+
+CORE-013 群目錄三平台乾淨候選已驗：來源 `6d76210943e75a29c5bfa5f310ad378737fb9f06`，tree `a96812e8d50128f7db3f73b00860667a1d8e970a7ddea28b0b56ca2952262c6d`，Mac ARM64／Linux ARM64／HJW Windows x86_64 各 175 項通過，獨立 SDK 安裝與乾淨 PATH 啟動通過。Reader 42、Host 2、握手 1，Rust SDK `1.0.0-alpha.11`／Python `1.0.0a11`，本次驗證工具為 `get_group_members`，coverage 僅 observed。
+
+未發布交接索引：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/handoff-final-01/verified-candidates.json`，SHA-256 `2c531868119a9b8d549e06820a16ee667f3667f668c1c221fbd24f2487460284`；索引附三個 ZIP 絕對路徑、逐成員雜湊與來源 manifest。
+
+- Mac ZIP `ca0daa2585b185b7a1d2266f4cabb88be08445946083016b6a0fb7355a6db8da`。
+- Linux ZIP `1cffea8b9ef0c9937b6a71133107abb5161f05fe068153a37d736c38ba176a84`。
+- Windows ZIP `a46dcbb838a1d7fa4e724e76e22c0346be45ee919eb45bd511ddb0600cd10dff`。
+
+PR #57 等 #56 與最新 head 六項 CI 通過；未發布、不標穩定擴展驗收。下一項原 `recall_own_message` 在 `codex/core-013-recall-wire` 進行，已核原 bot、未知結果與真實 writer 崩潰，待完整驗證及候選。
+
+CORE-034 Code 啟動修復 `9bb02fc` 的同源三平台驗證完成：tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`，`artifacts/CORE-034/unapproved-runtime-{mac,linux,windows}-01/` 各 387 項通過；Mac CORE-037 同名回歸 977 項通過。未批准的 Code 留在 discovered／disabled／offline，owner 管理入口可用；原 Work 不越過 runtime revision 或原預算。最新 PR CI 仍待完成。
+
+CORE-013 原撤回模型工具補核（`codex/core-013-recall-wire`）：`recall_own_message(event_id)` 接實際 Rust Main 與認證 QQ socket。Reader 43 把目前工具操作綁到原出站 child／Presence／locator；群改派或暫停仍只能由原 bot 撤回。原 bot 離線拒絕，另一 bot 在線也不代撤。派發 claim 與工具效果同交易，原 session 不換代；未知、重複與崩潰重啟不重送，晚回只結算原鍵，來源清除不復活內容。
+
+Mac `artifacts/CORE-013/recall-wire-mac-04/` 252 項與 Rust 測試通過，舊版五個原用例通過（`original-recall-oracle-01/02`），成功回條逐欄核對；writer commit 後真殺程序並冷啟動，三次物理撤回與四個已提交原鍵分開記錄。`recall-adjacent-01/` CORE-005／010／030 通過。CORE-034 發現測試 peer 仍送 Artifact 舊 version／字串 path；按原公開 schema 修正後，本分支 `artifacts/CORE-013/recall-code-regression-02/` 387 項通過，兩次業務扣額與 Artifact 子讀零扣額未變。
+
+失敗保留：mac-01 測試雙 bot 共用憑證被啟動校驗拒絕；mac-02 把模型 call_id 誤當效果 operation_id，已經由原 intent 映射查核晚回；mac-03 成功後補完整結果對拍及包內證據，mac-04 通過。development-package 僅打包自測；待乾淨 commit 形成三平台未發布候選。未知／失敗 error_category 使用核心分類，不宣稱與舊 Python 例外類名完全相同。下一個核心補核是 `get_my_capabilities` 原主體權限目錄，穩定擴展消費及 CORE-040 全切片等價仍待補。
+
+CORE-015／034 整合補核：Code 測試 peer 仍使用 Artifact 舊 version／字串 path，被現行公開模型 schema 拒絕。改為原 operation=get 與相對 logical_root 的陣列 path；仍核兩次業務扣額、Artifact 子讀零扣額、真派發／回執及原 128 字元。`artifacts/CORE-034/original-artifact-wire-mac-02/` 387 項通過。首次 mac-01 誤把既有核心效果外層當成 Python envelope，已修正斷言路徑並保留失敗；不改產品授權或放寬 schema。
+
+CORE-013 撤回三平台乾淨候選已驗：來源 `266e9aa23e13990c156c6ed0bf8df3b985d6d810`，tree `8322f0c5be6285c8a62a64a1acbc91beeedfec7935cc8d99881c1348526a72eb`。Mac ARM64／Linux ARM64／HJW Windows x86_64 各 252 項、獨立 SDK 安裝及乾淨 PATH 啟動通過；Reader 43、Host 2、握手 1、Rust SDK `1.0.0-alpha.11`／Python `1.0.0a11`。同一包實驗證 `get_group_members` 與 `recall_own_message`，保留原 bot、未知、晚回及實際 writer 崩潰回條。
+
+未發布交接索引：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/recall-handoff-final-01/verified-candidates.json`，SHA-256 `d7b86f0244ca8064e13e67cd78ad96256d9879bd35444bd4b68a2add1e73ebe2`，含逐成員驗證與三平台 manifest。
+
+- Mac ZIP `f34dceb76bbf32f1af856b094fc70a17a3b1ec9261ce8c1ec183e31c44ae6178`。
+- Linux ZIP `aa2c2b76e0d550333ebe0456fb41fc6e1f5901d7e2f07d2a5d3274c602195d80`。
+- Windows ZIP `b72683a71ba2a8260f801bc6d85fd535dc871e3dd2ee366fff06b6222b569877`。
+
+實作 `3dafd7a` 已推 PR #58，等 #57 及最新 head 六項 CI 再合併 main。候選未發布，未宣稱真擴展穩定驗收或 CORE-040 全切片等價。下一項 CORE-037 原主體權限目錄已在 `codex/core-037-permission-directory` 實作，Mac 整合初驗 1052 項通過，相鄰回歸及乾淨候選仍在進行。
+
 CI 排隊修正（[PR #83](https://github.com/Institute-of-Agent-Life/yuki-core/pull/83)，`codex/ci-pr-queue`）：40 個開放 PR 的當時 head 有 58 個 Intel Mac job 在等。逐筆重查已過期的 45 個 run，GitHub 確認取消 43 個；2 個已有 job 執行，保留。以其他任務分支為基底的 PR 先跑 Linux 全套；以 main 為基底或轉向 main 的 PR 跑 Windows、Linux、Apple Silicon macOS 三平台完整合併檢查。同 PR 新提交取消舊任務。main 推送及手動完整檢查保留 Intel Mac。
 
 `python ci/suite.py --out <新目錄>` 從 `ci/checks.json` 取完整清單。每台先跑含 release 的卡、fmt、clippy、writer tests、debug／release build；兩個分開的程序執行其餘案例，同一工作內依來源與 SHA-256 綁定編譯證據。快取只供 Cargo 依賴及編譯中間物，仍執行本倉的編譯與測試。卡片的斷言、期限及具名輸出保留。失敗或未跑完時，`suite.json` 列出缺口，整體回非零。SQLite 歷史測試庫分 migration 提交；reader 5、20、29 的 schema／資料相同，注入錯誤可回滾。原 Mac CORE-032 曾等不到 Rust 回呼；兩段獨立案例現在等前一回合完成，失敗時保留操作與預算診斷。佇列與測試紀錄在 [artifacts/ci](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/)。
+
+PR #79 整合新的 CI 入口。Mac 完整驗證通過 49 張卡，見 `artifacts/ci/pr79-suite-mac-02/suite.json`。第一次複測時 Rust 消費者離線，未取得當次退出原因。CORE-032 現在等待該消費者完成 SDK 握手，並保存握手狀態或退出錯誤。四次獨立啟動均完成實際工具呼叫，見 `artifacts/CORE-032/pr79-startup-probe-01/` 至 `04/`。同步採用 #77 驗過的 Windows Manager 回條讀取方式，HJW 原生 CORE-039 的 150 項驗證見 `artifacts/CORE-039/manager-ready-reader-windows-01/manifest.json`。
+
+PR #81 同步 #79 的發送回條與 CI 修正，保留兩次 Compact 的原始重播。Mac 49 張卡全部通過，包含 CORE-018、032、039 與 040，見 `artifacts/ci/pr81-suite-mac-01/suite.json`。HJW 原生 Windows 另完成 CORE-018 共 103 項斷言，見 `artifacts/CORE-018/schedule-model-receipt-windows-02/manifest.json`。
+
 
 PR #35 整合已合併的 Work 分段 main `ce66753`。Mac 回歸通過：CORE-028 94、CORE-016 184、CORE-012 163 項斷言，產物 `artifacts/CORE-028/segments-main-merge-01/`。推送整合提交後重新計算六項 CI。
 

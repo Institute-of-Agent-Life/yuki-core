@@ -17,7 +17,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-pub(crate) use tools::{append_image, declaration, perform};
+pub(crate) use tools::{append_image, declaration, native_image as append_native_image, perform};
 
 #[derive(Default, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -183,7 +183,12 @@ fn decode(encoded: &str) -> Result<Snapshot> {
     Snapshot::new(STANDARD.decode(encoded)?)
 }
 pub(crate) fn mime(snapshot: &Snapshot) -> &'static str {
-    let b = &snapshot.data;
+    mime_bytes(&snapshot.data)
+}
+pub(crate) fn mime_bytes(b: &[u8]) -> &'static str {
+    if b.starts_with(b"%PDF-") {
+        return "application/pdf";
+    }
     if b.starts_with(b"\x89PNG\r\n\x1a\n") {
         "image/png"
     } else if b.starts_with(&[0xff, 0xd8, 0xff]) {
@@ -192,6 +197,8 @@ pub(crate) fn mime(snapshot: &Snapshot) -> &'static str {
         "image/gif"
     } else if b.starts_with(b"RIFF") && b.get(8..12) == Some(b"WEBP") {
         "image/webp"
+    } else if b.starts_with(b"RIFF") && b.get(8..12) == Some(b"WAVE") {
+        "audio/wav"
     } else if std::str::from_utf8(b).is_ok() && !b.contains(&0) {
         "text/plain"
     } else {
@@ -429,14 +436,29 @@ async fn acquire(
         return Ok(proof);
     }
     let rt = runtime(store)?;
-    let snapshot = if let Some((_, _, path)) = local {
+    let source = proof["source"]
+        .as_i64()
+        .ok_or("missing attachment source")?;
+    let hosted =
+        crate::host::gateway_media::hosted(&mut *store.readers().acquire().await?, source).await?;
+    let snapshot = if hosted {
+        if local.is_some() {
+            return Err("installed gateway requires its original receiver".into());
+        }
+        let (data, gate) =
+            crate::host::gateway_media::fetch(store, exec, actor, event, slot).await?;
+        proof["gateway_fetch"] = serde_json::to_value(gate)?;
+        data
+    } else if let Some((_, _, path)) = local {
         let path = path.to_owned();
         let root = rt.inputs.clone();
         tokio::task::spawn_blocking(move || root.snapshot(&path)).await??
     } else {
         rt.receive(hub, &proof).await?
     };
-    proof["acquired_via"] = json!(if local.is_some() {
+    proof["acquired_via"] = json!(if hosted {
+        "gateway.media"
+    } else if local.is_some() {
         "trusted_input_file"
     } else {
         "original_receiver"
@@ -746,7 +768,7 @@ pub fn start(store: Store) -> tokio::task::JoinHandle<()> {
         let mut timer = tokio::time::interval(std::time::Duration::from_secs(5));
         loop {
             timer.tick().await;
-            let needed=sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM media_sources WHERE state='cached' AND expires<=CAST(unixepoch('subsec')*1000 AS INTEGER)) OR EXISTS(SELECT 1 FROM media_transfer_files f JOIN media_versions v ON v.id=f.version WHERE f.state='stale' OR v.digest IS NULL) OR EXISTS(SELECT 1 FROM media_objects WHERE digest NOT IN(SELECT digest FROM media_sources WHERE digest IS NOT NULL UNION SELECT digest FROM media_versions WHERE digest IS NOT NULL UNION SELECT digest FROM media_reads WHERE digest IS NOT NULL))").fetch_one(store.readers()).await;
+            let needed=sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM client_uploads WHERE digest IS NOT NULL AND expires<=unixepoch()) OR EXISTS(SELECT 1 FROM media_sources WHERE state='cached' AND expires<=CAST(unixepoch('subsec')*1000 AS INTEGER)) OR EXISTS(SELECT 1 FROM media_transfer_files f JOIN media_versions v ON v.id=f.version WHERE f.state='stale' OR v.digest IS NULL) OR EXISTS(SELECT 1 FROM media_objects WHERE digest NOT IN(SELECT digest FROM live_media_digests))").fetch_one(store.readers()).await;
             if matches!(needed, Ok(true))
                 && let Err(e) = gc(&store).await
             {

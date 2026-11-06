@@ -10,6 +10,7 @@ import sys
 import time
 import tomllib
 from contextlib import closing
+from tests.harness.terminal_work import exercise as terminal_work
 from tests.harness.service import Service, previous_schema
 from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer as OneBot
@@ -539,7 +540,15 @@ grants=["observe.metadata","tool.call"]
                 "result"
             ]
             raw, q = peer.receive()
-            q.put((reply([tool("send", "wire-send", {"text": "one|two|three"})]), 0))
+            recipient, entry = rows("SELECT raw_actor,entry_id FROM events WHERE id=?", second["event"])[0]
+            wrong = {"kind":"space","target_id":"ffffffff-ffff-4fff-8fff-ffffffffffff","conversation_id":entry}
+            q.put((reply([tool("send","wrong-gateway-kind",{"text":"must not deliver","target":wrong})]),0))
+            denied,q=peer.receive()
+            refused=json.loads(next(m["content"] for m in json.loads(denied)["messages"] if m.get("tool_call_id")=="wrong-gateway-kind"))
+            ctx.equal("private gateway cannot match a space through absent native IDs",refused["state"],"failed")
+            ctx.equal("invalid gateway destination did not reach the plugin",len((areas["tg"]/"deliveries.jsonl").read_text().splitlines()),delivery_start)
+            valid={"kind":"person","target_id":recipient,"conversation_id":entry,"binding_id":"ffffffff-ffff-4fff-8fff-ffffffffffff"}
+            q.put((reply([tool("send","wire-send",{"text":"one|two|three","target":valid})]),0))
             until(lambda: offline("tg"), "lost physical receipt")
             parts = rows(
                 "SELECT c.state,c.operation FROM host_calls c JOIN executions x ON x.id=c.execution WHERE x.source=? AND c.method='gateway.dispatch_part' ORDER BY c.rowid",
@@ -720,6 +729,7 @@ grants=["observe.metadata","tool.call"]
                 pass
             statuses = op("host", "status")
     return {
+        "terminal_work":terminal_work(ctx,sdkdir,profile),
         "normal": {
             "observation": observation,
             "command": cmd,
@@ -741,7 +751,7 @@ grants=["observe.metadata","tool.call"]
         "host_idl_sha256": hashlib.sha256(
             (ctx.root / "protocol/plugin/gateway/host-preview.json").read_bytes()
         ).hexdigest(),
-        "sdk_versions": {"python": "1.0.0a2", "rust": "1.0.0-alpha.2"},
+        "sdk_versions": json.loads((dist/"candidate.json").read_bytes())["sdk_versions"],
         "rust_consumer": {
             "binary_sha256": hashlib.sha256(rust_binary.read_bytes()).hexdigest(),
             "response": rust_result,

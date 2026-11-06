@@ -9,6 +9,8 @@ import time
 
 root = Path(sys.argv[1])
 sys.path.insert(0, sys.argv[2])
+sys.path.insert(1, str(Path(__file__).resolve().parents[3]))
+from tests.harness.json_file import take_command
 from yuki_plugin_sdk.connection import Binding, Peer, encode, read_frame
 from yuki_plugin_sdk.host import Calls
 
@@ -35,10 +37,8 @@ calls = Calls(json.loads(line)["result"])
 def post():
     while True:
         for item in root.glob("cmd-*.json"):
-            try:
-                v = json.loads(item.read_text())
-                item.unlink()
-            except (FileNotFoundError, ValueError):
+            v = take_command(item)
+            if v is None:
                 continue
             send(calls.request(v["id"], v["method"], v["params"]))
         time.sleep(0.01)

@@ -10,6 +10,9 @@ import threading
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from tests.harness.json_file import read_json
+
 folder = Path(sys.argv[1])
 folder.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, sys.argv[2])
@@ -33,6 +36,12 @@ def note(name, value):
     file = folder / (name + ".tmp")
     file.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
     file.replace(folder / (name + ".json"))
+
+
+threading.excepthook = lambda failure: note("private-thread-fault", {
+    "type":failure.exc_type.__name__, "message":str(failure.exc_value),
+    "thread":failure.thread.name if failure.thread else None,
+})
 
 
 def rpc_call(method, params, accepted=True):
@@ -128,7 +137,7 @@ def serve(frame):
                 args = step["arguments"]
                 if step.get("previous_artifact"):
                     artifact = state["seen"][-1]["receipt"]["result"]["artifact"]
-                    args = {"handle": artifact["handle"], "version": artifact["version"], "path": "/result/value/value", "offset": 0, "limit": 128}
+                    args = {"handle": artifact["handle"], "operation": "get", "path": ["value", "value"], "offset": 0, "limit": 128}
                 if original is not None:
                     child = rpc_call("tool.resume", {"handle": handle, "ordinal": index, "feed_index": original["feed_index"], "engine_call_id": original["engine_call_id"]})
                 else:
@@ -177,7 +186,7 @@ def probes():
     while True:
         path=folder/'probe.json'
         if path.is_file():
-            request=json.loads(path.read_bytes())
+            request=read_json(path)
             path.unlink()
             result=rpc_call(request['method'],request['params'],False)
             note('probe-'+str(request['id']),result)

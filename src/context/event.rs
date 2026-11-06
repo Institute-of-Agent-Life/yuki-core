@@ -5,7 +5,7 @@ use crate::{
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use sqlx::{Row, SqliteConnection};
-use std::sync::LazyLock;
+use std::{collections::HashSet, sync::LazyLock};
 static CONTROL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\p{C}").expect("Unicode category C"));
 fn name(text: &str) -> String {
@@ -68,36 +68,60 @@ pub async fn line(conn: &mut SqliteConnection, id: i64, zone: &str) -> Result<St
             fields.push("回复:引用不可用".into());
         }
     }
-    let mentions: Vec<_> = frame
+    let mut text = crate::runtime::main::event_text(row.try_get("envelope")?)?;
+    let mut mentions = Vec::new();
+    if frame
         .segments
         .iter()
-        .filter_map(|s| {
-            if let Segment::Mention {
+        .any(|s| matches!(s, Segment::Mention { .. }))
+    {
+        // Use the Assignment admitted with the original event. The live QQ bot list can change.
+        let owned: HashSet<(i64, String)> = sqlx::query_as(
+            "SELECT json_extract(m.value,'$.position'), a.id FROM events e, json_each(e.mentions) m
+             JOIN assignments s ON s.id=json_extract(m.value,'$.assignment') AND s.kind='self'
+             JOIN accounts a ON a.id=s.account_id AND a.id=json_extract(m.value,'$.account')
+               AND a.native=json_extract(m.value,'$.native') WHERE e.id=?",
+        )
+        .bind(id)
+        .fetch_all(&mut *conn)
+        .await?
+        .into_iter()
+        .collect();
+        let mut replacements = Vec::new();
+        for (position, part) in frame.segments.iter().enumerate() {
+            let Segment::Mention {
                 account,
                 native,
                 label,
-                ..
-            } = s
-            {
-                let label = name(if label.is_empty() {
-                    if native.as_deref() == Some("all") {
-                        "全体成员"
-                    } else {
-                        "未识别成员"
-                    }
-                } else {
-                    label
-                });
-                Some(if let Some(a) = account {
-                    format!("{label}/@{{account:{a}}}")
-                } else {
-                    label
-                })
+                span,
+            } = part
+            else {
+                continue;
+            };
+            let agent = account
+                .as_ref()
+                .is_some_and(|a| owned.contains(&(position as i64, a.clone())));
+            let label = if agent {
+                "Agent".to_owned()
+            } else if !label.is_empty() {
+                name(label)
+            } else if native.as_deref() == Some("all") {
+                "全体成员".into()
             } else {
-                None
+                "未识别成员".into()
+            };
+            mentions.push(match account {
+                Some(a) => format!("{label}/@{{account:{a}}}"),
+                None => label.clone(),
+            });
+            if let Some(r) = span
+                && r.segment == position
+            {
+                replacements.push((r.start, r.end, agent));
             }
-        })
-        .collect();
+        }
+        text = render_agent_spans(&text, &replacements);
+    }
     if !mentions.is_empty() {
         fields.push(format!("提及:{}", mentions.join(",")));
     }
@@ -113,11 +137,34 @@ pub async fn line(conn: &mut SqliteConnection, id: i64, zone: &str) -> Result<St
             .to_string(),
         None => String::new(),
     };
-    let text = crate::runtime::main::event_text(row.try_get("envelope")?)?;
     Ok(format!(
         "[{clock}{display}|person:{person}]\n{}>{text}",
         fields.join("|")
     ))
+}
+// Span offsets refer to the sanitized source in Unicode scalars, never to labels
+// or to a textual search for a marker (which may also occur in literal user text).
+fn render_agent_spans(text: &str, spans: &[(usize, usize, bool)]) -> String {
+    let offsets: Vec<_> = text
+        .char_indices()
+        .map(|(i, _)| i)
+        .chain(std::iter::once(text.len()))
+        .collect();
+    let mut output = String::with_capacity(text.len());
+    let mut last = 0;
+    for &(start, end, agent) in spans {
+        let (Some(&lo), Some(&hi)) = (offsets.get(start), offsets.get(end)) else {
+            continue;
+        };
+        if lo < last || lo >= hi || &text[lo..hi] != "[提及Agent]" {
+            continue;
+        }
+        output.push_str(&text[last..lo]);
+        output.push_str(if agent { "@Agent" } else { "@未识别成员" });
+        last = hi;
+    }
+    output.push_str(&text[last..]);
+    output
 }
 pub async fn trigger(conn: &mut SqliteConnection, events: &[i64], zone: &str) -> Result<String> {
     let Some(first) = events.first() else {
@@ -134,4 +181,36 @@ pub async fn trigger(conn: &mut SqliteConnection, events: &[i64], zone: &str) ->
         serde_json::json!({"platform":platform}),
         rendered.join("\n")
     ))
+}
+
+#[cfg(test)]
+mod mention_render_tests {
+    use super::render_agent_spans;
+
+    #[test]
+    fn only_proved_native_ranges_can_change_literal_agent_markers() {
+        let text = "猫[提及Agent] / [提及Agent] 😸[提及Agent]";
+        let marker = "[提及Agent]";
+        let ranges: Vec<_> = text
+            .match_indices(marker)
+            .map(|(byte, _)| {
+                (
+                    text[..byte].chars().count(),
+                    text[..byte + marker.len()].chars().count(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            render_agent_spans(
+                text,
+                &[
+                    (ranges[1].0, ranges[1].1, true),
+                    (ranges[2].0, ranges[2].1, false),
+                    (0, usize::MAX, true)
+                ]
+            ),
+            "猫[提及Agent] / @Agent 😸@未识别成员"
+        );
+        assert_eq!(render_agent_spans(text, &[(0, 3, true)]), text);
+    }
 }

@@ -1,0 +1,14 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/memory/mutation/service.py": "92b3489a7fb00c3898da301597e1aa3f18e8ce8a5860b26bf29baa6ca0e62b76",
+    "src/yuki/memory/service.py": "3b4447a2e16f8e431c4415e0157e145c095079130946d112960dfa3bf662ab30",
+    "src/yuki/memory/mutation/models.py": "ee16c01a51db05faca77e5ec84b9b5193a6de64a1283b189c7190f55c3cf3f22"
+  },
+  "cases": [
+    "tests/unit/test_memory_mutation.py::test_merge_metadata_contest_invalidate_and_restore_operations",
+    "tests/unit/test_memory_operation_identity.py"
+  ],
+  "pytest_exit": 0,
+  "scope": "Original state restoration and immutable operation identity; not a Rust acceptance result"
+}

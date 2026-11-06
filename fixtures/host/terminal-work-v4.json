@@ -1,0 +1,17 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_archive_sha256": "86735aacc29f5cb8e8b8f16755e377b99317587b22dffe6bb6fcc8bedf6a284f",
+  "cases": [
+    "tests/unit/test_work_execution_receipt_regressions.py"
+  ],
+  "pytest_exit": 0,
+  "platform": "linux/amd64",
+  "case_count": 16,
+  "junit_sha256": "dd4848ccde9f3d2761363bdbb817e38d3301ba0367457818e3450625715806c2",
+  "source_files": {
+    "tests/unit/test_work_execution_receipt_regressions.py": "16587aca83ed580e999382f81ad7a60d6cbc58ea4d1c53934f8bbfe1fdca149d",
+    "src/yuki/sandbox/client.py": "d9a361fd944f342710ae1fb16e0d365078afd45c1461dbc87e3e4772b9c3e0a2",
+    "src/yuki/sandbox/environment_tools.py": "44c16e75f15a81f600ef27835f2b739c0eb49368d3ca2a50a5fdc05703c01cb4",
+    "src/yuki/sandbox/task_repository.py": "06ffe020acecf87ff9976fa0d318adc27d175aa29c8ef2d20bc79946d5c6f067"
+  }
+}

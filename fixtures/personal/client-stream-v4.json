@@ -1,0 +1,19 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/client_api/views.py": "92118e991dffa8b2a0330bf05ce38b8b13b235fc7e345a4aaa6270c976d1bc02",
+    "src/yuki/client_api/http.py": "a6990f67a2fb616dd58368540ec905b84b42daa4953c83f5e5a0d35ed283869c",
+    "tests/unit/test_client_views.py": "633b2e22e79f9a10243a7207ffaea5b7b0df4c14500195bfc806f307f9392c02",
+    "src/yuki/client_api/identity.py": "0c30ce251f4c5bbfd18e1acbf491be600da2771b7e6ce1c5b06999bd15a1a5cb"
+  },
+  "pytest_exit": 0,
+  "pytest_log_sha256": "c0c97a59039d36cb1632c52c030a27b65ce3e4c8b860c34e161371f2b887feaa",
+  "tests": [
+    "snapshot_and_keysets_read_only_own_private_entries",
+    "subscribe_before_sync_covers_snapshot_gap_and_hint_follows_commit",
+    "lost_final_hint_disconnects_and_reconnect_sync_reads_durable_result",
+    "activity_uses_actual_live_spans_and_never_payloads",
+    "revoked_device_stream_ends_without_exposing_new_facts"
+  ],
+  "external_provider_calls": 0
+}

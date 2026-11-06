@@ -52,9 +52,9 @@ def sha(v):
 
 
 class Owner:
-    def __init__(self, ctx, path, prior_schema=16):
+    def __init__(self, ctx, path, prior_schema=16, profile="debug"):
         self.ctx = ctx
-        self.svc = Service(ctx, ctx.working / path)
+        self.svc = Service(ctx, ctx.working / path, profile)
         previous_schema(ctx, self.svc.data, prior_schema)
         (self.svc.data / "SOUL.md").write_text(
             "Fixed public character.", encoding="utf-8"

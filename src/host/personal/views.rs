@@ -6,10 +6,10 @@ use crate::Result;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::{Value, json};
 use sqlx::{Row, SqliteConnection};
-async fn entry(conn: &mut SqliteConnection, who: &Principal, id: &str) -> Result<Value> {
-    let row=sqlx::query("SELECT e.id,e.actor_stage,a.platform,p.name,e.closed_at,coalesce(w.generation,1) AS generation,coalesce((SELECT max(v.id) FROM events v LEFT JOIN personal_live_deliveries d ON d.event=v.id WHERE v.entry_id=e.id AND (d.id IS NOT NULL OR json_extract(v.envelope,'$.kind')='message') AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=v.id)),0) AS latest FROM entries e JOIN assignments s ON s.id=e.actor_stage JOIN accounts a ON a.id=s.account_id JOIN persons p ON p.id=s.original_person AND p.enabled LEFT JOIN main_windows w ON w.conversation=e.id WHERE e.id=? AND e.scope='private' AND coalesce(p.current_root,p.id)=? AND s.status='active' AND e.closed_at IS NULL").bind(id).bind(&who.root).fetch_optional(conn).await?.ok_or("not_found")?;
+pub(super) async fn entry(conn: &mut SqliteConnection, who: &Principal, id: &str) -> Result<Value> {
+    let row=sqlx::query("SELECT e.id,e.actor_stage,a.platform,p.name,e.closed_at,s.status AS binding_status,coalesce(w.generation,1) AS generation,coalesce((SELECT max(v.id) FROM events v LEFT JOIN personal_live_deliveries d ON d.event=v.id WHERE v.entry_id=e.id AND (d.id IS NOT NULL OR json_extract(v.envelope,'$.kind')='message') AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=v.id)),0) AS latest FROM entries e JOIN assignments s ON s.id=e.actor_stage JOIN accounts a ON a.id=s.account_id JOIN persons p ON p.id=s.original_person AND p.enabled LEFT JOIN main_windows w ON w.conversation=e.id WHERE e.id=? AND e.scope='private' AND coalesce(p.current_root,p.id)=? ").bind(id).bind(&who.root).fetch_optional(conn).await?.ok_or("not_found")?;
     Ok(
-        json!({"conversation_id":row.get::<&str,_>("id"),"binding_id":row.get::<&str,_>("actor_stage"),"platform":row.get::<&str,_>("platform"),"display_name":row.get::<&str,_>("name"),"status":"active","generation":row.get::<i64,_>("generation"),"revision":row.get::<i64,_>("generation"),"latest_event_id":row.get::<i64,_>("latest")}),
+        json!({"conversation_id":row.get::<&str,_>("id"),"binding_id":row.get::<&str,_>("actor_stage"),"platform":row.get::<&str,_>("platform"),"display_name":row.get::<&str,_>("name"),"status":row.get::<&str,_>("binding_status"),"generation":row.get::<i64,_>("generation"),"revision":row.get::<i64,_>("generation"),"latest_event_id":row.get::<i64,_>("latest")}),
     )
 }
 pub async fn me(conn: &mut SqliteConnection, who: &Principal) -> Result<Value> {
@@ -27,7 +27,7 @@ pub async fn me(conn: &mut SqliteConnection, who: &Principal) -> Result<Value> {
         .fetch_one(conn)
         .await?;
     Ok(
-        json!({"person_id":who.root,"source_person_id":who.owner,"request_person_id":who.owner,"request_conversation_id":own,"request_scope":"entry","platform":"app","presence_id":bot,"thread_id":null,"binding_id":view["binding_id"],"display_name":view["display_name"],"conversation_id":own,"is_superuser":who.admin,"bindings":bindings,"devices":devices}),
+        json!({"person_id":who.root,"source_person_id":who.owner,"request_person_id":who.request_person,"request_conversation_id":who.thread.as_ref().map(|_|own),"request_scope":if who.thread.is_some(){own}else{&who.request_person},"platform":view["platform"],"presence_id":bot,"thread_id":who.thread,"binding_id":view["binding_id"],"display_name":view["display_name"],"conversation_id":own,"is_superuser":who.admin,"bindings":bindings,"devices":devices}),
     )
 }
 pub async fn works(
@@ -118,6 +118,7 @@ pub async fn events(
         };
         let observed = ts(r.get("observed_at"))?;
         let mut attachments:Vec<_>=crate::media::display(conn,event).await?.into_iter().map(|a|json!({"attachment_index":a["attachment_index"],"segment_index":a["segment_index"],"kind":a["type"]})).collect();
+        super::uploads::metadata(conn, event, &mut attachments).await?;
         if outbound.is_some() {
             attachments.extend(super::artifacts::parts(conn, event).await?);
         }

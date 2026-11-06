@@ -1,3 +1,4 @@
+pub(crate) mod activity;
 mod domain;
 pub(crate) use domain::{human_text as event_text, window};
 pub(crate) mod segment;
@@ -25,6 +26,14 @@ pub(crate) use transport::{dispatch_child, physical as physical_request};
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile_task: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachment_processor: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile_binding: Option<crate::model::profile_store::runtime::Binding>,
+    #[serde(skip)]
+    pub credentials: Option<Arc<crate::model::profile_store::runtime::Credentials>>,
     #[serde(default, skip_serializing_if = "crate::model::wire::Protocol::is_chat")]
     pub protocol: crate::model::wire::Protocol,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -81,6 +90,13 @@ impl Config {
         )
     }
     pub fn validate(&self) -> Result<()> {
+        if self
+            .profile_task
+            .as_deref()
+            .is_some_and(|task| !crate::model::profile_store::task_supported(task))
+        {
+            return Err("unsupported_model_task".into());
+        }
         if (self.messages_thinking || self.thinking_budget.is_some())
             && !self.protocol.is_messages()
         {
@@ -276,12 +292,14 @@ async fn write(store: &Store, cfg: &Arc<Config>, change: Change) -> Result<Value
         .await
 }
 pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
-    let cfg = store.main.as_ref().ok_or("Main not configured")?;
+    let cfg = crate::model::profile_store::runtime::current(store)
+        .await?
+        .ok_or("Main not configured")?;
     if let Action::Inspect { execution } = action {
         let mut tx = store.readers().begin().await?;
         return domain::inspect(&mut tx, &execution).await;
     }
-    write(store, cfg, Change::Operator(action)).await
+    write(store, &cfg, Change::Operator(action)).await
 }
 fn now() -> Result<i64> {
     Ok(i64::try_from(
@@ -356,6 +374,9 @@ impl Runner {
     }
 
     async fn tick(&mut self) -> Result<()> {
+        self.cfg = crate::model::profile_store::runtime::current(&self.store)
+            .await?
+            .ok_or("Main not configured")?;
         let timestamp = now()?;
         for schedule in crate::work::schedule::due::ready(self.store.readers(), timestamp).await? {
             write(
@@ -429,15 +450,35 @@ impl Runner {
             let cfg = if let Some(profile)=sqlx::query_scalar::<_,String>("SELECT w.profile FROM work_runs r JOIN work_nodes w ON w.id=r.work WHERE r.execution=?1 UNION ALL SELECT profile FROM schedule_occurrences WHERE execution=?1 LIMIT 1").bind(&exec).fetch_optional(self.store.readers()).await?{
                 Arc::new(serde_json::from_str(&profile)?)
             }else{cfg};
+            let cfg = match crate::model::profile_store::runtime::original(&store, &exec, cfg).await
+            {
+                Ok(cfg) => cfg,
+                Err(_) => {
+                    write(
+                        &store,
+                        &self.cfg,
+                        Change::Hold(exec, "original_profile_unavailable".into()),
+                    )
+                    .await?;
+                    continue;
+                }
+            };
             let id = exec.clone();
             let hub = self.hub.clone();
             let task = self.tasks.spawn(async move {
+                let _live = store.active_turns.enter(&id);
                 if let Err(error) =
                     transport::run(&store, &cfg, &client, &data, &id, rx, &hub).await
                 {
                     let reason = error
                         .downcast_ref::<crate::host::composition::Unavailable>()
-                        .map_or("runner_failed", |e| e.0);
+                        .map(|e| e.0)
+                        .or_else(|| {
+                            error
+                                .is::<crate::social::model_receipt::SourceChanged>()
+                                .then_some(crate::social::model_receipt::CHANGED)
+                        })
+                        .unwrap_or("runner_failed");
                     let _ = write(&store, &cfg, Change::Hold(id.clone(), reason.into())).await;
                 }
                 id

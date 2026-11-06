@@ -150,10 +150,13 @@ pub struct Facts {
 }
 
 async fn facts(conn: &mut SqliteConnection, f: &Frame) -> Result<Facts> {
-    let bot=sqlx::query("SELECT b.status FROM assignments b JOIN accounts receiver ON b.account_id=receiver.id
+    let bot=sqlx::query("SELECT b.status,b.ingest_eligible FROM assignments b JOIN accounts receiver ON b.account_id=receiver.id
         JOIN accounts sender ON sender.platform=receiver.platform AND sender.namespace=receiver.namespace
         WHERE b.id=? AND b.kind='self' AND sender.id=?").bind(&f.bot_stage).bind(&f.account)
         .fetch_one(&mut *conn).await?;
+    if !bot.try_get::<bool, _>("ingest_eligible")? {
+        return Err("receiving presence is not eligible for ingest".into());
+    }
     let actor = assignment::resolve(conn, &f.account, f.observed, f.occurred).await?;
     let person = actor["original"].as_str();
     let enabled: bool = sqlx::query_scalar(
@@ -393,18 +396,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
         }
     }
     if request.accept && eligible && verified.current && f.ordinary() {
-        sqlx::query(
-            "INSERT INTO accepted_sources(event_id) VALUES(?) ON CONFLICT(event_id) DO NOTHING",
-        )
-        .bind(id)
-        .execute(&mut *conn)
-        .await?;
-        if f.answer_work_id.is_some() {
-            crate::work::questions::explicit(conn, id, f.answer_work_id.as_deref().unwrap())
-                .await?;
-        } else if !crate::memory::route(conn, id, f).await? {
-            crate::host::domain::route_command(conn, id, f).await?;
-        }
+        accept_source(conn, id, f).await?;
     }
     let accepted: bool =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accepted_sources WHERE event_id=?)")
@@ -430,6 +422,46 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
         receipt["work_answer"] = json!({"matched":routed});
     }
     Ok(receipt)
+}
+
+async fn accept_source(conn: &mut SqliteConnection, event: i64, frame: &Frame) -> Result<bool> {
+    let inserted = sqlx::query(
+        "INSERT INTO accepted_sources(event_id) VALUES(?) ON CONFLICT(event_id) DO NOTHING",
+    )
+    .bind(event)
+    .execute(&mut *conn)
+    .await?
+    .rows_affected()
+        == 1;
+    if let Some(work) = &frame.answer_work_id {
+        crate::work::questions::explicit(conn, event, work).await?;
+    } else if !crate::memory::route(conn, event, frame).await? {
+        crate::host::domain::route_command(conn, event, frame).await?;
+    }
+    Ok(inserted)
+}
+
+/// Promote the stored ID without reconstructing its transport deduplication scope.
+pub(crate) async fn promote(conn: &mut SqliteConnection, event: i64) -> Result<Value> {
+    let row = sqlx::query(
+        "SELECT e.envelope,e.raw_actor,e.actor_stage FROM events e
+         JOIN entries d ON d.id=e.entry_id AND d.closed_at IS NULL
+         WHERE e.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)",
+    )
+    .bind(event)
+    .fetch_one(&mut *conn)
+    .await?;
+    let frame: Frame = serde_json::from_str(row.get("envelope"))?;
+    let verified = facts(conn, &frame).await?;
+    if !frame.ordinary()
+        || !verified.current
+        || verified.actor != row.get::<Option<String>, _>("raw_actor")
+        || verified.stage != row.get::<Option<String>, _>("actor_stage")
+    {
+        return Err("original observation cannot be promoted".into());
+    }
+    let inserted = accept_source(conn, event, &frame).await?;
+    Ok(json!({"event":event,"accepted":true,"newly_accepted":inserted}))
 }
 
 pub async fn validate_claim(conn: &mut SqliteConnection, event: i64) -> Result<Value> {

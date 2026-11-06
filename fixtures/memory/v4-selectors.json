@@ -1,0 +1,335 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/memory/mutation/service.py": "92b3489a7fb00c3898da301597e1aa3f18e8ce8a5860b26bf29baa6ca0e62b76",
+    "src/yuki/memory/mutation/models.py": "ee16c01a51db05faca77e5ec84b9b5193a6de64a1283b189c7190f55c3cf3f22",
+    "src/yuki/memory/repository.py": "7b2d37568cc74677664e710d0bad8263fb90a532f4d6478d50cbaac5cb570e80",
+    "src/yuki/memory/validation.py": "45c22810baeb5678492dceb9c09ca8b26852aec1660b088bd5054813367ba555"
+  },
+  "cases": [
+    {
+      "name": "exact_key",
+      "facts": [
+        {
+          "memory_key": "tea",
+          "content": "likes tea",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:26.418096+00:00"
+        },
+        {
+          "memory_key": "coffee",
+          "content": "likes coffee",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:26.445193+00:00"
+        }
+      ],
+      "selector": {
+        "memory_key": "tea"
+      },
+      "ok": true,
+      "reason_code": "user_retracted",
+      "candidate_indices": [],
+      "candidate_rows": [],
+      "states": [
+        "invalidated",
+        "active"
+      ]
+    },
+    {
+      "name": "normalized_key",
+      "facts": [
+        {
+          "memory_key": "tea key",
+          "content": "likes tea",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:26.693703+00:00"
+        }
+      ],
+      "selector": {
+        "memory_key": " tea\u0000\tkey "
+      },
+      "ok": true,
+      "reason_code": "user_retracted",
+      "candidate_indices": [],
+      "candidate_rows": [],
+      "states": [
+        "invalidated"
+      ]
+    },
+    {
+      "name": "exact_content",
+      "facts": [
+        {
+          "memory_key": "tea",
+          "content": "Likes Tea",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:26.961889+00:00"
+        }
+      ],
+      "selector": {
+        "old_content": "likes tea"
+      },
+      "ok": true,
+      "reason_code": "user_retracted",
+      "candidate_indices": [],
+      "candidate_rows": [],
+      "states": [
+        "invalidated"
+      ]
+    },
+    {
+      "name": "original_case",
+      "facts": [
+        {
+          "memory_key": "tea",
+          "content": "Likes Tea",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.239843+00:00"
+        }
+      ],
+      "selector": {
+        "old_content": "Likes Tea"
+      },
+      "ok": false,
+      "reason_code": "memory_candidate_ambiguous",
+      "candidate_indices": [
+        0
+      ],
+      "candidate_rows": [
+        {
+          "fact_id": 1,
+          "memory_ref": "M1",
+          "key": "tea",
+          "category": "drink",
+          "kind": "fact",
+          "content": "Likes Tea",
+          "status": "active"
+        }
+      ],
+      "states": [
+        "active"
+      ]
+    },
+    {
+      "name": "category",
+      "facts": [
+        {
+          "memory_key": "tea",
+          "content": "tea one",
+          "category": "first",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.451652+00:00"
+        },
+        {
+          "memory_key": "tea",
+          "content": "tea two",
+          "category": "second",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.470102+00:00"
+        }
+      ],
+      "selector": {
+        "memory_key": "tea",
+        "category": "second"
+      },
+      "ok": true,
+      "reason_code": "user_retracted",
+      "candidate_indices": [],
+      "candidate_rows": [],
+      "states": [
+        "active",
+        "invalidated"
+      ]
+    },
+    {
+      "name": "ambiguous",
+      "facts": [
+        {
+          "memory_key": "tea",
+          "content": "tea 0",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.761835+00:00"
+        },
+        {
+          "memory_key": "tea",
+          "content": "tea 1",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.781372+00:00"
+        },
+        {
+          "memory_key": "tea",
+          "content": "tea 2",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.798310+00:00"
+        },
+        {
+          "memory_key": "tea",
+          "content": "tea 3",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.814673+00:00"
+        },
+        {
+          "memory_key": "tea",
+          "content": "tea 4",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:27.831362+00:00"
+        }
+      ],
+      "selector": {
+        "memory_key": "tea"
+      },
+      "ok": false,
+      "reason_code": "memory_candidate_ambiguous",
+      "candidate_indices": [
+        4,
+        3,
+        2
+      ],
+      "candidate_rows": [
+        {
+          "fact_id": 5,
+          "memory_ref": "M5",
+          "key": "tea",
+          "category": "drink",
+          "kind": "fact",
+          "content": "tea 4",
+          "status": "active"
+        },
+        {
+          "fact_id": 4,
+          "memory_ref": "M4",
+          "key": "tea",
+          "category": "drink",
+          "kind": "fact",
+          "content": "tea 3",
+          "status": "active"
+        },
+        {
+          "fact_id": 3,
+          "memory_ref": "M3",
+          "key": "tea",
+          "category": "drink",
+          "kind": "fact",
+          "content": "tea 2",
+          "status": "active"
+        }
+      ],
+      "states": [
+        "active",
+        "active",
+        "active",
+        "active",
+        "active"
+      ]
+    },
+    {
+      "name": "partial_content",
+      "facts": [
+        {
+          "memory_key": "internal",
+          "content": "preferred jasmine tea",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:28.069849+00:00"
+        }
+      ],
+      "selector": {
+        "old_content": "jasmine"
+      },
+      "ok": false,
+      "reason_code": "memory_candidate_ambiguous",
+      "candidate_indices": [
+        0
+      ],
+      "candidate_rows": [
+        {
+          "fact_id": 1,
+          "memory_ref": "M1",
+          "key": "internal",
+          "category": "drink",
+          "kind": "fact",
+          "content": "preferred jasmine tea",
+          "status": "active"
+        }
+      ],
+      "states": [
+        "active"
+      ]
+    },
+    {
+      "name": "literal_wildcards",
+      "facts": [
+        {
+          "memory_key": "x%_y",
+          "content": "literal",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:28.283708+00:00"
+        },
+        {
+          "memory_key": "xABCzy",
+          "content": "other",
+          "category": "drink",
+          "person": "1001",
+          "updated_at": "2026-11-05T23:52:28.301983+00:00"
+        }
+      ],
+      "selector": {
+        "memory_key": "%_"
+      },
+      "ok": false,
+      "reason_code": "memory_candidate_ambiguous",
+      "candidate_indices": [
+        0
+      ],
+      "candidate_rows": [
+        {
+          "fact_id": 1,
+          "memory_ref": "M1",
+          "key": "x%_y",
+          "category": "drink",
+          "kind": "fact",
+          "content": "literal",
+          "status": "active"
+        }
+      ],
+      "states": [
+        "active",
+        "active"
+      ]
+    },
+    {
+      "name": "foreign",
+      "facts": [
+        {
+          "memory_key": "private:cat",
+          "content": "private cat",
+          "category": "profile",
+          "person": "2002",
+          "updated_at": "2026-11-05T23:52:28.561876+00:00"
+        }
+      ],
+      "selector": {
+        "memory_key": "private:cat"
+      },
+      "ok": false,
+      "reason_code": "memory_candidate_not_found",
+      "candidate_indices": [],
+      "candidate_rows": [],
+      "states": [
+        "active"
+      ]
+    }
+  ],
+  "scope": "Actual original mutation selector outcomes in independent data directories; not Rust acceptance"
+}
