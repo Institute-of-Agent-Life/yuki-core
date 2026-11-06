@@ -80,8 +80,8 @@ pub(crate) async fn confirmed_text(
     Ok(Some(json!({"ok":true,"data":data,"retryable":false,"mutation_committed":true,"provider_id":"core","tool_name":"send"}).to_string()))
 }
 
-/// Only fully acknowledged file + caption sends have this original aggregate shape.
-pub(crate) async fn file_and_caption(
+/// Reconstruct a completed text batch or file with caption from every visible acknowledgement.
+pub(crate) async fn confirmed_parts(
     db: &mut SqliteConnection,
     exec: &str,
     op: &str,
@@ -89,7 +89,8 @@ pub(crate) async fn file_and_caption(
     let rows=sqlx::query(
         "SELECT p.actor,p.entry,p.stage,p.scope,p.window,s.ordinal,s.child,s.wire_action,
          CASE p.scope WHEN 'private' THEN dst.original_person ELSE space.id END AS subject,
-         d.event,d.body,v.id AS artifact,v.filename,v.digest,v.size,v.kind
+         d.event,d.body,v.id AS artifact,v.filename,v.digest,v.size,v.kind,
+         (SELECT count(*) FROM social_parts all_parts WHERE all_parts.namespace=p.namespace AND all_parts.operation_id=p.operation_id) AS planned
          FROM social_plans p
          JOIN operations o ON o.namespace=p.namespace AND o.operation_id=p.operation_id
          JOIN social_parts s ON s.namespace=p.namespace AND s.operation_id=p.operation_id
@@ -104,72 +105,86 @@ pub(crate) async fn file_and_caption(
               AND EXISTS(SELECT 1 FROM media_version_readers r WHERE r.version=v.id AND r.reader=p.namespace)
          WHERE p.namespace=? AND p.operation_id=? AND o.action='external' AND o.target='send'
            AND o.state='confirmed' AND s.state='confirmed' AND coalesce(w.generation,1)=p.window
-           AND (SELECT count(*) FROM social_parts all_parts WHERE all_parts.namespace=p.namespace AND all_parts.operation_id=p.operation_id)=2
          ORDER BY s.ordinal"
     ).bind(exec).bind(op).fetch_all(&mut *db).await?;
-    let [file, caption] = rows.as_slice() else {
+    let Some(first) = rows.first() else {
         return Ok(None);
     };
-    if file.try_get::<i64, _>("ordinal")? != 0
-        || caption.try_get::<i64, _>("ordinal")? != 1
-        || !matches!(
-            file.try_get::<&str, _>("wire_action")?,
-            "upload_private_file" | "upload_group_file"
-        )
-        || !matches!(
-            caption.try_get::<&str, _>("wire_action")?,
-            "send_private_msg" | "send_group_msg"
-        )
-        || file.try_get::<Option<&str>, _>("kind")? != Some("file")
-    {
+    if rows.len() < 2 || first.try_get::<i64, _>("planned")? != rows.len() as i64 {
         return Ok(None);
     }
-    let entry: &str = file.try_get("entry")?;
-    let scope = crate::history::query::members::scope(db, exec, file.try_get("actor")?).await?;
-    let Some(subject) = file.try_get::<Option<&str>, _>("subject")? else {
+    let entry: &str = first.try_get("entry")?;
+    let scope = crate::history::query::members::scope(db, exec, first.try_get("actor")?).await?;
+    let Some(subject) = first.try_get::<Option<&str>, _>("subject")? else {
         return Ok(None);
     };
     if !scope.entries.iter().any(|e| e == entry) {
         return Ok(None);
     }
-    let body: Value = serde_json::from_str(caption.try_get("body")?)?;
-    let Some([segment]) = body["message"].as_array().map(Vec::as_slice) else {
-        return Ok(None);
-    };
-    let Some(text) = segment["data"]["text"]
-        .as_str()
-        .filter(|_| segment["type"] == "text")
-    else {
-        return Ok(None);
-    };
-    let target = json!({"kind":if file.try_get::<&str,_>("scope")?=="private"{"person"}else{"space"},"id":subject});
-    let file_meta = json!({"artifact_id":file.try_get::<&str,_>("artifact")?,
-        "name":file.try_get::<&str,_>("filename")?, "filename":file.try_get::<&str,_>("filename")?,
-        "version":file.try_get::<&str,_>("digest")?, "size":file.try_get::<i64,_>("size")?,"attachment_kind":"file"});
-    let mut parts = Vec::new();
-    for (row, is_caption) in [(file, false), (caption, true)] {
+    let target = json!({"kind":if first.try_get::<&str,_>("scope")?=="private"{"person"}else{"space"},"id":subject});
+    let mut parts = Vec::with_capacity(rows.len());
+    let mut events = Vec::with_capacity(rows.len());
+    let mut data = json!({"operation_id":op,"status":"succeeded","target":target,
+        "event_id":null,"original_event_id":null,"original_conversation_id":null,"error_category":null,
+        "planned_messages":rows.len(),"sent_messages":rows.len()});
+    for (index, row) in rows.iter().enumerate() {
+        if row.try_get::<i64, _>("ordinal")? != index as i64 {
+            return Ok(None);
+        }
         let event: i64 = row.try_get("event")?;
         let mut child = json!({"operation_id":row.try_get::<&str,_>("child")?,"action":"send_message",
             "status":"succeeded","target":target,"presence_id":row.try_get::<&str,_>("stage")?,
             "event_id":event,"original_event_id":event,"original_conversation_id":entry,"error_category":null,
-            "delivered_text_available":true,"text_planned":is_caption,"delivered_text":if is_caption{text}else{""}});
-        if !is_caption {
-            child
-                .as_object_mut()
-                .unwrap()
-                .extend(file_meta.as_object().unwrap().clone());
+            "delivered_text_available":true});
+        match row.try_get::<&str, _>("wire_action")? {
+            "send_private_msg" | "send_group_msg" => {
+                let body: Value = serde_json::from_str(row.try_get("body")?)?;
+                let Some([segment]) = body["message"].as_array().map(Vec::as_slice) else {
+                    return Ok(None);
+                };
+                let Some(text) = segment["data"]["text"]
+                    .as_str()
+                    .filter(|_| segment["type"] == "text")
+                else {
+                    return Ok(None);
+                };
+                child["text_planned"] = json!(true);
+                child["delivered_text"] = json!(text);
+            }
+            "upload_private_file" | "upload_group_file"
+                if index == 0
+                    && rows.len() == 2
+                    && row.try_get::<Option<&str>, _>("kind")? == Some("file") =>
+            {
+                for (key, column) in [
+                    ("artifact_id", "artifact"),
+                    ("name", "filename"),
+                    ("filename", "filename"),
+                    ("version", "digest"),
+                    ("attachment_kind", "kind"),
+                ] {
+                    let value = json!(row.try_get::<&str, _>(column)?);
+                    data[key] = value.clone();
+                    child[key] = value;
+                }
+                data["size"] = json!(row.try_get::<i64, _>("size")?);
+                child["size"] = data["size"].clone();
+                child["text_planned"] = json!(false);
+                child["delivered_text"] = json!("");
+            }
+            _ => return Ok(None),
         }
         parts.push(child);
+        events.push(event);
+    }
+    for event in events {
         sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
             .bind(exec)
             .bind(event)
             .execute(&mut *db)
             .await?;
     }
-    let mut data = file_meta;
-    data.as_object_mut().unwrap().extend(json!({"operation_id":op,"status":"succeeded","target":target,
-        "event_id":null,"original_event_id":null,"original_conversation_id":null,"error_category":null,
-        "planned_messages":2,"sent_messages":2,"parts":parts}).as_object().unwrap().clone());
+    data["parts"] = json!(parts);
     Ok(Some(
         json!({"ok":true,"data":data,"retryable":false,"mutation_committed":true,
         "provider_id":"core","tool_name":"send"})

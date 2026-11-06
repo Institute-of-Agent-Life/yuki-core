@@ -151,7 +151,7 @@ pub(crate) async fn receipt<'a>(
     if let Some(text) = crate::social::model_receipt::confirmed_text(db, exec, op).await? {
         return Ok(text.into());
     }
-    if let Some(receipt) = crate::social::model_receipt::file_and_caption(db, exec, op).await? {
+    if let Some(receipt) = crate::social::model_receipt::confirmed_parts(db, exec, op).await? {
         return Ok(receipt.into());
     }
     Ok(original.into())

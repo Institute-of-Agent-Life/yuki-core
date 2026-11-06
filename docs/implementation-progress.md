@@ -1,5 +1,7 @@
 # 核心實作進度
 
+CORE-013／040（`codex/core-040-automatic-replay`）已修復六段長文字的模型回條。舊版 A／B 的原始 Chat 請求與資料庫事實在 `artifacts/CORE-040/automatic-original-{A,B}-01/`。Rust 曾只返回派發摘要；修正後 96,000 token 門檻觸發公開 Compact，接續請求逐段帶回六個已確認事件。第三段在下一次預留時遭撤回，該預留的實體派發數為零。Mac 已驗 CORE-040（186 項）與 CORE-013（350 項），產物各在 `artifacts/CORE-{040,013}/automatic-split-check-01/`。精簡測試驅動後另跑兩條時序，32 項通過，見 `artifacts/CORE-040/automatic-native-09/`。原始 P 規劃拒絕後走 E 的 Rust 對拍仍待驗。
+
 截至 2026-11-06 04:20（洛杉磯），main 已合併 #83、#39、#40（`5557e35`），三端逐次各驗 36、37、38 卡。回執在 `artifacts/ci/local-pr/{83,39,40}/receipt.json`。#43 的 Linux 回執已完成，仍待完整三端合併檢查。Mac 的舊原生編譯產物和內建 Docker 增量快取合計釋出約 85 GiB；驗證在 `artifacts/ci/cleanup-20261106/`。
 
 CORE-013（#85，`codex/core-013-file-send-receipt`，來源 `04139ad30742`）的三端候選均已打包。每端 CORE-013 通過 349 項、CORE-040 通過 152 項。Windows 檔案傳送回條和重放分別保存在 `windows/manifest.json`、`windows/related-core040/manifest.json`。候選可供擴展倉唯讀對拍，狀態為未發布，schema 51，Rust SDK 1.0.0-alpha.14，Python SDK 1.0.0a14。各包位於 `artifacts/CORE-013/file-caption-04139ad30742/<平台>/handoff/`，實含方法以包中清單為準。
