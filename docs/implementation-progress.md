@@ -202,3 +202,5 @@ CORE-025 六項 CI 通過並合併 main `692e323`；CORE-033 已整合此來源�
 CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自動合併重複的 provider 欄位，保留原工具宣告入口。Mac CORE-016、014、039 全部通過 `artifacts/CORE-016/dist-main-segments-03/`、`artifacts/CORE-014/dist-segments-integration-02/`、`artifacts/CORE-039/work-segments-main-integration-02/`。PR #42 以整合後 head 等 CI。
 
 PR #42 macOS Intel CI `42071266030` 在 CORE-039 冷 release 編譯達 600 秒上限，尚未進入產品案例；原 artifact `.cache/segments-ci-13441839430.zip`，SHA-256 `6546648675809170fcb363d0797ccd2b86dc547bfcf6323e673b77ca35affdf5`。編譯器 release 階段獨立給 1200 秒，其他命令及案例期限不變，所有編譯超時現在保留 stdout／stderr 和 timed_out 回條。Mac CORE-039 `segments-release-build-budget-01/` 通過；注入超時 `segments-release-timeout-evidence-01/` 正確失敗並保留兩路輸出。PR #42 按新 head 重驗三平台，未把原失敗標為通過。
+
+CI 排隊修正（`codex/ci-pr-queue`）：檢查 40 個開放 PR 時，最新提交有 58 個 Intel macOS job 在排隊；16 個 PR 另有 45 個過期 run 仍列為 queued。改為每個 PR 只驗一次 GitHub 產生的合併版本；新提交取代同 PR 舊檢查，轉換基底時重驗。PR 跑 Windows、Linux、Apple Silicon macOS；main 推送、手動完整檢查及 Intel 候選流程保留 Intel Mac。所有原有卡片、斷言及時限不變。SQLite 歷史測試庫按 migration 連同 checksum 一起提交；本機 reader 5、20、29 的 schema／資料相同，注入壞 SQL 會回滾整個未完成 migration。診斷與實測：[本機紀錄](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/queue-triage-01/)。
