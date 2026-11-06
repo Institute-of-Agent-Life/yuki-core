@@ -244,7 +244,7 @@ pub fn decode(v: &Value, task: Option<&Task>, cfg: &Config, paid: &Value) -> Res
                     }
                     emitted = Some(block["input"].clone());
                 } else {
-                    let mut intent = chat::intent(id, name, block["input"].clone())?;
+                    let mut intent = chat::intent(id, name, block["input"].clone());
                     if let Some(error) = error {
                         super::tool_rejection::mark(&mut intent, error);
                     }

@@ -27,6 +27,8 @@ CORE-040 的三個執行端共用同一份帶 SHA-256 的 QQ 封包。A 使用�
 
 ## 搜尋結果數
 
-固定 v4 的一般 Main 對模型公開 query、topic、time_range、start_date 和 end_date。處理器從當次部署的 web.search_max_results 取得結果數，再呼叫搜尋後端。Rust 的獨立搜尋連線現在以 [search] 的 max_results 選定數量，預設 5，支援 1 至 20。新執行將上限寫入原 Main Profile 合同。已凍結的模型工具及其顯式數量仍沿原執行處理。
+固定 v4 的一般 Main 對模型公開 query、topic、time_range、start_date 和 end_date。處理器從當次部署的 `web.search_max_results` 取得結果數，再呼叫搜尋後端。Rust 的獨立搜尋連線現在以 `[search]` 的 `max_results` 選定數量，預設 5，支援 1 至 20。新執行將上限寫入原 Main Profile 合同。已凍結的模型工具及其顯式數量仍沿原執行處理。
 
-CORE-024 透過一般 Main 送出同批兩個請求。合法請求以部署值 3 呼叫一次獨立的本機 Responses 端點並讀回來源，企圖指定 20 的請求在派發前收到拒絕。逐字工具宣告對固定 E13 原 wire 的 SHA-256，實際請求及回應見卡片輸出 search-tool-policy.json。低階 operator 仍可測不同限制的快取隔離。原先關閉搜尋的 E13 三組試驗保留其原配置及結果。
+CORE-024 透過一般 Main 送出同批兩個請求。合法請求以部署值 3 呼叫一次獨立的本機 Responses 端點並讀回來源，企圖指定 20 的請求在派發前收到拒絕。逐字工具宣告對固定 E13 原 wire 的 SHA-256，實際請求及回應見卡片輸出 `search-tool-policy.json`。低階 operator 仍可測不同限制的快取隔離。原先關閉搜尋的 E13 三組試驗保留其原配置及結果。
+
+升級重放使用來源 `c6bd0c75e387` 的已簽署 Mac 執行檔。原 Work 接納後在分段邊界關機；重新啟動時將部署上限設為 3。原執行仍能用其已付合同明示 7，獨立搜尋實收 7，回條接回原 Work。新執行的數量由新部署決定。
