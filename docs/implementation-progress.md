@@ -97,3 +97,13 @@ CORE-013 目標：`codex/core-013-send-entry`；[原 QQ 目標、時序及界線
 - 外部能力：EXT-004／006 附件授權與 fetch、EXT-020 gVisor/execd/PTY 旋轉、EXT-015 agent_target/附件/SSE、SnowLuma 映像 digest 與雙向包仍待真實方法、版本或證據。
 - 安裝與切換：CORE-043 等 EXT-041 與核心分發／移轉輸入；044 等 EXT-067 B0 實測；045 等 EXT-043 已發布 tuple 與 044；046 等 EXT-044／045 安裝證據；047、053、054 依各前置。CORE-041／042 等 CORE-040 等價切片判斷；不把未滿足前置的卡標完成。
 - 下一個可獨立工作：有效期間乾淨候選已完成；`codex/core-033-connector-auth` 已實作 EXT-011 明確要求的未選 Work 裝置認證，三平台候選已驗，待 EXT-011 對拍。這是核心生產者應補的入口，不列為等待擴展提供的方法。Client9 明選入口／會話已產出候選；接續原 Social Outbound 斷線續讀、附件與 send／workspace 的本倉責任；CORE-040 仍需完整等功能切片。擴展倉保持只讀。
+
+CORE-018 與 CORE-013 交叉驗證：排程私聊、SELF 群聊的文字送達，均對照原 QQ ACK 的操作 ID、事件、對話、Presence 及目的類型。PR #79 與 #81 原 CI 讀取舊回條欄位而失敗；Mac 已驗 103 項，見 `artifacts/CORE-018/schedule-model-receipt-01/manifest.json`。
+
+CI 排隊修正（[PR #83](https://github.com/Institute-of-Agent-Life/yuki-core/pull/83)，`codex/ci-pr-queue`）：40 個開放 PR 的當時 head 有 58 個 Intel Mac job 在等。逐筆重查已過期的 45 個 run，GitHub 確認取消 43 個；2 個已有 job 執行，保留。以其他任務分支為基底的 PR 先跑 Linux 全套；以 main 為基底或轉向 main 的 PR 跑 Windows、Linux、Apple Silicon macOS 三平台完整合併檢查。同 PR 新提交取消舊任務。main 推送及手動完整檢查保留 Intel Mac。
+
+`python ci/suite.py --out <新目錄>` 從 `ci/checks.json` 取完整清單。每台先跑含 release 的卡、fmt、clippy、writer tests、debug／release build；兩個分開的程序執行其餘案例，同一工作內依來源與 SHA-256 綁定編譯證據。快取只供 Cargo 依賴及編譯中間物，仍執行本倉的編譯與測試。卡片的斷言、期限及具名輸出保留。失敗或未跑完時，`suite.json` 列出缺口，整體回非零。SQLite 歷史測試庫分 migration 提交；reader 5、20、29 的 schema／資料相同，注入錯誤可回滾。原 Mac CORE-032 曾等不到 Rust 回呼；兩段獨立案例現在等前一回合完成，失敗時保留操作與預算診斷。佇列與測試紀錄在 [artifacts/ci](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/)。
+
+PR #79 整合新的 CI 入口。Mac 完整驗證通過 49 張卡，見 `artifacts/ci/pr79-suite-mac-02/suite.json`。第一次複測時 Rust 消費者離線，未取得當次退出原因。CORE-032 現在等待該消費者完成 SDK 握手，並保存握手狀態或退出錯誤。四次獨立啟動均完成實際工具呼叫，見 `artifacts/CORE-032/pr79-startup-probe-01/` 至 `04/`。同步採用 #77 驗過的 Windows Manager 回條讀取方式，HJW 原生 CORE-039 的 150 項驗證見 `artifacts/CORE-039/manager-ready-reader-windows-01/manifest.json`。
+
+PR #81 同步 #79 的發送回條與 CI 修正，保留兩次 Compact 的原始重播。Mac 49 張卡全部通過，包含 CORE-018、032、039 與 040，見 `artifacts/ci/pr81-suite-mac-01/suite.json`。HJW 原生 Windows 另完成 CORE-018 共 103 項斷言，見 `artifacts/CORE-018/schedule-model-receipt-windows-02/manifest.json`。
