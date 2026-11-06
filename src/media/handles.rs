@@ -28,6 +28,9 @@ pub async fn original(
         JOIN events e ON e.id=s.event JOIN events current ON current.id=h.event JOIN assignments stage ON stage.id=s.stage
         WHERE h.event=?1 AND h.slot=?2 AND stage.status='active' AND s.state!='erased' AND current.entry_id=e.entry_id
         AND e.entry_id IN(SELECT value FROM json_each(?3)) AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source IN(h.event,s.event))").bind(event).bind(slot).bind(serde_json::to_string(&scope.entries)?).fetch_one(&mut *conn).await?;
+    if r.get::<Option<&str>, _>("acquired_via") == Some("gateway.media") {
+        crate::host::gateway_media::cached_authority(conn, r.get("event")).await?;
+    }
     let expires = r.try_get::<Option<i64>, _>("expires")?;
     let at = now()?;
     let state = r.try_get::<String, _>("state")?;
@@ -44,6 +47,10 @@ pub async fn cache(
     proof: &Value,
     data: &Snapshot,
 ) -> Result<Value> {
+    if let Some(value) = proof.get("gateway_fetch") {
+        let gate: crate::host::gateway_media::Gate = serde_json::from_value(value.clone())?;
+        gate.recheck(conn).await?;
+    }
     let mime = super::mime(data);
     let current = original(conn, exec, actor, event, slot).await?;
     for name in ["source", "slot", "stage", "origin", "kind"] {
@@ -61,8 +68,11 @@ pub async fn cache(
         return Ok(current);
     }
     store_blob(conn, data).await?;
-    sqlx::query("UPDATE media_sources SET digest=?,mime=?,expires=?,acquired_via=?,state='cached' WHERE event=? AND slot=? AND state='unprepared'")
-        .bind(&data.digest).bind(mime).bind(now()?.checked_add(LIFETIME).ok_or("media expiry overflow")?).bind(proof["acquired_via"].as_str()).bind(current["source"].as_i64()).bind(current["slot"].as_i64()).execute(&mut *conn).await?;
+    let changed = sqlx::query("UPDATE media_sources SET digest=?1,mime=?2,expires=min(coalesce(expires,?3),?3),acquired_via=?4,state='cached' WHERE event=?5 AND slot=?6 AND state='unprepared'")
+        .bind(&data.digest).bind(mime).bind(now()?.checked_add(LIFETIME).ok_or("media expiry overflow")?).bind(proof["acquired_via"].as_str()).bind(current["source"].as_i64()).bind(current["slot"].as_i64()).execute(&mut *conn).await?.rows_affected();
+    if changed != 1 {
+        return Err("attachment source changed before storage".into());
+    }
     original(conn, exec, actor, event, slot).await
 }
 async fn store_blob(conn: &mut SqliteConnection, data: &Snapshot) -> Result<()> {

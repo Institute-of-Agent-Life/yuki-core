@@ -18,6 +18,8 @@ pub struct Install {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notifications: Option<super::notification::Policy>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gateway_media: Option<super::gateway_media::Identity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sessions: Option<super::plugin_sessions::Policy>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maintenance: Option<super::maintenance::Policy>,
@@ -94,6 +96,14 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if self.grants.contains("gateway.media") != self.gateway_media.is_some()
+            || self
+                .gateway_media
+                .as_ref()
+                .is_some_and(|i| !i.valid() || !self.grants.contains("gateway.inbound"))
+        {
+            return Err("gateway.media requires an inbound installation with an explicit application identity".into());
+        }
         if let Some(policy) = &self.notifications {
             policy.validate(self)?;
         }
@@ -195,6 +205,9 @@ impl Install {
     }
     pub fn revision(&self) -> Result<String> {
         let mut identity = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if let Some(media) = &self.gateway_media {
+            identity["gateway_media"] = serde_json::to_value(media)?;
+        }
         if let Some(policy) = &self.notifications {
             identity["notifications"] = serde_json::to_value(policy)?;
         }
@@ -281,6 +294,7 @@ mod tests {
     #[test]
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
+            gateway_media: None,
             notifications: None,
             enabled: true,
             configuration: None,

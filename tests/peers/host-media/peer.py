@@ -58,6 +58,21 @@ def serve(frame):
                 "watermark": p["watermark"],
                 "proof": "cleared-local-fixture",
             }
+        elif method == "gateway.media":
+            idx, offset = p["attachment_index"], p["offset"]
+            if p["media_identity"] != json.loads((folder/"authority.json").read_bytes()):
+                raise ValueError("native credentials differ from the original application or tenant")
+            with lock, (folder/"fetch-calls.ndjson").open("a",encoding="utf-8") as calls:
+                calls.write(json.dumps([p["source_event"],idx,offset])+"\n")
+            raw = (folder/"native.bin").read_bytes()
+            note("fetch-"+str(idx)+"-"+str(offset), p)
+            if p["reference"] == "late" and offset:
+                deadline = time.monotonic()+7
+                while not (folder/"release-page").exists() and time.monotonic()<deadline: time.sleep(.01)
+            chunk = raw[offset:offset+p["length"]]
+            result = {"transfer":p["transfer"],"offset":offset,"size":len(raw),"sha256":hashlib.sha256(raw).hexdigest(),"data":base64.b64encode(chunk).decode()}
+            if p["reference"]=="wrong-digest": result["sha256"]="f"*64
+            if p["reference"]=="wrong-offset": result["offset"]+=1
         elif method == "gateway.plan_send":
             chosen = p["arguments"].get("media")
             if (folder / "tamper-plan").exists() and chosen:

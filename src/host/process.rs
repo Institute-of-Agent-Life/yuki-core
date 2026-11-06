@@ -18,6 +18,7 @@ struct Message {
     frame: Value,
     handle: Option<String>,
     flushed: Option<oneshot::Sender<()>>,
+    fetch: Option<(Id, super::gateway_media::Gate)>,
 }
 struct Pending {
     handle: Option<String>,
@@ -50,6 +51,7 @@ impl Session {
             .try_send(Message {
                 frame,
                 handle: None,
+                fetch: None,
                 flushed: None,
             })
             .is_ok()
@@ -60,6 +62,7 @@ impl Session {
             .send(Message {
                 frame,
                 handle: None,
+                fetch: None,
                 flushed: Some(tx),
             })
             .await?;
@@ -72,6 +75,25 @@ impl Session {
         method: &str,
         params: Value,
         handle: Option<String>,
+    ) -> Result<Value> {
+        self.call_scoped(store, method, params, handle, None).await
+    }
+    pub(super) async fn fetch_page(
+        &self,
+        store: &Store,
+        params: Value,
+        gate: super::gateway_media::Gate,
+    ) -> Result<Value> {
+        self.call_scoped(store, "gateway.media", params, None, Some(gate))
+            .await
+    }
+    async fn call_scoped(
+        &self,
+        store: &Store,
+        method: &str,
+        params: Value,
+        handle: Option<String>,
+        fetch: Option<super::gateway_media::Gate>,
     ) -> Result<Value> {
         let id = Id::Text(format!(
             "host-{}",
@@ -105,6 +127,7 @@ impl Session {
         let msg = Message {
             frame: json!({"jsonrpc":"2.0","id":id,"method":method,"params":params}),
             handle: handle.clone(),
+            fetch: fetch.map(|gate| (id.clone(), gate)),
             flushed: None,
         };
         if self.send.try_send(msg).is_err() {
@@ -218,6 +241,7 @@ pub async fn launch(
     let instance = generation.clone();
     let halt = session.stop.clone();
     let mut w_stop = stopping.clone();
+    let waiters = session.pending.clone();
     let writer = tokio::spawn(async move {
         loop {
             let msg = tokio::select! {biased;_=w_stop.changed()=>break,m=queue.recv()=>match m{Some(v)=>v,None=>break}};
@@ -226,6 +250,22 @@ pub async fn launch(
             };
             if bytes.len() > MAX_FRAME_BYTES {
                 break;
+            }
+            // Check at dequeue, not at the earlier time the request entered the pipe queue.
+            if let Some((request, gate)) = &msg.fetch
+                && write(
+                    &store_writer,
+                    Change::FetchDispatch(Box::new(gate.clone()), id.clone(), instance.clone()),
+                )
+                .await
+                .is_err()
+            {
+                if let Some(p) = waiters.lock().await.remove(request) {
+                    let _ = p
+                        .reply
+                        .send(Err("original gateway media dispatch denied".into()));
+                }
+                continue;
             }
             if let Some(h) = &msg.handle
                 && write(

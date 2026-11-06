@@ -433,14 +433,29 @@ async fn acquire(
         return Ok(proof);
     }
     let rt = runtime(store)?;
-    let snapshot = if let Some((_, _, path)) = local {
+    let source = proof["source"]
+        .as_i64()
+        .ok_or("missing attachment source")?;
+    let hosted =
+        crate::host::gateway_media::hosted(&mut *store.readers().acquire().await?, source).await?;
+    let snapshot = if hosted {
+        if local.is_some() {
+            return Err("installed gateway requires its original receiver".into());
+        }
+        let (data, gate) =
+            crate::host::gateway_media::fetch(store, exec, actor, event, slot).await?;
+        proof["gateway_fetch"] = serde_json::to_value(gate)?;
+        data
+    } else if let Some((_, _, path)) = local {
         let path = path.to_owned();
         let root = rt.inputs.clone();
         tokio::task::spawn_blocking(move || root.snapshot(&path)).await??
     } else {
         rt.receive(hub, &proof).await?
     };
-    proof["acquired_via"] = json!(if local.is_some() {
+    proof["acquired_via"] = json!(if hosted {
+        "gateway.media"
+    } else if local.is_some() {
         "trusted_input_file"
     } else {
         "original_receiver"

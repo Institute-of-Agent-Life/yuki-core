@@ -5,6 +5,7 @@ pub(crate) mod composition;
 pub(crate) mod configuration;
 mod control;
 pub(crate) mod domain;
+pub(crate) mod gateway_media;
 mod grants;
 pub(crate) mod lifecycle;
 pub(crate) mod maintenance;
@@ -43,6 +44,7 @@ pub enum Change {
     Enable(String, bool),
     Callback(String, String, String, Value),
     Call(calls::Change),
+    FetchDispatch(Box<gateway_media::Gate>, String, String),
     Composition(Box<composition::Change>),
     CommandDone(i64, String),
     Reported(i64, String),

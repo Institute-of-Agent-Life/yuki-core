@@ -217,6 +217,13 @@ async fn inbound(
     if !bot_ok {
         return Err("gateway bot does not belong to this installed namespace".into());
     }
+    let previous: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_ingress WHERE plugin=? AND source=?)")
+            .bind(id)
+            .bind(&key)
+            .fetch_one(&mut *conn)
+            .await?;
+    let media = super::gateway_media::inbound_identity(conn, id, generation, p).await?;
     let account = new_id(conn).await?;
     sqlx::query("INSERT INTO accounts(id,platform,namespace,native) VALUES(?,?,?,?) ON CONFLICT(platform,namespace,native) DO NOTHING").bind(account).bind(&platform).bind(&namespace).bind(sender).execute(&mut *conn).await?;
     let account: String =
@@ -271,7 +278,18 @@ async fn inbound(
     };
     let result = admit::from_gateway(conn, frame, p["accept"].as_bool().unwrap_or(false)).await?;
     sqlx::query("INSERT INTO host_ingress VALUES(?,?,?,?) ON CONFLICT(plugin,source) DO UPDATE SET accepted=excluded.accepted WHERE host_ingress.event=excluded.event")
-       .bind(id).bind(key).bind(result["event"].as_i64()).bind(result["accepted"]==true).execute(conn).await?;
+       .bind(id).bind(key).bind(result["event"].as_i64()).bind(result["accepted"]==true).execute(&mut *conn).await?;
+    if let Some(identity) = media {
+        super::gateway_media::record(
+            conn,
+            id,
+            p,
+            &identity,
+            result["event"].as_i64().ok_or("missing gateway event")?,
+            previous,
+        )
+        .await?;
+    }
     Ok(result)
 }
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
@@ -286,6 +304,10 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 .bind(event)
                 .execute(conn)
                 .await?;
+            Ok(Value::Null)
+        }
+        Change::FetchDispatch(gate, plugin, generation) => {
+            gate.check(conn, plugin, generation).await?;
             Ok(Value::Null)
         }
         Change::Configure(installs) => configure(conn, installs).await,

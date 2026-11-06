@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import hashlib, json, os, struct, subprocess, sys, zlib
 from pathlib import Path
 from tests.harness.compact import Owner, call, reply
+from tests.harness.gateway_media import run as gateway_inbound
 from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer
 from contextlib import closing
@@ -567,6 +568,7 @@ def run(ctx):
             if m.startswith("media.")
         ),
         "gateway_delivery": gateway_delivery(ctx, sdk, paper),
+        "gateway_inbound": gateway_inbound(ctx, sdk),
         "original_digest": digest,
         "physical_reader": capture,
         "foreign_handle_denied": True,

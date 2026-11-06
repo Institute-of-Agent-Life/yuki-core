@@ -248,6 +248,14 @@ def tested_contents(receipt, profile, personal=False, card=None):
         ) != set(json.loads(methods)["methods"]):
             raise ValueError("media methods differ from exercised original")
         files["protocol/media/methods.json"] = methods
+        gateway=receipt("gateway-inbound-media.json")
+        doc=json.loads(gateway)
+        oracle=(ROOT/"fixtures/media/gateway-media-v4.json").read_bytes()
+        if digest(oracle)!=doc["original_oracle_sha256"] or data["gateway_inbound"]!=doc:
+            raise ValueError("inbound gateway receipt differs from validated source")
+        files["evidence/gateway-inbound-media.json"]=gateway
+        files["evidence/gateway-media-v4.json"]=oracle
+        files["docs/gateway-inbound-media.md"]=(ROOT/"docs/gateway-inbound-media.md").read_bytes()
     if personal:
         methods = (ROOT / "protocol/plugin/personal/methods.json").read_bytes()
         if digest(methods) != data["personal_schema_sha256"] or set(
@@ -563,6 +571,9 @@ def build(manifest_path, out, development=False):
         candidate["validated_http_routes"] = data["validated_routes"]
     if media:
         candidate["media_schema_revision"] = 1
+        candidate["database_schema_revision"]=m["schema_version"]
+        candidate["validated_gateway_media_method"]=data["gateway_inbound"]["method"]
+        candidate["gateway_media_oracle_sha256"]=data["gateway_inbound"]["original_oracle_sha256"]
         candidate["media_schema_sha256"] = data["media_schema_sha256"]
         candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
     if notifications:

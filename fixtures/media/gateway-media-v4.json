@@ -1,0 +1,17 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "tests/integration/test_telegram_attachment_tools.py": "14f29794f48ee00ca5261a1c3c7f90d78ed76a6aedaa92b65399588f82fea4f9",
+    "tests/integration/test_feishu_attachment_tools.py": "25bece01aba9ec708f9c3ff376a9e078de26089ae6c5b3776323c38a90160183",
+    "src/yuki/gateway/providers/feishu.py": "d4cc00e824155f329d0d14c0e2781ba015826957caeee796b4e7b7162ecf6a5a",
+    "src/yuki/gateway/providers/feishu_ingress.py": "7ef8cddce8e6ccfe9d746b6ce6623676b5f82ac60929bb3e7bdd601293a23ed3"
+  },
+  "cases": [
+    "tests/integration/test_telegram_attachment_tools.py",
+    "tests/integration/test_feishu_attachment_tools.py"
+  ],
+  "pytest_exit": 0,
+  "scope": "Original Telegram and Feishu attachment resolution and cache, including original presence and locator priority.",
+  "case_count": 18,
+  "junit_sha256": "ec4ec2973d73d10f3dde252ff991a0904c4b61d14bffd964699fa00c2d5f416f"
+}
