@@ -595,6 +595,28 @@ pub(crate) async fn operator(store: &Store, action: Action) -> Result<Value> {
     }
 }
 
+/// The private stream exposes only SOUL revisions, and only to the original
+/// superuser. Neither the document nor its management record enters a frame.
+pub(crate) async fn personal_soul_revisions(
+    db: &mut SqliteConnection,
+    service: &Service,
+    source: &str,
+) -> Result<Option<Value>> {
+    if !sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM persons WHERE id=? AND enabled AND admin)",
+    )
+    .bind(source)
+    .fetch_one(&mut *db)
+    .await?
+        || get(db, "character-soul-active").await?.is_none()
+    {
+        return Ok(None);
+    }
+    let current = soul::read(db, service).await?;
+    Ok(Some(
+        json!({"revision":current["revision"],"active_revision":current["active_revision"]}),
+    ))
+}
 pub(crate) async fn current_name(db: &mut SqliteConnection) -> Result<Option<String>> {
     if get(db, "character-name-managed").await?.is_none() {
         return Ok(None);

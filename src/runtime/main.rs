@@ -1,3 +1,4 @@
+pub(crate) mod activity;
 mod domain;
 pub(crate) use domain::{human_text as event_text, window};
 pub(crate) mod segment;
@@ -463,6 +464,7 @@ impl Runner {
             let id = exec.clone();
             let hub = self.hub.clone();
             let task = self.tasks.spawn(async move {
+                let _live = store.active_turns.enter(&id);
                 if let Err(error) =
                     transport::run(&store, &cfg, &client, &data, &id, rx, &hub).await
                 {

@@ -15,7 +15,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::sync::LazyLock;
-fn reply(res: Result<Value>, envelope: bool) -> Response {
+pub(super) fn reply(res: Result<Value>, envelope: bool) -> Response {
     match res {
         Ok(value) => Json(if envelope {
             json!({"data":value})
@@ -46,7 +46,7 @@ fn reply(res: Result<Value>, envelope: bool) -> Response {
         }
     }
 }
-fn bearer(h: &HeaderMap) -> Result<String> {
+pub(super) fn bearer(h: &HeaderMap) -> Result<String> {
     let h = h
         .get("authorization")
         .and_then(|v| v.to_str().ok())
@@ -436,6 +436,7 @@ pub fn router(store: Store) -> Router {
         .route("/client/v1/me", get(me))
         .route("/client/v1/home", get(home))
         .route("/client/v1/conversations/{id}/events", get(events))
+        .route("/client/v1/stream", get(super::stream::open))
         .route("/client/v1/messages", post(message))
         .route("/client/v1/works", get(works))
         .route("/client/v1/works/{id}", get(one_work))

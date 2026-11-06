@@ -223,11 +223,13 @@ async fn execute(args: Args) -> Result<()> {
                 domain.worker("memory_vectors", vectors.is_some(), vectors.as_ref());
             }
             let signal = stop.clone();
+            let draining = store.draining_http.clone();
             let service = axum::serve(listener, router).with_graceful_shutdown(async move {
                 #[cfg(unix)]
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {}, _ = terminate.recv() => {} }
                 #[cfg(windows)]
                 tokio::select! { _ = signal.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
+                draining.send_replace(true);
                 qq.shutdown();
             }).await;
             if let Some(host) = &store.host {

@@ -6,6 +6,7 @@ mod http;
 mod native;
 mod receipts;
 mod selection;
+mod stream;
 mod views;
 mod work;
 use crate::{

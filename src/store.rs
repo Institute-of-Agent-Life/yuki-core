@@ -376,6 +376,8 @@ enum Command {
 
 #[derive(Clone)]
 pub struct Store {
+    pub(crate) draining_http: tokio::sync::watch::Sender<bool>,
+    pub(crate) active_turns: crate::runtime::main::activity::Active,
     pub(crate) profile_files: Option<Arc<crate::model::profile_store::Service>>,
     pub(crate) control: Option<Arc<crate::operator::domain::Service>>,
     pub media: Option<Arc<crate::media::Runtime>>,
@@ -471,6 +473,8 @@ impl Store {
             let _ = driver.close().await;
         });
         Self {
+            draining_http: tokio::sync::watch::channel(false).0,
+            active_turns: Default::default(),
             profile_files: None,
             control: None,
             vectors: None,

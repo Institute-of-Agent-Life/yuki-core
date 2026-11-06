@@ -29,6 +29,7 @@ CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux �
 | CORE-026 有效期間 | PR #65，`6d47464`，`codex/core-026-memory-temporal` | Windows／Linux／Mac 各 1181 項；7 張相鄰卡、72 組原解析、8 步原修改及逐 ZIP 檢查通過。reader 45，尚未發布。 |
 | CORE-033 未選 Work 認證 | PR #66，`3e4080d`，`codex/core-033-connector-auth` | 三平台各 369 項、原版 8 項與 6 張相鄰卡通過。首次 HJW 打包因 Windows 執行檔鎖失敗；清理修正後三平台乾淨候選各 369 項且 ZIP 成員已驗。reader 46，SDK alpha.12／a12。 |
 | CORE-033 Client9 明選 | `codex/core-033-entry-selection` | A→B／既有 ACP、舊 NULL、原 Work mailbox 與 Host 授權；[方法與失敗時序](client-entry-selection.md)。reader 47；Mac 558 項、7 張相鄰卡通過。乾淨三平台候選接續。 |
+| CORE-033 Client9 出站串流 | `codex/core-033-client-stream` | [提交提示、快照與按事件續讀](client-stream.md)。Mac 581 項、原版 5 項及 6 張相鄰卡通過；三平台候選接續。 |
 | CORE-040 | #55 `400c9b8`，部分完成 | 12 次冷暖 A/B/C 各 1200 輸入已逐筆核效果；完整工具／DTO／Compact 等價與受控資源比較未完成，不判 Rust 勝出。 |
 
 每個 PR 均等其前置合併與最新 head 的 push／PR × Windows／Linux／Mac 六項檢查全通過才合併。待合併分支以 PR 的 head ref 為準；本地 worktree 在 `.cache/worktrees/`。不直接提交 main。

@@ -6,7 +6,7 @@ use crate::Result;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::{Value, json};
 use sqlx::{Row, SqliteConnection};
-async fn entry(conn: &mut SqliteConnection, who: &Principal, id: &str) -> Result<Value> {
+pub(super) async fn entry(conn: &mut SqliteConnection, who: &Principal, id: &str) -> Result<Value> {
     let row=sqlx::query("SELECT e.id,e.actor_stage,a.platform,p.name,e.closed_at,s.status AS binding_status,coalesce(w.generation,1) AS generation,coalesce((SELECT max(v.id) FROM events v LEFT JOIN personal_live_deliveries d ON d.event=v.id WHERE v.entry_id=e.id AND (d.id IS NOT NULL OR json_extract(v.envelope,'$.kind')='message') AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=v.id)),0) AS latest FROM entries e JOIN assignments s ON s.id=e.actor_stage JOIN accounts a ON a.id=s.account_id JOIN persons p ON p.id=s.original_person AND p.enabled LEFT JOIN main_windows w ON w.conversation=e.id WHERE e.id=? AND e.scope='private' AND coalesce(p.current_root,p.id)=? ").bind(id).bind(&who.root).fetch_optional(conn).await?.ok_or("not_found")?;
     Ok(
         json!({"conversation_id":row.get::<&str,_>("id"),"binding_id":row.get::<&str,_>("actor_stage"),"platform":row.get::<&str,_>("platform"),"display_name":row.get::<&str,_>("name"),"status":row.get::<&str,_>("binding_status"),"generation":row.get::<i64,_>("generation"),"revision":row.get::<i64,_>("generation"),"latest_event_id":row.get::<i64,_>("latest")}),

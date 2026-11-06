@@ -267,6 +267,13 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/client-entry-selection.json']=selected
         files['evidence/entry-selection.json']=oracle
         files['docs/client-entry-selection.md']=(ROOT/'docs/client-entry-selection.md').read_bytes()
+        stream=receipt('client-outbound-stream.json')
+        source=(ROOT/'fixtures/personal/client-stream-v4.json').read_bytes()
+        if digest(source)!=json.loads(stream)['original_oracle_sha256']:
+            raise ValueError('Client9 stream oracle differs from validated input')
+        files['evidence/client-outbound-stream.json']=stream
+        files['evidence/client-stream-v4.json']=source
+        files['docs/client-stream.md']=(ROOT/'docs/client-stream.md').read_bytes()
 
         files['docs/connector-authentication.md']=(ROOT/'docs/connector-authentication.md').read_bytes()
         for index in (
@@ -534,6 +541,9 @@ def build(manifest_path, out, development=False):
         selected=json.loads(receipt('client-entry-selection.json'))
         candidate['validated_client_selection_headers']=selected['selected_headers']
         candidate['client_selection_oracle_sha256']=selected['original_oracle_sha256']
+        stream=json.loads(receipt('client-outbound-stream.json'))
+        candidate['client_stream_oracle_sha256']=stream['original_oracle_sha256']
+        candidate['validated_stream_recovery']='fresh sync and durable events after cursor'
         candidate['database_schema_revision']=m['schema_version']
         candidate["personal_schema_sha256"] = data["personal_schema_sha256"]
         candidate["client_api_revision"] = 9
