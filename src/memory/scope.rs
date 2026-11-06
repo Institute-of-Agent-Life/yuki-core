@@ -52,12 +52,15 @@ pub async fn visible(
     cursor: &str,
     limit: i64,
 ) -> Result<Vec<String>> {
-    let rows=sqlx::query_scalar("SELECT f.id FROM memory_facts f LEFT JOIN persons p ON p.id=f.person LEFT JOIN persons owner ON owner.id=coalesce(p.current_root,p.id)
+    let rows=sqlx::query_scalar("WITH relations AS MATERIALIZED(SELECT person,space FROM memory_group_relations),
+     spaces AS MATERIALIZED(SELECT space FROM relations WHERE person=?3 AND (NOT ?6 OR space=(SELECT space FROM entries WHERE id=?4))),
+     peers AS MATERIALIZED(SELECT DISTINCT person FROM relations WHERE space IN(SELECT space FROM spaces))
+     SELECT f.id FROM memory_facts f LEFT JOIN persons p ON p.id=f.person LEFT JOIN persons owner ON owner.id=coalesce(p.current_root,p.id)
      WHERE (?1 IS NULL OR f.id=?1) AND f.id>?2 AND f.status!='erased' AND (?1 IS NOT NULL OR f.status='active')
      AND (f.person IS NULL OR (p.enabled AND owner.enabled)) AND (
-       (f.kind='person' AND (owner.id=?3 OR EXISTS(SELECT 1 FROM memory_group_relations a JOIN memory_group_relations b ON b.space=a.space WHERE a.person=?3 AND b.person=owner.id AND (NOT ?6 OR a.space=(SELECT space FROM entries WHERE id=?4)))))
-       OR (f.kind='group' AND EXISTS(SELECT 1 FROM memory_group_relations g WHERE g.person=?3 AND g.space=f.space AND (NOT ?6 OR g.space=(SELECT space FROM entries WHERE id=?4))))
-       OR (f.kind='person_group' AND EXISTS(SELECT 1 FROM memory_group_relations a JOIN memory_group_relations b ON a.space=b.space WHERE a.person=?3 AND b.person=owner.id AND a.space=f.space AND (NOT ?6 OR a.space=(SELECT space FROM entries WHERE id=?4))))
+       (f.kind='person' AND (owner.id=?3 OR owner.id IN(SELECT person FROM peers)))
+       OR (f.kind='group' AND f.space IN(SELECT space FROM spaces))
+       OR (f.kind='person_group' AND f.space IN(SELECT space FROM spaces) AND (owner.id,f.space) IN(SELECT person,space FROM relations))
        OR (f.kind='self' AND (f.visibility='global' OR f.visibility_entry=?4))
        OR (?5 AND f.kind!='self' AND EXISTS(SELECT 1 FROM memory_evidence original WHERE original.fact=f.id AND original.entry=?4 AND original.quote IS NOT NULL)))
      ORDER BY f.id LIMIT ?7").bind(id).bind(cursor).bind(&r.root).bind(&r.base.home).bind(r.admin).bind(r.delegated).bind(limit).fetch_all(conn).await?;

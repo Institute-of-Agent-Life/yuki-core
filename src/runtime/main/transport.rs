@@ -108,6 +108,9 @@ impl Dispatch {
             "inspect_conversation_attachment" | "workspace_inspect" => {
                 crate::media::perform(&store, &cfg, &hub, &exec, &actor, &id).await?;
             }
+            "search_memory" => {
+                crate::memory::search_tool::perform(&store, &exec, &actor, &id, &t.payload).await?;
+            }
             "read_memory" | "memory_change" => {
                 crate::memory::tools::perform(&store, &exec, &actor, &id).await?
             }

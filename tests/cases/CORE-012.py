@@ -140,9 +140,23 @@ def run(ctx):
                     db.row_factory = sqlite3.Row
                     diagnostic = {table: [dict(row) for row in db.execute("SELECT * FROM " + table)]
                                   for table in ("executions", "main_turns", "operations", "model_attempts")}
+                ctx.write("main-wire-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT activation,id FROM model_requests"),
+                })
                 diagnostic["physical_deliveries"] = list(server.deliveries)
                 ctx.write("main-wire-timeout.json", diagnostic)
                 raise AssertionError("physical Main request not received; see main-wire-timeout.json") from error
+            except Exception:
+                ctx.write("main-wire-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT activation,id FROM model_requests"),
+                })
+                raise
             return raw, json.loads(raw), reply
 
         with service.running():

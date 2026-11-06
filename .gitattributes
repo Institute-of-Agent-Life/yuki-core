@@ -13,3 +13,7 @@ sdk/rust/Cargo.lock text eol=lf
 native/windows-runtime/COPYING.RUNTIME text eol=lf whitespace=-blank-at-eof
 src/context/main-program.txt text eol=lf
 character/SOUL.md text eol=lf
+
+# Preserve upstream Vec1 source bytes in Windows checkouts.
+native/vec1/vec1.c -text whitespace=-trailing-space,-space-before-tab,-blank-at-eof
+native/vec1/sqlite3.h -text

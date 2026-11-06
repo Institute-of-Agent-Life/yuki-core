@@ -1,6 +1,6 @@
 pub(crate) mod index;
 pub(crate) use index::outbound as outbound_text;
-mod normalize;
+pub(crate) mod normalize;
 mod opencc;
 pub mod query;
 

@@ -51,6 +51,7 @@ def tested_contents(receipt, profile, personal=False):
         "evidence/" + proof_name: proof,
         "LICENSE": (ROOT / "LICENSE").read_bytes(),
         "NOTICE": (ROOT / "NOTICE").read_bytes(),
+        "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
     if personal:
