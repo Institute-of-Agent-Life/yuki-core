@@ -369,6 +369,8 @@ def run(ctx):
                 )
             }
         )
+    from tests.harness.memory_contest import run as contest
+    ctx.write("memory-contest.json", contest(ctx))
     from tests.harness.memory_merge import run as merge
     ctx.write("memory-merge.json",merge(ctx))
     from tests.harness.memory_restore import run as restore

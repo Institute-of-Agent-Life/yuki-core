@@ -68,7 +68,7 @@ async fn summary(
     home_only: bool,
     detail: bool,
 ) -> Result<Value> {
-    let row=sqlx::query("SELECT f.*,state.status AS current_status,v.body,v.confidence FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id JOIN memory_versions v ON v.fact=f.id AND v.revision=f.revision WHERE f.id=?").bind(id).fetch_one(&mut *conn).await?;
+    let row=sqlx::query("SELECT f.*,state.status AS current_status,state.conflict_state,v.body,v.confidence FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id JOIN memory_versions v ON v.fact=f.id AND v.revision=f.revision WHERE f.id=?").bind(id).fetch_one(&mut *conn).await?;
     let revision: i64 = row.try_get("revision")?;
     let evidence = evidence::readable(conn, r, actor, id, home_only).await?;
     let metadata = super::metadata::read(conn, id).await?;
@@ -79,7 +79,7 @@ async fn summary(
         &metadata,
         row.try_get::<String, _>("fact_key")?
     ]));
-    let mut result = json!({"fact":id,"fact_id":row.try_get::<i64,_>("number")?,"revision":revision,"status":row.try_get::<String,_>("current_status")?,"kind":row.try_get::<String,_>("kind")?,
+    let mut result = json!({"fact":id,"fact_id":row.try_get::<i64,_>("number")?,"revision":revision,"status":row.try_get::<String,_>("current_status")?,"conflict_state":row.try_get::<String,_>("conflict_state")?,"kind":row.try_get::<String,_>("kind")?,
        "person":row.try_get::<Option<String>,_>("person")?,"space":row.try_get::<Option<String>,_>("space")?,"visibility":row.try_get::<String,_>("visibility")?,
        "fact_key":row.try_get::<String,_>("fact_key")?,"body":row.try_get::<Option<String>,_>("body")?,"confidence":row.try_get::<Option<f64>,_>("confidence")?,
        "readable_evidence":evidence.len(),"proof":binding,"metadata":metadata});
@@ -319,6 +319,12 @@ pub async fn edit(
                 ("retracted", None, current["confidence"].as_f64())
             };
             sqlx::query("UPDATE memory_facts SET revision=?,status=? WHERE id=? AND revision=? RETURNING id").bind(next).bind(status).bind(fact).bind(revision).fetch_one(&mut *conn).await?;
+            if !matches!(edit, Edit::Metadata { .. }) {
+                sqlx::query("DELETE FROM memory_conflict_flags WHERE fact=? AND role='original'")
+                    .bind(fact)
+                    .execute(&mut *conn)
+                    .await?;
+            }
             (fact.to_owned(), next, status, body, confidence)
         }
     };

@@ -17,7 +17,7 @@ pub(super) async fn source_ids(db: &mut SqliteConnection, fact: &str) -> Result<
       .bind(fact).fetch_all(db).await?)
 }
 pub(super) async fn version(db: &mut SqliteConnection, fact: &str) -> Result<String> {
-    let data:String=sqlx::query_scalar("SELECT json_array(f.kind,f.person,f.space,f.visibility,f.visibility_entry,f.fact_key,f.revision,state.status,v.body,v.confidence,d.category,d.kind,d.importance,d.temporal_mode,d.valid_from,d.valid_until) FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id JOIN memory_versions v ON v.fact=f.id AND v.revision=f.revision LEFT JOIN extract_fact_details d ON d.fact=f.id WHERE f.id=?")
+    let data:String=sqlx::query_scalar("SELECT json_array(f.kind,f.person,f.space,f.visibility,f.visibility_entry,f.fact_key,f.revision,state.status,state.conflict_state,v.body,v.confidence,d.category,d.kind,d.importance,d.temporal_mode,d.valid_from,d.valid_until) FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id JOIN memory_versions v ON v.fact=f.id AND v.revision=f.revision LEFT JOIN extract_fact_details d ON d.fact=f.id WHERE f.id=?")
         .bind(fact).fetch_one(&mut *db).await?;
     let evidence:Vec<String>=sqlx::query_scalar("SELECT json_array(kind,source_key,source_version,quote,entry,author,origin_execution,event) FROM memory_evidence WHERE fact=? ORDER BY id")
         .bind(fact).fetch_all(&mut *db).await?;

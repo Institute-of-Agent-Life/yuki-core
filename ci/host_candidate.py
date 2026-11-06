@@ -130,6 +130,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/memory-restore.json']=proof
         files['evidence/v4-restore.json']=raw_fixture
         files['docs/memory-restore.md']=(ROOT/'docs/memory-restore.md').read_bytes()
+        proof=receipt('memory-contest.json')
+        oracle=(ROOT/'fixtures/memory/v4-contest.json').read_bytes()
+        if digest(oracle)!=json.loads(proof)['oracle_sha256'] or json.loads(oracle)['projection']!=json.loads(proof)['projection']:raise ValueError('memory contest differs from original transition')
+        files['evidence/memory-contest.json']=proof
+        files['evidence/v4-contest.json']=oracle
+        files['docs/memory-contest.md']=(ROOT/'docs/memory-contest.md').read_bytes()
         proof=receipt('memory-merge.json')
         original=(ROOT/'fixtures/memory/v4-merge.json').read_bytes()
         if digest(original)!=json.loads(proof)['oracle_sha256']:raise ValueError('memory merge oracle differs from verified original')
@@ -519,13 +525,14 @@ def build(manifest_path, out, development=False):
     if memory:
         candidate['database_schema_revision']=m['schema_version']
         candidate['validated_core_tools']=['memory_change','read_memory']
-        candidate['validated_memory_operations']=['create','correct','invalidate','restore','update_metadata','merge']
+        candidate['validated_memory_operations']=['create','correct','invalidate','restore','update_metadata','merge','contest']
         candidate['validated_memory_selectors']=['current_speaker/person']
         candidate['memory_selector_oracle_sha256']=json.loads(receipt('memory-selectors.json'))['oracle_sha256']
         candidate['memory_temporal_oracle_sha256']=json.loads(receipt('memory-temporal.json'))['oracle_sha256']
         candidate['validated_memory_temporal_fields']=['valid_from','valid_until']
         candidate['memory_metadata_oracle_sha256']=json.loads(receipt('memory-metadata.json'))['oracle_sha256']
         candidate['memory_restore_oracle_sha256']=json.loads(receipt('memory-restore.json'))['oracle_sha256']
+        candidate['memory_contest_oracle_sha256']=json.loads(receipt('memory-contest.json'))['oracle_sha256']
         candidate['memory_merge_oracle_sha256']=json.loads(receipt('memory-merge.json'))['oracle_sha256']
         candidate['validation']['consumer']='physical Main, QQ command and original writer fixtures; SDK packages independently installed'
         candidate['validation']['real_extension_consumers']=False

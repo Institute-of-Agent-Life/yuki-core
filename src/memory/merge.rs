@@ -8,27 +8,6 @@ use crate::Result;
 use serde_json::{Value, json};
 use sqlx::SqliteConnection;
 
-async fn checked(db: &mut SqliteConnection, r: &Reader, exec: &str, id: &str) -> Result<Value> {
-    scope::writable(db, r, id).await?;
-    let (revision, proof): (i64, String) =
-        sqlx::query_as("SELECT revision,proof FROM memory_paid_reads WHERE execution=? AND fact=?")
-            .bind(exec)
-            .bind(id)
-            .fetch_optional(&mut *db)
-            .await?
-            .ok_or("read both original facts before merging")?;
-    let read = facts::read(db, r, Some(id), "", 1, true, false).await?;
-    let row = &read["items"][0];
-    if row["revision"] != revision
-        || row["proof"] != proof
-        || row["status"] != "active"
-        || row["kind"] != "person"
-    {
-        return Err("fact revision or readable evidence changed".into());
-    }
-    Ok(row.clone())
-}
-
 async fn resolve(
     db: &mut SqliteConnection,
     r: &Reader,
@@ -72,8 +51,8 @@ pub(super) async fn apply(
     if src == dst {
         return Err("cannot merge a memory fact into itself".into());
     }
-    let origin = checked(db, r, exec, &src).await?;
-    let target = checked(db, r, exec, &dst).await?;
+    let origin = tools::paid_active_person(db, r, exec, &src).await?;
+    let target = tools::paid_active_person(db, r, exec, &dst).await?;
     let person = |v: &Value| facts::Subject {
         kind: "person".into(),
         person: v["person"].as_str().map(str::to_owned),

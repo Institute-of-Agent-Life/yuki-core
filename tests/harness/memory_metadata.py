@@ -109,7 +109,7 @@ def upgrade(ctx):
         db.execute('INSERT INTO memory_retrieval_fts(rowid,content,memory_key,category) SELECT number,content,fact_key,category FROM retrieval_documents')
         ctx.equal('recorded reader 43 rows have valid foreign keys',db.execute('PRAGMA foreign_key_check').fetchall(),[])
         db.commit()
-    ctx.equal('populated reader 43 migrates to current metadata reader',svc.command('migrate')['schema_version'],52)
+    ctx.equal('populated reader 43 migrates to current metadata reader',svc.command('migrate')['schema_version'],53)
     def rows(sql):
         with closing(sqlite3.connect((svc.data/'core.sqlite').as_uri()+'?mode=ro',uri=True)) as db:return db.execute(sql).fetchall()
     before=rows('SELECT * FROM memory_operations ORDER BY original_key')

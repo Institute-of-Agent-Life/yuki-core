@@ -1,4 +1,5 @@
 mod commands;
+mod contest;
 pub mod embedding;
 pub(crate) mod evidence;
 pub mod extract;

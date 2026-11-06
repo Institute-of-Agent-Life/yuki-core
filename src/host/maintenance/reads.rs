@@ -70,9 +70,9 @@ pub(super) async fn facts_full(
     for item in result["items"].as_array_mut().ok_or("missing fact items")? {
         // The installed maintenance contract has no metadata field. Keep its
         // declared projection; the opaque proof still binds the full fact.
-        item.as_object_mut()
-            .ok_or("invalid fact item")?
-            .remove("metadata");
+        let projection = item.as_object_mut().ok_or("invalid fact item")?;
+        projection.remove("metadata");
+        projection.remove("conflict_state");
         if !evidence_granted {
             let object = item.as_object_mut().ok_or("invalid fact item")?;
             object.remove("proof");
