@@ -1,0 +1,5 @@
+# Merge two model-read facts
+
+Normal sequence: the model reads the current revisions of two facts in the same Person partition, then calls memory_change with operation merge, one source and one destination. Under the same writer lock, validate each read proof, current write authority, evidence visibility and both subject roots. Copy only authorized, original source evidence into the retained fact; the destination body and metadata remain its own. Record the equivalent relation and original operation, retire the source as superseded, and advance the destination proof together. Replaying the original operation reads its receipt.
+
+Fault sequence: missing or stale reads, a self-merge, another subject, a retired fact, ambiguous selectors, or a conflicting original key makes no changes. A source that was superseded cannot be restored by the invalidation API. An interrupted write leaves both facts unchanged or the complete merge. Erasure follows copied source evidence; keep the relation's opaque keys while removing private content. This revision covers active Person facts under the original speaker's authority; it does not advertise contested-state editing.

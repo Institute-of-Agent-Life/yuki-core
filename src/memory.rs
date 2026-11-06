@@ -1,9 +1,12 @@
+mod attribution;
 mod commands;
+mod contest;
 pub mod embedding;
 pub(crate) mod evidence;
 pub mod extract;
 pub mod facts;
 pub(crate) mod index;
+mod merge;
 mod metadata;
 mod rank;
 pub(crate) mod retrieve;

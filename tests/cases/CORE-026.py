@@ -369,6 +369,12 @@ def run(ctx):
                 )
             }
         )
+    from tests.harness.group_attribution import run as attribution
+    ctx.write("group-attribution.json",attribution(ctx))
+    from tests.harness.memory_contest import run as contest
+    ctx.write("memory-contest.json", contest(ctx))
+    from tests.harness.memory_merge import run as merge
+    ctx.write("memory-merge.json",merge(ctx))
     from tests.harness.memory_restore import run as restore
     restored=restore(ctx)
     ctx.write("memory-restore.json",restored)

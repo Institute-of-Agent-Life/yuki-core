@@ -66,6 +66,7 @@ pub struct Hit {
     pub revision: i64,
     pub id: String,
     pub text: String,
+    pub conflict: String,
     pub importance: i64,
     pub key: String,
     pub category: String,
@@ -112,7 +113,7 @@ pub fn global(hits: BTreeMap<i64, Hit>, query: &str, limit: usize) -> Vec<Value>
             .flatten()
             .map(|rank| 1. / (60 + rank) as f64)
             .sum::<f64>();
-        rows.push((band,fusion,h.importance,id,json!({"fact_id":id,"revision":h.revision,"fact":h.id,"text":h.text,"key":h.key,"lexical_score":h.lexical,"semantic_score":h.semantic,"lexical_rank":lex.get(&id),"semantic_rank":sem.get(&id),"relevance_band":band,"fusion_score":fusion,"selection_reason":reason})));
+        rows.push((band,fusion,h.importance,id,json!({"fact_id":id,"revision":h.revision,"fact":h.id,"text":h.text,"conflict_state":h.conflict,"key":h.key,"lexical_score":h.lexical,"semantic_score":h.semantic,"lexical_rank":lex.get(&id),"semantic_rank":sem.get(&id),"relevance_band":band,"fusion_score":fusion,"selection_reason":reason})));
     }
     rows.sort_by(|a, b| {
         b.0.cmp(&a.0)

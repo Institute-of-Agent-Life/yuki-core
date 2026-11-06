@@ -70,9 +70,17 @@ pub(super) async fn facts_full(
     for item in result["items"].as_array_mut().ok_or("missing fact items")? {
         // The installed maintenance contract has no metadata field. Keep its
         // declared projection; the opaque proof still binds the full fact.
-        item.as_object_mut()
-            .ok_or("invalid fact item")?
-            .remove("metadata");
+        let projection = item.as_object_mut().ok_or("invalid fact item")?;
+        projection.remove("metadata");
+        projection.remove("conflict_state");
+        projection.remove("authority");
+        if let Some(rows) = projection.get_mut("evidence").and_then(Value::as_array_mut) {
+            for row in rows {
+                if let Some(row) = row.as_object_mut() {
+                    row.remove("authority");
+                }
+            }
+        }
         if !evidence_granted {
             let object = item.as_object_mut().ok_or("invalid fact item")?;
             object.remove("proof");
@@ -105,7 +113,7 @@ pub(super) async fn audit(db: &mut SqliteConnection, c: &Change, g: &Granted) ->
     let mut items = vec![];
     let mut versions = vec![];
     for id in page {
-        let row=sqlx::query("SELECT f.revision,f.status,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id) AS total,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id AND e.quote IS NOT NULL) AS retained,(SELECT count(*) FROM fact_vectors v WHERE v.fact=f.id AND v.revision=f.revision) AS vectors FROM memory_facts f WHERE f.id=?")
+        let row=sqlx::query("SELECT f.revision,state.status,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id) AS total,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id AND e.quote IS NOT NULL) AS retained,(SELECT count(*) FROM fact_vectors v WHERE v.fact=f.id AND v.revision=f.revision) AS vectors FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id WHERE f.id=?")
             .bind(&id).fetch_one(&mut *db).await?;
         let evidence:Vec<String>=sqlx::query_scalar("SELECT json_array(e.kind,e.source_key,e.source_version,e.quote,source.envelope,(SELECT json_group_array(json_array(segment,text)) FROM (SELECT segment,text FROM history_transcripts WHERE source=e.event ORDER BY segment))) FROM memory_evidence e LEFT JOIN events source ON source.id=e.event WHERE e.fact=? ORDER BY e.id")
             .bind(&id).fetch_all(&mut *db).await?;
