@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 import json
 from pathlib import Path
 import sys
+import unittest
 import time
 
 from check import ROOT, run_card
@@ -72,4 +73,8 @@ def run(out):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', required=True, type=Path)
-    sys.exit(run(parser.parse_args().out.resolve()))
+    output = parser.parse_args().out.resolve()
+    tests = unittest.defaultTestLoader.discover(str(ROOT / "ci"), pattern="test_*.py")
+    if not unittest.TextTestRunner().run(tests).wasSuccessful():
+        sys.exit(1)
+    sys.exit(run(output))

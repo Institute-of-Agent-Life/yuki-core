@@ -266,3 +266,5 @@ PR #37 整合最新前置 `codex/core-028-vectors`，Mac 回歸 CORE-012、CORE-
 另核對 17 筆重複 push，取消仍只排隊等待 Intel Mac 的 16 筆。#67 已開始執行並最終通過，全部 17 筆 PR run 保留。逐筆回執位於 `artifacts/ci/queue-triage-01/verified-duplicate-push-cancellations.json`。#35 合併後的 Mac 全套 35 卡見 `artifacts/ci/pr83-vectors-main-mac-01/suite.json`。#37 合併後以 `3c16aaf` 為基底重新驗證 36 卡，Mac 產物位於 `artifacts/ci/pr83-retrieval-main-mac-01/suite.json`。
 
 PR #40 已整合 #83 的 CI 提交 `11e5a5b` 與 main 上的 CORE-028、029，同時保留 CORE-038 的媒體、ASR 和原路交付測試。Mac 37 卡通過，見 `artifacts/ci/pr40-current-main-mac-01/suite.json`。先以 #83 為基底跑 Linux，待 CI 修正合併後轉回 main 跑三平台。
+
+日常 PR 改用本地 Mac mini、同機 Linux ARM64 容器與 HJW Windows。三端均執行完整註冊套件。合併入口 `ci/local_matrix.py` 核對目前 PR 合併 SHA、來源樹、三個平台、全部斷言與具名產物雜湊，再寫入三個 GitHub commit status。#83 的首份本地合併回執位置為 `artifacts/ci/local-pr/83/receipt.json`。Intel Mac 候選驗證可手動執行。
