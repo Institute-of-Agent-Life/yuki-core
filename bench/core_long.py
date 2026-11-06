@@ -305,7 +305,16 @@ def run(ctx, index, *, withdraw_question=False, erase_file=False):
             body, q = wire()
             if erase_file:
                 import sqlite3
-                from bench.file_receipt import delivered
+                from bench.file_receipt import delivered, projection as file_projection
+
+                oracle = (
+                    ctx.root / "fixtures/oracle/v4/file-caption-receipt.json"
+                ).read_bytes()
+                ctx.equal(
+                    "sixth physical model request matches the original file and caption result",
+                    file_projection(delivered(body)),
+                    json.loads(oracle)["receipt"],
+                )
 
                 file_result = delivered(body)["data"]["parts"][0]
                 ctx.equal(
@@ -349,6 +358,7 @@ def run(ctx, index, *, withdraw_question=False, erase_file=False):
                 return {
                     "physical_calls": len(wires),
                     "seventh_dispatch": "held",
+                    "oracle_sha256": hashlib.sha256(oracle).hexdigest(),
                     "acknowledged_parts": len(physical),
                 }
             reply(
