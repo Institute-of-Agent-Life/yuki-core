@@ -95,7 +95,7 @@ class Owner:
         ) as db:
             return db.execute(sql, args).fetchall()
 
-    def human(self, text, group=None):
+    def human(self, text, group=None, *, nickname="Alice"):
         self.seq += 1
         frame = {
             "source": "P-" + str(self.seq),
@@ -105,7 +105,7 @@ class Owner:
             "occurred": 100 * self.seq,
             "observed": 100 * self.seq,
             "kind": "message",
-            "sender": {"nickname": "Alice"},
+            "sender": {"nickname": nickname},
             "segments": [{"type": "text", "text": text}],
         }
         if group:
