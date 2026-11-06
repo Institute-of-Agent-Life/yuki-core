@@ -1,0 +1,49 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "target_schema": {
+    "type": "object",
+    "description": "可选；省略时发送到当前群或当前私聊。明确发给别处时须指定 kind 和唯一标识。",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "person",
+          "space"
+        ]
+      },
+      "binding_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "person 的指定入口绑定；App/ACP 显式 person 目标可用此字段或 conversation_id。同时提供时 conversation_id 优先。"
+      },
+      "target_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "内部 Person/Space ID"
+      },
+      "conversation_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "明确发送入口的内部 Conversation ID；与 binding_id 同时提供时优先。"
+      }
+    },
+    "required": [
+      "kind",
+      "target_id"
+    ],
+    "additionalProperties": false
+  },
+  "cases": [
+    {
+      "case": "::test_main_discovers_subject_and_conversation_reads_neighbours_and_sends[False]",
+      "sends": 1,
+      "result": "succeeded"
+    },
+    {
+      "case": "::test_main_discovers_subject_and_conversation_reads_neighbours_and_sends[True]",
+      "sends": 1,
+      "result": "succeeded"
+    }
+  ],
+  "junit_sha256": "4beb364367bd520cb959135ac57f82409d77431a31be35c984b0edd15bc0b2aa"
+}

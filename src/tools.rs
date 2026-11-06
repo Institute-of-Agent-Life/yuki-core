@@ -46,6 +46,18 @@ pub async fn reject(
     op: &str,
     reason: String,
 ) -> Result<()> {
+    reject_receipt(store, exec, actor, op, reason).await?;
+    Ok(())
+}
+
+/// Return the writer's actual receipt: only an unclaimed intent may become a refusal.
+pub(crate) async fn reject_receipt(
+    store: &Store,
+    exec: &str,
+    actor: &str,
+    op: &str,
+    reason: String,
+) -> Result<Value> {
     store
         .write(Mutation::Tool(Box::new(Change {
             exec: exec.into(),
@@ -54,8 +66,7 @@ pub async fn reject(
             prepared: Err(reason),
             artifact_version: None,
         })))
-        .await?;
-    Ok(())
+        .await
 }
 pub async fn perform(
     store: &Store,

@@ -206,19 +206,34 @@ impl Dispatch {
                 crate::social::recall::perform(&store, &hub, &exec, &actor, &id).await?;
             }
             "send" if cfg.binding_endpoint.is_none() => {
-                if let Some(host) = &store.host
-                    && host.deliver(&store, &exec, &actor, &id).await?.is_some()
-                {
-                    return Ok(());
-                }
+                let delivery: Result<()> = async {
+                    if let Some(host) = &store.host
+                        && host.deliver(&store, &exec, &actor, &id).await?.is_some()
+                    {
+                        return Ok(());
+                    }
 
-                crate::media::prepare_host_delivery(&store, &exec, &actor, &t.payload).await?;
-                let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
-                if !matches!(
-                    result["state"].as_str(),
-                    Some("confirmed" | "failed" | "unknown")
-                ) {
-                    return Err("original social receipt pending".into());
+                    crate::media::prepare_host_delivery(&store, &exec, &actor, &t.payload).await?;
+                    let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
+                    if !matches!(
+                        result["state"].as_str(),
+                        Some("confirmed" | "failed" | "unknown")
+                    ) {
+                        return Err("original social receipt pending".into());
+                    }
+                    Ok(())
+                }
+                .await;
+                if let Err(err) = delivery {
+                    if !err.is::<crate::social::destination::Refused>() {
+                        return Err(err);
+                    }
+                    let receipt =
+                        crate::tools::reject_receipt(&store, &exec, &actor, &id, err.to_string())
+                            .await?;
+                    if receipt["state"] != "failed" {
+                        return Err(err);
+                    }
                 }
             }
             _ => {

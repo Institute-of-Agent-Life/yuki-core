@@ -1,4 +1,5 @@
 pub mod content;
+pub(crate) mod destination;
 pub(crate) mod recall;
 pub mod send;
 pub mod split;
@@ -80,7 +81,7 @@ pub async fn apply(conn: &mut SqliteConnection, c: &Change) -> Result<Value> {
         }
         Change::Reply(exec, id, n, reply) => send::settle(conn, exec, id, *n, reply.as_ref()).await,
         Change::Recall(exec, id, actor, n, session) => {
-            let route = send::route(conn, exec, actor).await?;
+            let route = destination::select(conn, exec, actor, id).await?.0;
             let part=sqlx::query("SELECT d.locator,d.child,p.stage,p.entry,p.window,p.actor FROM social_parts d JOIN social_plans p USING(namespace,operation_id)
                 WHERE p.namespace=? AND p.operation_id=? AND d.ordinal=? AND d.state='confirmed'")
                 .bind(exec).bind(id).bind(n).fetch_one(&mut *conn).await?;
@@ -193,7 +194,7 @@ pub async fn deliver(store: &Store, hub: &Hub, exec: &str, id: &str, actor: &str
                     return Ok(receipt);
                 }
             }
-            let route = send::route(&mut tx, exec, actor).await?;
+            let route = destination::select(&mut tx, exec, actor, id).await?.0;
             hub.session(&route.stage)
                 .ok_or("original receiver offline before dispatch")?
         };
@@ -252,7 +253,10 @@ pub async fn invoke(store: &Store, hub: &Hub, action: Action) -> Result<Value> {
         } => {
             let stage = {
                 let mut tx = store.readers().begin().await?;
-                send::route(&mut tx, &exec, &actor).await?.stage
+                destination::select(&mut tx, &exec, &actor, &id)
+                    .await?
+                    .0
+                    .stage
             };
             let session = hub
                 .session(&stage)

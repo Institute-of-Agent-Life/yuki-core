@@ -166,6 +166,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/original-recall-wire.json']=recall
         files['evidence/v4-recall.json']=original
         files['docs/recall-compat.md']=(ROOT/'docs/recall-compat.md').read_bytes()
+        wire=receipt('canonical-send-entry.json')
+        target=(ROOT/'fixtures/social/v4-send-target.json').read_bytes()
+        if digest(target)!=json.loads(wire)['oracle_sha256']:raise ValueError('send contract differs from verified original')
+        files['evidence/canonical-send-entry.json']=wire
+        files['evidence/v4-send-target.json']=target
+        files['docs/social-send-entry.md']=(ROOT/'docs/social-send-entry.md').read_bytes()
     if artifact:
         isolated=receipt('tool-call-isolation.json')
         original_rejections=(ROOT/'fixtures/tool-results/v4-call-rejections.json').read_bytes()
@@ -518,7 +524,9 @@ def build(manifest_path, out, development=False):
         candidate['validation']['real_extension_consumers']=False
     if observed_members:
         candidate['database_schema_revision']=m['schema_version']
-        candidate['validated_core_tools']=['get_group_members','recall_own_message']
+        candidate['validated_core_tools']=['get_group_members','recall_own_message','send']
+        candidate['send_target_oracle_sha256']=json.loads(receipt('canonical-send-entry.json'))['oracle_sha256']
+        candidate['send_target_scope']='original QQ Presence, current entry or scoped observed private/configured group entry'
         candidate['recall_oracle_sha256']=json.loads(receipt('original-recall-wire.json'))['recall_oracle_sha256']
         candidate['members_oracle_sha256']=data['members_oracle_sha256']
         candidate['coverage']='observed'

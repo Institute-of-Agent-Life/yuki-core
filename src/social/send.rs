@@ -105,12 +105,6 @@ async fn prepare(
     }
     let mut msg: content::Message = serde_json::from_str(op.try_get("payload")?)?;
     msg.text = content::outbound_text(&msg.text);
-    if let Some(target) = &msg.target
-        && ((r.group && (target.kind != "space" || target.id != r.entry))
-            || (!r.group && (target.kind != "person" || target.id != r.person)))
-    {
-        return Err("target differs from the authorized original conversation".into());
-    }
     let mut parts = content::plan(conn, exec, r, &msg, limits).await?;
     if let Some(source) = msg.reply_to_event_id {
         let locator:String=sqlx::query_scalar("SELECT l.native_id FROM event_locators l JOIN events e ON e.id=l.event_id WHERE e.id=? AND l.receiver=? AND e.entry_id=?
@@ -195,7 +189,7 @@ pub async fn next(
             return Ok(json!({"receipt":receipt}));
         }
     }
-    let route = route(conn, exec, actor).await?;
+    let (route, source) = super::destination::select(conn, exec, actor, id).await?;
     if let Some(row) = frozen {
         if row.try_get::<String, _>("stage")? != route.stage
             || row.try_get::<String, _>("entry")? != route.entry
@@ -207,6 +201,13 @@ pub async fn next(
             return Err("original frozen social route changed".into());
         }
     } else {
+        if let Some(event) = source {
+            sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
+                .bind(exec)
+                .bind(event)
+                .execute(&mut *conn)
+                .await?;
+        }
         if let Err(error) = prepare(conn, exec, id, actor, &route, limits).await {
             if !error.is::<content::UnavailableVersion>() {
                 return Err(error);
