@@ -2,6 +2,7 @@
 
 import json
 import os
+import queue
 import socket
 from unittest.mock import patch
 
@@ -24,6 +25,9 @@ def exchange(ctx, events):
 
 
 def run(ctx):
+    if ctx.fault == "empty-exception":
+        ctx.check("assertion before an empty-message exception", True)
+        raise queue.Empty
     if ctx.fault == "empty":
         return {}
     fixture = json.loads((ctx.root / "tests/fixtures/CORE-001.json").read_text())
@@ -35,11 +39,14 @@ def run(ctx):
     ctx.equal("event order", [row["request"]["event_id"] for row in wire],
               fixture["expected_order"])
     ctx.equal("deterministic replay", exchange(ctx, events), wire)
-    for fault, failure in [("swap", "event order"), ("empty", "empty case")]:
+    for fault, failure in [("swap", "event order"), ("empty", "empty case"),
+                           ("empty-exception", "Empty")]:
         manifest = ctx.rejected_run("CORE-001", fault)
         ctx.equal(f"{fault} exits nonzero", manifest["exit_code"], 1)
         ctx.equal(f"{fault} records a failed manifest", manifest["status"], "failed")
         ctx.check(f"{fault} has the intended failure", failure in manifest["failure"])
+        case = json.loads((ctx.output / ("fault-" + fault) / "case-result.json").read_text())
+        ctx.check(f"{fault} preserves the child exception", bool(case["failure"]))
     ctx.rejects("external IP is denied", PermissionError,
                 lambda: socket.create_connection(("203.0.113.1", 443), timeout=1))
     ctx.rejects("external DNS is denied", PermissionError,
@@ -51,7 +58,7 @@ def run(ctx):
         "kind": "harness-selftest",
         "fixture": "tests/fixtures/CORE-001.json",
         "normal": {"requests": len(wire), "responses": len(wire)},
-        "faults": {"swap": "rejected", "empty": "rejected"},
+        "faults": {"swap": "rejected", "empty": "rejected", "empty-exception": "rejected"},
         "replay": "identical ordered request/response bodies and virtual timestamps",
         "network": "Python socket boundary allows loopback only",
         "real_platform": {"status": "not_run", "reason": "synthetic harness bootstrap"},

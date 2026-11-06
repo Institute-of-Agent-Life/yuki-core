@@ -3,6 +3,7 @@
 import hashlib, json, sqlite3, sys
 from contextlib import closing
 from tests.harness.compact import Owner, call, reply
+from tests.harness.json_file import read_json
 from tests.peers.chat.recorder import Recorder
 
 
@@ -25,7 +26,7 @@ class Peer:
         self.post({"id": id, "method": method, "params": params})
         file = self.folder / ("out-" + str(id) + ".json")
         self.o.until(file.is_file)
-        r = json.loads(file.read_bytes())
+        r = read_json(file)
         self.o.ctx.equal(
             method + " public RPC " + ("granted" if ok else "denied"), "result" in r, ok
         )
@@ -74,7 +75,7 @@ def exercise(ctx, sdk, profile="debug"):
 
         a = o.until(new)
         seen.add(a.name)
-        return json.loads(a.read_bytes())
+        return read_json(a)
 
     def accepted(q):
         reply(
@@ -193,7 +194,7 @@ def exercise(ctx, sdk, profile="debug"):
                 p.rpc("terminal.scope", {"handle": oh})["mode"],
                 "read",
             )
-            old = json.loads((p.folder / "ready.json").read_bytes())["pid"]
+            old = read_json(p.folder / "ready.json", timeout=2)["pid"]
             o.op("host", "enable", "manager", "false")
             o.until(
                 lambda: o.rows("SELECT state FROM host_calls WHERE handle=?", oh)
@@ -209,7 +210,7 @@ def exercise(ctx, sdk, profile="debug"):
             )
             o.op("host", "enable", "manager", "true")
             o.until(
-                lambda: json.loads((p.folder / "ready.json").read_bytes())["pid"] != old
+                lambda: read_json(p.folder / "ready.json", timeout=2)["pid"] != old
             )
             p.rpc("terminal.scope", {"handle": oh}, False)
             _, q = o.wire(model)
@@ -247,7 +248,7 @@ def exercise(ctx, sdk, profile="debug"):
             p.rpc("terminal.scope", {"handle": h2}, False)
             edit("UPDATE executions SET work_id=? WHERE id=?", other, s2["execution"])
             # Stop the plugin after the physical call, before recording a run. The Manager is independent.
-            old = json.loads((p.folder / "ready.json").read_bytes())["pid"]
+            old = read_json(p.folder / "ready.json", timeout=2)["pid"]
             o.op("host", "enable", "manager", "false")
             o.until(
                 lambda: o.rows("SELECT state FROM host_calls WHERE handle=?", h2)
@@ -256,7 +257,7 @@ def exercise(ctx, sdk, profile="debug"):
             o.op("host", "enable", "manager", "true")
             o.until(
                 lambda: (p.folder / "ready.json").is_file()
-                and json.loads((p.folder / "ready.json").read_bytes())["pid"] != old
+                and read_json(p.folder / "ready.json", timeout=2)["pid"] != old
             )
             rec = p.rpc("terminal.scope", {"handle": h2})
             ctx.equal(
