@@ -714,3 +714,15 @@ reader 45 清除目前 erased fact 的 category／kind／importance／期間，�
 打包自測 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-package-development-01/yuki-memory-preview-fed00d2ca451-darwin-arm64.zip`，SHA-256 `87879ba3dec5309f7db26b26ae5d5132d8984df9e48409a0779c39ff9e4a00ec`。dirty source，僅自測；乾淨三平台候選接續。Host 2／handshake 1／SDK alpha.11、a11；未發布。
 
 CI 維護：PR #35 的原 Mac job 四小時無 runner；直接 rerun 被 GitHub 以仍在運行拒絕。核對同 head、另外兩平台成功且沒有運行中的 job 後，取消該待分配工作並以 --failed 重排 Mac；run `42102562779` attempt 2 保留原 Windows／Linux 成功，仍等待 Mac 真實結果。未跳過合併條件。
+
+### 有效期間乾淨三平台候選
+
+PR #65，來源 `6d474640a3b6212b87c1f724be69cb76e6af0014`，tree `99cf0af807fae3ddfda1ce33266dbf8fd49715f8a50df68e83bec8f047e196b8`。三平台各 1181 項；完整 ZIP 成員、bytes／SHA-256、來源／manifest 綁定、獨立 SDK 安裝及乾淨 PATH 啟動均已驗。Host 2／handshake 1／reader 45／SDK alpha.11、a11。未發布，無新真擴展消費回條。
+
+索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-handoff-final-01/verified-candidates.json`，SHA-256 `fe110e66e41cc41ea0155ea81c2ba82207610fa224f2053f865e4f580d943c13`。
+
+- macos：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-handoff-final-01/macos-validation/candidate/yuki-memory-preview-6d474640a3b6-darwin-arm64.zip`；SHA-256 `22677338720a95709af017cd914ce72e98faa5ea4f7c1dd98530258c3e27787e`。
+- linux：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-handoff-final-01/linux-validation/candidate/yuki-memory-preview-6d474640a3b6-linux-arm64.zip`；SHA-256 `1bfe1b11c88195b55c19c3c33cb276ff8b42ef287f2fef605dbfd94a56a0eaec`。
+- windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-handoff-final-01/windows-validation/handoff/yuki-memory-preview-6d474640a3b6-windows-x86_64.zip`；SHA-256 `dd690dea32b0b8120de4064871944ef004fcd495212aa10f83e964c81e8ad8b6`。
+
+Windows 原執行目錄 `D:\yuki-core-validation-20261104\CORE-026-99cf0af807fa-c7ed1819`。PR #64 最新 head 的 Windows CORE-037 逾時正在定位，尚未合併；候選驗證結果不改寫為整倉 CI 通過。
