@@ -2,6 +2,8 @@
 
 PR #51 已整合前置；Mac 037=977、048=663、039=84 項通過，回條在各卡 `control-integrated-parent-nov06-03/manifest.json`。
 
+PR #44 已整合前置；Mac 005=36、050=561 項通過，回條在各卡 `aux-model-parent-nov06-03/manifest.json`。
+
 來源：任務書 v3.2 核心文檔補核版，ZIP SHA-256
 `79dfd2ba5a8b96f22dea4c5f72a94ca761b15f2e354e33b36c7ecdbedc3ec3ee`。
 舊行為基線：`329ca7c487414d2f54ddd98ff4727446ed2446cd`，舊倉只讀。
@@ -438,6 +440,9 @@ CORE-029 合入新增工具後，CORE-012 的舊測試根額度在第三筆共�
 CORE-030 已整合檢索 `e9af0f5` 及 main 分發／個人入口。CORE-030 `forget-main-integration-01/` 與 CORE-039 `forget-main-final-01/` 通過；可攜包離線啟動明選 lexical-only。CORE-039 第三次整合遇到一次 Rust tool 後續請求未派發，保留 `forget-main-integration-03/host-rust-followup-diagnostic.json`；原因未定位。隨後 debug 三次、release 十二次診斷及移除臨時診斷後的最終檢查均通過，原故障回條保留，測試失敗時現在附原 turn／intent 狀態。PR #39 以整合 head 等 CI。
 CORE-025 六項 CI 通過並合併 main `692e323`；CORE-033 已整合此來源及核心分發入口。Mac CORE-033、039 通過 `artifacts/CORE-033/media-main-integration-01/`、`artifacts/CORE-039/personal-main-integration-01/`。PR #36 以整合後提交重新等待三平台 CI。
 
+
+
+CORE-038 已整合個人入口 `d576aee` 及 main `692e323` 的分發入口。Mac CORE-038、039 通過 `artifacts/CORE-038/dist-main-integration-01/`、`artifacts/CORE-039/media-broker-main-integration-01/`；整合用 development-package 實際打包及乾淨 PATH 啟動通過，該包標記 dirty 且未發布，並非新增正式交接包。PR #40 以新 head 重驗，等待個人入口在 main 完成。
 CORE-033 已由六項 CI 合併 main `76cf762`。CORE-028 整合此來源，保留兩張卡的 CI；Mac CORE-028／033／012／039 全部通過 `vectors-personal-main-01/`。Main fixture 沿用檢索已驗的 1,000,000 units，不改核心額度邏輯。PR #35 按最新整合 head 重新驗證三平台。
 
 CORE-029 整合向量 `e43339b` 與個人通道 main `76cf762`。Mac CORE-029、033、039 全部通過 `artifacts/CORE-{029,033,039}/retrieval-personal-main-01/`；兩組 SDK、個人協議與記憶檢索介面一併保留。PR #37 按此整合 head 等最新三平台 CI。
@@ -446,6 +451,12 @@ CORE-030 同步檢索 `87a07f9` 與個人入口 main `76cf762` 的提交祖先�
 
 CORE-034 接入清除 `b745a9d`、檢索及 main 的分發入口。Mac CORE-034 通過 `erasure-distribution-main-02/`，CORE-039／030 通過 `code-erasure-distribution-main-03/`、`code-distribution-main-03/`。整合時移除重複的 Tool provider 欄位，候選共用打包器按被驗的 debug／release profile 取二進位；兩次先前失敗回條保留。原 `f74ecdd` 三機候選仍按原來源供擴展讀取，PR #43 以最新整合 head 重驗六項 CI。
 CORE-038 已整合個人入口 `d576aee` 及 main `692e323` 的分發入口。Mac CORE-038、039 通過 `artifacts/CORE-038/dist-main-integration-01/`、`artifacts/CORE-039/media-broker-main-integration-01/`；整合用 development-package 實際打包及乾淨 PATH 啟動通過，該包標記 dirty 且未發布，並非新增正式交接包。PR #40 以新 head 重驗，等待個人入口在 main 完成。
+
+## CORE-028 CI 診斷補核
+
+PR #35 原 head `e43339b` 的 Windows 重跑在 CORE-012 等候工具序列後的模型請求逾時，12 秒限制保留；下載證據 `/Volumes/huawei/項目實戰/yuki-core/.cache/vector-ci-13449371446.zip`。框架原先將 `queue.Empty` 記成空字串，已修正為非空例外名稱並增加真子程序負向案例；發生 wire 逾時會保留原 executions／operations／attempts 與本地實收資料。此修正不宣稱已找出該次平台逾時根因。
+
+Mac `artifacts/CORE-001/empty-exception-01/`、`artifacts/CORE-012/wire-diagnostics-mac-01/` 通過；HJW 同一快照 `CORE-012-ba61fb93385f-415385e6` 的 CORE-001 與 CORE-012 亦通過，後者取回 `artifacts/CORE-012/wire-diagnostics-windows-01/`。PR 仍須最新 head 的六項 CI 全過才合併。
 
 CORE-038 已整合個人入口 `d576aee` 及 main `692e323` 的分發入口。Mac CORE-038、039 通過 `artifacts/CORE-038/dist-main-integration-01/`、`artifacts/CORE-039/media-broker-main-integration-01/`；整合用 development-package 實際打包及乾淨 PATH 啟動通過，該包標記 dirty 且未發布，並非新增正式交接包。PR #40 以新 head 重驗，等待個人入口在 main 完成。
 CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自動合併重複的 provider 欄位，保留原工具宣告入口。Mac CORE-016、014、039 全部通過 `artifacts/CORE-016/dist-main-segments-03/`、`artifacts/CORE-014/dist-segments-integration-02/`、`artifacts/CORE-039/work-segments-main-integration-02/`。PR #42 以整合後 head 等 CI。
@@ -500,6 +511,8 @@ PR #40 整合已合併的 Work 分段 main `ce66753`。Mac 回歸通過：CORE-0
 
 PR #43 整合最新前置 `codex/core-038-media`，Mac 回歸 CORE-016、CORE-034、CORE-038 已通過，見 `artifacts/CORE-034/segments-parent-merge-01/`。
 
+PR #43 的 Windows run 42147427157 在 crates.io HTTP/2 載入 siphasher 時出錯，PowerShell 接續準備 SDK，將第一個 cargo 的失敗隱藏，令離線 CORE-005 缺依賴。現在兩個鎖檔均須成功，準備階段使用非 multiplex HTTP，不改離線測試。Mac 驗證：`artifacts/CORE-005/code-locked-download-01/download-gate.json` 注入第一個錯誤後結束碼 16、第二個 fetch 沒執行；`code-locked-deps-owner-01/` 通過。原失敗 ZIP SHA-256 3fa1870cd09660b5102a44bdb740650563235251b9abd537e76b4a3cd8db1aa5，重等六項 CI。
+
 PR #44 最新前置整合後，Mac CORE-034、CORE-050 通過，具名回條在 `artifacts/CORE-050/segments-parent-merge-01/`。
 
 PR #45 已整合最新 CORE-050；參與與輔助模型兩張卡的 Mac 回歸通過，見 `artifacts/CORE-036/segments-parent-merge-01/`。
@@ -511,3 +524,23 @@ PR #47 已接入維護分支 d658db3 的 Work 與分發修正。macOS CORE-051�
 PR #49 已接入 #47 的 Work 與分發修正 8a47f56。macOS 048=624, 051=735, 039=84 項均通過，詳見各卡 `sessions-048-work-main-01/`。等本 head 的六項 CI。
 
 CORE-037／034 啟動修復：PR #51 的 Linux CI（42113062451／127545421287）在改動 Code runtime 後回 `plugin disabled`，導致整個 owner 尚未提供管理入口便退出。Host 啟動現在按目前 enabled 狀態 reconcile；未批准的 Code 只保持離線，原 Work 由原 runtime 校驗進 held，不啟動替代程序。顯式強制啟動的拒絕語義保留。Mac `CORE-034/unapproved-runtime-mac-01/` 387 項與 `CORE-037/unapproved-runtime-mac-01/` 977 項通過，tree `6f66f94254b9358dad90c66e56328c7792390f498df83102e5efb4ff63599ff2`。新增斷言核 discovered／disabled／offline、原 checkpoint、原模型預留及零派發；Windows／Linux 同源回歸正在跑。
+
+CI 排隊修正（[PR #83](https://github.com/Institute-of-Agent-Life/yuki-core/pull/83)，`codex/ci-pr-queue`）：40 個開放 PR 的當時 head 有 58 個 Intel Mac job 在等。逐筆重查已過期的 45 個 run，GitHub 確認取消 43 個；2 個已有 job 執行，保留。以其他任務分支為基底的 PR 先跑 Linux 全套；以 main 為基底或轉向 main 的 PR 跑 Windows、Linux、Apple Silicon macOS 三平台完整合併檢查。同 PR 新提交取消舊任務。main 推送及手動完整檢查保留 Intel Mac。
+
+`python ci/suite.py --out <新目錄>` 從 `ci/checks.json` 取完整清單。每台先跑含 release 的卡、fmt、clippy、writer tests、debug／release build；兩個分開的程序執行其餘案例，同一工作內依來源與 SHA-256 綁定編譯證據。快取只供 Cargo 依賴及編譯中間物，仍執行本倉的編譯與測試。卡片的斷言、期限及具名輸出保留。失敗或未跑完時，`suite.json` 列出缺口，整體回非零。SQLite 歷史測試庫分 migration 提交；reader 5、20、29 的 schema／資料相同，注入錯誤可回滾。原 Mac CORE-032 曾等不到 Rust 回呼；兩段獨立案例現在等前一回合完成，失敗時保留操作與預算診斷。佇列與測試紀錄在 [artifacts/ci](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/)。
+
+PR #35 整合已合併的 Work 分段 main `ce66753`。Mac 回歸通過：CORE-028 94、CORE-016 184、CORE-012 163 項斷言，產物 `artifacts/CORE-028/segments-main-merge-01/`。推送整合提交後重新計算六項 CI。
+
+PR #37 整合最新前置 `codex/core-028-vectors`，Mac 回歸 CORE-012、CORE-016、CORE-028、CORE-029 已通過，見 `artifacts/CORE-029/segments-parent-merge-01/`。
+
+PR #39 最新前置整合後，Mac CORE-016、CORE-029、CORE-030 通過，具名回條在 `artifacts/CORE-030/segments-parent-merge-01/`。
+
+另核對 17 筆重複 push，取消仍只排隊等待 Intel Mac 的 16 筆。#67 已開始執行並最終通過，全部 17 筆 PR run 保留。逐筆回執位於 `artifacts/ci/queue-triage-01/verified-duplicate-push-cancellations.json`。#35 合併後的 Mac 全套 35 卡見 `artifacts/ci/pr83-vectors-main-mac-01/suite.json`。#37 合併後以 `3c16aaf` 為基底重新驗證 36 卡，Mac 產物位於 `artifacts/ci/pr83-retrieval-main-mac-01/suite.json`。
+
+PR #40 已整合 #83 的 CI 提交 `11e5a5b` 與 main 上的 CORE-028、029，同時保留 CORE-038 的媒體、ASR 和原路交付測試。Mac 37 卡通過，見 `artifacts/ci/pr40-current-main-mac-01/suite.json`。先以 #83 為基底跑 Linux，待 CI 修正合併後轉回 main 跑三平台。
+
+PR #39 將 CORE-030 的遺忘測試接上 #83 工作流，Mac 37 卡全部通過，見 `artifacts/ci/pr39-current-main-mac-01/suite.json`。#83 提交 `11e5a5b` 的同一來源樹已在 HJW Windows、Mac 與 Linux 各驗過 36 卡，逐卡 SHA-256 見 `artifacts/ci/queue-triage-01/pr83-retrieval-native-matrix.json`。GitHub Windows、Linux 亦各通過 36 卡，見同目錄 `hosted-pr83-retrieval-main-windows-linux.json`。#39 先以 #83 為基底驗 Linux，之後轉回 main 驗三平台。
+
+日常 PR 改用本地 Mac mini、同機 Linux ARM64 容器與 HJW Windows。三端均執行完整註冊套件。合併入口 `ci/local_matrix.py` 核對目前 PR 合併 SHA、來源樹、三個平台、全部斷言與具名產物雜湊，再寫入三個 GitHub commit status。#83 的首份本地合併回執位置為 `artifacts/ci/local-pr/83/receipt.json`。Intel Mac 候選驗證可手動執行。
+
+#83 已合併至 main `b2cfe37`，日常驗證使用本地 Mac、Docker Linux ARM64 及 HJW Windows。三端各完成 36 卡，逐卡回執見 `artifacts/ci/local-pr/83/receipt.json`。
