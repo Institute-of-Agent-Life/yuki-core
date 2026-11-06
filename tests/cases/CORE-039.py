@@ -15,6 +15,25 @@ def run(ctx):
     from dist import archive
     from source import digest, source_identity
     from verify_dist import verify, native_target
+    from host_candidate import cleanup_workspace
+
+    # Windows sharing violations may outlive the exited process. Retry only cleanup;
+    # persistent locks and unrelated permission errors must still fail validation.
+    attempts = []
+    locked = PermissionError("synthetic Windows sharing violation")
+    locked.winerror = 32
+    def transient_lock():
+        attempts.append(1)
+        if len(attempts) == 1:
+            raise locked
+    cleanup_workspace(transient_lock)
+    ctx.equal("workspace cleanup retries a transient sharing violation", len(attempts), 2)
+    def persistent_lock():
+        raise locked
+    ctx.rejects("persistent sharing violation remains a failure", PermissionError, lambda: cleanup_workspace(persistent_lock, timeout=0))
+    def other_permission():
+        raise PermissionError("unrelated permission failure")
+    ctx.rejects("unrelated permission error is never retried", PermissionError, lambda: cleanup_workspace(other_permission))
 
     spec = importlib.util.spec_from_file_location(
         "host_case", ctx.root / "tests/cases/CORE-032.py"
