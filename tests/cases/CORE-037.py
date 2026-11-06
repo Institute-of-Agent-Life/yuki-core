@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import time
 import uuid
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -26,9 +27,7 @@ def wire(address, path, token, body=None, method=None):
             return error.code, json.load(error)
 
 
-def run(ctx):
-    from tests.harness.control_sdk import prepare
-    results = {"sdk": prepare(ctx)}
+def character(ctx, results):
     with Recorder() as http:
         owner = Owner(ctx, 'control-character', 20)
         owner.config(http)
@@ -114,30 +113,50 @@ def run(ctx):
                 ctx.equal('known file rename is never repeated', (owner.svc.data / 'SOUL.md').stat().st_mtime_ns, stamp)
             ctx.equal('recovered activation matches original intended bytes', applied['revision'], 'sha256:' + hashlib.sha256(body['content'].encode()).hexdigest())
             results[phase] = applied
+
+
+def run(ctx):
+    from tests.harness.control_sdk import prepare
+    phases=[]
+    def measured(name, operation, *args):
+        started=time.monotonic()
+        phase={'name':name,'status':'running'};phases.append(phase)
+        ctx.write('control-phase-timings.json',phases)
+        try:
+            result=operation(*args)
+        except BaseException:
+            phase.update(status='failed',seconds=round(time.monotonic()-started,6))
+            ctx.write('control-phase-timings.json',phases)
+            raise
+        phase.update(status='passed',seconds=round(time.monotonic()-started,6))
+        ctx.write('control-phase-timings.json',phases)
+        return result
+    results = {"sdk": measured('installed-sdk-consumers',prepare,ctx)}
+    measured('character-and-recovery',character,ctx,results)
     from tests.harness.control_config import run as configuration
-    results['plugin_configuration'] = configuration(ctx, wire)
+    results['plugin_configuration'] = measured('plugin_configuration',configuration,ctx,wire)
     from tests.harness.control_discovery import run as discovery
-    results['plugin_discovery'] = discovery(ctx, wire)
+    results['plugin_discovery'] = measured('plugin_discovery',discovery,ctx,wire)
     from tests.harness.control_authority import run as authority
-    results['host_authority'] = authority(ctx, wire)
+    results['host_authority'] = measured('host_authority',authority,ctx,wire)
     from tests.harness.control_trace import run as trace
-    results['trace'] = trace(ctx, wire)
+    results['trace'] = measured('trace',trace,ctx,wire)
     from tests.harness.control_identity import run as identities
-    results['identity'] = identities(ctx, wire)
+    results['identity'] = measured('identity',identities,ctx,wire)
     from tests.harness.control_usage import run as usage
-    results['usage'] = usage(ctx, wire)
+    results['usage'] = measured('usage',usage,ctx,wire)
     from tests.harness.control_presence import run as presence
-    results['presence'] = presence(ctx, wire)
+    results['presence'] = measured('presence',presence,ctx,wire)
     from tests.harness.control_work import run as work
-    results['work'] = work(ctx, wire)
+    results['work'] = measured('work',work,ctx,wire)
     from tests.harness.control_model_probes import run as probes
-    results['model_probes'] = probes(ctx, wire)
+    results['model_probes'] = measured('model_probes',probes,ctx,wire)
     from tests.harness.control_outbox import run as outbox
-    results['outbox'] = outbox(ctx, wire)
+    results['outbox'] = measured('outbox',outbox,ctx,wire)
     from tests.harness.control_failure_receipts import run as failures
-    results['deterministic_failures'] = failures(ctx, wire)
+    results['deterministic_failures'] = measured('deterministic_failures',failures,ctx,wire)
     from tests.harness.permission_directory import run as permissions
-    ctx.write('original-permission-directory.json',permissions(ctx))
+    ctx.write('original-permission-directory.json',measured('permission-directory',permissions,ctx))
     binary=ctx.root/'target/debug'/('yuki-core.exe' if os.name=='nt' else 'yuki-core')
     return {'phase':'implemented-unpublished-candidate','results':results,'paid_calls':0,
             'real_extension_consumption':False,'database_schema_revision':results['outbox']['database_schema_version'],
