@@ -29,14 +29,15 @@ def group_frame(identity, text):
     }
 
 
-def run(ctx, *, withdraw=False):
+def run(ctx, *, withdraw=False, refused=False):
     oracle = json.loads(
         gzip.decompress(
             (ctx.root / "fixtures/compact/v4-automatic-delivery.json.gz").read_bytes()
         )
     )
     stimulus = oracle["stimulus"]
-    prefix = "withdrawn" if withdraw else "normal"
+    scenario = "p_refused" if refused else "finish"
+    prefix = "withdrawn" if withdraw else scenario
     owner = Owner(ctx, "auto-" + prefix)
     shutil.copyfile(ctx.root / "character/SOUL.md", owner.svc.data / "SOUL.md")
     wire = []
@@ -96,6 +97,36 @@ utility_structured = "main"
                 ][0]
             )
             ctx.write(prefix + "-prior-history-request.json", setup)
+            if refused:
+                owner.op("person", "set-admin", owner.actor, "true")
+                group = json.dumps(["qq", "compact", "20001"], separators=(",", ":"))
+                refused_event = owner.human("/ai compact", group)
+                previous, answer = owner.wire(model)
+                ctx.write("public-proposal-setup.json", previous)
+                ctx.check(
+                    "the setup has a public proposal for the original prefix",
+                    previous["messages"][-1]["content"].startswith(
+                        "[Host 会话上下文压缩要求]"
+                    ),
+                )
+                reply(
+                    answer,
+                    calls=[
+                        call("refuse-public-summary", "send", {"text": "forbidden"})
+                    ],
+                )
+                owner.finished(refused_event)
+                ctx.equal(
+                    "the candidate was rejected before measuring this turn",
+                    owner.rows("SELECT state FROM compact_jobs"),
+                    [("rejected",)],
+                )
+                owner.op("person", "set-admin", owner.actor, "false")
+                ctx.equal(
+                    "an inadmissible summary never sends a QQ part",
+                    owner.rows("SELECT count(*) FROM social_parts"),
+                    [(0,)],
+                )
             peer.send(group_frame(11, stimulus["question"]))
             event = owner.until(
                 lambda: owner.rows(
@@ -105,7 +136,7 @@ utility_structured = "main"
 
             def acknowledge():
                 while len(deliveries) < len(
-                    oracle["scenarios"]["finish"][-1]["delivered_parts"]
+                    oracle["scenarios"][scenario][-1]["delivered_parts"]
                 ):
                     action = peer.receive()
                     if action["action"] == "get_group_member_info":
@@ -143,7 +174,22 @@ utility_structured = "main"
                             q,
                             "PRIVATE_CHECKPOINT: fanout was answered successfully; no remaining action.",
                         )
-                    elif turn == 0:
+                    elif refused and turn == 0:
+                        kind = "normal"
+                        reply(
+                            q,
+                            calls=[
+                                call(
+                                    "prior-observed-write",
+                                    "update_short_state",
+                                    {
+                                        "slot": 1,
+                                        "text": "PRIVATE_TOOL_RESULT_MUST_NOT_ENTER_PUBLIC_CHECKPOINT",
+                                    },
+                                )
+                            ],
+                        )
+                    elif turn == int(refused):
                         kind = "normal"
                         reply(
                             q,
@@ -185,7 +231,7 @@ utility_structured = "main"
                         else:
                             reply(q, "NO_REPLY")
                     wire.append((kind, request))
-                    if turn and kind == "normal":
+                    if turn > int(refused) and kind == "normal":
                         if withdraw:
                             owner.until(
                                 lambda: owner.rows(
@@ -220,12 +266,23 @@ utility_structured = "main"
                     prefix + "-automatic-operations.json",
                     owner.rows("SELECT state,target FROM operations"),
                 )
+            if refused:
+                ctx.equal(
+                    "the earlier public candidate was never repurchased",
+                    owner.rows("SELECT state FROM compact_jobs"),
+                    [("rejected",)],
+                )
+                ctx.equal(
+                    "one execution checkpoint was published",
+                    owner.rows("SELECT state FROM exec_compacts"),
+                    [("published",)],
+                )
     observed = [observation(kind, body, stimulus) for kind, body in wire]
     ctx.write(prefix + "-automatic-observed.json", observed)
     ctx.equal(
-        "automatic P keeps the original six-part send receipt",
+        "original public/private path retains the six-part send receipt: " + scenario,
         observed,
-        oracle["scenarios"]["finish"],
+        oracle["scenarios"][scenario],
     )
     expected_parts = observed[-1]["delivered_parts"]
     ctx.equal(
