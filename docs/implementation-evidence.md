@@ -768,3 +768,11 @@ CORE-033 有序附件：來源 c616cf35e4424e2b9f3c99a4481bfab1c99a34f3，Host 2
 - macos: ed3e98ed0e203f5c80339f167132ee8e46c17967752117dc44492cac49dba474
 - linux: 173fddfcd1d12469844f6f7263d6573c1e4d23561ff96dca02336f3a0f170bf2
 - windows: 5260a4f063fa4d2598cec9f94a6547b0f9bfd8c6660188bdff233d177f9806a5
+
+CORE-038 入站附件：原件來源 b99b01a924439b4104bd087808d789ba46809202，tree 9764872e716d8bc306fdc1a6077cbeacc40428748822dfdac7dd210ee51ff921。每個平台均驗了 207 項、包內成員、校驗檔與乾淨啟動；包含同鍵不同安裝、撤權、到期與遲到末頁。18 個固定舊版案例通過。
+
+- macOS: `d90bac4cb6657caa63359236fa6acc55064dc7c901e810034e58667d325134b3`
+- Linux: `0b7fb6dc423a04fd4bb9a2c0f5ea90878a7e9fe6902d84e2990091b941066fb9`
+- Windows: `684504f4ccc69a8947eec47de2cd98db68fa4bdc68b6a4aff63613155f48c24d`
+
+[交接索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/inbound-gateway-handoff-final-01/verified-candidates.json)；本地候選，待 EXT-004／006 回條。
