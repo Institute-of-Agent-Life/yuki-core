@@ -121,7 +121,7 @@ def tested_contents(receipt, profile, personal=False):
         directory = Path(sandbox) / "data"
         for command in ("init", "doctor"):
             result = subprocess.run(
-                [str(exe), "--data", str(directory), command],
+                [str(exe), "--data", str(directory), command, *(["--memory-mode","lexical-only"] if command=="init" else [])],
                 cwd=sandbox,
                 env=env,
                 capture_output=True,

@@ -1,0 +1,68 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "fields": {
+    "kind": "fact",
+    "category": "preference",
+    "memory_key": "tea",
+    "content": "選 １２３４５ 的茶\t  。"
+  },
+  "projection": "Kind: fact\nCategory: preference\nKey: tea\nFact: 選 [id] 的茶 。",
+  "sha256": "158e1cdf770b261f99dc64b1f128672e7e98b6b1b62092f66045fcdbd32db93d",
+  "wires": [
+    {
+      "path": "/v1/embeddings",
+      "body": {
+        "model": "fixture",
+        "input": [
+          "Kind: fact\nCategory: preference\nKey: tea\nFact: 選 [id] 的茶 。"
+        ],
+        "dimensions": 2,
+        "encoding_format": "float"
+      }
+    },
+    {
+      "path": "/v1/embeddings",
+      "body": {
+        "model": "fixture",
+        "input": [
+          "茶"
+        ],
+        "dimensions": 2,
+        "encoding_format": "float"
+      }
+    },
+    {
+      "path": "/v1/services/embeddings/text-embedding/text-embedding",
+      "body": {
+        "model": "fixture-q",
+        "input": {
+          "texts": [
+            "Kind: fact\nCategory: preference\nKey: tea\nFact: 選 [id] 的茶 。"
+          ]
+        },
+        "parameters": {
+          "text_type": "document",
+          "dimension": 1024,
+          "output_type": "dense"
+        }
+      }
+    },
+    {
+      "path": "/v1/services/embeddings/text-embedding/text-embedding",
+      "body": {
+        "model": "fixture-q",
+        "input": {
+          "texts": [
+            "茶"
+          ]
+        },
+        "parameters": {
+          "text_type": "query",
+          "dimension": 1024,
+          "output_type": "dense",
+          "instruct": "Retrieve personal memory facts relevant to the conversational query."
+        }
+      }
+    }
+  ]
+}

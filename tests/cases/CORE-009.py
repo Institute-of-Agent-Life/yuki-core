@@ -21,7 +21,7 @@ def run(ctx):
     spec.loader.exec_module(module)
     Peer = module.Peer
     owner = Service(ctx, ctx.working / "data")
-    owner.command("init")
+    owner.command("init", "--memory-mode", "lexical-only")
 
     def op(*args, **kw):
         return owner.command("operator", *args, **kw)
