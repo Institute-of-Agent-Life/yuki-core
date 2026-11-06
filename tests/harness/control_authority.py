@@ -31,8 +31,17 @@ def scenario(ctx, wire, runtime):
             serial += 1
             params = {'handle':selected,'method':action, 'args' if method=='control.read' else 'body':args}
             params.update(extra or {})
-            (folder / ('request-' + str(serial) + '.json')).write_text(json.dumps({'jsonrpc':'2.0','id':serial,'method':method,'params':params}))
-            return wait(lambda: json.loads((folder / ('response-' + str(serial) + '.json')).read_text()))
+            # The independent peer consumes and unlinks these frames immediately. On
+            # Windows a reader can see complete bytes before Python closes the file.
+            frame = folder / f'request-{serial}.json'
+            stage = frame.with_suffix('.tmp')
+            stage.write_text(json.dumps({'jsonrpc':'2.0','id':serial,'method':method,'params':params}),encoding='utf-8')
+            stage.replace(frame)
+            try:
+                return wait(lambda: json.loads((folder / f'response-{serial}.json').read_bytes()))
+            except AssertionError as exc:
+                ctx.write('control-invocation-barrier.json',{'runtime':runtime,'serial':serial,'method':method,'action':action,'frame_pending':frame.exists(),'host':owner.rows("SELECT enabled,online FROM host_installations WHERE plugin='control.fixture'")})
+                raise AssertionError(f'{runtime} control response {serial} ({action}) missing') from exc
         public = rpc('control.read','character.public',{})
         ctx.check('bound ordinary command reads public character','result' in public)
         ctx.check('plugin supplied superuser is rejected by closed schema','error' in rpc('control.read','character.get',{},extra={'superuser':True,'actor':owner.actor}))
