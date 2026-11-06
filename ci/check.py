@@ -32,11 +32,16 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--fault", choices=["swap", "empty", "empty-exception"])
     args = parser.parse_args()
+    return run_card(args)
+
+
+def run_card(args, prepared=None):
     out = args.out.resolve()
     try:
         out.mkdir(parents=True, exist_ok=False)
     except FileExistsError:
-        parser.exit(2, "output exists; choose a new attempt directory\n")
+        print("output exists; choose a new attempt directory", file=sys.stderr)
+        return 2
     command = [sys.executable, str(ROOT / "tests/harness/worker.py"), args.card, str(out)]
     if args.fault:
         command.extend(["--fault", args.fault])
@@ -59,7 +64,24 @@ def main():
             raise RuntimeError("locked Python " + lock["python"] + " required")
         spec = lock["cards"][args.card]
         manifest["capabilities"] = spec["capabilities"]
-        if spec.get("rust"):
+        if spec.get("rust") and prepared is not None:
+            # The suite creates this in memory from a successful card in THIS job.
+            # A standalone card always runs the compiler, lint and writer checks.
+            anchor, receipt = prepared
+            if receipt["source"] != manifest["source"] or receipt["lock_sha256"] != manifest["lock_sha256"]:
+                raise RuntimeError("prepared Rust checks belong to a different checkout")
+            stages = [stage for stage in receipt["stages"] if spec.get("release") or stage["name"] != "rust-release"]
+            if spec.get("release") and not any(stage["name"] == "rust-release" for stage in stages):
+                raise RuntimeError("release build was not prepared")
+            for name in [stage["name"] + ".txt" for stage in stages] + ["rust-test-executable.txt"]:
+                data = (anchor / name).read_bytes()
+                if digest(data) != receipt["artifacts"][name]:
+                    raise RuntimeError("prepared Rust evidence changed: " + name)
+                (out / name).write_bytes(data)
+            manifest.update(stages=stages, rust_cases=receipt["rust_cases"],
+                            cargo_lock_sha256=receipt["cargo_lock_sha256"], rust_checks_from=receipt["card"])
+            manifest["tools"].update({k: receipt["tools"][k] for k in ("rustc", "cargo")})
+        elif spec.get("rust"):
             environment = clean_environment()
             if os.name == "nt" and environment.get("YUKI_MINGW_BIN"):
                 bin_dir = Path(environment["YUKI_MINGW_BIN"])

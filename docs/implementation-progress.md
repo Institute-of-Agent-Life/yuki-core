@@ -234,6 +234,14 @@ CORE-016 分段分支已整合個人入口 `d576aee` 及 main 分發。修正自
 
 PR #42 macOS Intel CI `42071266030` 在 CORE-039 冷 release 編譯達 600 秒上限，尚未進入產品案例；原 artifact `.cache/segments-ci-13441839430.zip`，SHA-256 `6546648675809170fcb363d0797ccd2b86dc547bfcf6323e673b77ca35affdf5`。編譯器 release 階段獨立給 1200 秒，其他命令及案例期限不變，所有編譯超時現在保留 stdout／stderr 和 timed_out 回條。Mac CORE-039 `segments-release-build-budget-01/` 通過；注入超時 `segments-release-timeout-evidence-01/` 正確失敗並保留兩路輸出。PR #42 按新 head 重驗三平台，未把原失敗標為通過。
 
+CI 排隊修正（[PR #83](https://github.com/Institute-of-Agent-Life/yuki-core/pull/83)，`codex/ci-pr-queue`）：40 個開放 PR 的當時 head 有 58 個 Intel Mac job 在等。逐筆重查已過期的 45 個 run，GitHub 確認取消 43 個；2 個已有 job 執行，保留。以其他任務分支為基底的 PR 先跑 Linux 全套；以 main 為基底或轉向 main 的 PR 跑 Windows、Linux、Apple Silicon macOS 三平台完整合併檢查。同 PR 新提交取消舊任務。main 推送及手動完整檢查保留 Intel Mac。
+
+`python ci/suite.py --out <新目錄>` 從 `ci/checks.json` 取完整清單。每台先跑含 release 的卡、fmt、clippy、writer tests、debug／release build；兩個分開的程序執行其餘案例，同一工作內依來源與 SHA-256 綁定編譯證據。快取只供 Cargo 依賴及編譯中間物，仍執行本倉的編譯與測試。卡片的斷言、期限及具名輸出保留。失敗或未跑完時，`suite.json` 列出缺口，整體回非零。SQLite 歷史測試庫分 migration 提交；reader 5、20、29 的 schema／資料相同，注入錯誤可回滾。原 Mac CORE-032 曾等不到 Rust 回呼；兩段獨立案例現在等前一回合完成，失敗時保留操作與預算診斷。佇列與測試紀錄在 [artifacts/ci](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/)。
+
 PR #35 整合已合併的 Work 分段 main `ce66753`。Mac 回歸通過：CORE-028 94、CORE-016 184、CORE-012 163 項斷言，產物 `artifacts/CORE-028/segments-main-merge-01/`。推送整合提交後重新計算六項 CI。
 
 PR #37 整合最新前置 `codex/core-028-vectors`，Mac 回歸 CORE-012、CORE-016、CORE-028、CORE-029 已通過，見 `artifacts/CORE-029/segments-parent-merge-01/`。
+
+另核對 17 筆重複 push，取消仍只排隊等待 Intel Mac 的 16 筆。#67 已開始執行並最終通過，全部 17 筆 PR run 保留。逐筆回執位於 `artifacts/ci/queue-triage-01/verified-duplicate-push-cancellations.json`。#35 合併後的 Mac 全套 35 卡見 `artifacts/ci/pr83-vectors-main-mac-01/suite.json`。#37 合併後以 `3c16aaf` 為基底重新驗證 36 卡，Mac 產物位於 `artifacts/ci/pr83-retrieval-main-mac-01/suite.json`。
+
+日常 PR 改用本地 Mac mini、同機 Linux ARM64 容器與 HJW Windows。三端均執行完整註冊套件。合併入口 `ci/local_matrix.py` 核對目前 PR 合併 SHA、來源樹、三個平台、全部斷言與具名產物雜湊，再寫入三個 GitHub commit status。#83 的首份本地合併回執位置為 `artifacts/ci/local-pr/83/receipt.json`。Intel Mac 候選驗證可手動執行。
