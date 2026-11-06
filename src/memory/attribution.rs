@@ -22,7 +22,7 @@ async fn source_actor(
          .bind(event).bind(&r.base.home).fetch_optional(&mut *db).await?.ok_or("original_group_required")?;
     let (person, authority) = match reference {
         "current_speaker" => (actor, "explicit"),
-        "mentioned_user" => {
+        reference if reference == "mentioned_user" || reference.starts_with("member_") => {
             // Only admitted human Assignment IDs from this event qualify. Exclude the
             // original speaker (and their merged identities); never resolve a display label.
             let unresolved:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM events e JOIN json_each(e.mentions) m LEFT JOIN assignments s ON s.id=json_extract(m.value,'$.assignment') LEFT JOIN persons p ON p.id=s.original_person LEFT JOIN persons root ON root.id=coalesce(p.current_root,p.id) WHERE e.id=? AND (s.id IS NULL OR (s.id!=e.bot_stage AND (s.kind!='person' OR p.id IS NULL OR p.id IS NOT json_extract(m.value,'$.original') OR NOT p.enabled OR NOT root.enabled))))")
@@ -31,10 +31,18 @@ async fn source_actor(
                 return Err("unproved_group_mention".into());
             }
             let people:Vec<String>=sqlx::query_scalar("SELECT DISTINCT p.id FROM events e JOIN json_each(e.mentions) m JOIN assignments s ON s.id=json_extract(m.value,'$.assignment') AND s.kind='person' JOIN persons p ON p.id=s.original_person AND p.id=json_extract(m.value,'$.original') JOIN persons root ON root.id=coalesce(p.current_root,p.id) WHERE e.id=? AND p.enabled AND root.enabled AND root.id!=? ORDER BY p.id").bind(event).bind(&r.root).fetch_all(&mut *db).await?;
-            let [one] = people.as_slice() else {
-                return Err("mentioned_user_is_ambiguous".into());
+            let person = if let Some(selected) = reference.strip_prefix("member_") {
+                people
+                    .into_iter()
+                    .find(|p| p == selected)
+                    .ok_or("unproved_group_subject")?
+            } else {
+                let [one] = people.as_slice() else {
+                    return Err("mentioned_user_is_ambiguous".into());
+                };
+                one.clone()
             };
-            (one.clone(), "third_party")
+            (person, "third_party")
         }
         _ => return Err("unproved_group_subject".into()),
     };
@@ -59,8 +67,11 @@ pub(super) async fn apply(
     mut patch: metadata::Patch,
 ) -> Result<Value> {
     let moved = req["operation"] == "reassign";
+    let reference = req["target"]["subject_ref"]
+        .as_str()
+        .ok_or("missing_subject")?;
     if req["target"]["scope_type"] != "person_group"
-        || (moved && req["target"]["subject_ref"] != "mentioned_user")
+        || (moved && reference == "current_speaker")
         || !req["selector"].is_null()
         || (!moved && !req["fact_id"].is_null())
     {
@@ -71,15 +82,7 @@ pub(super) async fn apply(
         return Err("original_group_event_required".into());
     };
     let proof = evidence::resolve(db, r, &r.actor, &source).await?;
-    let (subject, authority) = source_actor(
-        db,
-        r,
-        *event,
-        req["target"]["subject_ref"]
-            .as_str()
-            .ok_or("missing_subject")?,
-    )
-    .await?;
+    let (subject, authority) = source_actor(db, r, *event, reference).await?;
     let old = if moved {
         if req["expected_fact_state"]
             .as_str()
