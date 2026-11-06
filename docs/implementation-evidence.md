@@ -690,3 +690,13 @@ Mac `memory-selectors-mac-05` 823 項通過；包括唯一精確項在第 129 �
 失敗記錄保留：mac-01／02 捕獲 fixture 把未結束種子輪當成待測請求，現逐一以真 Main 寫入並完成；mac-03 捕獲 withdrawn 的 NULL 正文令 restore selector 找不到原事實，已改取最後有效正文。mac-04 679 項通過後補上第 129 筆的分頁測試。
 
 開發打包自測 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-package-development-01/yuki-memory-preview-f5855e54b543-darwin-arm64.zip`，SHA-256 `a7758a7035e4a059de3f96d6817352febbeafa6fa51754b7d2750d845855bed0`。來源 dirty，僅自測；乾淨三平台候選接續產生。Host／SDK／reader 均沿 #63；只增加模型 current_speaker/person selector，不宣告其他主體或狀態。
+
+### selector 乾淨三平台候選
+
+PR #64，來源 `fed00d2ca4519daf0857a03d6b054dd10b640dab`、tree `3228881039b0300eb64607d4a5682bc5182ca0a7084806cf5874291ba5665e33`。三平台各 823 項；逐 ZIP 成員 bytes／SHA-256、manifest、獨立 SDK 安裝及乾淨 PATH 啟動均已驗。索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-handoff-final-01/verified-candidates.json`，SHA-256 `bb483640d365bfd755831c8ef53910aa44db125d76685737f9f4154438c62c56`。
+
+- macos：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-handoff-final-01/macos-validation/candidate/yuki-memory-preview-fed00d2ca451-darwin-arm64.zip`；SHA-256 `0632272e174bbd0e1c8b3d78296a59e59806a35a3b2421c1f191965c86738538`。
+- linux：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-handoff-final-01/linux-validation/candidate/yuki-memory-preview-fed00d2ca451-linux-arm64.zip`；SHA-256 `50ab55c2b7b1b1d83406e152b274cf9eb56f5824e4a70ebc8c3f077bdc24fb10`。
+- windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-handoff-final-01/windows-validation/handoff/yuki-memory-preview-fed00d2ca451-windows-x86_64.zip`；SHA-256 `5b4cf3c36f0ef16742fafda2643114f8e5fc293b85a11610717d628b2ddb72e0`。
+
+Windows 原目錄 `D:\yuki-core-validation-20261104\CORE-026-3228881039b0-f5ca16d6`。Host 2／handshake 1／reader 44／SDK alpha.11、a11；實含 current_speaker/person selector，尚未發布，不替代真擴展消費。下一補核為原有效期間。
