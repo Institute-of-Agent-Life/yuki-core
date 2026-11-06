@@ -1,5 +1,9 @@
 # 核心實作進度
 
+CORE-040 冷暖重放（`codex/core-040-native-trials`）已用 CORE-039 的 Mac 執行檔 `b74a91582f22` 跑六個獨立程序，24 個測量事件全部正確。原始資料、候選來源雜湊、歷史 14,400 個效果的重核與工具集差異見 `artifacts/CORE-040/native-trials-smoke-02/` 和 `docs/benchmarks/slice.md`。全平台的投資裁決仍開放。
+
+#43 三端合併後，#85 的 Windows 原始重放及三端候選已交接在 `artifacts/CORE-013/file-caption-04139ad30742/verified-candidates.json`。HJW 可重現檔案共享拒絕，修正後的終端流程在 release、debug、release 各過 62 項，見 `artifacts/CORE-032/terminal-owner-replay-9b752105/windows.json`。#85 的最新合併檢查另存 `artifacts/ci/local-pr/85/`。Mac 已清除三處閒置 incremental 快取並驗回保留的產物，釋出 11.03 GiB；回執在 `artifacts/ci/cleanup-20261106/three-pr-mac-incremental-verified.json`。
+
 CORE-040（`codex/core-040-private-fallback`）的公開 Compact 提案遭拒後，Rust 在已拒同一公開前綴的狀態下，與固定 A/B 一致走四次模型請求。六段已發 QQ 回條、私人摘要、未覆蓋舊歷史一併進入最後一次正常請求。原版注入規劃失敗，Rust 的先行拒絕另存為 setup。Mac CORE-040 共 209 項通過，見 `artifacts/CORE-040/private-fallback-check-01/slice-decision.json`。完整功能集與效能裁決仍在進行。
 
 CORE-013／040（`codex/core-040-automatic-replay`）已修復六段長文字的模型回條。舊版 A／B 的原始 Chat 請求與資料庫事實在 `artifacts/CORE-040/automatic-original-{A,B}-01/`。Rust 曾只返回派發摘要；修正後 96,000 token 門檻觸發公開 Compact，接續請求逐段帶回六個已確認事件。第三段在下一次預留時遭撤回，該預留的實體派發數為零。Mac 已驗 CORE-040（186 項）與 CORE-013（350 項），產物各在 `artifacts/CORE-{040,013}/automatic-split-check-01/`。精簡測試驅動後另跑兩條時序，32 項通過，見 `artifacts/CORE-040/automatic-native-09/`。原始 P 規劃拒絕後走 E 的 Rust 對拍仍待驗。
