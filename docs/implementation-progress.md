@@ -23,6 +23,8 @@
 
 CORE-039 的獨立驗簽器在 HJW 的 Windows SSH 會話曾停住。已重現 OpenSSH 繼承的舊檔案描述符狀態與新 stdin pipe 衝突，並以原簽名和變造輸入驗證修正。回執在 `artifacts/CORE-039/pr85-02a8bcf9d7c8/{openssh-native-environment,signature-regression-windows}.json`。
 
+本地三端 CI 會核對 PR head、待合併提交及目標分支即時 tip。#96 的 PR 詳情保留了 #95 合併前的 base SHA；已用 GitHub 真實父提交重放，並驗證目標基線、head、合併樹或倉庫變動時會拒絕。記錄在 `artifacts/ci/pr96-stacked-base/`，#96 三端驗收回執路徑為 `artifacts/ci/local-pr/96/receipt.json`。
+
 **執行中的 CORE-040。** 固定舊版 A、套用可重現 patch 的 B，以及 Rust 核心 C 在 Mac 上各跑兩輪冷、暖 QQ 離線重放。12 個獨立程序共驗證 14,400／14,400 個事件，失敗輪次為零。報告綁定 C 的執行檔與來源 `b74a91582f22`，見 `artifacts/CORE-040/native-cold-warm-bound-01/trial-report.json`，SHA-256 `f8ef9111edf8b00849ee9fdfdf3ab74affecc20bf29cf3c3d2b44f3a7ad21385`。SQLite 寫入設定一致，模型可見的工具仍有差異，速度及成本裁決待等功能驗收。
 
 CORE-026／040 的 `codex/core-040-memory-create-contract` 以固定 v4 實際寫入與拒絕回執核對七種記憶建立參數。Rust 拒絕缺少目標、內容、鍵或類別的請求；人物目標收到合法 SELF visibility 提示時仍只寫入原人物範圍。原版投影 SHA-256 `52f4d2657d902f34a7d03d2a92dbcfd817e926b43fc844146357350bfa65921f`，實跑對照在 `artifacts/CORE-026/{create-arguments-v4-01,create-arguments-before-01,create-arguments-after-02}/`。

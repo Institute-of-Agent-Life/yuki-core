@@ -3,11 +3,39 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
+from unittest.mock import patch
+
+import local_matrix
 from local_matrix import verify_suite
 from source import digest
 
 
 class LocalMatrix(unittest.TestCase):
+    def test_stacked_pr_is_bound_to_the_current_base_and_merge(self):
+        repo = {'full_name': local_matrix.REPO}
+        pr = {'state': 'open', 'head': {'repo': repo, 'sha': 'head'},
+              'base': {'repo': repo, 'ref': 'main', 'sha': 'previous-base'},
+              'merge_commit_sha': 'merge'}
+        def check():
+            local_matrix.verify_pr(96, ['current-base', 'head'], 'merge', True)
+        live = {'object': {'sha': 'current-base'}}
+        with patch.object(local_matrix, 'api', side_effect=[pr, live]) as api:
+            check()
+            self.assertEqual([c.args[0] for c in api.call_args_list],
+                             ['pulls/96', 'git/ref/heads/main'])
+        for bad, ref in [
+            (pr, {'object': {'sha': 'newer-base'}}),
+            ({**pr, 'head': {**pr['head'], 'sha': 'new-head'}}, live),
+            ({**pr, 'merge_commit_sha': 'another-merge'}, live),
+            ({**pr, 'state': 'closed'}, live),
+            ({**pr, 'base': {**pr['base'], 'ref': 'other'}}, live),
+            ({**pr, 'base': {**pr['base'], 'repo': {'full_name': 'elsewhere'}}}, live),
+            ({**pr, 'head': {**pr['head'], 'repo': {'full_name': 'elsewhere'}}}, live),
+        ]:
+            with self.subTest(pr=bad, ref=ref), patch.object(local_matrix, 'api',
+                    side_effect=[bad, ref]), self.assertRaises(ValueError):
+                check()
+
     def test_mismatched_evidence_is_rejected(self):
         registry = b'{"cards":{"CORE-001":{"artifact":"proof.json"}}}'
         source = dict(commit='merge', dirty=False, tree_sha256='tree', files={'file': 'hash'})
