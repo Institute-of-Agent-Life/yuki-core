@@ -6,6 +6,8 @@ CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；�
 
 CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux 各 1052 項及超時診斷](control-fixture-timing.md)。
 
+PR #71：Windows CI 的 Rust SDK 測試讀取完整 JSON 時，寫入端可能尚未關檔。兩個 SDK 的測試現在先關閉暫存檔，再原子交給獨立程序；逾時會記錄卡住的方法與程序狀態。Mac、HJW 同一工作樹 d839315809be 各通過 CORE-037 全部 1052 項。回條：`artifacts/CORE-037/client-stream-atomic-inbox{,-hjw}-01/manifest.json`。
+
 ## 完成與進行中
 
 已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；CORE-016 分段 #42 已合併至 `ce66753`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。
@@ -67,6 +69,10 @@ CORE-033 未選 Work 認證：[乾淨三平台候選](/Volumes/huawei/項目實�
 CORE-033 Client9 明選：[三平台索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/entry-selection-handoff-final-01/verified-candidates.json)，SHA-256 `11123ac0502c2f86a74dc31c52ca81f05e50b6cd0b561db1377d86853650e080`；含所選人物、binding、會話、事件與拒絕前後計數。未發布，待 EXT-015 對拍。
 
 CORE-033 Client9 出站續讀：[三平台索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-handoff-final-01/verified-candidates.json)，SHA-256 739ecae7768f860e4d7a4e9801a5d7c51e38eac623e155a88cacd3e6f8cd08c1。來源 d8bf54c1174741a23fdfad0d99b516a2bb584218；Windows、macOS、Linux 各通過 581 項檢查；未發布，待 EXT-015。
+
+PR #72 已整合原版客戶端對拍及 SDK 測試修正 `df3670b`。Mac CORE-033 666 項、CORE-037 1052 項通過：各卡 `uploads-independent-client-01/manifest.json`。
+
+CORE-033／真 EXT-015：HJW 以原插件 `5b890f5e8244` 消費 `d8bf54c11747`。配對、一次 QQ 派發後的 REST 游標續讀及撤權 401 通過。直連宿主收到 SSE 初始同步、ACK 提示及重連；同一宿主及憑證經原插件的首訂閱／重連各 10 秒均未收到 HTTP 標頭，明選標頭由該插件回 503。SSE 跨倉驗收未過。[原始回條](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-real-ext015-02/real-client-stream.json) SHA-256 `f11cfe5de0a657ff373a09a429111f23224beb255ce63736718a1f958ba6a664`。[重現程式](../ci/consume-ext015.py) 對照兩端，回條分項記錄，請 EXT-015 核對代理的首包刷新及明選轉發。
 
 CORE-033 Client9 上傳：[三平台完整性索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-uploads-handoff-final-01/verified-candidates.json)，SHA-256 4da11e14c4118f087c6535de7b973d60b195cb98eade2ed3a45b4d2404f2900c。未發布，待 EXT-015／016。
 
