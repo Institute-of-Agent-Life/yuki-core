@@ -17,6 +17,23 @@ pub struct Change {
     prepared: std::result::Result<Value, String>,
 }
 
+pub(crate) async fn settle(
+    store: &Store,
+    exec: &str,
+    actor: &str,
+    op: &str,
+    value: Result<Value>,
+) -> Result<()> {
+    store
+        .write(Mutation::Tool(Box::new(Change {
+            exec: exec.into(),
+            actor: actor.into(),
+            op: op.into(),
+            prepared: value.map_err(|e| e.to_string()),
+        })))
+        .await?;
+    Ok(())
+}
 pub async fn reject(
     store: &Store,
     exec: &str,
@@ -134,6 +151,11 @@ pub(crate) async fn finish_prepared(
     let mut output = prepared;
     if output.is_ok() {
         match name.as_str() {
+            "search_memory" => {
+                output = crate::memory::search_tool::confirm(conn, exec, actor, &args, &output?)
+                    .await
+                    .map_err(|e| e.to_string());
+            }
             "update_short_state" => {
                 output = Ok(transient::update(conn, exec, &args, transient::now()?).await?);
             }

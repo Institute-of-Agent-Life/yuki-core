@@ -19,16 +19,20 @@ static CASEFOLD: LazyLock<HashMap<char, String>> = LazyLock::new(|| {
         })
         .collect()
 });
-pub fn fold(raw: &str) -> String {
+pub(crate) fn casefold(chars: impl Iterator<Item = char>) -> String {
     let mut case = String::new();
-    for c in raw.nfkc() {
+    for c in chars {
         if let Some(replacement) = CASEFOLD.get(&c) {
             case.push_str(replacement);
         } else {
             case.push(c);
         }
     }
-    case.nfkc()
+    case
+}
+pub fn fold(raw: &str) -> String {
+    casefold(raw.nfkc())
+        .nfkc()
         .collect::<String>()
         .split(|c: char| c.is_whitespace() || matches!(c, '\u{1c}'..='\u{1f}'))
         .filter(|s| !s.is_empty())
