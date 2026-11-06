@@ -1,5 +1,7 @@
 # 核心實作進度
 
+CORE-040 跨裝置續接（`codex/core-040-work-replay`）。固定 v4 A/B 各重放同一個 Work 的六次實際模型請求。Mac 修正前連續三次遺失已確認的提問，修正後兩次冷啟動均保留原問題與手機答案，撤回原問題則停止下一次派發。Mac 150 項斷言見 `artifacts/CORE-040/work-question-fixed-01/manifest.json`。本卡仍待完整等功能與效能判定。正常與故障時序見 [Work replay](benchmarks/work-replay.md)。
+
 CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；明示 64,000 容量並放大必要未觀察輪，保留硬上限拒絕並加驗恰好一次物理 attempt。Windows／Mac／Linux 全卡通過；詳見 [故障與修正證據](compact-capacity-fixture.md)。
 
 任務書 v3.2 ZIP SHA-256：`79dfd2ba5a8b96f22dea4c5f72a94ca761b15f2e354e33b36c7ecdbedc3ec3ee`。舊倉只讀，行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；K05 補正已套用工作副本，不增加 unknown 重試權。原提交、驗證、失敗診斷及完整交接雜湊見 [實作驗證記錄](implementation-evidence.md)。

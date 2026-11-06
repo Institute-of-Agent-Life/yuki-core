@@ -93,7 +93,11 @@ pub(crate) async fn stale(db: &mut SqliteConnection, exec: &str, actor: &str) ->
         FROM main_dependencies d JOIN personal_deliveries key ON key.event=d.event
         JOIN social_outbound a ON a.id=key.outbound JOIN social_parts s ON s.namespace=a.namespace AND s.child=a.child
         JOIN social_plans p ON p.namespace=s.namespace AND p.operation_id=s.operation_id
-        WHERE d.execution=? AND a.namespace=d.execution").bind(exec).fetch_all(&mut *db).await?;
+        WHERE d.execution=? AND (a.namespace=d.execution OR EXISTS(
+            SELECT 1 FROM work_runs r JOIN work_runs sender ON sender.work=r.work
+            JOIN work_mail m ON m.work=r.work AND m.kind='human_answer'
+            JOIN work_wait_mail link ON link.mail=m.id AND link.source_event=d.event
+            WHERE r.execution=d.execution AND sender.execution=a.namespace))").bind(exec).fetch_all(&mut *db).await?;
     if rows.is_empty() {
         return Ok(false);
     }

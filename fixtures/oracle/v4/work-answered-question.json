@@ -1,0 +1,57 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "receipts": {
+    "A": {
+      "run.json": "57f6cf2485bdde76eec138dbeb90b130e2aa42b3d71ef2e234ff3aa15043b4bc",
+      "junit.xml": "df45859f49e946f9d2fc4b1906c728db83079e2a15c925e9c84de9b761eba43d",
+      "work-00-wire.json": "5f342b26a495695effc2debcdddde90a26874570c3f9fabc21e10eb9f9d41ace",
+      "work-00-requests.json": "042d72b1527a82dd07887537733daad331cfbc5edad9227c98aff1815a6c7d61"
+    },
+    "B": {
+      "run.json": "f9624092572f4e642eecc4a8f16ab416c74de6bb488357b47b8f251c796b294a",
+      "junit.xml": "27b1c6e5bc7b50d2b29a55fe61b0e94e8cd89e98517a883da723b807db8897ad",
+      "work-00-wire.json": "8217bc55de19408492aff0e38140f05b680a5b130225a07440af9f69b4dfb4b3",
+      "work-00-requests.json": "e585da8258a79d4ffc400a10eaaa1903e55d4c151d645ed74f634f52216f14f5"
+    }
+  },
+  "requests": [
+    {
+      "question_roles": [],
+      "phone_answer_roles": []
+    },
+    {
+      "question_roles": [],
+      "phone_answer_roles": []
+    },
+    {
+      "question_roles": [
+        "tool"
+      ],
+      "phone_answer_roles": []
+    },
+    {
+      "question_roles": [
+        "assistant"
+      ],
+      "phone_answer_roles": [
+        "user"
+      ]
+    },
+    {
+      "question_roles": [
+        "assistant"
+      ],
+      "phone_answer_roles": [
+        "user"
+      ]
+    },
+    {
+      "question_roles": [
+        "assistant"
+      ],
+      "phone_answer_roles": [
+        "user"
+      ]
+    }
+  ]
+}

@@ -17,7 +17,7 @@ OUT = Path(os.environ["YUKI_SLICE_OUT"])
 
 @pytest.mark.parametrize("index", range(int(os.environ["YUKI_LONG_WORKS"])))
 async def test_original_work(database, tmp_path, index):
-    with Chat(scripted=True) as peer:
+    with Chat(scripted=True, sample_limit=6) as peer:
         peer.key = f"long-{index}"
         async with httpx.AsyncClient(
             base_url=peer.url + "/", trust_env=False
@@ -63,4 +63,8 @@ async def test_original_work(database, tmp_path, index):
                 (OUT / f"work-{index:02}-wire.json").write_text(
                     json.dumps(peer.wires, indent=2) + "\n"
                 )
-            assert len(peer.wires) >= 6
+                (OUT / f"work-{index:02}-requests.json").write_text(
+                    json.dumps(peer.samples, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+            assert len(peer.wires) == len(peer.samples) == 6

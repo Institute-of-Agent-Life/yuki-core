@@ -87,7 +87,15 @@ def run(ctx):
         rows=projection(compact(ctx,refuse))
         ctx.equal('all fifteen physical requests retain the original public sources and checkpoints: '+name,rows,expected['expected'][name])
         compact_results[name]={'physical_requests':len(rows),'final':rows[-1]}
+    from bench.core_long import run as long_work
+    work_fixture = ctx.root / "fixtures/oracle/v4/work-answered-question.json"
+    original_work = json.loads(work_fixture.read_bytes())
+    work = long_work(ctx, 0)
+    ctx.equal("the original question and phone answer keep their roles across both cold owners",
+              work["requests"], original_work["requests"])
+    lost = long_work(ctx, 1, withdraw_question=True)
     return {
+        "long_work": {"oracle_sha256": sha(work_fixture.read_bytes()), "normal": work, "withdrawn": lost},
         "explicit_public_compact":{"oracle_sha256":sha(compact_fixture.read_bytes()),"scenarios":compact_results},
         "scope": original["scope"],
         "v4_source": original["source_commit"],
@@ -95,7 +103,7 @@ def run(ctx):
         "oracle_sha256": sha(oracle.read_bytes()),
         "frames_sha256": digest,
         "rust_binary_sha256": sha(binary.read_bytes()),
-        "inputs": len(rows),
+        "inputs": len(plan),
         "physical_requests": 8,
         "send_fault_detected": True,
         "group_material": current["material"],
@@ -105,7 +113,7 @@ def run(ctx):
         "status": "partial_evidence",
         "timing_comparison_allowed": False,
         "remaining": [
-            "equal tool declarations, original send receipt and provider controls",
-            "long Work and automatic P/E Compact equivalence; controlled cross-platform timings",
+            "remaining tool declaration differences and untested receipt variants",
+            "full long Work wire and automatic P/E Compact equivalence; controlled cross-platform timings",
         ],
     }
