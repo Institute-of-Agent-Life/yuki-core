@@ -5,6 +5,8 @@ from pathlib import Path
 
 folder = Path(sys.argv[1])
 sys.path.insert(0, sys.argv[2])
+sys.path.insert(1, str(Path(__file__).resolve().parents[3]))
+from tests.harness.json_file import take_command
 from yuki_plugin_sdk.connection import Binding, Peer, encode, read_frame
 from yuki_plugin_sdk.host import Calls
 
@@ -36,8 +38,9 @@ record("ready", {"methods": sorted(rpc.allowed), "pid": os.getpid()})
 def mailbox():
     while True:
         for item in folder.glob("cmd-*.json"):
-            data = json.loads(item.read_bytes())
-            item.unlink()
+            data = take_command(item)
+            if data is None:
+                continue
             if "reply" in data:
                 send({"jsonrpc": "2.0", "id": data["id"], "result": data["reply"]})
             else:
