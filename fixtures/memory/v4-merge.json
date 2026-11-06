@@ -1,0 +1,35 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/memory/mutation/models.py": "ee16c01a51db05faca77e5ec84b9b5193a6de64a1283b189c7190f55c3cf3f22",
+    "src/yuki/memory/mutation/service.py": "92b3489a7fb00c3898da301597e1aa3f18e8ce8a5860b26bf29baa6ca0e62b76",
+    "src/yuki/memory/service.py": "3b4447a2e16f8e431c4415e0157e145c095079130946d112960dfa3bf662ab30",
+    "tests/unit/test_memory_mutation.py": "398efbb285fd12410fadfa20e8f23e30bee763f7a8097c4bbeb4de0f3090ae47",
+    "tests/unit/test_memory_operation_identity.py": "84963ee25e9833db59dbe50f919f092f53fbbf1a40c83a061d9554ed81a2c4b0"
+  },
+  "cases": [
+    "test_merge_metadata_contest_invalidate_and_restore_operations",
+    "test_mutation_selector_cannot_cross_resolved_identity_target",
+    "test_historical_social_read_policy_is_consistent_without_evidence_expansion",
+    "test_receipt_failure_rolls_back_fact",
+    "test_operation_replay_is_distinct_from_equal_content_and_later_actions",
+    "test_concurrent_original_operation_rejects_a_different_payload[False]",
+    "test_concurrent_original_operation_rejects_a_different_payload[True]",
+    "test_prepared_operation_checks_the_receipt_that_arrived_before_its_writer",
+    "test_current_voice_is_manual_and_automatic_evidence_while_reply_voice_is_not[False]",
+    "test_current_voice_is_manual_and_automatic_evidence_while_reply_voice_is_not[True]"
+  ],
+  "pytest_exit": 0,
+  "junit_sha256": "224a992795aee9ecef3151b9ecfd4f3b06f32177b9923c7ce74cedcfac2f90e3",
+  "original_transition": {
+    "source_status_before": "active",
+    "source_status_after": "superseded",
+    "destination_status": "active",
+    "kept_destination_id": true,
+    "kept_destination_content": true,
+    "source_evidence_before": 1,
+    "destination_evidence_before": 1,
+    "destination_evidence_after": 3
+  },
+  "transition_sha256": "abc2cc64ee4407db8cba94431c3580a83365313032949ac814e447752655f6fc"
+}

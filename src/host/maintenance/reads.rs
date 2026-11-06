@@ -105,7 +105,7 @@ pub(super) async fn audit(db: &mut SqliteConnection, c: &Change, g: &Granted) ->
     let mut items = vec![];
     let mut versions = vec![];
     for id in page {
-        let row=sqlx::query("SELECT f.revision,f.status,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id) AS total,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id AND e.quote IS NOT NULL) AS retained,(SELECT count(*) FROM fact_vectors v WHERE v.fact=f.id AND v.revision=f.revision) AS vectors FROM memory_facts f WHERE f.id=?")
+        let row=sqlx::query("SELECT f.revision,state.status,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id) AS total,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id AND e.quote IS NOT NULL) AS retained,(SELECT count(*) FROM fact_vectors v WHERE v.fact=f.id AND v.revision=f.revision) AS vectors FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id WHERE f.id=?")
             .bind(&id).fetch_one(&mut *db).await?;
         let evidence:Vec<String>=sqlx::query_scalar("SELECT json_array(e.kind,e.source_key,e.source_version,e.quote,source.envelope,(SELECT json_group_array(json_array(segment,text)) FROM (SELECT segment,text FROM history_transcripts WHERE source=e.event ORDER BY segment))) FROM memory_evidence e LEFT JOIN events source ON source.id=e.event WHERE e.fact=? ORDER BY e.id")
             .bind(&id).fetch_all(&mut *db).await?;

@@ -369,6 +369,8 @@ def run(ctx):
                 )
             }
         )
+    from tests.harness.memory_merge import run as merge
+    ctx.write("memory-merge.json",merge(ctx))
     from tests.harness.memory_restore import run as restore
     restored=restore(ctx)
     ctx.write("memory-restore.json",restored)
