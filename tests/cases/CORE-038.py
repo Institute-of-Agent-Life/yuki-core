@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import hashlib, json, os, struct, subprocess, sys, zlib
 from pathlib import Path
 from tests.harness.compact import Owner, call, reply
-from tests.harness.gateway_media import run as gateway_inbound
+from tests.harness.gateway_media import refused_media_send, run as gateway_inbound
 from tests.harness.selected_processor import run as selected_processor
 from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer
@@ -152,6 +152,13 @@ def gateway_delivery(ctx, sdk, paper):
                 "attachment_kind": "file",
                 "name": "paper.bin",
             }
+            execution = owner.rows("SELECT id FROM executions WHERE source=?", event)[0][0]
+            for arguments, reason in [
+                ({"emoji": {"goal": "greet"}}, "gateway_media_unsupported"),
+                ({**args, "artifact_id": "unread-version"}, "gateway_artifact_unavailable"),
+                ({**args, "attachment_kind": "image"}, "gateway_attachment_kind_mismatch"),
+            ]:
+                q = refused_media_send(ctx, owner, model, q, execution, arguments, reason)
             (peer / "tamper-plan").touch()
             reply(q, calls=[call("wrong-version", "send", args)])
             wire, q = owner.wire(model)

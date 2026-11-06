@@ -10,6 +10,20 @@ from tests.harness.compact import Owner, call, reply
 from tests.peers.chat.recorder import Recorder
 
 
+def refused_media_send(ctx, owner, model, queue, execution, arguments, reason):
+    before = owner.rows("SELECT count(*) FROM host_calls WHERE execution=? AND method IN ('gateway.plan_send','gateway.dispatch_part')", execution)
+    reply(queue, calls=[call(reason, "send", arguments)])
+    wire, queue = owner.wire(model)
+    receipt = json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == reason))
+    ctx.equal(f"{reason} returns to the requesting Main", (receipt["state"], receipt["result"]),
+              ("failed", {"error": reason}))
+    ctx.equal(f"{reason} does not plan or dispatch any part",
+              owner.rows("SELECT count(*) FROM host_calls WHERE execution=? AND method IN ('gateway.plan_send','gateway.dispatch_part')", execution), before)
+    ctx.equal(f"{reason} can be read by original operation",
+              owner.op("effect", "read", execution, receipt["id"], owner.actor)["result"], receipt["result"])
+    return queue
+
+
 def run(ctx, sdk):
     o=Owner(ctx,"gw-media",48)
     peers={}
@@ -24,8 +38,9 @@ def run(ctx, sdk):
             (folder/"authority.json").write_text(json.dumps(identity))
             (folder/"native.bin").write_bytes(data)
             peers[name]=(folder,bot,identity,data)
+            grants = ["gateway.inbound", "gateway.media"] + (["gateway.send"] if n == 1 else [])
             with (o.svc.data/"yuki.toml").open("a") as f:
-                f.write(f'\n[[plugins]]\nid="{name}"\nnamespace="{name}"\nplatform="{platform}"\nbot_stage="{bot}"\nprogram='+json.dumps(sys.executable)+'\nargs='+json.dumps([str(ctx.root/"tests/peers/host-media/peer.py"),str(folder),str(sdk/"python-install")])+'\ngrants=["gateway.inbound","gateway.media"]\n[plugins.gateway_media]\napplication='+json.dumps(identity["application"])+'\ntenant='+json.dumps(identity["tenant"])+'\n')
+                f.write(f'\n[[plugins]]\nid="{name}"\nnamespace="{name}"\nplatform="{platform}"\nbot_stage="{bot}"\nprogram='+json.dumps(sys.executable)+'\nargs='+json.dumps([str(ctx.root/"tests/peers/host-media/peer.py"),str(folder),str(sdk/"python-install")])+'\ngrants='+json.dumps(grants)+'\n[plugins.gateway_media]\napplication='+json.dumps(identity["application"])+'\ntenant='+json.dumps(identity["tenant"])+'\n')
 
     def submit(folder,request,deny=False):
         old=folder/"probed.json"
@@ -71,6 +86,10 @@ def run(ctx, sdk):
                               [(0,)])
                     ctx.equal("reading the original denied operation returns its immutable receipt",
                               o.op("effect", "read", exec_id, refused["id"], o.actor)["result"], refused["result"])
+                else:
+                    q = refused_media_send(ctx, o, model, q, exec_id,
+                                           {"artifact_id": "unread-version", "attachment_kind": "file"},
+                                           "gateway_media_read_not_granted")
                 pin(exec_id,event,0,"pin-good")
                 h=hashlib.sha256(data).hexdigest()
                 ctx.equal("original bound gateway returned selected bytes only",o.rows("SELECT state,digest,segment,acquired_via FROM media_sources WHERE event=? AND slot=0",event),[("cached",h,1,"gateway.media")])

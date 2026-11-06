@@ -1,5 +1,5 @@
 use super::{Hub, calls};
-use crate::{Result, runtime::effects, store::Store};
+use crate::{Result, runtime::effects, social::destination::Refused, store::Store};
 use serde_json::{Value, json};
 use sqlx::Row;
 
@@ -48,7 +48,7 @@ impl Hub {
         }
         let grants: Vec<String> = serde_json::from_str(row.try_get("grants")?)?;
         if !grants.iter().any(|g| g == "gateway.send") {
-            return Err(crate::social::destination::Refused("gateway_send_not_granted").into());
+            return Err(Refused("gateway_send_not_granted").into());
         }
         let message: Value = serde_json::from_str(row.try_get("payload")?)?;
         let group: Option<String> = row.try_get("space")?;
@@ -70,20 +70,27 @@ impl Hub {
                 },
             };
             if !valid {
-                return Err(crate::social::destination::Refused("target_entry_mismatch").into());
+                return Err(Refused("target_entry_mismatch").into());
             }
         }
         // File/media references belong to their owning handle subsystem, not the plugin filesystem.
         if !message["file"].is_null() || !message["emoji"].is_null() {
-            return Err("gateway media capability unavailable".into());
+            return Err(Refused("gateway_media_unsupported").into());
         }
         let selected = if let Some(id) = message["artifact_id"].as_str() {
             if !grants.iter().any(|g| g == "media.open") {
-                return Err("original gateway lacks a selected media reader".into());
+                return Err(Refused("gateway_media_read_not_granted").into());
             }
-            let (digest,kind):(String,String)=sqlx::query_as("SELECT v.digest,v.kind FROM media_versions v JOIN media_version_readers r ON r.version=v.id WHERE v.id=? AND r.reader=?").bind(id).bind(exec).fetch_one(&mut *tx).await?;
+            let (digest, kind): (String, String) = sqlx::query_as(
+                "SELECT v.digest,v.kind FROM media_versions v JOIN media_version_readers r ON r.version=v.id WHERE v.id=? AND r.reader=?",
+            )
+            .bind(id)
+            .bind(exec)
+            .fetch_optional(&mut *tx)
+            .await?
+            .ok_or(Refused("gateway_artifact_unavailable"))?;
             if message["attachment_kind"] != kind {
-                return Err("original attachment kind differs".into());
+                return Err(Refused("gateway_attachment_kind_mismatch").into());
             }
             Some(json!({"artifact_id":id,"version":digest}))
         } else {
