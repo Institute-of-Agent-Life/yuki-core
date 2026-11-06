@@ -13,7 +13,7 @@ pub async fn active(
     generation: &str,
     grant: &str,
 ) -> Result<()> {
-    let ok:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i WHERE plugin=? AND generation=? AND online AND enabled AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value=?))").bind(id).bind(generation).bind(grant).fetch_one(conn).await?;
+    let ok:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i WHERE plugin=?1 AND generation=?2 AND online AND enabled AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value=?3) AND (?3='forget.owner' OR (NOT EXISTS(SELECT 1 FROM host_cleanup_generations c WHERE c.plugin=i.plugin AND c.generation=i.generation) AND NOT EXISTS(SELECT 1 FROM owner_erasures e WHERE e.owner=i.plugin AND e.proof IS NULL))))").bind(id).bind(generation).bind(grant).fetch_one(conn).await?;
     if !ok {
         return Err("plugin instance or grant unavailable".into());
     }
@@ -239,24 +239,40 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             Ok(Value::Null)
         }
         Change::Configure(installs) => configure(conn, installs).await,
-        Change::Start(id) => {
+        Change::Start(id, cleanup) => {
+            let pending: bool = sqlx::query_scalar(
+                "SELECT EXISTS(SELECT 1 FROM owner_erasures WHERE owner=? AND proof IS NULL)",
+            )
+            .bind(id)
+            .fetch_one(&mut *conn)
+            .await?;
+            if pending != *cleanup {
+                return Err("plugin launch mode disagrees with erasure watermark".into());
+            }
             let instance = new_id(conn).await?;
             if sqlx::query(
                 "UPDATE host_installations SET generation=?,online=0 WHERE plugin=? AND enabled",
             )
             .bind(&instance)
             .bind(id)
-            .execute(conn)
+            .execute(&mut *conn)
             .await?
             .rows_affected()
                 != 1
             {
                 return Err("plugin disabled".into());
             }
+            if *cleanup {
+                sqlx::query("INSERT INTO host_cleanup_generations VALUES(?,?)")
+                    .bind(id)
+                    .bind(&instance)
+                    .execute(&mut *conn)
+                    .await?;
+            }
             Ok(json!(instance))
         }
         Change::Online(id, instance) => {
-            if sqlx::query("UPDATE host_installations SET online=1 WHERE plugin=? AND generation=? AND enabled").bind(id).bind(instance).execute(conn).await?.rows_affected()!=1{return Err("plugin instance superseded".into());}
+            if sqlx::query("UPDATE host_installations SET online=1 WHERE plugin=? AND generation=? AND enabled AND (NOT EXISTS(SELECT 1 FROM owner_erasures e WHERE e.owner=host_installations.plugin AND e.proof IS NULL) OR EXISTS(SELECT 1 FROM host_cleanup_generations c WHERE c.plugin=host_installations.plugin AND c.generation=host_installations.generation))").bind(id).bind(instance).execute(conn).await?.rows_affected()!=1{return Err("plugin instance superseded".into());}
             Ok(Value::Null)
         }
         Change::Close(id, instance) => {

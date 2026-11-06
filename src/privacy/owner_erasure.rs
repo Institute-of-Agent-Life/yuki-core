@@ -16,6 +16,19 @@ pub async fn erase(
     if sources.is_empty() {
         return Err("erase requires actual sources".into());
     }
+    if sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM person_forgets f JOIN source_erasure_requests r USING(watermark) WHERE r.erase_key=?)").bind(key).fetch_one(&mut *conn).await?{
+        return Err("erasure key belongs to a Person closure".into());
+    }
+    erase_sources(conn, key, person, sources, None).await
+}
+
+pub(super) async fn erase_sources(
+    conn: &mut SqliteConnection,
+    key: &str,
+    person: &str,
+    sources: Vec<i64>,
+    family: Option<&str>,
+) -> Result<Value> {
     let canonical = serde_json::to_string(&sources)?;
     if let Some(old) = sqlx::query(
         "SELECT subject,sources,watermark FROM source_erasure_requests WHERE erase_key=?",
@@ -35,13 +48,16 @@ pub async fn erase(
     }
     let watermark:i64=sqlx::query_scalar("INSERT INTO source_erasure_requests(erase_key,subject,sources) VALUES(?,?,?) RETURNING watermark")
         .bind(key).bind(person).bind(&canonical).fetch_one(&mut *conn).await?;
+    if let Some(members) = family {
+        super::forget::capture(conn, watermark, person, members, &canonical).await?;
+    }
     let mut obligations: BTreeMap<String, Vec<i64>> = BTreeMap::new();
     for event in &sources {
         let actual: Option<String> = sqlx::query_scalar("SELECT raw_actor FROM events WHERE id=?")
             .bind(event)
             .fetch_one(&mut *conn)
             .await?;
-        if actual.as_deref() != Some(person) {
+        if family.is_none() && actual.as_deref() != Some(person) {
             return Err("source is not owned by this original person".into());
         }
         if source::is_erased(conn, *event).await? {

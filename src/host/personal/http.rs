@@ -279,6 +279,22 @@ async fn message(State(s): State<Store>, h: HeaderMap, Json(v): Json<Value>) -> 
 async fn admin(State(s): State<Store>, h: HeaderMap) -> Response {
     reply(read(&s, &h, Read::Admin).await, true)
 }
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct IdentityRequest {
+    request_id: String,
+}
+async fn forget(
+    State(s): State<Store>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+    Json(v): Json<IdentityRequest>,
+) -> Response {
+    reply(
+        action(&s, &h, Purpose::Chat, Command::Forget(id, v.request_id)).await,
+        true,
+    )
+}
 async fn role(
     State(s): State<Store>,
     h: HeaderMap,
@@ -471,6 +487,7 @@ pub fn router(store: Store) -> Router {
         .route("/client/v1/works/{id}/inputs", post(input))
         .route("/client/v1/works/{id}/cancel", post(cancel))
         .route("/client/v1/requests/{id}", get(receipt))
+        .route("/admin/v1/persons/{id}/forget", post(forget))
         .route("/admin/v1/health", get(admin))
         .route("/admin/v1/persons/{id}/superuser/{action}", post(role))
         .with_state(store)
