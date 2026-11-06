@@ -7,3 +7,5 @@ fixture 改用明示 64,000 上限，先確認包含完整真實工具宣告的�
 原 CI 證據：artifacts/CORE-023/github-pr57-42120758440、github-pr57-42120747418、github-pr59-42124961198。本地重現與修正驗證接續記錄。
 
 修正驗證：`artifacts/CORE-023/ci-hard-capacity-mac-01/` 全部通過；同一失敗亦在 `ci-regression-mac-01/` 以最新原來源重現。完整正例、unknown、reset、erased、硬上限、重啟及原 Work 範圍測試均保留。
+
+補修再於 Linux `artifacts/CORE-023/hard-capacity-linux-01`、HJW Windows `hard-capacity-windows-01` 通過；乾淨來源 `94d441cc9095629363104cf565b91e46c804dd36`，tree `25645f363b0b77bc2272055f482b8e400cd77b3c977aa6313488d87c6230268e`。原舊 head 的 CI 失敗 artifact 保留，最新 GitHub CI 仍依各 PR 等候。

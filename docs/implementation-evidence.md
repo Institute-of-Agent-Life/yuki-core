@@ -666,3 +666,15 @@ Mac `memory-metadata-mac-05` 370 項通過。`memory-metadata-adjacent-01` 的 C
 開發自測包 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/metadata-package-development-01/yuki-memory-preview-94d441cc9095-darwin-arm64.zip`，SHA-256 `942c2a51040b223d68e1e52df58729ee1bad244200f0b126f6903d08de3d9541`；dirty source，僅打包自測，非交接或發布候選。乾淨三平台候選接續產出。
 
 CORE-023 補修另於 Linux `hard-capacity-linux-01` 通過；來源 `94d441cc9095629363104cf565b91e46c804dd36`／tree `25645f363b0b77bc2272055f482b8e400cd77b3c977aa6313488d87c6230268e`。Windows 同來源驗證中。
+
+### metadata 乾淨三平台候選及容量補修
+
+PR #63，來源 `f5855e54b543dd59171feb23508fd923edadd55e`，tree `6d7b26bfda36928dee7a224ce3b95a0aa48bdf4652dee308cb5622f5c392d448`。三平台各 370 項及獨立 SDK 安裝、乾淨 PATH 啟動、全部 ZIP 成員 bytes／SHA-256／manifest 綁定均通過。根路徑 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/metadata-handoff-final-01/`，索引 `verified-candidates.json` SHA-256 `5282ee47d50e31f8877683850ecb654c79c33a5223dd8b6c5660f4a8054ef4a9`。
+
+- Mac：`macos-validation/candidate/yuki-memory-preview-f5855e54b543-darwin-arm64.zip`，SHA-256 `7db980579d46e42afc6e3551240caec4f2d5eaf9b720ea4805bb37101f1f5dfc`。
+- Linux：`linux-validation/candidate/yuki-memory-preview-f5855e54b543-linux-arm64.zip`，SHA-256 `08cd5f0a7ce28b7fe8b64f442bf59e39566f9198663864841ef5913fb7b2b964`。
+- Windows：`windows-validation/handoff/yuki-memory-preview-f5855e54b543-windows-x86_64.zip`，SHA-256 `0c3b83eb1aecccfcf4a5c2aae56ac91915c2fb343312a0a65b660823c56e65de`。HJW 根 `D:\yuki-core-validation-20261104\CORE-026-6d7b26bfda36-55b8f8bb`。
+
+Host 2／handshake 1／reader 44／Rust SDK alpha.11、Python SDK a11。實含 memory_change／read_memory 的 create、correct、invalidate、restore、update_metadata；候選未發布，沒有真擴展新消費回條。
+
+CORE-023 容量補修亦於 Windows `artifacts/CORE-023/hard-capacity-windows-01` 通過；HJW 根 `D:\yuki-core-validation-20261104\CORE-023-25645f363b0b-c3fa0b2b`。來源與 Linux 相同為 `94d441c`，與 Mac 的原場景斷言一致：首輪原宣告進入容量、超大必要未觀察輪拒絕、恰好一次物理 attempt、零任意 Compact。GitHub 六項檢查繼續按最新 head 等待。
