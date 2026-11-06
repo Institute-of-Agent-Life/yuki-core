@@ -69,6 +69,8 @@ CORE-033 Client9 明選：[三平台索引](/Volumes/huawei/項目實戰/yuki-co
 
 CORE-033 Client9 出站續讀：[三平台索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-handoff-final-01/verified-candidates.json)，SHA-256 739ecae7768f860e4d7a4e9801a5d7c51e38eac623e155a88cacd3e6f8cd08c1。來源 d8bf54c1174741a23fdfad0d99b516a2bb584218；Windows、macOS、Linux 各通過 581 項檢查；未發布，待 EXT-015。
 
+CORE-033／真 EXT-015：HJW 以原插件 `5b890f5e8244` 消費 `d8bf54c11747`。配對、一次 QQ 派發後的 REST 游標續讀及撤權 401 通過。直連宿主收到 SSE 初始同步、ACK 提示及重連；同一宿主及憑證經原插件的首訂閱／重連各 10 秒均未收到 HTTP 標頭，明選標頭由該插件回 503。SSE 跨倉驗收未過。[原始回條](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-real-ext015-02/real-client-stream.json) SHA-256 `f11cfe5de0a657ff373a09a429111f23224beb255ce63736718a1f958ba6a664`。[重現程式](../ci/consume-ext015.py) 對照兩端，回條分項記錄，請 EXT-015 核對代理的首包刷新及明選轉發。
+
 ## 缺少輸入與下一步
 
 - 真擴展消費：EXT-023 需對已修的原 feed ACK 再測；EXT-022／037／038／039／049 需消費最新管理、權限與用量候選。未取得回條，不凍結穩定協議。
