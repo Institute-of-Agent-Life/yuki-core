@@ -75,6 +75,8 @@ CORE-038 入站附件：來源 `b99b01a92443`，Windows、macOS、Linux 各通�
 
 CORE-038 Main 選讀：[PR #74](https://github.com/Institute-of-Agent-Life/yuki-core/pull/74)，來源 `0ef956a9c6d9`，Windows、macOS、Linux 各 318 項。[三平台候選索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/main-selected-handoff-final-01/verified-candidates.json)，SHA-256 `49437652505a0881fc14576502036101412042542d642f7eeea4f98bbdc7c459`。reader 50／SDK alpha.13、a13。原 PDF 頁文和兩張影格到達同一 Main，未額外派發模型請求。未發布。HJW 已用原 EXT-031 Rust 插件解出 PDF 兩頁與兩幀，並核對同一 Main 的實際 HTTP；[消費回條](../fixtures/media/ext031-windows-main.json)。
 
+CORE-032 終端：`codex/core-032-terminal-work`，[原 Work／run 時序](terminal-work-scope.md)。SDK alpha.14／a14、reader 51。Mac CORE-032 127 項、CORE-039 release 146 項及 6 張相鄰卡通過；Linux 固定舊版 16 個原 Manager／Work 回歸全過。正式三平台包與 EXT-020 獨立消費分列。
+
 ## 缺少輸入與下一步
 
 - 真擴展消費：EXT-023 需對已修的原 feed ACK 再測；EXT-022／037／038／039／049 需消費最新管理、權限與用量候選。未取得回條，不凍結穩定協議。

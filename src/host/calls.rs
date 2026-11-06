@@ -89,7 +89,7 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
 pub async fn status(
     conn: &mut SqliteConnection,
     id: &str,
-    _generation: &str,
+    generation: &str,
     h: &str,
     method: &str,
 ) -> Result<Value> {
@@ -104,6 +104,9 @@ pub async fn status(
     ) || row.try_get::<String, _>("revision")? != row.try_get::<String, _>("current_revision")?
     {
         return Err("handle outside method or original manifest".into());
+    }
+    if super::terminal_work::receipt(conn, h, id, generation).await? {
+        return Ok(json!({"handle":h,"state":row.try_get::<String,_>("state")?,"result":null}));
     }
     Ok(
         json!({"handle":h,"state":row.try_get::<String,_>("state")?,"result":row.try_get::<Option<String>,_>("result")?.as_deref().map(serde_json::from_str::<Value>).transpose()?}),
@@ -177,6 +180,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 h
             };
             if r.method == "tool.call" {
+                super::terminal_work::open(conn, r, &handle, &generation).await?;
                 super::composition::open(conn, r, &handle).await?;
                 super::media::retain_inputs(conn, r, &handle).await?;
                 sqlx::query("INSERT OR IGNORE INTO host_media_profiles VALUES(?,?)")
@@ -220,6 +224,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .ok_or("unknown grant")?,
             )
             .await?;
+            super::terminal_work::check(conn, handle, plugin, generation).await?;
             super::selected_processor::check(conn, handle).await?;
             let resume=sqlx::query("UPDATE code_resume_attempts SET state='dispatched' WHERE handle=? AND generation=? AND state='queued'").bind(handle).bind(generation).execute(&mut *conn).await?.rows_affected()==1;
             if resume {
@@ -269,6 +274,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 && row.try_get::<bool, _>("same_generation")?;
             let who = actor(conn, &exec).await?;
             let publish = permitted
+                && super::terminal_work::check(conn, handle, plugin, generation)
+                    .await
+                    .is_ok()
                 && super::selected_processor::check(conn, handle).await.is_ok()
                 && effects::authorize(conn, &exec, &who, true).await.is_ok()
                 && !source::execution_erased(conn, &exec, None).await?;

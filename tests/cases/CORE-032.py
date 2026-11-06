@@ -10,6 +10,7 @@ import sys
 import time
 import tomllib
 from contextlib import closing
+from tests.harness.terminal_work import exercise as terminal_work
 from tests.harness.service import Service, previous_schema
 from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer as OneBot
@@ -708,6 +709,7 @@ grants=["observe.metadata","tool.call"]
                 pass
             statuses = op("host", "status")
     return {
+        "terminal_work":terminal_work(ctx,sdkdir,profile),
         "normal": {
             "observation": observation,
             "command": cmd,
@@ -729,7 +731,7 @@ grants=["observe.metadata","tool.call"]
         "host_idl_sha256": hashlib.sha256(
             (ctx.root / "protocol/plugin/gateway/host-preview.json").read_bytes()
         ).hexdigest(),
-        "sdk_versions": {"python": "1.0.0a2", "rust": "1.0.0-alpha.2"},
+        "sdk_versions": json.loads((dist/"candidate.json").read_bytes())["sdk_versions"],
         "rust_consumer": {
             "binary_sha256": hashlib.sha256(rust_binary.read_bytes()).hexdigest(),
             "response": rust_result,

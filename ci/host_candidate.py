@@ -115,6 +115,14 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if card=="CORE-032":
+        terminal=receipt("terminal-work-scope.json")
+        oracle=(ROOT/"fixtures/host/terminal-work-v4.json").read_bytes()
+        if data["terminal_work"]!=json.loads(terminal) or digest(oracle)!=data["terminal_work"]["original_oracle_sha256"]:
+            raise ValueError("terminal Work receipt differs from original proof")
+        files["evidence/terminal-work-scope.json"]=terminal
+        files["evidence/terminal-work-v4.json"]=oracle
+        files["docs/terminal-work-scope.md"]=(ROOT/"docs/terminal-work-scope.md").read_bytes()
     if memory:
         proof=receipt('memory-restore.json')
         raw_fixture=(ROOT/'fixtures/memory/v4-restore.json').read_bytes()
@@ -577,6 +585,10 @@ def build(manifest_path, out, development=False):
         candidate['validated_connector_methods']=connector['methods']
         candidate["validated_personal_methods"] = sorted(data["negotiated_methods"])
         candidate["validated_http_routes"] = data["validated_routes"]
+    if m["card"]=="CORE-032":
+        candidate["validated_terminal_methods"]=data["terminal_work"]["methods"]
+        candidate["terminal_work_oracle_sha256"]=data["terminal_work"]["original_oracle_sha256"]
+        candidate["database_schema_revision"]=m["schema_version"]
     if media:
         candidate["validated_main_processor_tool"]=data["selected_processor"]["tool"]
         candidate["main_selected_media_oracle_sha256"]=data["selected_processor"]["original_oracle_sha256"]

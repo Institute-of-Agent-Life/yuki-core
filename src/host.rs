@@ -17,6 +17,7 @@ pub(crate) mod plugin_sessions;
 mod process;
 pub(crate) mod selected_processor;
 mod send;
+mod terminal_work;
 use crate::{
     Result,
     store::{Mutation, Store},

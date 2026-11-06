@@ -916,6 +916,151 @@
         "additionalProperties": false
       }
     },
+    "terminal.scope": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "terminal.work",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "installation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "execution": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "tool": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "mode": {
+            "enum": [
+              "launch",
+              "reconcile",
+              "read",
+              "input",
+              "interrupt",
+              "cancel",
+              "close"
+            ]
+          },
+          "launch_request": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "run_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "installation",
+          "work_id",
+          "execution",
+          "request_id",
+          "tool",
+          "mode",
+          "launch_request",
+          "run_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "terminal.bind": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "terminal.work",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "handle",
+          "request_id",
+          "run_id"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "request_id",
+          "run_id"
+        ],
+        "additionalProperties": false
+      }
+    },
     "device.auth": {
       "direction": "plugin_to_host",
       "revision": 1,

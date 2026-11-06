@@ -411,6 +411,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     )
                     .await
                 }
+                "terminal.scope" | "terminal.bind" => {
+                    super::terminal_work::callback(conn, id, instance, method, params).await
+                }
                 "media.open" | "media.publish" => {
                     super::media::callback(conn, id, instance, method, params).await
                 }

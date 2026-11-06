@@ -96,6 +96,13 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if self.grants.contains("terminal.work")
+            && !["tool.call", "forget.owner"]
+                .iter()
+                .all(|g| self.grants.contains(*g))
+        {
+            return Err("terminal.work requires tool.call and forget.owner".into());
+        }
         if self.grants.contains("gateway.media") != self.gateway_media.is_some()
             || self
                 .gateway_media

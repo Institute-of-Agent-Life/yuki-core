@@ -788,3 +788,5 @@ CORE-038 選讀原件的乾淨候選，來源 0ef956a9c6d90fae79c0d4488296c064cc
 [未發布交接索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/main-selected-handoff-final-01/verified-candidates.json)，SHA-256 `49437652505a0881fc14576502036101412042542d642f7eeea4f98bbdc7c459`。
 
 CORE-038 × EXT-031：HJW 以原擴展 candidate-03 與本倉 `0ef956a` 實測。兩個案例均在同一 Main 走完一次原工具及一次正常續輪。回條 `3e43a514cee1abce0873da4393c610a02c48e65956a1ec359367ae244c09dcd7`，含輸入、輸出、核心包、插件與 FFmpeg 雜湊；[原始 HTTP 回條目錄](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/main-selected-real-ext031-01)。
+
+CORE-032 終端：`artifacts/CORE-032/terminal-work-mac-03/` 含原 Host 派發、兩個 Work、真 SDK 的重接／拒絕與清除。固定舊版 Linux 16 項（`original-work-run-oracle-linux-01/`），原 Mac 的 /proc 案例失敗保留。Mac CORE-031、016、017、030、038、039 通過 `terminal-work-integration-01/`，026 在調整測例期間遇 source changed，從固定內容完整重跑通過 `terminal-work-integration-02/`；未測真 gVisor/execd PTY。
