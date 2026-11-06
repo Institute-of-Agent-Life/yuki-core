@@ -1,9 +1,6 @@
 name: core-check
 
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
+on: workflow_dispatch
 
 permissions:
   contents: read
@@ -15,7 +12,7 @@ jobs:
       matrix:
         os: [windows-latest, macos-15-intel, ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
+    timeout-minutes: 45
     env:
       CARGO_HOME: ${{ github.workspace }}/.cache/cargo
     steps:
@@ -28,111 +25,23 @@ jobs:
       - name: Prepare Windows C compiler
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
-      - name: Prepare pinned Rust and immutable dependency downloads
+      - name: Install the locked compiler
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+      - name: Restore Rust dependencies for this runner and toolchain
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          cache-workspace-crates: 'false'
+          cache-on-failure: 'false'
+          save-if: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }}
+      - name: Fetch locked dependencies
         run: |
-          rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           cargo fetch --locked
           cargo fetch --locked --manifest-path sdk/rust/Cargo.toml
-      - name: Replay shared native QQ packets and reject a missing send
-        run: python ci/check.py CORE-040 --out artifacts/CORE-040/ci
-      - name: Verify retained usage fields and actual cache denominators
-        run: python ci/check.py CORE-055 --out artifacts/CORE-055/ci
-      - name: Verify original management authority with both installed SDKs
-        run: python ci/check.py CORE-037 --out artifacts/CORE-037/ci
-      - name: Reconcile original plugin notifications and real administrator target grants
-        run: python ci/check.py CORE-058 --out artifacts/CORE-058/ci
-      - name: Recover isolated plugin sessions with original paid receipts
-        run: python ci/check.py CORE-051 --out artifacts/CORE-051/ci
-      - name: Verify scoped maintenance and original paid review results
-        run: python ci/check.py CORE-035 --out artifacts/CORE-035/ci
-      - name: Verify original human promotion and scene-bound SELF feedback
-        run: python ci/check.py CORE-036 --out artifacts/CORE-036/ci
-      - name: Replay offline harness and reject injected faults
-        run: python ci/check.py CORE-001 --out artifacts/CORE-001/ci
+      - name: Run all registered cards with two isolated workers
+        run: |
+          python ci/suite.py --out artifacts
         env:
           PYTHONDONTWRITEBYTECODE: '1'
-      - name: Compare both v4 captures and hash the offline consumer bundle
-        run: python ci/check.py CORE-002 --out artifacts/CORE-002/ci
-      - name: Inventory a quiesced synthetic multi-owner snapshot
-        run: python ci/check.py CORE-003 --out artifacts/CORE-003/ci
-      - name: Evaluate QQ key evidence for the target deployment
-        run: python ci/check.py CORE-004 --out artifacts/CORE-004/ci
-      - name: Verify Rust owner, cleanup barriers and actual binary
-        run: python ci/check.py CORE-005 --out artifacts/CORE-005/ci
-      - name: Verify original-person merges and current device authorization
-        run: python ci/check.py CORE-006 --out artifacts/CORE-006/ci
-      - name: Verify dated ownership, transfers and private entries
-        run: python ci/check.py CORE-007 --out artifacts/CORE-007/ci
-      - name: Check offline provider evidence and the opt-in gate on loopback
-        run: python ci/check.py CORE-049 --out artifacts/CORE-049/ci
-      - name: Kill and recover the writer at both ingress barriers
-        run: python ci/check.py CORE-008 --out artifacts/CORE-008/ci
-      - name: Exercise authenticated OneBot peers, routing and private typing
-        run: python ci/check.py CORE-009 --out artifacts/CORE-009/ci
-      - name: Verify immutable receipts and external dispatch recovery
-        run: python ci/check.py CORE-010 --out artifacts/CORE-010/ci
-      - name: Install the handshake distributions and test bidirectional stdio peers
-        run: python ci/check.py CORE-031 --out artifacts/CORE-031/ci
-      - name: Race logical reservations and recover physical model attempts
-        run: python ci/check.py CORE-011 --out artifacts/CORE-011/ci
-      - name: Restart between source erasure and external holder acknowledgment
-        run: python ci/check.py CORE-052 --out artifacts/CORE-052/ci
-      - name: Recover native QQ groups with a membership probe and original authority
-        run: python ci/check.py CORE-056 --out artifacts/CORE-056/ci
-      - name: Exercise the Rust Main runner and physical Chat Completions boundaries
-        run: python ci/check.py CORE-012 --out artifacts/CORE-012/ci
-      - name: Deliver original QQ parts and recover lost acknowledgments
-        run: python ci/check.py CORE-013 --out artifacts/CORE-013/ci
-      - name: Replay ordered Responses items with three explicit dialects
-        run: python ci/check.py CORE-019 --out artifacts/CORE-019/ci
-      - name: Match authorized literal history against the v4 Unicode and OpenCC oracle
-        run: python ci/check.py CORE-014 --out artifacts/CORE-014/ci
-      - name: Replay original signed Messages blocks, choices and paid pauses
-        run: python ci/check.py CORE-020 --out artifacts/CORE-020/ci
-      - name: Replay original GenerateContent parts and function response IDs
-        run: python ci/check.py CORE-021 --out artifacts/CORE-021/ci
-      - name: Replay frozen native tools, effect barriers and immutable result pages
-        run: python ci/check.py CORE-015 --out artifacts/CORE-015/ci
-      - name: Exercise installed plugin subprocesses and source-bound receipts
-        run: python ci/check.py CORE-032 --out artifacts/CORE-032/ci
-      - name: Verify the signed native release in an empty directory
-        run: python ci/check.py CORE-039 --out artifacts/CORE-039/ci
-      - name: Recover original Work settlement and private child messages
-        run: python ci/check.py CORE-016 --out artifacts/CORE-016/ci
-      - name: Verify fact visibility independently of private evidence and correction receipts
-        run: python ci/check.py CORE-026 --out artifacts/CORE-026/ci
-      - name: Replay timed, conversation and child wait boundaries
-        run: python ci/check.py CORE-017 --out artifacts/CORE-017/ci
-      - name: Verify original public Compact publication and next normal wire
-        run: python ci/check.py CORE-022 --out artifacts/CORE-022/ci
-      - name: Verify scheduled occurrences and original ownership
-        run: python ci/check.py CORE-018 --out artifacts/CORE-018/ci
-      - name: Verify private compaction and original observation rounds
-        run: python ci/check.py CORE-023 --out artifacts/CORE-023/ci
-      - name: Verify actual immutable media inputs and transfers
-        run: python ci/check.py CORE-025 --out artifacts/CORE-025/ci
-      - name: Verify paid extraction sources and atomic cursor
-        run: python ci/check.py CORE-027 --out artifacts/CORE-027/ci
-      - name: Verify committed vector coverage, original physical charges and erasure
-        run: python ci/check.py CORE-028 --out artifacts/CORE-028/ci
-      - name: Replay authorized top-k against original v4 ranking and coverage faults
-        run: python ci/check.py CORE-029 --out artifacts/CORE-029/ci
-      - name: Verify actual personal entry and generation-bound native receipts
-        run: python ci/check.py CORE-033 --out artifacts/CORE-033/ci
-      - name: Exercise two media owners, actual bytes and late callbacks
-        run: python ci/check.py CORE-038 --out artifacts/CORE-038/ci
-      - name: Verify Person source closure, cold cleanup and retained costs
-        run: python ci/check.py CORE-030 --out artifacts/CORE-030/ci
-      - name: Verify original auxiliary model routes, receipts and source bounds
-        run: python ci/check.py CORE-050 --out artifacts/CORE-050/ci
-      - name: Verify original Code checkpoints and shared tool accounting
-        run: python ci/check.py CORE-034 --out artifacts/CORE-034/ci
-      - name: Verify native search proof, budget and cache on physical HTTP
-        run: python ci/check.py CORE-024 --out artifacts/CORE-024/ci
-      - name: Reconcile stopped legacy model settings without provider calls
-        run: python ci/check.py CORE-057 --out artifacts/CORE-057/ci
-      - name: Verify original model configuration and interrupted atomic saves
-        run: python ci/check.py CORE-048 --out artifacts/CORE-048/ci
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
