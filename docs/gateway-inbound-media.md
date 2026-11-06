@@ -6,4 +6,10 @@ EXT-004 和 EXT-006 需要在本來的 Bot 或 app／tenant 取回 Telegram file
 
 故障時序：沒有授權或舊收件沒有來源綁定時，不向其他插件、QQ 或 HTTP 回退。相同 key 在其他 namespace 仍是另一來源。換 application／tenant、換安裝 revision、插件重啟、錯 event/slot、到期或 forget 在讀取前拒絕；讀取途中停用，不再送下一塊，也不快取收到的部分內容。錯 offset、長度、SHA 或超限都沒有可讀的半份檔案；已快取但到期的原件不重抓。驗收以真實 stdio peer 計實際 callback 次數，獨立擴展回條另列。
 
-來源與證據：原版固定 SHA 329ca7c487414d2f54ddd98ff4727446ed2446cd，18 個 Telegram／飛書行為用例，artifacts/CORE-038/original-gateway-media-oracle-01/。新核心的 207 項檢查和分塊回條在 artifacts/CORE-038/inbound-gateway-mac-02/；相鄰 CORE-031／032／039／025／030／026／033 在 artifacts/CORE-038/inbound-gateway-adjacent-01/。獨立消費與發布待交接。
+來源與證據：原版固定 SHA 329ca7c487414d2f54ddd98ff4727446ed2446cd，18 個 Telegram／飛書行為用例，artifacts/CORE-038/original-gateway-media-oracle-01/。新核心的 207 項檢查和分塊回條在 artifacts/CORE-038/inbound-gateway-mac-02/；相鄰 CORE-031／032／039／025／030／026／033 在 artifacts/CORE-038/inbound-gateway-adjacent-01/。
+
+## Telegram 原生插件的三端消費記錄
+
+在 `[[plugins]]` 核准 `gateway.inbound`、`gateway.media` 後，將同一安裝的 `[plugins.gateway_media]` 中的 `application` 設為 Bot 的 ID 字串，例如 `application = "101"`。測試使用真正的 Telegram 0.1.0-alpha.2 插件、原生核心與本機 Bot API 錄製端。Mac、Linux、HJW Windows 各自從入站 ACK 取得原 event，選取同一附件，經兩個 callback 取回 29,367 bytes。原 Bot 各收到一次 getFile 與一次檔案下載，第二次選取沿用已驗快取。將授權改為另一個 Bot ID 後，Host 回覆 -32003，沒有媒體 callback、原生下載或 offset 推進。
+
+核心來源 `4a41470e89b4`，插件來源 `5ad17ab4507b`，插件使用的 SDK 為 Rust 1.0.0-alpha.13。三份原生執行檔及逐幀記錄的雜湊均可從 `artifacts/CORE-038/telegram-5ad17ab-three-platform-01/consumer-receipts.json` 核對。出站逐段和穩定協議由各自的見證卡驗收。

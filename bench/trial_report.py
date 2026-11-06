@@ -32,6 +32,10 @@ def report(directory):
         and len(journal) % 6 == 0,
         "incomplete repetitions",
     )
+    require(
+        index["source"] == "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+        "wrong original owner",
+    )
     measurements = []
     seen = set()
     writers = set()
@@ -69,17 +73,61 @@ def report(directory):
             "inconsistent load",
         )
         total += count
-        if row["status"] != "verified":
-            failed.append({"label": label, "status": row["status"]})
+        status = row["status"]
+        require(
+            status in {"verified", "failed", "effect_mismatch"}, "unknown trial status"
+        )
+        sources[label] = {"trial_sha256": sha(folder / "trial.json")}
+        metrics = (
+            "wall_seconds",
+            "sampled_cpu_seconds",
+            "waited_cpu_seconds",
+            "sampled_tree_rss_peak_bytes",
+            "resource_scope",
+            "storage",
+            "observation",
+        )
+        measurement = {
+            key: row[key] if status == "verified" else row.get(key) for key in metrics
+        }
+        measurement.update(
+            label=label,
+            status=status,
+            measured_inputs=count,
+            warmup_inputs=warm,
+            exit_code=row.get("exit_code"),
+            sample_count=row.get("sample_count"),
+        )
+        measurements.append(measurement)
+        if status != "verified":
+            log = folder / "process.log"
+            observed = sha(log) if log.is_file() else None
+            if "failure_log_sha256" in row:
+                require(row["failure_log_sha256"] == observed, "changed failure log")
+            sources[label].update(
+                process_log_sha256=observed,
+                log_digest_recorded_at_capture="failure_log_sha256" in row,
+            )
+            failed.append(
+                {
+                    key: row.get(key)
+                    for key in (
+                        "label",
+                        "status",
+                        "failure",
+                        "exit_code",
+                        "all_effects",
+                        "measured_effects",
+                    )
+                }
+            )
             continue
         raw = folder / "evidence"
         run = json.loads((raw / "run.json").read_bytes())
         if name in patches:
             require(
                 run["patch_sha256"] == patches[name]
-                and run["source_commit"]
-                == index["source"]
-                == "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+                and run["source_commit"] == index["source"],
                 "wrong original owner",
             )
         events, obs = arm(raw, name)
@@ -127,26 +175,8 @@ def report(directory):
         )
         writers.add(tuple(writer))
         contracts[name].add(json.dumps(obs["wire_controls"], sort_keys=True))
-        sources[label] = {
-            "trial_sha256": sha(folder / "trial.json"),
-            "files": obs["files"],
-        }
+        sources[label]["files"] = obs["files"]
         correct += count
-        measurements.append(
-            {
-                k: row[k]
-                for k in (
-                    "label",
-                    "wall_seconds",
-                    "sampled_cpu_seconds",
-                    "waited_cpu_seconds",
-                    "sampled_tree_rss_peak_bytes",
-                    "resource_scope",
-                    "storage",
-                    "observation",
-                )
-            }
-        )
     repeats = len(journal) // 6
     for rep in range(1, repeats + 1):
         for name in "ABC":

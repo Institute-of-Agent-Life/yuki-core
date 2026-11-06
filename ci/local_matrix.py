@@ -49,6 +49,21 @@ def api(endpoint, *args):
     return json.loads(subprocess.check_output(['gh', 'api', f'repos/{REPO}/{endpoint}', *args]))
 
 
+def verify_pr(number, parents, tested_merge, merge_into_main):
+    pr = api(f'pulls/{number}')
+    base = pr['base']
+    require(pr['state'] == 'open' and base['repo']['full_name'] == REPO
+            and pr['head']['repo']['full_name'] == REPO
+            and pr['head']['sha'] == parents[1] and pr['merge_commit_sha'] == tested_merge,
+            'PR head, repository or prospective merge changed')
+    if merge_into_main:
+        require(base['ref'] == 'main', 'merge requires a main PR')
+    # A stacked PR can retain its original base.sha after its parent lands.
+    # Validate the tested first parent against the live target branch.
+    live_base = api('git/ref/heads/' + base['ref'])['object']['sha']
+    require(live_base == parents[0], 'target branch advanced after the tested merge')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('pr', type=int)
@@ -68,15 +83,7 @@ def main():
     require(len(parents) == 2, 'expected the PR merge commit')
 
     def current():
-        pr = api(f'pulls/{args.pr}')
-        require(pr['state'] == 'open' and pr['head']['repo']['full_name'] == REPO
-                and [pr['base']['sha'], pr['head']['sha']] == parents
-                and pr['merge_commit_sha'] == source['commit']
-                and api('git/ref/heads/' + pr['base']['ref'])['object']['sha'] == parents[0],
-                'PR head, base or prospective merge changed')
-        if args.merge:
-            require(pr['base']['ref'] == 'main', 'merge requires a main PR')
-        return pr
+        verify_pr(args.pr, parents, source['commit'], args.merge)
 
     current()
     registry = (checkout / 'ci/checks.json').read_bytes()
