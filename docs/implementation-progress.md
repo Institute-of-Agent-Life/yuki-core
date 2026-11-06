@@ -16,6 +16,8 @@ CORE-013 未發布候選（PR #79，來源 `9597513f82d3f42a4ababcb750362bf15326
 
 CORE-040 連續兩次公開 Compact（`codex/core-040-compact-replay`）：[共同輸入及重現方式](benchmarks/compact-replay.md)。正常／第二份摘要帶禁用工具兩條時序，A／B／Rust 各 30 次實體 Chat；逐次核對哪些原文、摘要及當前問題真正進入模型。第二份失敗時第一份摘要仍有效，沒有送出 QQ，沒有補買。舊版原始回條 `artifacts/CORE-040/compact-two-{a,b}-03/`；Rust `artifacts/CORE-040/compact-replay-check-01/slice-decision.json`。此處只驗公開手動壓縮，E13 的自動 P/E、長 Work 工具與等資源比較仍待核對。
 
+[PR #81](https://github.com/Institute-of-Agent-Life/yuki-core/pull/81) 固定來源 `d8a10ba67270b8d2ff2c936ade3e267c0d9e9fbe`，HJW Windows、Linux、macOS 各 84 項通過；三平台實際模型時序、公開摘要及費用帳本索引 `artifacts/CORE-040/compact-replay-clean-01/verified-platforms.json`，SHA-256 `bb518eec24eea3f7c8126b69fe4edaf41214161e11c0f8e06c6fd394f9710b53`。
+
 ## 完成與進行中
 
 已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；CORE-016 分段 #42 已合併至 `ce66753`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。
