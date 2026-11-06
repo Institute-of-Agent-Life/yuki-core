@@ -483,6 +483,10 @@ grants=["observe.metadata","tool.call"]
                 in record("tg", "tool.status", {"handle": handle, "admin": True}),
             )
             q.put((reply(), 0))
+            # Queueing an HTTP reply is not a commit. Each independent SDK scenario
+            # starts on a new turn, after the preceding owner has actually settled.
+            until(lambda: rows("SELECT id FROM executions WHERE source=? AND state='completed'", incoming["event"]),
+                  "original Python SDK turn settled")
             rust_source = record(
                 "tg",
                 "gateway.inbound",
@@ -490,11 +494,32 @@ grants=["observe.metadata","tool.call"]
             )["result"]
             ctx.check("original human admitted for Rust SDK", rust_source["accepted"])
             raw, q = peer.receive()
+            ctx.check("Rust probe answers the second original model request",
+                      "second independent consumer" in json.dumps(json.loads(raw)["messages"]))
             q.put((reply([tool("rust_host_probe", "rust-1", {"value": "rust"})]), 0))
-            follow, q = peer.receive()
-            rust_result = json.loads(json.loads(follow)["messages"][-1]["content"])[
-                "result"
-            ]["data"]
+            try:
+                follow, q = peer.receive()
+            except Exception:
+                ctx.write("host-rust-followup-diagnostic.json", {
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "intents": rows("SELECT * FROM model_tool_intents"),
+                    "budgets": rows("SELECT * FROM root_budgets"),
+                    "requests": rows("SELECT id,root,estimated_input,max_output FROM model_requests"),
+                    "attempts": rows("SELECT id,state,diagnostic FROM model_attempts"),
+                    "calls": rows("SELECT method,state FROM host_calls"),
+                })
+                raise
+            rust_envelope = json.loads(json.loads(follow)["messages"][-1]["content"])
+            if "data" not in rust_envelope.get("result", {}):
+                ctx.write("host-rust-result-diagnostic.json", {
+                    "result": rust_envelope,
+                    "executions": rows("SELECT id,state FROM executions"),
+                    "turns": rows("SELECT execution,diagnostic FROM main_turns"),
+                    "calls": rows("SELECT plugin,method,state FROM host_calls"),
+                    "plugins": rows("SELECT plugin,enabled,online,generation FROM host_installations"),
+                })
+            rust_result = rust_envelope["result"]["data"]
             ctx.check(
                 "installed Rust SDK handles interleaved opposite-direction status",
                 rust_result["rust_sdk"]
@@ -502,6 +527,8 @@ grants=["observe.metadata","tool.call"]
                 and rust_result["original"] == {"value": "rust"},
             )
             q.put((reply(), 0))
+            until(lambda: rows("SELECT id FROM executions WHERE source=? AND state='completed'", rust_source["event"]),
+                  "original Rust SDK turn settled")
             (areas["tg"] / "cut-second").touch()
             second = record("tg", "gateway.inbound", frame("send", "send test", True))[
                 "result"
