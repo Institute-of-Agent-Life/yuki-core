@@ -31,7 +31,7 @@ CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux �
 | CORE-033 Client9 明選 | PR #67，`389d586`，`codex/core-033-entry-selection` | A→B／既有 ACP、舊 NULL、原 Work mailbox 與 Host 授權；[方法與失敗時序](client-entry-selection.md)。reader 47；乾淨 Windows／Mac／Linux 各 558 項、7 張相鄰卡通過。 |
 | CORE-033 Client9 出站串流 | PR #71，來源 d8bf54c | [提交提示、快照與按事件續讀](client-stream.md)。Mac、HJW Windows、Linux 各 581 項，候選索引見下。 |
 | CORE-033 Client9 上傳 | codex/core-033-client-uploads | [回執與有序附件](client-upload-receipts.md)。PR #72，來源 c616cf3；Windows／macOS／Linux 各 666 項、原版 15 項與 7 張相鄰卡通過。 |
-| CORE-038／025 原 gateway 取件 | codex/core-038-inbound-media | [原 Bot、app 與租戶取件](gateway-inbound-media.md)；SDK alpha.13／a13，reader 49。Mac 207 項、固定原版 18 項及 7 張相鄰卡通過；待三平台交接與 EXT-004／006。 |
+| CORE-038／025 原 gateway 取件 | codex/core-038-inbound-media | [原 Bot、app 與租戶取件](gateway-inbound-media.md)；SDK alpha.13／a13，reader 49。三平台各 207 項、固定原版 18 項及 7 張相鄰卡通過；索引見下，待 EXT-004／006。 |
 | CORE-040 | #55 `400c9b8`，部分完成 | 12 次冷暖 A/B/C 各 1200 輸入已逐筆核效果；完整工具／DTO／Compact 等價與受控資源比較未完成，不判 Rust 勝出。 |
 
 每個 PR 均等其前置合併與最新 head 的 push／PR × Windows／Linux／Mac 六項檢查全通過才合併。待合併分支以 PR 的 head ref 為準；本地 worktree 在 `.cache/worktrees/`。不直接提交 main。
@@ -73,7 +73,7 @@ CORE-033 Client9 上傳：[三平台完整性索引](/Volumes/huawei/項目實�
 
 CORE-038 入站附件：來源 `b99b01a92443`，Windows、macOS、Linux 各通過 207 項。[候選包與逐平台 SHA-256](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/inbound-gateway-handoff-final-01/verified-candidates.json)，索引 SHA-256 `ad9f55a0434d54e3b8adc74c26f1e0a29d699621588eed9e668b5c48764585bb`。SDK alpha.13／a13、reader 49，供 EXT-004／006 重放原收件與過期案例；尚未發布。
 
-CORE-038 Main 選讀：`codex/core-038-selected-processor`，macOS 原生 318 項、固定舊版 22 個案例已通過。讀取原 PDF 及兩張影片幀，核對當次 Main HTTP 的兩組實際 bytes；原件到期與處理器換代後不呈現。驗證：`artifacts/CORE-038/main-selected-mac-01/`，待乾淨三平台候選與 EXT-031 對拍。
+CORE-038 Main 選讀：[PR #74](https://github.com/Institute-of-Agent-Life/yuki-core/pull/74)，來源 `0ef956a9c6d9`，Windows、macOS、Linux 各 318 項。[三平台候選索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/main-selected-handoff-final-01/verified-candidates.json)，SHA-256 `49437652505a0881fc14576502036101412042542d642f7eeea4f98bbdc7c459`。reader 50／SDK alpha.13、a13。原 PDF 頁文和兩張影格到達同一 Main，未額外派發模型請求。未發布，待 EXT-031 消費。
 
 ## 缺少輸入與下一步
 
