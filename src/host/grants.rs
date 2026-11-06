@@ -11,8 +11,14 @@ use yuki_plugin_sdk::{Binding, Declaration};
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Install {
+    #[serde(default = "initially_enabled", skip_serializing_if = "is_enabled")]
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configuration: Option<super::configuration::Definition>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notifications: Option<super::notification::Policy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gateway_media: Option<super::gateway_media::Identity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sessions: Option<super::plugin_sessions::Policy>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -43,6 +49,12 @@ pub struct Install {
     #[serde(default)]
     pub tools: Vec<Tool>,
 }
+fn initially_enabled() -> bool {
+    true
+}
+fn is_enabled(value: &bool) -> bool {
+    *value
+}
 pub fn methods() -> &'static Value {
     static IDL: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
     IDL.get_or_init(|| {
@@ -51,6 +63,7 @@ pub fn methods() -> &'static Value {
         ))
         .expect("gateway IDL");
         for schema in [
+            include_str!("../../protocol/plugin/control/methods.json"),
             include_str!("../../protocol/plugin/personal/methods.json"),
             include_str!("../../protocol/plugin/media/methods.json"),
             include_str!("../../protocol/plugin/composition/methods.json"),
@@ -83,8 +96,26 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if self.grants.contains("terminal.work")
+            && !["tool.call", "forget.owner"]
+                .iter()
+                .all(|g| self.grants.contains(*g))
+        {
+            return Err("terminal.work requires tool.call and forget.owner".into());
+        }
+        if self.grants.contains("gateway.media") != self.gateway_media.is_some()
+            || self
+                .gateway_media
+                .as_ref()
+                .is_some_and(|i| !i.valid() || !self.grants.contains("gateway.inbound"))
+        {
+            return Err("gateway.media requires an inbound installation with an explicit application identity".into());
+        }
         if let Some(policy) = &self.notifications {
             policy.validate(self)?;
+        }
+        if let Some(definition) = &self.configuration {
+            definition.validate()?;
         }
         if let Some(policy) = &self.sessions {
             policy.validate(self)?;
@@ -181,8 +212,14 @@ impl Install {
     }
     pub fn revision(&self) -> Result<String> {
         let mut identity = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if let Some(media) = &self.gateway_media {
+            identity["gateway_media"] = serde_json::to_value(media)?;
+        }
         if let Some(policy) = &self.notifications {
             identity["notifications"] = serde_json::to_value(policy)?;
+        }
+        if let Some(definition) = &self.configuration {
+            identity["configuration"] = serde_json::to_value(definition)?;
         }
         if let Some(policy) = &self.sessions {
             identity["sessions"] = serde_json::to_value(policy)?;
@@ -264,7 +301,10 @@ mod tests {
     #[test]
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
+            gateway_media: None,
             notifications: None,
+            enabled: true,
+            configuration: None,
             sessions: None,
             maintenance: None,
             participation: None,

@@ -67,6 +67,25 @@
               "string",
               "null"
             ]
+          },
+          "media_identity": {
+            "type": "object",
+            "properties": {
+              "application": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "tenant": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "application"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -672,6 +691,376 @@
         "type": "object"
       }
     },
+    "gateway.media": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "gateway.media",
+      "params": {
+        "type": "object",
+        "properties": {
+          "transfer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "platform": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "bot_stage": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "media_identity": {
+            "type": "object",
+            "properties": {
+              "application": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "tenant": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "application"
+            ],
+            "additionalProperties": false
+          },
+          "source_event": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "attachment_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4095
+          },
+          "segment_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4095
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "locator": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "native_id": {
+                "anyOf": [
+                  {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "native_version": {
+                "anyOf": [
+                  {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "space": {
+                "anyOf": [
+                  {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "topic": {
+                "anyOf": [
+                  {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "sender": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "source",
+              "native_id",
+              "native_version",
+              "space",
+              "topic",
+              "sender"
+            ],
+            "additionalProperties": false
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24576
+          }
+        },
+        "required": [
+          "transfer",
+          "namespace",
+          "platform",
+          "bot_stage",
+          "media_identity",
+          "source_event",
+          "attachment_index",
+          "segment_index",
+          "kind",
+          "reference",
+          "locator",
+          "offset",
+          "length"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "transfer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16777216
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "data": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32768
+          }
+        },
+        "required": [
+          "transfer",
+          "offset",
+          "size",
+          "sha256",
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "terminal.scope": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "terminal.work",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "installation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "execution": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "tool": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "mode": {
+            "enum": [
+              "launch",
+              "reconcile",
+              "read",
+              "input",
+              "interrupt",
+              "cancel",
+              "close"
+            ]
+          },
+          "launch_request": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "run_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "installation",
+          "work_id",
+          "execution",
+          "request_id",
+          "tool",
+          "mode",
+          "launch_request",
+          "run_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "terminal.bind": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "terminal.work",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "handle",
+          "request_id",
+          "run_id"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "request_id",
+          "run_id"
+        ],
+        "additionalProperties": false
+      }
+    },
     "device.auth": {
       "direction": "plugin_to_host",
       "revision": 1,
@@ -1012,6 +1401,186 @@
       },
       "result": {
         "type": "object"
+      }
+    },
+    "device.connect": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "device.connections",
+      "params": {
+        "type": "object",
+        "properties": {
+          "proof": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "proof"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "purpose": {
+            "const": "connector"
+          },
+          "connection_epoch": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "journal_namespace": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "device_id",
+          "purpose",
+          "connection_epoch",
+          "journal_namespace",
+          "expires_at",
+          "closed",
+          "handle"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "device.check": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "device.connections",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "purpose": {
+            "const": "connector"
+          },
+          "connection_epoch": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "journal_namespace": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "closed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "device_id",
+          "purpose",
+          "connection_epoch",
+          "journal_namespace",
+          "expires_at",
+          "closed"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "device.close": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "device.connections",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "purpose": {
+            "const": "connector"
+          },
+          "connection_epoch": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "journal_namespace": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "closed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "device_id",
+          "purpose",
+          "connection_epoch",
+          "journal_namespace",
+          "expires_at",
+          "closed"
+        ],
+        "additionalProperties": false
       }
     },
     "media.process": {
@@ -5953,6 +6522,153 @@
           "minimum": 0
         }
       }
+    },
+    "plugin.config.get": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "plugin.config.read",
+      "params": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "plugin.secrets.get": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "plugin.secrets.read",
+      "params": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "plugin.observe": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "plugin.observe",
+      "params": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "cursor",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object"
+      }
+    },
+    "control.read": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "control.invoke",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "args": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "method",
+          "args"
+        ],
+        "additionalProperties": false
+      },
+      "result": {}
+    },
+    "control.write": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "control.invoke",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "body": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "method",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "result": {}
     }
   }
 }

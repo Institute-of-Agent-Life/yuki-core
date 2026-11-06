@@ -60,6 +60,8 @@ def run(ctx):
             database = json.loads(command("operator", "database-info").stdout)
             ctx.equal("foreign keys enabled", database["foreign_keys"], 1)
             ctx.equal("WAL enabled", database["journal_mode"], "wal")
+            ctx.equal("database-info inspects the original writer connection", database["observed_connection"], "writer")
+            ctx.equal("writer keeps full durability and bounded busy wait", (database["synchronous"], database["busy_timeout_ms"]), (2, 5000))
             latest = max(int(p.name.split("_")[0]) for p in (ctx.root / "migrations").glob("[0-9]*_*.sql"))
             ctx.equal("schema matches the last embedded migration", database["schema_version"], latest)
             ctx.check("FTS5 compiled in", "ENABLE_FTS5" in database["compile_options"])

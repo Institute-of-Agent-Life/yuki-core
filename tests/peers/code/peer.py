@@ -137,7 +137,7 @@ def serve(frame):
                 args = step["arguments"]
                 if step.get("previous_artifact"):
                     artifact = state["seen"][-1]["receipt"]["result"]["artifact"]
-                    args = {"handle": artifact["handle"], "version": artifact["version"], "path": "/result/value/value", "offset": 0, "limit": 128}
+                    args = {"handle": artifact["handle"], "operation": "get", "path": ["value", "value"], "offset": 0, "limit": 128}
                 if original is not None:
                     child = rpc_call("tool.resume", {"handle": handle, "ordinal": index, "feed_index": original["feed_index"], "engine_call_id": original["engine_call_id"]})
                 else:

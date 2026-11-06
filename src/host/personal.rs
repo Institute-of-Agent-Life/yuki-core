@@ -1,8 +1,14 @@
 mod artifacts;
-mod credentials;
+mod connector;
+pub(crate) mod credentials;
 mod domains;
 mod http;
 mod native;
+mod receipts;
+mod selection;
+mod stream;
+mod upload_body;
+mod uploads;
 mod views;
 mod work;
 use crate::{
@@ -11,9 +17,8 @@ use crate::{
 };
 use credentials::Purpose;
 pub use http::router;
-pub(crate) use native::callback;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use sqlx::SqliteConnection;
 #[derive(clap::Subcommand, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, tag = "method", rename_all = "snake_case")]
@@ -38,20 +43,21 @@ pub enum Request {
     },
     Entry {
         token_hash: String,
+        selection: selection::Selection,
         purpose: Purpose,
         command: Command,
     },
 }
 pub enum Command {
+    ConnectionProof(String),
     Issue(String, Purpose),
     Revoke(String),
     Work(String, Value, bool),
     Proof(String, String, bool),
     Message(Value),
+    Upload(uploads::Spec, String, std::fs::File),
     Correct(i64, Value),
     Schedule(i64, String, Value),
-    AdminRole(String, bool, String, i64),
-    Forget(String, String),
 }
 pub async fn write(store: &Store, r: Request) -> Result<Value> {
     store.write(Mutation::Personal(Box::new(r))).await
@@ -84,11 +90,15 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
         } => credentials::pair(conn, code_hash, label, *purpose).await,
         Request::Entry {
             token_hash,
+            selection,
             purpose,
             command,
         } => {
-            let who = credentials::authenticate(conn, token_hash, *purpose).await?;
+            let who = selection::authenticate(conn, token_hash, *purpose, selection, true).await?;
             match command {
+                Command::ConnectionProof(plugin) if *purpose == Purpose::Connector => {
+                    connector::proof(conn, &who, plugin).await
+                }
                 Command::Proof(plugin, w, native)
                     if *native == (*purpose == Purpose::Connector) =>
                 {
@@ -96,7 +106,25 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
                 }
                 _ if *purpose != Purpose::Chat => Err("unauthenticated".into()),
                 Command::Issue(op, p) => {
-                    credentials::issue(conn, &who.device, &who.owner, op, *p, None).await
+                    if receipts::find(conn, &who, op).await?.is_some() {
+                        return Err("request_conflict".into());
+                    }
+                    let scope = who.request_scope();
+                    let binding: String =
+                        sqlx::query_scalar("SELECT actor_stage FROM entries WHERE id=?")
+                            .bind(&who.entry)
+                            .fetch_one(&mut *conn)
+                            .await?;
+                    credentials::issue_with_scope(
+                        conn,
+                        &who.device,
+                        &who.request_person,
+                        op,
+                        *p,
+                        Some(&binding),
+                        Some(scope),
+                    )
+                    .await
                 }
                 Command::Revoke(id) => credentials::revoke(conn, id, Some(&who.root)).await,
                 Command::Work(id, v, cancel) => work::apply(conn, &who, id, v, *cancel).await,
@@ -104,54 +132,26 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
                 Command::Schedule(n, action, v) => {
                     domains::change_schedule(conn, &who, *n, action, v).await
                 }
+                Command::Upload(spec, entry, file) => {
+                    uploads::register(conn, &who, spec, entry, file).await
+                }
                 Command::Message(v) => work::message(conn, &who, v).await,
-                Command::Forget(id, op) => {
-                    if !who.admin {
-                        return Err("forbidden".into());
-                    }
-                    credentials::uuid(op)?;
-                    let r = crate::privacy::forget::apply(
-                        conn,
-                        &format!("admin-forget:{}:{op}", who.owner),
-                        id,
-                    )
-                    .await?;
-                    Ok(
-                        json!({"person_id":id,"deleted":true,"peer_cleanup":r["owners_pending"],"managed_storage":r["managed_storage"]}),
-                    )
-                }
-                Command::AdminRole(id, enabled, op, revision) => {
-                    if !who.admin {
-                        return Err("forbidden".into());
-                    }
-                    credentials::uuid(op)?;
-                    let hash = credentials::fingerprint(
-                        "admin.person_superuser",
-                        id,
-                        &json!({"enabled":enabled,"expected_revision":revision}),
-                    );
-                    if let Some(r)=sqlx::query_as::<_,(String,String)>("SELECT digest,result FROM personal_receipts WHERE owner=? AND scope='admin' AND operation=?").bind(&who.owner).bind(op).fetch_optional(&mut *conn).await?{
-                        if r.0!=hash{return Err("request_conflict".into())}return Ok(serde_json::from_str(&r.1)?)
-                    }
-                    let current: i64 =
-                        sqlx::query_scalar("SELECT revision FROM persons WHERE id=?")
-                            .bind(id)
-                            .fetch_optional(&mut *conn)
-                            .await?
-                            .ok_or("not_found")?;
-                    if current != *revision {
-                        return Err("precondition_failed".into());
-                    }
-                    let result = crate::identity::person::apply(
-                        conn,
-                        &crate::identity::person::Change::Admin(id.clone(), *enabled),
-                    )
-                    .await?;
-                    sqlx::query("INSERT INTO personal_receipts VALUES(?,'admin',?,'admin.person_superuser',?,?,?,NULL)").bind(&who.owner).bind(op).bind(id).bind(hash).bind(result.to_string()).execute(conn).await?;
-                    Ok(result)
-                }
                 _ => Err("scope_unavailable".into()),
             }
         }
+    }
+}
+
+pub(crate) async fn callback(
+    conn: &mut SqliteConnection,
+    plugin: &str,
+    generation: &str,
+    method: &str,
+    args: &Value,
+) -> Result<Value> {
+    if matches!(method, "device.connect" | "device.check" | "device.close") {
+        connector::callback(conn, plugin, generation, method, args).await
+    } else {
+        native::callback(conn, plugin, generation, method, args).await
     }
 }

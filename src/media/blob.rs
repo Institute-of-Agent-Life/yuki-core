@@ -23,8 +23,59 @@ impl Root {
     pub fn open(path: &Path) -> Result<Self> {
         Ok(Self(platform::root(path)?))
     }
+    pub fn writable(&self) -> Result<bool> {
+        let permissions = self.0.metadata()?.permissions();
+        #[cfg(unix)]
+        {
+            use rustix::fs::{Access, AtFlags, StatVfsMountFlags, accessat, fstatvfs};
+            use std::os::unix::fs::PermissionsExt;
+            if permissions.mode() & 0o222 == 0
+                || fstatvfs(&self.0)?
+                    .f_flag
+                    .contains(StatVfsMountFlags::RDONLY)
+            {
+                return Ok(false);
+            }
+            match accessat(&self.0, ".", Access::WRITE_OK, AtFlags::EACCESS) {
+                Ok(()) => Ok(true),
+                Err(rustix::io::Errno::ACCESS | rustix::io::Errno::ROFS) => Ok(false),
+                Err(error) => Err(error.into()),
+            }
+        }
+        #[cfg(not(unix))]
+        Ok(!permissions.readonly())
+    }
     pub fn snapshot(&self, relative: &str) -> Result<Snapshot> {
-        let mut file = self.file(relative)?;
+        Self::read_snapshot(self.file(relative)?)
+    }
+    pub fn modified(&self, relative: &str) -> Result<std::time::SystemTime> {
+        Ok(self.file(relative)?.metadata()?.modified()?)
+    }
+    pub fn snapshot_optional(&self, relative: &str) -> Result<Option<Snapshot>> {
+        self.optional(relative, false)
+    }
+    /// Apply the v3 secret file's POSIX mode check to the opened descriptor.
+    pub fn private_snapshot_optional(&self, relative: &str) -> Result<Option<Snapshot>> {
+        self.optional(relative, true)
+    }
+    fn optional(&self, relative: &str, private: bool) -> Result<Option<Snapshot>> {
+        let file = match self.file(relative) {
+            Ok(file) => file,
+            Err(error) if platform::missing(error.as_ref()) => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if private && file.metadata()?.permissions().mode() & 0o077 != 0 {
+                return Err("secret file permissions are not private".into());
+            }
+        }
+        #[cfg(not(unix))]
+        let _ = private;
+        Ok(Some(Self::read_snapshot(file)?))
+    }
+    fn read_snapshot(mut file: File) -> Result<Snapshot> {
         let before = file.metadata()?;
         if !before.is_file() || before.len() > MAX_BYTES as u64 || platform::links(&file)? != 1 {
             return Err("single regular file within byte limit required".into());
@@ -57,6 +108,12 @@ impl Root {
             return Err("invalid staging name".into());
         }
         platform::remove(&self.0, name)
+    }
+    pub fn replace(&self, staged: &str, destination: &str) -> Result<()> {
+        if components(staged)?.len() != 1 || components(destination)?.len() != 1 {
+            return Err("invalid replacement name".into());
+        }
+        platform::replace(&self.0, staged, destination)
     }
     fn file(&self, relative: &str) -> Result<File> {
         let names = components(relative)?;
@@ -125,6 +182,17 @@ mod platform {
             Ok(()) | Err(rustix::io::Errno::NOENT) => Ok(()),
             Err(e) => Err(e.into()),
         }
+    }
+    pub fn replace(parent: &File, staged: &str, destination: &str) -> Result<()> {
+        rustix::fs::renameat(parent, staged, parent, destination)?;
+        parent.sync_all()?;
+        Ok(())
+    }
+    pub fn missing(error: &(dyn std::error::Error + Send + Sync + 'static)) -> bool {
+        error.downcast_ref::<rustix::io::Errno>() == Some(&rustix::io::Errno::NOENT)
+            || error
+                .downcast_ref::<std::io::Error>()
+                .is_some_and(|error| error.kind() == std::io::ErrorKind::NotFound)
     }
     pub fn links(f: &File) -> Result<u64> {
         Ok(f.metadata()?.nlink())
@@ -213,6 +281,43 @@ mod platform {
             return Err(io::Error::last_os_error().into());
         }
         Ok(())
+    }
+    pub fn replace(parent: &File, staged: &str, destination: &str) -> Result<()> {
+        use windows_sys::Wdk::Storage::FileSystem::{
+            FILE_RENAME_INFORMATION, FileRenameInformation, NtSetInformationFile,
+        };
+        let file = relative(parent, staged, false, false, true)?;
+        let name: Vec<u16> = destination.encode_utf16().collect();
+        let bytes = size_of::<FILE_RENAME_INFORMATION>() + name.len() * 2;
+        let mut storage = vec![0u64; bytes.div_ceil(size_of::<u64>())];
+        let info = storage.as_mut_ptr().cast::<FILE_RENAME_INFORMATION>();
+        let mut status = IO_STATUS_BLOCK::default();
+        // The native API resolves this single name against the already pinned root.
+        // Both the aligned variable-length buffer and handles outlive the synchronous call.
+        let code = unsafe {
+            (*info).Anonymous.ReplaceIfExists = true;
+            (*info).RootDirectory = parent.as_raw_handle();
+            (*info).FileNameLength = u32::try_from(name.len() * 2)?;
+            std::ptr::copy_nonoverlapping(name.as_ptr(), (*info).FileName.as_mut_ptr(), name.len());
+            NtSetInformationFile(
+                file.as_raw_handle(),
+                &mut status,
+                info.cast(),
+                u32::try_from(bytes)?,
+                FileRenameInformation,
+            )
+        };
+        if code < 0 {
+            return Err(
+                io::Error::from_raw_os_error(unsafe { RtlNtStatusToDosError(code) } as i32).into(),
+            );
+        }
+        Ok(())
+    }
+    pub fn missing(error: &(dyn std::error::Error + Send + Sync + 'static)) -> bool {
+        error
+            .downcast_ref::<io::Error>()
+            .is_some_and(|error| error.kind() == io::ErrorKind::NotFound)
     }
     fn relative(parent: &File, name: &str, dir: bool, create: bool, delete: bool) -> Result<File> {
         use windows_sys::{

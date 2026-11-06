@@ -2,8 +2,12 @@ mod aux_model;
 pub(crate) mod calls;
 mod commands;
 pub(crate) mod composition;
+pub(crate) mod configuration;
+mod control;
 pub(crate) mod domain;
+pub(crate) mod gateway_media;
 mod grants;
+pub(crate) mod lifecycle;
 pub(crate) mod maintenance;
 mod media;
 pub(crate) mod notification;
@@ -11,7 +15,9 @@ pub(crate) mod participation;
 pub(crate) mod personal;
 pub(crate) mod plugin_sessions;
 mod process;
+pub(crate) mod selected_processor;
 mod send;
+mod terminal_work;
 use crate::{
     Result,
     store::{Mutation, Store},
@@ -22,7 +28,7 @@ use sqlx::Row;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{Arc, RwLock},
     time::Duration,
 };
 use tokio::sync::Mutex;
@@ -34,12 +40,13 @@ pub enum Change {
     PluginSession(Box<plugin_sessions::Change>),
     Notification(notification::Change),
     Configure(Vec<Install>),
-    Start(String, bool),
+    Start(String, bool, String),
     Online(String, String),
     Close(String, String),
     Enable(String, bool),
     Callback(String, String, String, Value),
     Call(calls::Change),
+    FetchDispatch(Box<gateway_media::Gate>, String, String),
     Composition(Box<composition::Change>),
     CommandDone(i64, String),
     Reported(i64, String),
@@ -53,7 +60,8 @@ struct Slot {
 }
 pub struct Hub {
     pub(crate) qq: crate::gateway::qq::Hub,
-    slots: BTreeMap<String, Slot>,
+    slots: RwLock<BTreeMap<String, Arc<Slot>>>,
+    inventory: Mutex<()>,
     data: PathBuf,
     shutdown: tokio::sync::watch::Sender<bool>,
 }
@@ -81,6 +89,163 @@ pub enum Action {
 }
 
 impl Hub {
+    fn installed(&self) -> Vec<(String, Arc<Slot>)> {
+        self.slots
+            .read()
+            .expect("host inventory lock")
+            .iter()
+            .map(|(id, slot)| (id.clone(), slot.clone()))
+            .collect()
+    }
+    fn slot(&self, id: &str) -> Result<Arc<Slot>> {
+        self.slots
+            .read()
+            .expect("host inventory lock")
+            .get(id)
+            .cloned()
+            .ok_or_else(|| "plugin not installed".into())
+    }
+    pub(crate) async fn discover(
+        &self,
+        store: &Store,
+        authority: crate::operator::config::Authority,
+        body: Value,
+    ) -> Result<Value> {
+        use crate::operator::domain::{Request, invoke};
+        let _inventory = self.inventory.lock().await;
+        let probe = invoke(
+            store,
+            Request::DiscoverAuth(authority.clone(), body.clone()),
+        )
+        .await?;
+        let prepared = if probe["new"] == true {
+            let declarations = (|| -> Result<Vec<Install>> {
+                let installs = crate::config::Config::read(&self.data)?.plugins;
+                grants::validate(&installs)?;
+                Ok(installs)
+            })();
+            let installs = match declarations {
+                Ok(installs) => installs,
+                Err(_) => {
+                    return invoke(
+                        store,
+                        Request::Failed(
+                            authority,
+                            "plugin.discover".into(),
+                            body,
+                            "validation_error".into(),
+                        ),
+                    )
+                    .await;
+                }
+            };
+            invoke(
+                store,
+                Request::Discover(authority.clone(), body.clone(), installs),
+            )
+            .await?
+        } else {
+            probe
+        };
+        if prepared["prepared"] != true {
+            return Ok(prepared);
+        }
+        #[cfg(test)]
+        crate::store::tests::commit_barrier("plugin-discovery-committed").await;
+        let rows: Vec<String> = sqlx::query_scalar(
+            "SELECT value FROM core_meta WHERE key LIKE 'plugin-install:%' ORDER BY key",
+        )
+        .fetch_all(store.readers())
+        .await?;
+        let installs = rows
+            .into_iter()
+            .map(|s| serde_json::from_str::<Install>(&s).map_err(Into::into))
+            .collect::<Result<Vec<_>>>()?;
+        let mut slots = BTreeMap::new();
+        for (id, slot) in self.installed() {
+            if installs.iter().any(|i| {
+                i.id == id && serde_json::to_value(i).ok() == serde_json::to_value(&slot.spec).ok()
+            }) {
+                slots.insert(id, slot);
+            } else if let Some(session) = slot.session.lock().await.take() {
+                session.stop();
+                session.wait_closed().await;
+                write(store, Change::Close(id, session.generation)).await?;
+            }
+        }
+        for spec in installs {
+            slots.entry(spec.id.clone()).or_insert_with(|| {
+                Arc::new(Slot {
+                    spec,
+                    session: Mutex::new(None),
+                })
+            });
+        }
+        *self.slots.write().expect("host inventory lock") = slots;
+        invoke(store, Request::Discovered(authority, body)).await
+    }
+    pub(crate) async fn runtime_health(&self, store: &Store) -> Result<Vec<Value>> {
+        let enabled: std::collections::BTreeSet<String> =
+            sqlx::query_scalar("SELECT plugin FROM host_installations WHERE enabled")
+                .fetch_all(store.readers())
+                .await?
+                .into_iter()
+                .collect();
+        let mut running = 0;
+        let mut gateway = self.qq.connected();
+        let (
+            mut maintenance,
+            mut maintenance_running,
+            mut participation,
+            mut participation_running,
+        ) = (false, false, false, false);
+        for (id, slot) in self.installed() {
+            let active = enabled.contains(&id)
+                && slot
+                    .session
+                    .lock()
+                    .await
+                    .as_ref()
+                    .is_some_and(|s| !s.stopped());
+            running += usize::from(active);
+            gateway |= active && slot.spec.platform.is_some();
+            maintenance |= enabled.contains(&id) && slot.spec.maintenance.is_some();
+            maintenance_running |= active && slot.spec.maintenance.is_some();
+            participation |= enabled.contains(&id) && slot.spec.participation.is_some();
+            participation_running |= active && slot.spec.participation.is_some();
+        }
+        Ok(vec![
+            json!({"name":"plugins","enabled":true,"running":running>0,"running_count":running,"healthy":null}),
+            json!({"name":"gateway","enabled":null,"running":gateway,"healthy":null}),
+            json!({"name":"memory_maintenance","enabled":maintenance,"running":maintenance_running,"healthy":null}),
+            json!({"name":"semantic_participation","enabled":participation,"running":participation_running,"healthy":null}),
+        ])
+    }
+    pub(crate) async fn observe(
+        &self,
+        store: &Store,
+        args: &Value,
+        generation: &str,
+    ) -> Result<Value> {
+        let id = args["plugin_id"].as_str().ok_or("validation_error")?;
+        let slot = self.slot(id)?;
+        let session = slot
+            .session
+            .lock()
+            .await
+            .clone()
+            .filter(|s| s.generation == generation && !s.stopped())
+            .ok_or("observation_unavailable")?;
+        let params = json!({"cursor":args["cursor"],"limit":args["limit"].as_u64().unwrap_or(10)});
+        let definition = grants::schema("plugin.observe", "host_to_plugin", &params)?;
+        let output = session.call(store, "plugin.observe", params, None).await?;
+        if serde_json::to_vec(&output)?.len() > 65536
+            || !jsonschema::validator_for(&definition["result"])?.is_valid(&output)
+        {
+            return Err("observation_invalid".into());
+        }
+        Ok(output)
+    }
     pub async fn start(
         store: &mut Store,
         installs: Vec<Install>,
@@ -88,26 +253,22 @@ impl Hub {
         qq: crate::gateway::qq::Hub,
     ) -> Result<()> {
         grants::validate(&installs)?;
-        if installs.is_empty()
-            && !sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM host_installations)")
+        if !installs.is_empty()
+            || sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM host_installations)")
                 .fetch_one(store.readers())
                 .await?
         {
-            return Ok(());
-        }
-        write(store, Change::Configure(installs.clone())).await?;
-        if installs.is_empty() {
-            return Ok(());
+            write(store, Change::Configure(installs.clone())).await?;
         }
         let slots = installs
             .into_iter()
             .map(|spec| {
                 (
                     spec.id.clone(),
-                    Slot {
+                    Arc::new(Slot {
                         spec,
                         session: Mutex::new(None),
-                    },
+                    }),
                 )
             })
             .collect();
@@ -115,7 +276,8 @@ impl Hub {
         let hub = Arc::new(Self {
             qq: qq.clone(),
             shutdown,
-            slots,
+            slots: RwLock::new(slots),
+            inventory: Mutex::new(()),
             data: data.into(),
         });
         store.host = Some(hub.clone());
@@ -126,9 +288,11 @@ impl Hub {
             end.clone(),
         ));
         tokio::spawn(commands::serve(hub.clone(), store.clone(), qq, end));
-        for (id, slot) in &hub.slots {
+        for (id, slot) in hub.installed() {
             if slot.spec.composition.is_some() {
-                let started = hub.restart(store, id).await;
+                // A discovered or disabled Code plugin must not block the owner from
+                // starting its control plane and holding the original paid execution.
+                let started = hub.reconcile(store, &id, false).await;
                 if store.main.as_ref().is_some_and(|cfg| {
                     cfg.code_tool.as_deref()
                         == slot.spec.composition.as_ref().map(|c| c.tool.as_str())
@@ -145,12 +309,36 @@ impl Hub {
         Ok(())
     }
     async fn restart(&self, store: &Store, id: &str) -> Result<Value> {
-        let slot = self.slots.get(id).ok_or("plugin not installed")?;
+        self.reconcile(store, id, true).await
+    }
+    pub(crate) async fn reconcile(&self, store: &Store, id: &str, force: bool) -> Result<Value> {
+        let slot = self.slot(id)?;
         let mut guard = slot.session.lock().await;
+        let (enabled, online, generation): (bool, bool, Option<String>) = sqlx::query_as(
+            "SELECT enabled,online,generation FROM host_installations WHERE plugin=?",
+        )
+        .bind(id)
+        .fetch_one(store.readers())
+        .await?;
+        if !force
+            && enabled
+            && online
+            && guard
+                .as_ref()
+                .is_some_and(|s| !s.stopped() && Some(&s.generation) == generation.as_ref())
+        {
+            return Ok(json!({"plugin":id,"generation":generation,"online":true}));
+        }
         if let Some(old) = guard.take() {
             old.stop();
             old.wait_closed().await;
             write(store, Change::Close(id.into(), old.generation)).await?;
+        }
+        if !enabled {
+            if force {
+                return Err("plugin disabled".into());
+            }
+            return Ok(json!({"plugin":id,"online":false}));
         }
         let pending = pending_erasure(store, id).await?;
         if !pending.is_empty() {
@@ -179,7 +367,7 @@ impl Hub {
     }
     pub async fn stop(&self) {
         self.shutdown.send_replace(true);
-        for slot in self.slots.values() {
+        for (_, slot) in self.installed() {
             if let Some(s) = slot.session.lock().await.take() {
                 s.stop();
                 s.wait_closed().await;
@@ -199,11 +387,8 @@ impl Hub {
                 let mut tx = store.readers().begin().await?;
                 crate::runtime::effects::authorize(&mut tx, &execution, &actor, true).await?;
                 tx.commit().await?;
-                let spec = &self
-                    .slots
-                    .get(&plugin)
-                    .ok_or("selected processor unavailable")?
-                    .spec;
+                let slot = self.slot(&plugin)?;
+                let spec = &slot.spec;
                 self.execute(store,calls::Request{
  vision:false,plugin:plugin.clone(),revision:spec.revision()?,execution,operation,method:"media.process".into(),name:"media.process".into(),args:json!({"media":serde_json::from_str::<Value>(&source)?,"purpose":purpose}),parent:None,ordinal:None}).await
             }
@@ -217,7 +402,7 @@ impl Hub {
                 let result = write(store, Change::Enable(id.clone(), enabled)).await?;
                 if enabled {
                     self.restart(store, &id).await?;
-                } else if let Some(slot) = self.slots.get(&id)
+                } else if let Ok(slot) = self.slot(&id)
                     && let Some(session) = slot.session.lock().await.take()
                 {
                     session.stop();
@@ -232,7 +417,7 @@ impl Hub {
             .as_str()
             .ok_or("missing bound handle")?
             .to_owned();
-        let slot = self.slots.get(&r.plugin).ok_or("plugin not installed")?;
+        let slot = self.slot(&r.plugin)?;
         let session = slot.session.lock().await.clone();
         let (method,params,generation)=if opened["send"] == true {
             (r.method.clone(),opened["params"].clone(),opened["generation"].as_str().ok_or("missing original generation")?.to_owned())
@@ -371,20 +556,25 @@ async fn maintain(store: Store, install: Install, session: process::Session) {
         if session.stopped() {
             break;
         }
+        let effective:Option<String>=sqlx::query_scalar("SELECT grants FROM host_installations WHERE plugin=? AND generation=? AND enabled AND online").bind(&install.id).bind(&session.generation).fetch_optional(store.readers()).await.ok().flatten();
+        let Some(effective) = effective
+            .and_then(|s| serde_json::from_str::<std::collections::BTreeSet<String>>(&s).ok())
+        else {
+            break;
+        };
         let pending = match pending_erasure(&store, &install.id).await {
             Ok(items) => items,
             Err(_) => continue,
         };
         if let Some(ob) = pending.first() {
-            if install.grants.contains("forget.owner")
-                && last_forget.elapsed() >= Duration::from_secs(2)
+            if effective.contains("forget.owner") && last_forget.elapsed() >= Duration::from_secs(2)
             {
                 last_forget = std::time::Instant::now();
                 let _ = acknowledge(&store, &install.id, &session, ob).await;
             }
             continue;
         }
-        if install.grants.contains("observe.metadata") && let Ok(rows)=sqlx::query("SELECT o.event,e.entry_id,json_extract(e.envelope,'$.kind') AS kind FROM host_observations o JOIN events e ON e.id=o.event JOIN host_installations i ON i.plugin=o.plugin AND i.online AND i.enabled AND i.generation=o.generation
+        if effective.contains("observe.metadata") && let Ok(rows)=sqlx::query("SELECT o.event,e.entry_id,json_extract(e.envelope,'$.kind') AS kind FROM host_observations o JOIN events e ON e.id=o.event JOIN host_installations i ON i.plugin=o.plugin AND i.online AND i.enabled AND i.generation=o.generation
             WHERE o.plugin=? AND o.generation=? AND o.event>? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=o.event) ORDER BY o.event LIMIT 64").bind(&install.id).bind(&session.generation).bind(watermark).fetch_all(store.readers()).await{
             for r in rows{
                 let Ok(event)=r.try_get::<i64,_>("event")else{continue};
@@ -392,7 +582,7 @@ async fn maintain(store: Store, install: Install, session: process::Session) {
                 session.notify(json!({"jsonrpc":"2.0","method":"observer.event","params":{"event":event,"entry":r.try_get::<Option<String>,_>("entry_id").ok().flatten(),"kind":r.try_get::<String,_>("kind").unwrap_or_default()}}));
             }
         }
-        if install.grants.contains("command.invoke") {
+        if effective.contains("command.invoke") {
             let cmd=sqlx::query("SELECT c.event,c.path,c.execution,e.envelope FROM host_command_events c JOIN events e ON e.id=c.event WHERE c.plugin=? AND c.generation=? AND c.state='queued' ORDER BY event LIMIT 1").bind(&install.id).bind(&session.generation).fetch_optional(store.readers()).await;
             if let Ok(Some(r)) = cmd
                 && let (Ok(event), Ok(path), Ok(exec), Ok(raw)) = (

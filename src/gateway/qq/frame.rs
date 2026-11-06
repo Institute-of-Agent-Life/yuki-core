@@ -78,7 +78,7 @@ async fn segments(inner: &Inner, raw: &Value) -> Result<Vec<Segment>> {
                     continue;
                 }
                 Segment::Mention {
-                    account: account(inner, &native, false).await?,
+                    account: account(inner, &native, native != "all").await?,
                     label: if native == "all" {
                         "全体成员".into()
                     } else {

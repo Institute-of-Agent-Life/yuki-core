@@ -339,8 +339,12 @@ pub(super) async fn delivered(
     if !matches!(state, "confirmed" | "failed" | "unknown") {
         return Err("notification delivery requires an original terminal receipt".into());
     }
-    sqlx::query("UPDATE notification_deliveries SET state=? WHERE publication=? AND ordinal=? AND state='pending'")
-        .bind(state).bind(id).bind(ordinal).execute(&mut *db).await?;
+    let changed = sqlx::query("UPDATE notification_deliveries SET state=? WHERE publication=? AND ordinal=? AND state='pending'")
+        .bind(state).bind(id).bind(ordinal).execute(&mut *db).await?.rows_affected();
+    if changed == 1 {
+        sqlx::query("UPDATE notification_outbox_control SET attempts=attempts+1,error_category=CASE WHEN ?='confirmed' THEN NULL ELSE error_category END WHERE publication=? AND ordinal=?")
+            .bind(state).bind(id).bind(ordinal).execute(&mut *db).await?;
+    }
     sqlx::query(
         "UPDATE executions SET state=CASE WHEN EXISTS(SELECT 1 FROM notification_deliveries WHERE publication=?1 AND state IN('failed','unknown')) THEN 'held' ELSE 'completed' END
          WHERE id=(SELECT delivery_execution FROM notification_publications WHERE id=?1) AND state='running'

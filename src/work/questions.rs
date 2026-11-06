@@ -89,11 +89,7 @@ pub async fn route(
     let key = format!("human-answer:{event}");
     let text = crate::runtime::main::event_text(e.try_get("envelope")?)?;
     let mail = mailbox::put(conn, &work, &manager, &key, "human_answer", &text, None).await?;
-    sqlx::query("INSERT INTO work_wait_mail VALUES(?,?)")
-        .bind(mail)
-        .bind(event)
-        .execute(&mut *conn)
-        .await?;
+    bind_answer(conn, &work, mail, event).await?;
     let wake = tree::wake(conn, &work, &manager, &key).await?;
     sqlx::query("INSERT OR IGNORE INTO main_dependencies VALUES(?,?)")
         .bind(wake)
@@ -134,4 +130,58 @@ pub(crate) async fn explicit(conn: &mut SqliteConnection, event: i64, work: &str
         .execute(conn)
         .await?;
     Ok(())
+}
+
+/// Bind the answer and the actual acknowledged question before consuming the waiting row.
+pub(super) async fn bind_answer(
+    conn: &mut SqliteConnection,
+    work: &str,
+    mail: i64,
+    event: i64,
+) -> Result<()> {
+    sqlx::query(
+        "INSERT OR IGNORE INTO work_wait_mail(mail,source_event)
+        SELECT ?2,?3 UNION ALL
+        SELECT ?2,d.event FROM work_user_questions q
+        JOIN personal_live_deliveries d ON d.id=q.outbound AND d.namespace=q.execution
+        WHERE q.work=?1",
+    )
+    .bind(work)
+    .bind(mail)
+    .bind(event)
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
+/// A registered Work gets the questions answered in that Work, with their public author role.
+pub(crate) async fn resume_history(
+    conn: &mut SqliteConnection,
+    exec: &str,
+) -> Result<Vec<serde_json::Value>> {
+    let rows = sqlx::query(
+        "SELECT DISTINCT d.id,d.event,d.body FROM work_runs r
+        JOIN work_nodes w ON w.id=r.work
+        JOIN work_mail m ON m.work=r.work AND m.kind='human_answer' AND m.body IS NOT NULL
+        JOIN work_wait_mail link ON link.mail=m.id
+        JOIN personal_live_deliveries d ON d.event=link.source_event AND d.entry=w.entry
+        JOIN work_runs sender ON sender.execution=d.namespace AND sender.work=r.work
+        WHERE r.execution=? ORDER BY d.id",
+    )
+    .bind(exec)
+    .fetch_all(&mut *conn)
+    .await?;
+    let mut messages = Vec::new();
+    for row in rows {
+        let content = crate::history::outbound_text(row.try_get("body")?)?;
+        if !content.is_empty() {
+            sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
+                .bind(exec)
+                .bind(row.try_get::<i64, _>("event")?)
+                .execute(&mut *conn)
+                .await?;
+            messages.push(json!({"role":"assistant","content":content}));
+        }
+    }
+    Ok(messages)
 }

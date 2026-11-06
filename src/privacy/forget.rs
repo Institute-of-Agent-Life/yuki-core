@@ -33,6 +33,8 @@ pub async fn apply(db: &mut SqliteConnection, key: &str, person: &str) -> Result
     // Changes only name/family-owned rows and derived facts. A reused transport
     // account remains bound to its independent newer stage.
     for statement in [
+        "DELETE FROM core_meta WHERE key LIKE 'plugin-config-values:%' AND json_extract(value,'$.scope_type')='user' AND json_extract(value,'$.owner_id') IN(SELECT value FROM json_each(?1))",
+        "UPDATE core_meta SET value=json_set(value,'$.result',json('{\"erased\":true}')) WHERE key LIKE 'control-receipt:%' AND (json_extract(value,'$.source_person') IN(SELECT value FROM json_each(?1)) OR json_extract(value,'$.target_owner') IN(SELECT value FROM json_each(?1)) OR EXISTS(SELECT 1 FROM json_each(json_extract(core_meta.value,'$.target_people')) t JOIN json_each(?1) f ON t.value=f.value))",
         "UPDATE memory_facts SET status='erased' WHERE person IN(SELECT value FROM json_each(?1)) AND status!='erased'",
         "UPDATE memory_versions SET body=NULL WHERE fact IN(SELECT id FROM memory_facts WHERE person IN(SELECT value FROM json_each(?1)))",
         "UPDATE memory_evidence SET quote=NULL WHERE fact IN(SELECT id FROM memory_facts WHERE person IN(SELECT value FROM json_each(?1)))",
@@ -40,12 +42,17 @@ pub async fn apply(db: &mut SqliteConnection, key: &str, person: &str) -> Result
         "UPDATE schedule_versions SET goal=NULL,name=NULL WHERE schedule IN(SELECT id FROM schedules WHERE owner IN(SELECT value FROM json_each(?1)))",
         "UPDATE schedules SET status='blocked',next_due=NULL WHERE owner IN(SELECT value FROM json_each(?1))",
         "UPDATE work_nodes SET goal=NULL,note=NULL,summary=NULL,status='cancelled' WHERE principal IN(SELECT value FROM json_each(?1))",
+        "UPDATE personal_receipts SET result='{\"erased\":true}',target=NULL WHERE class='client.upload' AND target IN(SELECT u.id FROM client_uploads u JOIN device_origins d ON d.device_id=u.device WHERE d.original_person IN(SELECT value FROM json_each(?1)))",
+        "DELETE FROM client_upload_parts WHERE media IN(SELECT u.id FROM client_uploads u JOIN device_origins d ON d.device_id=u.device WHERE u.owner IN(SELECT value FROM json_each(?1)) OR d.original_person IN(SELECT value FROM json_each(?1)))",
+        "DELETE FROM client_uploads WHERE owner IN(SELECT value FROM json_each(?1)) OR device IN(SELECT device_id FROM device_origins WHERE original_person IN(SELECT value FROM json_each(?1)))",
         "UPDATE personal_codes SET code_hash='forgotten-'||id,expires=0 WHERE owner IN(SELECT value FROM json_each(?1))",
         "DELETE FROM personal_sessions WHERE device IN(SELECT device_id FROM device_origins WHERE original_person IN(SELECT value FROM json_each(?1)))",
         "DELETE FROM personal_proofs WHERE device IN(SELECT device_id FROM device_origins WHERE original_person IN(SELECT value FROM json_each(?1)))",
         "UPDATE personal_devices SET token_hash='forgotten-'||id,label='',revoked=coalesce(revoked,unixepoch()) WHERE id IN(SELECT device_id FROM device_origins WHERE original_person IN(SELECT value FROM json_each(?1)))",
         "UPDATE personal_receipts SET result='{\"erased\":true}',target=NULL WHERE owner IN(SELECT value FROM json_each(?1))",
         "UPDATE entries SET closed_at=coalesce(closed_at,unixepoch('subsec')*1000) WHERE actor_stage IN(SELECT id FROM assignments WHERE original_person IN(SELECT value FROM json_each(?1)))",
+        "UPDATE assignments SET display_name='' WHERE original_person IN(SELECT value FROM json_each(?1))",
+        "DELETE FROM person_names WHERE person IN(SELECT value FROM json_each(?1))",
         "UPDATE assignments SET status='ended',ended_at=max(unixepoch('subsec')*1000,first_observed,coalesce(started_at,first_observed)) WHERE original_person IN(SELECT value FROM json_each(?1)) AND status!='ended'",
         "UPDATE persons SET name='',admin=0,enabled=0,revision=revision+1 WHERE id IN(SELECT value FROM json_each(?1))",
     ] {
@@ -75,6 +82,8 @@ pub(super) async fn capture(
         .bind(members)
         .execute(&mut *db)
         .await?;
+    sqlx::query("INSERT OR IGNORE INTO forgotten_objects SELECT ?1,u.digest FROM client_uploads u JOIN device_origins d ON d.device_id=u.device WHERE u.digest IS NOT NULL AND (u.owner IN(SELECT value FROM json_each(?2)) OR d.original_person IN(SELECT value FROM json_each(?2)))")
+        .bind(mark).bind(members).execute(&mut *db).await?;
     // Catalog only versions and paths actually reachable from erased sources before triggers detach them.
     let versions = "SELECT v.id FROM media_versions v JOIN executions x ON x.id=v.execution WHERE v.source IN(SELECT value FROM json_each(?2)) OR x.source IN(SELECT value FROM json_each(?2)) OR EXISTS(SELECT 1 FROM main_dependencies d JOIN json_each(?2) s ON s.value=d.event WHERE d.execution=x.id)";
     sqlx::query(&format!("INSERT OR IGNORE INTO forgotten_objects SELECT ?1,digest FROM media_versions WHERE id IN({versions}) AND digest IS NOT NULL UNION SELECT ?1,digest FROM media_sources WHERE event IN(SELECT value FROM json_each(?2)) AND digest IS NOT NULL")).bind(mark).bind(ids).execute(&mut *db).await?;
@@ -83,7 +92,7 @@ pub(super) async fn capture(
 }
 pub async fn status(db: &mut SqliteConnection, key: &str) -> Result<Value> {
     let (mark,person,body):(i64,String,String)=sqlx::query_as("SELECT r.watermark,f.requested,r.sources FROM source_erasure_requests r JOIN person_forgets f USING(watermark) WHERE erase_key=?").bind(key).fetch_optional(&mut *db).await?.ok_or("not_found")?;
-    let (all,present,shared):(i64,i64,i64)=sqlx::query_as("SELECT count(*),count(b.digest),coalesce(sum(EXISTS(SELECT 1 FROM media_sources s WHERE s.digest=o.digest AND s.state='cached') OR EXISTS(SELECT 1 FROM media_versions v WHERE v.digest=o.digest)),0) FROM forgotten_objects o LEFT JOIN media_objects b ON b.digest=o.digest WHERE watermark=?").bind(mark).fetch_one(&mut *db).await?;
+    let (all,present,shared):(i64,i64,i64)=sqlx::query_as("SELECT count(*),count(b.digest),coalesce(sum(EXISTS(SELECT 1 FROM media_sources s WHERE s.digest=o.digest AND s.state='cached') OR EXISTS(SELECT 1 FROM media_versions v WHERE v.digest=o.digest) OR EXISTS(SELECT 1 FROM client_uploads u WHERE u.digest=o.digest) OR EXISTS(SELECT 1 FROM media_reads m WHERE m.digest=o.digest)),0) FROM forgotten_objects o LEFT JOIN media_objects b ON b.digest=o.digest WHERE watermark=?").bind(mark).fetch_one(&mut *db).await?;
     let files:i64=sqlx::query_scalar("SELECT count(*) FROM forgotten_transfers t JOIN media_transfer_files f USING(relative) WHERE t.watermark=?").bind(mark).fetch_one(&mut *db).await?;
     let pending:Vec<String>=sqlx::query_scalar("SELECT DISTINCT e.owner FROM owner_erasures e WHERE e.proof IS NULL AND EXISTS(SELECT 1 FROM json_each(e.sources) s JOIN json_each(?1) erased ON s.value=erased.value) ORDER BY e.owner").bind(&body).fetch_all(db).await?;
     Ok(

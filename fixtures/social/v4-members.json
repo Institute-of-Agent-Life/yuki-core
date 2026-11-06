@@ -1,0 +1,127 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "pytest_exit": 0,
+  "declarations": [
+    {
+      "name": "get_group_members",
+      "description": "分页读取实际群入口已观察到的逐账号目录；coverage=observed，不代表平台完整名册。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "description": "目标群的 canonical UUID；当前群省略"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "目标群名称，不是成员名"
+          },
+          "binding_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "具体群入口的内部 SpaceBinding ID"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "original_results": [
+    {
+      "args": {},
+      "conversation_id": "1655273a-b62f-4cd1-92f3-66b2a3b07b8e",
+      "space_id": "dfc14eeb-e448-4c2f-955b-990860b151fb",
+      "result": {
+        "items": [
+          {
+            "account_id": "e11a7977-9108-4a1a-a6b8-c93b765d036e",
+            "reference": "@{account:e11a7977-9108-4a1a-a6b8-c93b765d036e}",
+            "display_name": "test-10001",
+            "assignment_id": "0437db1c-9879-49bd-ac2b-8b4d64445b5c",
+            "person_id": "7e56a52a-a85e-480a-9689-c811fd039ea4",
+            "presence_id": null
+          }
+        ],
+        "coverage": "observed",
+        "binding_id": "ecbcacb2-c477-4a4d-b120-74308e3ad40e",
+        "next_cursor": null
+      }
+    },
+    {
+      "args": {},
+      "conversation_id": "8a667fbc-91df-4500-afc0-f25d318e3e69",
+      "space_id": "dfc14eeb-e448-4c2f-955b-990860b151fb",
+      "result": {
+        "items": [
+          {
+            "account_id": "e11a7977-9108-4a1a-a6b8-c93b765d036e",
+            "reference": "@{account:e11a7977-9108-4a1a-a6b8-c93b765d036e}",
+            "display_name": "test-10001",
+            "assignment_id": "0437db1c-9879-49bd-ac2b-8b4d64445b5c",
+            "person_id": "7e56a52a-a85e-480a-9689-c811fd039ea4",
+            "presence_id": null
+          }
+        ],
+        "coverage": "observed",
+        "binding_id": "ecbcacb2-c477-4a4d-b120-74308e3ad40e",
+        "next_cursor": null
+      }
+    },
+    {
+      "args": {},
+      "conversation_id": "d2842d84-9885-4222-8e46-a8d42a78954b",
+      "space_id": "dfc14eeb-e448-4c2f-955b-990860b151fb",
+      "result": {
+        "items": [
+          {
+            "account_id": "e11a7977-9108-4a1a-a6b8-c93b765d036e",
+            "reference": "@{account:e11a7977-9108-4a1a-a6b8-c93b765d036e}",
+            "display_name": "test-10001",
+            "assignment_id": "0437db1c-9879-49bd-ac2b-8b4d64445b5c",
+            "person_id": "7e56a52a-a85e-480a-9689-c811fd039ea4",
+            "presence_id": null
+          }
+        ],
+        "coverage": "observed",
+        "binding_id": "ecbcacb2-c477-4a4d-b120-74308e3ad40e",
+        "next_cursor": null
+      }
+    }
+  ],
+  "sanitized_names": [
+    {
+      "input": "  Alice　   Bob  ",
+      "output": "Alice Bob"
+    },
+    {
+      "input": "A\nB\tC​D",
+      "output": "ABCD"
+    },
+    {
+      "input": "\u0000‎",
+      "output": ""
+    },
+    {
+      "input": "🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名",
+      "output": "🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂 名🙂"
+    },
+    {
+      "input": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA  B",
+      "output": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+  ]
+}

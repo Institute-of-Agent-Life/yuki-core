@@ -1,0 +1,55 @@
+{
+  "result": {
+    "ok": true,
+    "revision": 1022085248434992,
+    "migrated": [
+      "embedding",
+      "vision",
+      "asr",
+      "search"
+    ],
+    "migrated_profiles": [
+      "main.legacy-agent"
+    ],
+    "apply_mode": "restart",
+    "consumed_env_fields": [
+      "LLM_MAX_OUTPUT_TOKENS",
+      "LLM_TEMPERATURE",
+      "LLM_THINKING_ENABLED"
+    ],
+    "retired_overrides": 3
+  },
+  "source_fields": [
+    "llm_max_output_tokens",
+    "llm_temperature",
+    "llm_thinking_enabled"
+  ],
+  "selected": {
+    "id": "main.legacy-agent",
+    "provider": "fake",
+    "protocol": "chat_completions",
+    "base_url": "https://test.invalid/v1",
+    "api_key_env": "",
+    "model": "fake-model",
+    "timeout_seconds": 60.0,
+    "max_retries": 1,
+    "default_temperature": 0.49,
+    "default_max_output_tokens": 771,
+    "max_output_tokens_limit": null,
+    "max_input_tokens": null,
+    "context_window_tokens": null,
+    "thinking_enabled": false,
+    "reasoning_effort": "medium",
+    "structured_output_mode": "function_tool",
+    "search_mode": null,
+    "search_connection": null,
+    "capabilities": [
+      "reasoning",
+      "structured_output",
+      "tools"
+    ],
+    "wire_options": null,
+    "headers": {}
+  },
+  "upstream_requests": []
+}

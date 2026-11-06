@@ -1,4 +1,5 @@
 mod grants;
+pub(crate) mod retry;
 mod scope;
 mod transport;
 mod writer;
@@ -44,6 +45,11 @@ pub struct Call {
 }
 
 pub enum Change {
+    Refused {
+        publication: String,
+        ordinal: i64,
+        category: String,
+    },
     Call(Box<Call>),
     Delivered {
         publication: String,
@@ -104,6 +110,11 @@ pub(super) async fn callback(
 
 pub(super) async fn apply(db: &mut SqliteConnection, change: &Change) -> Result<Value> {
     match change {
+        Change::Refused {
+            publication,
+            ordinal,
+            category,
+        } => retry::refused(db, publication, *ordinal, category).await,
         Change::Call(call) => {
             let definition = super::grants::schema(&call.method, "plugin_to_host", &call.params)?;
             super::domain::active(

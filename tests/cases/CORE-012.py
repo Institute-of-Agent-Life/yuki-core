@@ -186,13 +186,16 @@ def run(ctx):
             program = (ctx.root / "src/context/main-program.txt").read_text(
                 encoding="utf-8"
             )
+            grounding = json.loads((ctx.root / "fixtures/memory/v4-grounding.json").read_text(encoding="utf-8"))
+            ctx.equal("Memory guidance comes from the fixed behavior baseline",grounding["source_commit"],"329ca7c487414d2f54ddd98ff4727446ed2446cd")
+            ctx.equal("Memory guidance preserves the exact original rule",(ctx.root / "src/context/memory-program.txt").read_text(encoding="utf-8").rstrip(),grounding["text"])
             ctx.equal(
                 "physical Chat request preserves original identity, SOUL and program order",
                 body["messages"][0],
                 {
                     "role": "system",
                     "content": "【角色身份】\n当前角色的名称是 Yuki。\n\n【SOUL】\nhello Yuki; literal {{other}}\n\n"
-                    + program,
+                    + grounding["text"] + "\n\n" + program,
                 },
             )
             layout.append(raw)
@@ -217,6 +220,11 @@ def run(ctx):
                 "SELECT request_json FROM model_requests ORDER BY rowid"
             )[0][0]
             soul.write_text("", encoding="utf-8")
+            # External file edits activate through the shared management reload;
+            # already purchased executions retain their original SOUL snapshot.
+            op("control", "write", "character.soul.reload", json.dumps({
+                "request_id": "00000000-0000-4000-8000-000000000012"
+            }))
             count = rows("SELECT count(*) FROM events")[0][0]
             for kind in ("plugin", "self", "schedule", "work", "child"):
                 ref = "fixture-" + kind

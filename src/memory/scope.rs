@@ -71,7 +71,15 @@ pub async fn visible(
     Ok(rows)
 }
 pub async fn writable(conn: &mut SqliteConnection, r: &Reader, id: &str) -> Result<()> {
-    let row=sqlx::query("SELECT f.kind,f.person,f.space,f.visibility,f.visibility_entry,coalesce(p.current_root,p.id) AS owner FROM memory_facts f LEFT JOIN persons p ON p.id=f.person WHERE f.id=? AND f.status='active'").bind(id).fetch_one(&mut *conn).await?;
+    writable_state(conn, r, id, "active").await
+}
+pub(super) async fn writable_state(
+    conn: &mut SqliteConnection,
+    r: &Reader,
+    id: &str,
+    state: &str,
+) -> Result<()> {
+    let row=sqlx::query("SELECT f.kind,f.person,f.space,f.visibility,f.visibility_entry,coalesce(p.current_root,p.id) AS owner FROM memory_facts f LEFT JOIN persons p ON p.id=f.person WHERE f.id=? AND f.status=?").bind(id).bind(state).fetch_one(&mut *conn).await?;
     if let Some(granted) = &r.write_subject {
         let subject = super::facts::Subject {
             kind: row.get("kind"),

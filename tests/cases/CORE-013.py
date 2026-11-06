@@ -648,6 +648,15 @@ def run(ctx):
                 [(0,)],
             )
 
+    from bench.core_long import run as original_work
+    ctx.write("file-caption-withdrawal.json", original_work(ctx, 0, erase_file=True))
+    from tests.harness.send_entry import run as send_entry
+    ctx.write("canonical-send-entry.json",send_entry(ctx))
+    from tests.harness.recall_wire import run as recall
+    ctx.write("original-recall-wire.json",recall(ctx))
+    from tests.harness.observed_members import run as members
+    member_result=members(ctx)
+    ctx.write("observed-members.json",member_result)
     return {
         "wire": wire,
         "original_entry": g,

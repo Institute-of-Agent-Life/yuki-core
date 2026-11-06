@@ -139,6 +139,7 @@ def run(ctx):
         narrow = fact_only.call("maintenance.fact.page", {**params, "fact": fact})[
             "items"
         ][0]
+        ctx.check("installed maintenance projection excludes undeclared metadata", "metadata" not in narrow)
         ctx.check(
             "fact-only grant has no evidence quote or proof",
             not any(k in narrow for k in ["evidence", "readable_evidence", "proof"]),

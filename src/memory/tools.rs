@@ -29,6 +29,7 @@ pub fn declaration(name: &str) -> Option<Tool> {
             [
                 "operation",
                 "fact_id",
+                "selector",
                 "target",
                 "new_content",
                 "memory_key",
@@ -38,11 +39,22 @@ pub fn declaration(name: &str) -> Option<Tool> {
                 "evidence_refs",
                 "expected_fact_state",
                 "request_basis",
+                "category",
+                "kind",
+                "importance",
+                "valid_from",
+                "valid_until",
             ]
             .contains(&key.as_str())
         });
-        props.get_mut("operation")?["enum"] = json!(["create", "correct", "invalidate"]);
-        props.get_mut("expected_fact_state")?["enum"] = json!(["active"]);
+        props.get_mut("operation")?["enum"] = json!([
+            "create",
+            "correct",
+            "invalidate",
+            "restore",
+            "update_metadata"
+        ]);
+        props.get_mut("expected_fact_state")?["enum"] = json!(["active", "invalidated"]);
         props.get_mut("request_basis")?["enum"] = json!(["user_requested"]);
         props.get_mut("evidence_refs")?["items"] = json!({"type":"string","const":"current_event"});
         let target = &mut props.get_mut("target")?["properties"];
@@ -51,7 +63,7 @@ pub fn declaration(name: &str) -> Option<Tool> {
             .retain(|key, _| matches!(key.as_str(), "scope_type" | "subject_ref"));
         target["scope_type"]["enum"] = json!(["person"]);
         target["subject_ref"]["enum"] = json!(["current_speaker"]);
-        "按真实原事件写入本人事实。correct 或 invalidate 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。"
+        "按真实原事件写入本人事实。没有 fact_id 时可给 selector 和本人 target；只有唯一精确匹配才定位，模糊候选须先按原 ID 读取；selector 不代替已读版本。correct、invalidate、restore 或 update_metadata 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。category、kind、importance 和 memory_key 随原版本保存，省略字段保留原值。valid_from／valid_until 按部署时区解读并保存 UTC；update_metadata 省略两者保留期间，给其中一个则替换整个期间；correct 省略两者清除期间。restore 仅恢复已撤回且未到期的原事实；已忘记内容不能恢复。"
     } else {
         item["description"].as_str()?
     };
@@ -95,13 +107,25 @@ async fn original_event(conn: &mut SqliteConnection, exec: &str, args: &Value) -
             .fetch_one(&mut *conn)
             .await?
     };
-    Ok(Source::Event {
-        id: event,
-        quote: args["evidence_quote"]
-            .as_str()
-            .ok_or("original quote required")?
-            .into(),
-    })
+    let raw: String = sqlx::query_scalar("SELECT e.envelope FROM events e JOIN executions x ON x.id=? JOIN events origin ON origin.id=x.source JOIN persons author ON author.id=e.raw_actor JOIN persons owner ON owner.id=x.original_actor WHERE e.id=? AND coalesce(author.current_root,author.id)=coalesce(owner.current_root,owner.id) AND e.entry_id=origin.entry_id AND e.bot_stage=origin.bot_stage AND json_extract(e.envelope,'$.kind')='message' AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)")
+        .bind(exec).bind(event).fetch_optional(&mut *conn).await?
+        .ok_or("untrusted_trigger_event")?;
+    let raw: Value = serde_json::from_str(&raw)?;
+    let quote = if let Some(quote) = args["evidence_quote"].as_str() {
+        quote.to_owned()
+    } else if let Some(text) = raw["text"].as_str() {
+        text.to_owned()
+    } else {
+        raw["segments"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|s| s["type"] == "text")
+            .filter_map(|s| s["text"].as_str())
+            .collect::<Vec<_>>()
+            .join("")
+    };
+    Ok(Source::Event { id: event, quote })
 }
 async fn act(
     conn: &mut SqliteConnection,
@@ -138,6 +162,29 @@ async fn act(
     let requested = args["operation"]
         .as_str()
         .ok_or("missing memory operation")?;
+    let metadata = super::metadata::Patch {
+        memory_key: args["memory_key"].as_str().map(str::to_owned),
+        category: args["category"].as_str().map(str::to_owned),
+        kind: args["kind"].as_str().map(str::to_owned),
+        importance: args["importance"].as_i64(),
+        valid_from: args["valid_from"].as_str().map(str::to_owned),
+        valid_until: args["valid_until"].as_str().map(str::to_owned),
+    };
+    let patch = (matches!(requested, "create" | "correct")
+        || [
+            "memory_key",
+            "category",
+            "kind",
+            "importance",
+            "valid_from",
+            "valid_until",
+        ]
+        .iter()
+        .any(|name| !args[name].is_null()))
+    .then_some(metadata.clone());
+    if requested == "create" && !args["selector"].is_null() {
+        return Err("create_does_not_accept_selector".into());
+    }
     let edit = if requested == "create" {
         Edit::Add {
             subject: Subject {
@@ -157,9 +204,25 @@ async fn act(
                 .into(),
             confidence: args["confidence"].as_f64(),
             evidence: vec![original_event(conn, exec, &args).await?],
+            metadata: patch,
         }
     } else {
-        let id = fact(conn, &args).await?;
+        let id = if args["selector"].is_null() {
+            fact(conn, &args).await?
+        } else {
+            super::selectors::locate(conn, r, &args).await?
+        };
+        if let Some(expected) = args["expected_fact_state"].as_str() {
+            let current = facts::read(conn, r, Some(&id), "", 1, false, false).await?;
+            let expected = if expected == "invalidated" {
+                "retracted"
+            } else {
+                expected
+            };
+            if current["items"][0]["status"] != expected {
+                return Err("expected_fact_state_mismatch".into());
+            }
+        }
         let (revision, proof) = sqlx::query_as::<_, (i64, String)>(
             "SELECT revision,proof FROM memory_paid_reads WHERE execution=? AND fact=?",
         )
@@ -178,6 +241,7 @@ async fn act(
                     .ok_or("correction content required")?
                     .into(),
                 confidence: args["confidence"].as_f64(),
+                metadata: patch,
                 evidence: if !args["evidence_quote"].is_null()
                     || !args["evidence_refs"].is_null()
                     || !args["evidence_event_id"].is_null()
@@ -187,11 +251,28 @@ async fn act(
                     vec![]
                 },
             }
+        } else if requested == "update_metadata" {
+            Edit::Metadata {
+                fact: id,
+                revision,
+                proof,
+                fields: metadata,
+                body: args["new_content"].as_str().map(str::to_owned),
+                confidence: args["confidence"].as_f64(),
+                evidence: vec![original_event(conn, exec, &args).await?],
+            }
         } else if requested == "invalidate" {
             Edit::Retract {
                 fact: id,
                 revision,
                 proof,
+            }
+        } else if requested == "restore" {
+            Edit::Restore {
+                fact: id,
+                revision,
+                proof,
+                evidence: vec![original_event(conn, exec, &args).await?],
             }
         } else {
             return Err("unsupported Memory operation".into());
@@ -245,7 +326,17 @@ pub async fn apply(
             sqlx::query("ROLLBACK TO memory_tool")
                 .execute(&mut *conn)
                 .await?;
-            ("failed", json!({"error":e.to_string()}))
+            let payload = if let Some(rejected) = e.downcast_ref::<super::selectors::Rejected>() {
+                // Candidate content is a real read even when no mutation was
+                // authorized. Retain its erasure dependencies after rollback.
+                for fact in &rejected.facts {
+                    bind_sources(conn, exec, fact).await?;
+                }
+                rejected.payload()
+            } else {
+                json!({"error":e.to_string()})
+            };
+            ("failed", payload)
         }
     };
     sqlx::query("RELEASE memory_tool")

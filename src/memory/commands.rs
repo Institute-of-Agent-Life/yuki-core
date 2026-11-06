@@ -47,6 +47,7 @@ async fn command(
                 return Err("需要事實內容".into());
             }
             Edit::Add {
+                metadata: None,
                 subject: Subject {
                     kind: "person".into(),
                     person: Some(reader.base.subject.clone()),
@@ -63,7 +64,7 @@ async fn command(
                 }],
             }
         }
-        "update" | "correct" | "delete" | "invalidate" => {
+        "update" | "correct" | "delete" | "invalidate" | "restore" => {
             let (id, body) = words(args);
             let read = facts::read(conn, &reader, Some(id), "", 1, false, true).await?;
             let row = &read["items"][0];
@@ -78,8 +79,19 @@ async fn command(
                     revision,
                     proof,
                 }
+            } else if op == "restore" {
+                Edit::Restore {
+                    fact: id.into(),
+                    revision,
+                    proof,
+                    evidence: vec![Source::Event {
+                        id: event,
+                        quote: raw.into(),
+                    }],
+                }
             } else {
                 Edit::Correct {
+                    metadata: None,
                     fact: id.into(),
                     revision,
                     proof,
@@ -94,7 +106,8 @@ async fn command(
         }
         _ => {
             return Err(
-                "支援 list、show、evidence、add、correct、update、delete、invalidate".into(),
+                "支援 list、show、evidence、add、correct、update、delete、invalidate、restore"
+                    .into(),
             );
         }
     };

@@ -32,7 +32,10 @@ async fn selected(
 }
 fn sources(edit: &Edit) -> &[Source] {
     match edit {
-        Edit::Add { evidence, .. } | Edit::Correct { evidence, .. } => evidence,
+        Edit::Add { evidence, .. }
+        | Edit::Correct { evidence, .. }
+        | Edit::Restore { evidence, .. }
+        | Edit::Metadata { evidence, .. } => evidence,
         Edit::Retract { .. } => &[],
     }
 }
@@ -115,6 +118,7 @@ async fn extraction(
         return Err("quote absent from original extraction source".into());
     }
     Ok(Edit::Add {
+        metadata: None,
         subject: memory::facts::Subject {
             kind,
             person,

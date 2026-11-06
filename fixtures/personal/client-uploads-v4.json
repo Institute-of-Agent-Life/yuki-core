@@ -1,0 +1,17 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/conversation/uploads.py": "498324079234423f3d2bd3b8bdea30a2b470867721379322e3e10b368c237166",
+    "src/yuki/client_api/messages.py": "a6dc7f3358842785b5e3bc0fdeff299d6ab16286dc47d56331f8ff1b3f91abf1",
+    "src/yuki/client_api/http.py": "a6990f67a2fb616dd58368540ec905b84b42daa4953c83f5e5a0d35ed283869c",
+    "tests/unit/test_client_files.py": "abc9fe1a594a2591abc5556150bfb39888dbac64644d20d4ec2757ec4eedaaf2",
+    "tests/unit/test_client_sdk.py": "9d922a052941d19e6dbcc8eb0b9d5c7a61a5b2f07c2bba2f7eb1c92ab3910c9c"
+  },
+  "selectors": [
+    "tests/unit/test_client_files.py",
+    "tests/unit/test_client_sdk.py::test_upload_lost_ack_reads_same_registered_reference",
+    "tests/unit/test_client_sdk.py::test_interrupted_upload_has_no_registration_and_same_id_can_retry"
+  ],
+  "exit_code": 0,
+  "pytest_log_sha256": "c7e3be53c01ce56ea8662d59e6ea0b6963b80ddfdf590ec5a4446a5446800d43"
+}

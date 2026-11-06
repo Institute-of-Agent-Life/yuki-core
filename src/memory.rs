@@ -4,10 +4,13 @@ pub(crate) mod evidence;
 pub mod extract;
 pub mod facts;
 pub(crate) mod index;
+mod metadata;
 mod rank;
 pub(crate) mod retrieve;
 pub(crate) mod scope;
 pub(crate) mod search_tool;
+mod selectors;
+mod temporal;
 pub mod tools;
 use crate::{
     Result,

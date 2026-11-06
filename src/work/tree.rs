@@ -166,6 +166,7 @@ pub async fn wake(
     sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) SELECT ?,event FROM work_sources WHERE work=?").bind(&exec).bind(work).execute(&mut *conn).await?;
     // Inherit the entire frozen execution view from the original parent, including hidden schemas.
     sqlx::query("INSERT INTO execution_tool_views SELECT ?,revision,code_projection,page_budget,storage_quota,timezone FROM execution_tool_views WHERE execution=? ON CONFLICT(execution) DO NOTHING").bind(&exec).bind(r.try_get::<String,_>("owner_execution")?).execute(&mut *conn).await?;
+    sqlx::query("INSERT OR IGNORE INTO main_processor_bindings SELECT ?,plugin,revision,deployment FROM main_processor_bindings WHERE execution=?").bind(&exec).bind(r.try_get::<String,_>("owner_execution")?).execute(&mut *conn).await?;
     attach(
         conn,
         work,

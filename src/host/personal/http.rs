@@ -15,7 +15,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::sync::LazyLock;
-fn reply(res: Result<Value>, envelope: bool) -> Response {
+pub(super) fn reply(res: Result<Value>, envelope: bool) -> Response {
     match res {
         Ok(value) => Json(if envelope {
             json!({"data":value})
@@ -46,7 +46,7 @@ fn reply(res: Result<Value>, envelope: bool) -> Response {
         }
     }
 }
-fn bearer(h: &HeaderMap) -> Result<String> {
+pub(super) fn bearer(h: &HeaderMap) -> Result<String> {
     let h = h
         .get("authorization")
         .and_then(|v| v.to_str().ok())
@@ -109,6 +109,7 @@ pub(super) async fn action(
         s,
         Request::Entry {
             token_hash: bearer(h)?,
+            selection: super::selection::Selection::headers(h)?,
             purpose,
             command: c,
         },
@@ -138,20 +139,16 @@ async fn revoke(State(s): State<Store>, h: HeaderMap, Path(id): Path<String>) ->
 #[serde(deny_unknown_fields)]
 struct Proof {
     plugin: String,
-    work: String,
+    work: Option<String>,
     purpose: Purpose,
 }
 async fn exchange(State(s): State<Store>, h: HeaderMap, Json(p): Json<Proof>) -> Response {
-    reply(
-        action(
-            &s,
-            &h,
-            p.purpose,
-            Command::Proof(p.plugin, p.work, p.purpose == Purpose::Connector),
-        )
-        .await,
-        true,
-    )
+    let command = match p.work {
+        Some(work) => Command::Proof(p.plugin, work, p.purpose == Purpose::Connector),
+        None if p.purpose == Purpose::Connector => Command::ConnectionProof(p.plugin),
+        None => return reply(Err("validation_error".into()), true),
+    };
+    reply(action(&s, &h, p.purpose, command).await, true)
 }
 enum Read {
     Facts(String, Option<String>, i64),
@@ -163,11 +160,20 @@ enum Read {
     Works(Option<String>, i64),
     Events(String, i64, Option<i64>, i64),
     Receipt(String),
-    Admin,
+}
+async fn current(db: &mut sqlx::SqliteConnection, h: &HeaderMap) -> Result<credentials::Principal> {
+    super::selection::authenticate(
+        db,
+        &bearer(h)?,
+        Purpose::Chat,
+        &super::selection::Selection::headers(h)?,
+        false,
+    )
+    .await
 }
 async fn read(s: &Store, h: &HeaderMap, method: Read) -> Result<Value> {
     let mut tx = s.readers().begin().await?;
-    let who = credentials::authenticate(&mut tx, &bearer(h)?, Purpose::Chat).await?;
+    let who = current(&mut tx, h).await?;
     match method {
         Read::Facts(about, cursor, n) => {
             super::domains::list(&mut tx, &who, &about, cursor.as_deref(), n).await
@@ -182,11 +188,6 @@ async fn read(s: &Store, h: &HeaderMap, method: Read) -> Result<Value> {
             views::events(&mut tx, &who, &id, after, before, limit).await
         }
         Read::Receipt(op) => work::receipt(&mut tx, &who, &op).await,
-        Read::Admin if who.admin => {
-            drop(tx);
-            Ok(json!({"ready":s.health().await.writer_accepting}))
-        }
-        Read::Admin => Err("forbidden".into()),
     }
 }
 async fn me(State(s): State<Store>, h: HeaderMap) -> Response {
@@ -276,52 +277,6 @@ async fn message(State(s): State<Store>, h: HeaderMap, Json(v): Json<Value>) -> 
         true,
     )
 }
-async fn admin(State(s): State<Store>, h: HeaderMap) -> Response {
-    reply(read(&s, &h, Read::Admin).await, true)
-}
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct IdentityRequest {
-    request_id: String,
-}
-async fn forget(
-    State(s): State<Store>,
-    h: HeaderMap,
-    Path(id): Path<String>,
-    Json(v): Json<IdentityRequest>,
-) -> Response {
-    reply(
-        action(&s, &h, Purpose::Chat, Command::Forget(id, v.request_id)).await,
-        true,
-    )
-}
-async fn role(
-    State(s): State<Store>,
-    h: HeaderMap,
-    Path((id, change)): Path<(String, String)>,
-    Json(v): Json<Value>,
-) -> Response {
-    reply(
-        async {
-            let enabled = match change.as_str() {
-                "grant" => true,
-                "revoke" => false,
-                _ => return Err("not_found".into()),
-            };
-            let key = v["request_id"].as_str().ok_or("invalid_request_id")?;
-            let revision = v["expected_revision"].as_i64().ok_or("validation_error")?;
-            action(
-                &s,
-                &h,
-                Purpose::Chat,
-                Command::AdminRole(id, enabled, key.into(), revision),
-            )
-            .await
-        }
-        .await,
-        true,
-    )
-}
 #[derive(Deserialize)]
 struct FactPage {
     about: Option<String>,
@@ -402,7 +357,7 @@ async fn artifacts(
     reply(
         async {
             let mut tx = s.readers().begin().await?;
-            let who = credentials::authenticate(&mut tx, &bearer(&h)?, Purpose::Chat).await?;
+            let who = current(&mut tx, &h).await?;
             super::artifacts::list(
                 &mut tx,
                 &who,
@@ -428,7 +383,7 @@ async fn download(
 ) -> Response {
     let result = async {
         let mut tx = s.readers().begin().await?;
-        let who = credentials::authenticate(&mut tx, &bearer(&h)?, Purpose::Chat).await?;
+        let who = current(&mut tx, &h).await?;
         super::artifacts::download(&mut tx, &who, &id, &q.version).await
     }
     .await;
@@ -481,14 +436,17 @@ pub fn router(store: Store) -> Router {
         .route("/client/v1/me", get(me))
         .route("/client/v1/home", get(home))
         .route("/client/v1/conversations/{id}/events", get(events))
+        .route("/client/v1/uploads", post(super::uploads::upload))
+        .route(
+            "/client/v1/conversations/{entry}/events/{event}/attachments/{slot}",
+            get(super::uploads::download),
+        )
+        .route("/client/v1/stream", get(super::stream::open))
         .route("/client/v1/messages", post(message))
         .route("/client/v1/works", get(works))
         .route("/client/v1/works/{id}", get(one_work))
         .route("/client/v1/works/{id}/inputs", post(input))
         .route("/client/v1/works/{id}/cancel", post(cancel))
         .route("/client/v1/requests/{id}", get(receipt))
-        .route("/admin/v1/persons/{id}/forget", post(forget))
-        .route("/admin/v1/health", get(admin))
-        .route("/admin/v1/persons/{id}/superuser/{action}", post(role))
         .with_state(store)
 }

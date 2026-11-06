@@ -19,6 +19,9 @@ pub struct Prepared {
 
 fn inbound(raw: &str) -> Result<String> {
     let frame: Value = serde_json::from_str(raw)?;
+    if frame["kind"] == "external_event" {
+        return Ok(frame["summary"].as_str().unwrap_or("").to_owned());
+    }
     if let Some(text) = frame["text"].as_str() {
         return Ok(text.into());
     }

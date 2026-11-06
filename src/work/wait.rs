@@ -69,7 +69,7 @@ pub async fn propose(
         .transpose()?;
     let (logical,since,generation):(String,i64,i64)=sqlx::query_as("SELECT i.logical,m.event,t.window FROM model_tool_intents i JOIN work_request_marks m ON m.logical=i.logical JOIN main_turns t ON t.execution=i.execution WHERE i.execution=? AND i.operation_id=?").bind(exec).bind(op).fetch_one(&mut *conn).await?;
     let id = new_id(conn).await?;
-    sqlx::query("INSERT INTO work_waits VALUES(?,?,?,?,?,?,?,?,?,?,'proposed',NULL)")
+    sqlx::query("INSERT INTO work_waits(id,work,execution,logical,operation,mode,generation,since_event,created,deadline,state,wake_execution) VALUES(?,?,?,?,?,?,?,?,?,?,'proposed',NULL)")
         .bind(&id)
         .bind(work)
         .bind(exec)

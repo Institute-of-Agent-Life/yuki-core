@@ -1,0 +1,5 @@
+# Original text send receipt in the model conversation
+
+Normal sequence: a physical Main call sends one text through the scoped QQ route. The gateway ACK commits the immutable child and one internal delivery event. The next Chat request receives the original social operation ID, target, Presence, conversation and event anchors, plus the text read back from that same visible delivered event. Internal operation and transport receipts stay available to operators.
+
+Fault sequence: if the anchor disappears, the source or destination is no longer readable, or the public delivery was recalled, no later event, planned text or platform locator can stand in for the original. Recheck current visibility when constructing the model result. Once delivered text has entered a model request, its original delivery event is a dependency; withdrawal holds the execution before a subsequent request can copy that text. Physical dispatch checks the dependency again, including on a reserved request. An unknown effect cannot be described as delivered or dispatched again. A rejection before route selection has no proved destination to report.

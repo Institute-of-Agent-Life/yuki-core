@@ -68,7 +68,10 @@ pub(super) async fn callback(
             generation: generation.into(),
             method: method.into(),
             params,
-            config: store.main.as_deref().cloned(),
+            config: crate::model::profile_store::runtime::current(store)
+                .await?
+                .as_deref()
+                .cloned(),
         })),
     )
     .await
@@ -98,7 +101,7 @@ pub(super) async fn apply(db: &mut SqliteConnection, change: &Change) -> Result<
 }
 pub(crate) use proposals::{authorize, self_binding, self_group_route};
 
-pub(in crate::host) async fn qq_route(
+pub(crate) async fn qq_route(
     db: &mut SqliteConnection,
     namespace: &str,
     group: &str,

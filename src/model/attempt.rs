@@ -101,6 +101,8 @@ struct Tool {
     action: effects::Operation,
     target: String,
     payload: Value,
+    #[serde(default)]
+    rejected: Option<super::tool_rejection::Rejection>,
 }
 
 /// A new exclusive owner cannot know whether the previous HTTP write reached a provider.
@@ -222,7 +224,11 @@ async fn dispatch(conn: &mut SqliteConnection, logical: &str, attempt: &str) -> 
     }
     let meta=sqlx::query("SELECT a.execution,a.profile_contract,r.retry_unbilled,r.native_tools,r.request_json FROM model_requests r JOIN activations a ON a.id=r.activation WHERE r.id=?")
         .bind(logical).fetch_one(&mut *conn).await?;
-    execution::eligible(conn, meta.try_get("execution")?).await?;
+    let execution = meta.try_get("execution")?;
+    let actor = execution::eligible(conn, execution).await?;
+    if crate::social::model_receipt::stale(conn, execution, &actor).await? {
+        return Err(Box::new(crate::social::model_receipt::SourceChanged));
+    }
     let previous=sqlx::query("SELECT ordinal,state,retry_proof FROM model_attempts WHERE logical=? ORDER BY ordinal DESC LIMIT 1")
         .bind(logical).fetch_optional(&mut *conn).await?;
     let ordinal = if let Some(row) = previous {
@@ -340,6 +346,7 @@ async fn response(
                 && seen.insert(t.call_id.clone())
                 && !t.target.is_empty()
                 && t.target.trim() == t.target
+                && (t.rejected.is_none() || matches!(t.action, effects::Operation::External))
         })
     });
     let exec: String = row.try_get("execution")?;
@@ -368,6 +375,11 @@ async fn response(
                 },
             )
             .await?;
+            if let Some(error) = tool.rejected {
+                sqlx::query("UPDATE operations SET state='failed',result=? WHERE namespace=? AND operation_id=? AND state='intent'")
+                    .bind(json!({"error":error,"executed":false,"dispatched":false}).to_string())
+                    .bind(&exec).bind(&id).execute(&mut *conn).await?;
+            }
             sqlx::query("INSERT INTO model_tool_intents(logical,ordinal,call_id,execution,operation_id) VALUES(?,?,?,?,?)")
                 .bind(&logical).bind(index as i64).bind(tool.call_id).bind(&exec).bind(id).execute(&mut *conn).await?;
         }
@@ -429,6 +441,11 @@ pub(crate) async fn tool_receipt(
         && row.try_get::<String, _>("state")? != "failed"
     {
         crate::history::query::material(conn, exec, actor, id).await?
+    } else if row.try_get::<String, _>("action")? == "external"
+        && row.try_get::<String, _>("target")? == "query_chat_history"
+        && row.try_get::<String, _>("state")? != "failed"
+    {
+        crate::history::query::original::material(conn, exec, actor, id).await?
     } else if row.try_get::<String, _>("action")? == "external" {
         let r = effects::receipt(conn, exec, id).await?;
         if !matches!(

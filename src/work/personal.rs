@@ -33,11 +33,7 @@ pub async fn input(
     }
     crate::runtime::execution::eligible(conn, manager).await?;
     let mail = mailbox::put(conn, id, manager, key, "human_answer", text, None).await?;
-    sqlx::query("INSERT INTO work_wait_mail VALUES(?,?)")
-        .bind(mail)
-        .bind(event)
-        .execute(&mut *conn)
-        .await?;
+    super::questions::bind_answer(conn, id, mail, event).await?;
     sqlx::query("INSERT OR IGNORE INTO work_sources VALUES(?,?)")
         .bind(id)
         .bind(event)

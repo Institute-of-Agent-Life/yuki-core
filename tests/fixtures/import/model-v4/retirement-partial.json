@@ -1,0 +1,29 @@
+{
+  "partial": {
+    "ok": false,
+    "revision": 4287562964656826,
+    "migrated": [
+      "embedding",
+      "vision",
+      "asr",
+      "search"
+    ],
+    "migrated_profiles": [
+      "main.legacy-agent"
+    ],
+    "apply_mode": "restart",
+    "consumed_env_fields": [],
+    "partial": true,
+    "error_category": "legacy_changed"
+  },
+  "retry": {
+    "ok": true,
+    "revision": 4287562964656826,
+    "migrated": [],
+    "migrated_profiles": [],
+    "apply_mode": "restart",
+    "consumed_env_fields": [],
+    "retired_overrides": 1
+  },
+  "user_edit_preserved": true
+}

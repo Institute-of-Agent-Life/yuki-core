@@ -1,0 +1,102 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "scope": "four E13 inputs through the original native normalizer and physical offline Chat; first group request and its send follow-up sampled",
+  "frames_sha256": "6ec3a4d6eb091a0f46d35c514100ca668fd5088e0293d3c1bfe710b1107ddb2d",
+  "arms": {
+    "A": {
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "receipts": {
+        "run.json": "86d76ba0bf5fec93b079edfba7670449e8c970155855ff08acb5c8c31cab0060",
+        "arrivals.jsonl": "13660abaaee5e419b20be7614a90a63159d345aba846db211f94c08b0ec11e2a",
+        "wire.json": "e43e52132a808da707270cd5f6bf13844f8eb649775b85113bc5400b84fe5d3e",
+        "wire-samples.json": "537479a97eb778ab9df01a2485dbf9e357eb0a0fe2c6bdfebc4547a837d51a22",
+        "junit.xml": "c616e37020338a1e609cfd6400d10da944d5e8474c7f1314bf6c46b214543f9b"
+      }
+    },
+    "B": {
+      "patch_sha256": "98b49f5949fb22b5e5ce44d4832a944dcbb9fcaf1d209aba2de860d46e309abb",
+      "receipts": {
+        "run.json": "6779eed526dc3620a0db78de0bebe8757d305cf818ec5a98363a54e4a4725f09",
+        "arrivals.jsonl": "cc740d177a18f9141cc525a9c116d1c37bc77e72081a37945f499a00abc14cc4",
+        "wire.json": "5bfe005e73e446f1d716e1619ba72f751b5bb9199d7803822ff334e15b21ae14",
+        "wire-samples.json": "51a89470a5497036bcab0183cbf78772cc65c85e444a6c9387a9e9b1d68818ef",
+        "junit.xml": "4ff7fbc5f332c74d8ebf9148ee47ef5cb0eba232b225cfd2949a538e6853d9ca"
+      }
+    }
+  },
+  "original": {
+    "material": {
+      "context": "当前是群聊。\n资料：{\"platform\":\"qq\"}\n\n",
+      "clock": "08:00:01",
+      "name": "真实参与者",
+      "mention": "Agent",
+      "text": "@Agenta-0000"
+    },
+    "prefix": "ee9ad8e544c9444f3b19813af4a670de3e18657bb33f1b44f71e03eb4a51c82e",
+    "knobs": {
+      "model": "gemini-main",
+      "stream": false,
+      "max_tokens": 4096,
+      "tool_choice": "auto",
+      "reasoning_effort": "medium"
+    },
+    "tools": {
+      "automation_manage": "ca1c839457d37b75b7e66142e6564006cc8ad9e6eb3f64ec20695f24593739bd",
+      "automation_query": "810ddcf4306d23745027eef074a4d2a96804c593a32360fcec43e84c6c7cba1e",
+      "environment_service": "7d8eff19cb441bfb57a6ac77023ad9195aa88ec2ab6215d6d8f5ed7b203ac2cc",
+      "environment_status": "7b28b2984e701dd4335c1cd8afa6774bc7d0294a2b778215d38a9e72e688c24c",
+      "external_agent": "1f354609fe24044982242421fbea0504d8642d45544f2b7efa223256a57dada6",
+      "find_contacts": "a07fd51eb6b1d5a74d065f05eb4fc7c138011ba922323000717ecfe09661d335",
+      "find_conversations": "7e0dd65d3f9040555ea98614ed8111cb1e279a7782f45f04fe5178594e72c734",
+      "get_group_members": "e3b090a795701e1ec106ecebcc7243a4999d71da1db5bb88f6ef7a1c91890fe8",
+      "get_my_capabilities": "6c6c7ef75b64959ad9dca3275803b791c4937f6e0152f9310cdd2312941cf789",
+      "inspect_conversation_attachment": "759ecff04a20be1908549b135b68f01cde1fbd5af11ffc0c25dacc86b511e66e",
+      "memory_change": "35b4781d1bffcb729c44cc112c28286077339c29796c75faacc3406883374532",
+      "query_chat_history": "4b5d04d91b47eaeb58e96c73a01966cc00563ab3bfb87f30b1f9ee601d7c8c68",
+      "read_memory": "a9e2ab4e58a05c3774160fd4b99e09b0347159ca226e966e16da29365d568824",
+      "read_tool_artifact": "8d047fa98ee85cb5f3ec942283ea61372c777f1691e0aa6904b52ec1f7c17891",
+      "read_webpage": "c0e371edbf802081e05b00dac37e5aece23c8557cd9914e54f501a6fabf9fd40",
+      "recall_own_message": "bd3263df56bdeb3dfdc6d05bff69923735281d9fade737500b0a274ce87106cc",
+      "save_conversation_attachment_to_workspace": "9f777715efc9743df1abb72f9c3f783a069cd2fa41818641a845a106d05e81fb",
+      "search_memory": "eb89e61bbdd2ce8b355d81f8950240500e67539272e762f95c7095535391543e",
+      "send": "1c9aac4fae5a2f5a8374d0fae4ca543d2f26d1e66e7e139435fc7e4c8bd00717",
+      "subagent_control": "bb1bd3d02d0ef9df416ade79c5dade1959a65adc0d993b3243f92fbcf32eb482",
+      "subagent_start": "45208333ac260f3b2ff648d4773eb49e9add0497a5aac364cc76889747cffbaa",
+      "task_control": "75e4e3576e2cb8a7045ab179e17d2164869b2d431f9df5a639e1c9230e8c97f4",
+      "terminal_control": "dc942cac558e1fa5999e3894951093e20df007f44edd38f35675076c81eb6e19",
+      "terminal_exec": "764cbe1afa8c1e67573118f63d272121f7ae302af278bd6b6c89890f6acfdac2",
+      "terminal_read": "54e0b4c7f1a32ab6ed2e1356a1352c1046dcfe2872555f95867a16a0ba8fc1d8",
+      "time_get_current": "ce7ac3604051336cac9680615fc42179f61e77b71bb2f286bcb2f0bb992519a6",
+      "update_short_state": "f831feba9d1a78feefa4aba57a05563ae5d83d4383e5937b4ec550019d858252",
+      "web_search": "fb18802b8b4e2e5187ae8e853808ac085ad862e3ca9d4764dee65fd0c76a016e",
+      "workspace_inspect": "ab87b06b220ad998327d62cf3cc9169296b15288c69e03107d37ba51dd64692f"
+    }
+  },
+  "original_send_shape": {
+    "ok": "bool",
+    "data": [
+      "action",
+      "delivered_text",
+      "delivered_text_available",
+      "error_category",
+      "event_id",
+      "operation_id",
+      "original_conversation_id",
+      "original_event_id",
+      "presence_id",
+      "status",
+      "target",
+      "text_planned"
+    ],
+    "retryable": "bool",
+    "mutation_committed": "bool",
+    "provider_id": "str",
+    "tool_name": "str"
+  },
+  "packet_sha256": [
+    "8941dd977644de41bca3d6bb729d49327ec9c75401cf48ef10fea9c935373b6d",
+    "fd9ca52a7c87149843cad646e50140a4356645cee57e455d3b37f37fa7c57e46",
+    "4fc93ac30ccfa3cb332038718b020d6f1b2cd11a45a0d4c425ae1d110b705ba5",
+    "c5e6c3d6319b9684ea84e0cd67f236d0141f790baeed04adfed6677617f3b5a1"
+  ]
+}

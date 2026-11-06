@@ -58,15 +58,21 @@ impl Hub {
             .map(serde_json::from_str::<(String, String, String)>)
             .transpose()?
             .map(|(_, _, native)| native);
-        if let Some(target) = message.get("target").filter(|v| !v.is_null())
-            && !((target["kind"] == "person"
-                && group.is_none()
-                && target["id"].as_str() == row.get::<Option<&str>, _>("recipient"))
-                || (target["kind"] == "space"
-                    && (group.as_deref() == target["id"].as_str()
-                        || native_group.as_deref() == target["id"].as_str())))
-        {
-            return Err("target is outside original gateway route".into());
+        if let Some(value) = message.get("target").filter(|v| !v.is_null()) {
+            use crate::social::content::Target;
+            let valid = match serde_json::from_value::<Target>(value.clone())? {
+                Target::Canonical(v) => v.matches(&mut tx, row.get("entry_id")).await?,
+                Target::Legacy(v) => match (group.as_deref(), v.kind.as_str()) {
+                    (None, "person") => row.get::<Option<&str>, _>("recipient") == Some(&v.id),
+                    (Some(space), "space") => {
+                        space == v.id || native_group.as_deref() == Some(&v.id)
+                    }
+                    _ => false,
+                },
+            };
+            if !valid {
+                return Err(crate::social::destination::Refused("target_entry_mismatch").into());
+            }
         }
         // File/media references belong to their owning handle subsystem, not the plugin filesystem.
         if !message["file"].is_null() || !message["emoji"].is_null() {

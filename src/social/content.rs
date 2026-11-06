@@ -13,9 +13,23 @@ pub struct Emoji {
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Target {
+pub struct Canonical {
+    pub kind: String,
+    pub target_id: String,
+    pub conversation_id: Option<String>,
+    pub binding_id: Option<String>,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Legacy {
     pub kind: String,
     pub id: String,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Target {
+    Canonical(Canonical),
+    Legacy(Legacy),
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -67,7 +81,10 @@ pub fn outbound_text(raw: &str) -> String {
 }
 
 pub fn schema() -> Value {
-    json!({"type":"object","properties":{"target":{"type":"object","properties":{"kind":{"enum":["person","space"]},"id":{"type":"string","minLength":1}},"required":["kind","id"],"additionalProperties":false},"text":{"type":"string"},"emoji":{"type":"object","properties":{"goal":{"type":"string","minLength":1},"emotion":{"type":"string"}},"required":["goal"],"additionalProperties":false},
+    let original: Value =
+        serde_json::from_str(include_str!("../../fixtures/social/v4-send-target.json"))
+            .expect("fixed V4 send target declaration");
+    json!({"type":"object","properties":{"target":original["target_schema"],"text":{"type":"string"},"emoji":{"type":"object","properties":{"goal":{"type":"string","minLength":1},"emotion":{"type":"string"}},"required":["goal"],"additionalProperties":false},
         "artifact_id":{"type":"string"},"attachment_kind":{"enum":["image","file"]},"name":{"type":"string"},"reply_to_event_id":{"type":"integer"}},
         "anyOf":[{"required":["text"]},{"required":["emoji"]},{"required":["artifact_id","attachment_kind"]}],"additionalProperties":false})
 }

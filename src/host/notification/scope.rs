@@ -17,7 +17,9 @@ pub(super) async fn policy(db: &mut SqliteConnection, plugin: &str) -> Result<(S
          JOIN host_installations i ON i.plugin=p.plugin AND i.revision=p.revision
          JOIN notification_publishers publisher ON publisher.plugin=i.plugin
          JOIN accounts account ON account.id=publisher.account AND account.namespace=i.namespace
-         WHERE p.plugin=? AND i.enabled",
+         WHERE p.plugin=? AND i.enabled
+         AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='notification.publish')
+         AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='forget.owner')",
     )
     .bind(plugin)
     .fetch_one(&mut *db)

@@ -205,25 +205,31 @@ pub fn decode(v: &Value, task: Option<&Task>, paid: &Value) -> Result<Turn> {
             }
             let name = call["name"].as_str().ok_or("missing function name")?;
             let args = call.get("args").cloned().unwrap_or_else(|| json!({}));
-            let decl = decls
-                .iter()
-                .find(|d| d["name"] == name)
-                .ok_or("function absent from original GenerateContent request")?;
-            if config["mode"] == "NONE"
-                || config["allowedFunctionNames"]
+            let decl = decls.iter().find(|d| d["name"] == name);
+            let allowed = config["mode"] != "NONE"
+                && config["allowedFunctionNames"]
                     .as_array()
-                    .is_some_and(|v| !v.iter().any(|n| n == name))
-                || !jsonschema::validator_for(&decl["parametersJsonSchema"])?.is_valid(&args)
-            {
-                return Err("Gemini function violates original declaration".into());
-            }
+                    .is_none_or(|v| v.iter().any(|n| n == name));
+            let error = super::tool_rejection::validate(
+                decl.map(|d| &d["parametersJsonSchema"]),
+                &args,
+                allowed,
+            )?;
             if let Some(t) = task {
-                if t.mode != Mode::FunctionTool || name != "emit_result" || emitted.is_some() {
+                if error.is_some()
+                    || t.mode != Mode::FunctionTool
+                    || name != "emit_result"
+                    || emitted.is_some()
+                {
                     return Err("invalid Gemini structured function".into());
                 }
                 emitted = Some(args);
             } else {
-                intents.push(chat::intent(&id, name, args)?);
+                let mut intent = chat::intent(&id, name, args)?;
+                if let Some(error) = error {
+                    super::tool_rejection::mark(&mut intent, error);
+                }
+                intents.push(intent);
             }
         } else if let Some(call) = p.get("toolCall") {
             let id = call["id"]

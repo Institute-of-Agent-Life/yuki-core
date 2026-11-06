@@ -50,6 +50,26 @@ fn object(props: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":props,"required":required,"additionalProperties":false})
 }
 pub fn builtin(name: &str) -> Option<Tool> {
+    let mut tool = builtin_unprojected(name)?;
+    tool.code_direct = super::original_views::direct(name);
+    Some(tool)
+}
+fn builtin_unprojected(name: &str) -> Option<Tool> {
+    if let Some(tool) = super::original_views::declaration(name) {
+        return Some(tool);
+    }
+    if name == "get_my_capabilities" {
+        return Some(super::permissions::declaration());
+    }
+    if name == "recall_own_message" {
+        return Some(crate::social::recall::declaration());
+    }
+    if name == "get_group_members" {
+        return Some(crate::history::query::members::declaration());
+    }
+    if name == "query_chat_history" {
+        return Some(crate::history::query::original::declaration());
+    }
     if let Some(tool) = crate::history::query::contacts::declaration(name) {
         return Some(tool);
     }
@@ -112,41 +132,11 @@ pub fn builtin(name: &str) -> Option<Tool> {
             false,
             false,
         ),
-        "time_get_current" => (
-            "Read current UTC and local date and time.",
-            object(json!({}), &[]),
-            true,
-            false,
-            true,
-        ),
-        "update_short_state" => (
-            "Replace one of three 24-hour slots. Empty text clears it.",
-            object(
-                json!({"slot":{"type":"integer","minimum":1,"maximum":3},"text":{"type":"string","maxLength":300}}),
-                &["slot", "text"],
-            ),
-            false,
-            false,
-            true,
-        ),
         "read_tool_artifact" => (
-            "Continue a specific immutable result at a JSON pointer and character or item offset.",
-            object(
-                json!({"handle":{"type":"string"},"version":{"type":"string"},"path":{"type":"string"},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":8000}}),
-                &["handle", "version"],
-            ),
+            "读取工具产生的短期 Artifact。默认 get 按路径读取 JSON，read_more 中的参数项可原样传入；可用 inspect 查看结构、search 返回关键词命中的完整对象；文本使用 text。get 字符串按字符分页，offset/next_offset 单位为 characters；limit 默认当前有效结果字符预算，实际页受该预算约束。图片 Artifact 使用 image 将原图交给当前主模型原生查看。",
+            json!({"type": "object", "properties": {"handle": {"type": "string"}, "operation": {"type": "string", "enum": ["inspect", "get", "search", "text", "image"], "description": "默认 get；JSON 使用 inspect/get/search，文本使用 text，图片使用 image"}, "path": {"type": "array", "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]}, "description": "相对返回中 logical_root 的 JSON 路径，对象键用字符串、数组下标用整数"}, "offset": {"type": "integer", "minimum": 0, "description": "JSON 的键/元素/匹配偏移，或 text 字符偏移"}, "limit": {"type": "integer", "minimum": 1, "description": "JSON 条目数，或 text 最大字符数"}, "query": {"type": "string", "description": "search 关键词，或 text 的字符串定位词"}}, "required": ["handle"], "additionalProperties": false}),
             true,
             false,
-            true,
-        ),
-        "lookup_tools" => (
-            "Look up a frozen schema or page through capability summaries.",
-            object(
-                json!({"query":{"type":"string","maxLength":128},"name":{"type":"string","minLength":1,"maxLength":256},"limit":{"type":"integer","minimum":1,"maximum":10},"offset":{"type":"integer","minimum":0}}),
-                &[],
-            ),
-            true,
-            true,
             true,
         ),
         _ => return None,
@@ -180,9 +170,13 @@ impl Manifest {
                 "get",
                 "put",
                 "send",
+                "recall_own_message",
                 "complete",
                 "history_query",
+                "query_chat_history",
                 "history_directory",
+                "get_group_members",
+                "get_my_capabilities",
                 "find_contacts",
                 "find_conversations",
                 "time_get_current",
@@ -215,7 +209,7 @@ impl Manifest {
                 if code {
                     t.code_direct
                 } else {
-                    t.name != "lookup_tools"
+                    !["lookup_tools", "execute_code"].contains(&t.name.as_str())
                 }
             })
             .map(Tool::wire)
@@ -257,7 +251,7 @@ impl Manifest {
         )
     }
 }
-fn script_name(name: &str) -> String {
+pub(super) fn script_name(name: &str) -> String {
     if !name.is_empty()
         && !name.contains("__")
         && name
@@ -281,7 +275,7 @@ pub async fn pinned(
     let code = cfg.code_projection || cfg.code_tool.is_some();
     let mut tools: Vec<Tool> = Manifest::core().0.into_values().collect();
     if cfg.bridge_search {
-        tools.push(crate::model::search::declaration());
+        tools.push(builtin("web_search").expect("built-in configured search"));
     }
     let installed: Vec<(String, String, String)> = sqlx::query_as(
         "SELECT plugin,revision,tools FROM host_installations WHERE enabled ORDER BY plugin",
@@ -317,8 +311,9 @@ pub async fn pinned(
                 .unwrap_or(super::results::DEFAULT_QUOTA),
         )
         .bind(cfg.timezone.as_deref().unwrap_or("Asia/Shanghai"))
-        .execute(conn)
+        .execute(&mut *conn)
         .await?;
+    crate::host::selected_processor::pin(conn, exec, cfg.attachment_processor.as_deref()).await?;
     Ok((manifest, code))
 }
 

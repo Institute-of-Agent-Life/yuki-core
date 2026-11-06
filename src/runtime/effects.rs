@@ -117,13 +117,37 @@ pub(crate) async fn authorize(
     actor: &str,
     dispatch: bool,
 ) -> Result<String> {
+    authorize_run(conn, execution, actor, dispatch, false).await
+}
+
+/// Resume checks the same source and route as dispatch, while allowing the
+/// suspension that this management action will atomically remove.
+pub(crate) async fn authorize_resume(
+    conn: &mut SqliteConnection,
+    execution: &str,
+) -> Result<String> {
+    let actor: String =
+        sqlx::query_scalar("SELECT coalesce(original_actor,origin) FROM executions WHERE id=?")
+            .bind(execution)
+            .fetch_one(&mut *conn)
+            .await?;
+    authorize_run(conn, execution, &actor, true, true).await
+}
+
+async fn authorize_run(
+    conn: &mut SqliteConnection,
+    execution: &str,
+    actor: &str,
+    dispatch: bool,
+    resuming: bool,
+) -> Result<String> {
     if dispatch {
         crate::host::participation::authorize(conn, execution).await?;
         crate::host::maintenance::authorize(conn, execution).await?;
         crate::host::plugin_sessions::authorize(conn, execution).await?;
         crate::host::notification::authorize(conn, execution).await?;
     }
-    if dispatch && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM executions x JOIN work_suspensions s ON s.work=x.work_id WHERE x.id=?)").bind(execution).fetch_one(&mut *conn).await?{return Err("Work independently suspended".into());}
+    if dispatch && !resuming && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM executions x JOIN work_suspensions s ON s.work=x.work_id WHERE x.id=?)").bind(execution).fetch_one(&mut *conn).await?{return Err("Work independently suspended".into());}
     let erased = crate::privacy::source::execution_erased(conn, execution, None).await?;
     if erased {
         return Err("execution source erased".into());

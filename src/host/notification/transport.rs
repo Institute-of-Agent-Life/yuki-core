@@ -137,6 +137,24 @@ pub(crate) async fn serve(
                     }
                     Err(error) => Err(error),
                 };
+                if let Err(error) = &result {
+                    let category = match error.to_string().as_str() {
+                        "original receiver offline before dispatch" => Some("bot_unavailable"),
+                        "original gateway delivery unavailable" => Some("gateway_disconnected"),
+                        _ => None,
+                    };
+                    if let Some(category) = category {
+                        let _ = super::super::write(
+                            &store,
+                            super::super::Change::Notification(Change::Refused {
+                                publication: row.get("publication"),
+                                ordinal: row.get("ordinal"),
+                                category: category.into(),
+                            }),
+                        )
+                        .await;
+                    }
+                }
                 if let Ok(result) = result
                     && let Some(state @ ("confirmed" | "failed" | "unknown")) =
                         result["state"].as_str()

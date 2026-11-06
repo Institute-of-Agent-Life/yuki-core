@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import platform
+import shutil
 import subprocess
 import tempfile
 import time
@@ -31,17 +32,28 @@ def cleanup_workspace(cleanup, timeout=5):
 
 @contextmanager
 def portable_workspace():
-    workspace = tempfile.TemporaryDirectory(prefix="yuki-host-candidate-")
+    workspace = tempfile.mkdtemp(prefix="yuki-host-candidate-")
     try:
-        yield workspace.name
+        yield workspace
     finally:
-        cleanup_workspace(workspace.cleanup)
+        # TemporaryDirectory retries unlink via directory recursion, hiding a
+        # sharing violation on an executable behind Windows error 267. Keep
+        # the original rmtree error for our bounded, cleanup-only retry.
+        cleanup_workspace(lambda: shutil.rmtree(workspace))
 
 
 def tested_contents(receipt, profile, personal=False, card=None):
     card = card or ("CORE-033" if personal else "CORE-032")
     personal = card == "CORE-033"
     media = card == "CORE-038"
+    control = card == "CORE-037"
+    importing = card == "CORE-057"
+    history = card == "CORE-014"
+    memory = card == "CORE-026"
+    artifact = card == "CORE-015"
+    members = card == "CORE-013"
+    usage = card == "CORE-055"
+    profiles = card == "CORE-048"
     notifications = card == "CORE-058"
     sessions = card == "CORE-051"
     maintenance = card == "CORE-035"
@@ -49,6 +61,13 @@ def tested_contents(receipt, profile, personal=False, card=None):
     auxiliary = card == "CORE-050"
     composition = card == "CORE-034"
     proof_name = {
+        "CORE-057": "offline-config-reconciliation.json",
+        "CORE-014": "original-history-wire.json",
+        "CORE-015": "tool-result-pages.json",
+        "CORE-026": "fact-evidence-acl.json",
+        "CORE-013": "observed-members.json",
+        "CORE-055": "usage-field-coverage.json",
+        "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
         "CORE-033": "personal-handoff.json",
         "CORE-038": "media-handle-bridge.json",
@@ -56,6 +75,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "CORE-036": "promotion-vs-self.json",
         "CORE-035": "maintenance-grants.json",
         "CORE-051": "isolated-session-replay.json",
+        "CORE-048": "profile-apply-matrix.json",
         "CORE-058": "notification-publication.json",
         "CORE-034": "nested-boundary.json",
     }[card]
@@ -70,7 +90,7 @@ def tested_contents(receipt, profile, personal=False, card=None):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal or media or composition or auxiliary or participation or maintenance or sessions or notifications
+        if personal or media or composition or auxiliary or participation or maintenance or sessions or profiles or notifications or control or usage or importing or history or artifact or members or memory
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -95,6 +115,127 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "licenses/Vec1.txt": (ROOT / "native/vec1/NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if card=="CORE-032":
+        terminal=receipt("terminal-work-scope.json")
+        oracle=(ROOT/"fixtures/host/terminal-work-v4.json").read_bytes()
+        if data["terminal_work"]!=json.loads(terminal) or digest(oracle)!=data["terminal_work"]["original_oracle_sha256"]:
+            raise ValueError("terminal Work receipt differs from original proof")
+        files["evidence/terminal-work-scope.json"]=terminal
+        files["evidence/terminal-work-v4.json"]=oracle
+        files["docs/terminal-work-scope.md"]=(ROOT/"docs/terminal-work-scope.md").read_bytes()
+    if memory:
+        proof=receipt('memory-restore.json')
+        raw_fixture=(ROOT/'fixtures/memory/v4-restore.json').read_bytes()
+        if digest(raw_fixture)!=json.loads(proof)['oracle_sha256']:raise ValueError('memory restore oracle differs from validated input')
+        files['evidence/memory-restore.json']=proof
+        files['evidence/v4-restore.json']=raw_fixture
+        files['docs/memory-restore.md']=(ROOT/'docs/memory-restore.md').read_bytes()
+        proof=receipt('memory-metadata.json')
+        for name,expected in [('v4-metadata.json',json.loads(proof)['oracle_sha256']),('reader43-metadata.json',json.loads(proof)['upgrade']['fixture_sha256'])]:
+            raw_fixture=(ROOT/'fixtures/memory'/name).read_bytes()
+            if digest(raw_fixture)!=expected:raise ValueError('memory metadata fixture differs from validated input')
+            files['evidence/'+name]=raw_fixture
+        files['evidence/memory-metadata.json']=proof
+        files['docs/memory-metadata.md']=(ROOT/'docs/memory-metadata.md').read_bytes()
+        proof=receipt('memory-selectors.json')
+        original=(ROOT/'fixtures/memory/v4-selectors.json').read_bytes()
+        if digest(original)!=json.loads(proof)['oracle_sha256']:raise ValueError('memory selector oracle differs from validated input')
+        files['evidence/v4-selectors.json']=original
+        files['evidence/memory-selectors.json']=proof
+        files['docs/memory-selectors.md']=(ROOT/'docs/memory-selectors.md').read_bytes()
+        proof=receipt('memory-temporal.json')
+        original=(ROOT/'fixtures/memory/v4-temporal.json').read_bytes()
+        if digest(original)!=json.loads(proof)['oracle_sha256']:raise ValueError('memory temporal oracle differs from validated input')
+        files['evidence/v4-temporal.json']=original
+        files['evidence/memory-temporal.json']=proof
+        old=(ROOT/'fixtures/memory/reader44-temporal.json').read_bytes()
+        if digest(old)!=json.loads(proof)['upgrade']['fixture_sha256']:raise ValueError('reader 44 temporal upgrade fixture differs from validated input')
+        files['evidence/reader44-temporal.json']=old
+        files['docs/memory-temporal.md']=(ROOT/'docs/memory-temporal.md').read_bytes()
+    if importing:
+        files["docs/model-config-import.md"]=(ROOT/"docs/model-config-import.md").read_bytes()
+        files["evidence/legacy-import-provenance.json"]=(ROOT/"tests/fixtures/import/model-v4/provenance.json").read_bytes()
+    if members:
+        raw_fixture=(ROOT/'fixtures/social/v4-members.json').read_bytes()
+        if digest(raw_fixture)!=data['members_oracle_sha256']:raise ValueError('member contract differs from verified original')
+        files['evidence/v4-members.json']=raw_fixture
+        files['docs/observed-members-compat.md']=(ROOT/'docs/observed-members-compat.md').read_bytes()
+        recall=receipt('original-recall-wire.json')
+        original=(ROOT/'fixtures/social/v4-recall.json').read_bytes()
+        if digest(original)!=json.loads(recall)['recall_oracle_sha256']:raise ValueError('recall contract differs from verified original')
+        files['evidence/original-recall-wire.json']=recall
+        files['evidence/v4-recall.json']=original
+        files['docs/recall-compat.md']=(ROOT/'docs/recall-compat.md').read_bytes()
+        wire=receipt('canonical-send-entry.json')
+        target=(ROOT/'fixtures/social/v4-send-target.json').read_bytes()
+        if digest(target)!=json.loads(wire)['oracle_sha256']:raise ValueError('send contract differs from verified original')
+        files['evidence/canonical-send-entry.json']=wire
+        files['evidence/v4-send-target.json']=target
+        model_oracle=(ROOT/'fixtures/social/v4-model-send-receipt.json').read_bytes()
+        if digest(model_oracle)!=json.loads(receipt('canonical-send-entry.json'))['model_send_receipt']['oracle_sha256']:
+            raise ValueError('model-visible send receipt differs from verified original')
+        files['evidence/v4-model-send-receipt.json']=model_oracle
+        files['docs/model-send-receipt.md']=(ROOT/'docs/model-send-receipt.md').read_bytes()
+        file_proof = receipt('file-caption-withdrawal.json')
+        file_oracle = (ROOT/'fixtures/oracle/v4/file-caption-receipt.json').read_bytes()
+        if digest(file_oracle) != json.loads(file_proof)['oracle_sha256']:
+            raise ValueError('file receipt differs from verified original')
+        files['evidence/file-caption-withdrawal.json'] = file_proof
+        files['evidence/v4-file-caption-receipt.json'] = file_oracle
+        files['docs/file-send-receipt.md'] = (ROOT/'docs/file-send-receipt.md').read_bytes()
+        files['docs/social-send-entry.md']=(ROOT/'docs/social-send-entry.md').read_bytes()
+    if artifact:
+        isolated=receipt('tool-call-isolation.json')
+        original_rejections=(ROOT/'fixtures/tool-results/v4-call-rejections.json').read_bytes()
+        if digest(original_rejections)!=json.loads(isolated)['oracle_sha256']:raise ValueError('call rejection oracle differs from exercised source')
+        files['evidence/tool-call-isolation.json']=isolated
+        files['docs/tool-call-isolation.md']=(ROOT/'docs/tool-call-isolation.md').read_bytes()
+        files['evidence/v4-call-rejections.json']=original_rejections
+        views=receipt('original-tool-views.json')
+        original=(ROOT/'fixtures/tool-results/v4-tool-views.json').read_bytes()
+        if digest(original)!=json.loads(views)['oracle_sha256']:raise ValueError('tool views differ from verified original')
+        files['evidence/original-tool-views.json']=views
+        files['evidence/v4-tool-views.json']=original
+        files['docs/original-tool-views.md']=(ROOT/'docs/original-tool-views.md').read_bytes()
+        for path,key in [("fixtures/tool-results/v4-original-declaration.json","artifact_declaration_sha256"),("fixtures/tool-results/v4-original-pages.json","oracle_sha256")]:
+            raw_fixture=(ROOT/path).read_bytes()
+            if digest(raw_fixture)!=data[key]:raise ValueError("artifact contract differs from verified original")
+            files["evidence/"+Path(path).name]=raw_fixture
+        files["docs/tool-artifact-compat.md"]=(ROOT/"docs/tool-artifact-compat.md").read_bytes()
+    if history:
+        declaration=(ROOT/"fixtures/history/v4-query-declaration.json").read_bytes()
+        if digest(declaration)!=data["history_declaration_sha256"]:raise ValueError("history declaration differs from tested original")
+        files["protocol/query_chat_history.json"]=declaration
+        files["evidence/v4-original-query.json"]=(ROOT/"fixtures/history/v4-original-query.json").read_bytes()
+    if usage:
+        contract=(ROOT/"protocol/control/usage.json").read_bytes()
+        if digest(contract)!=data["usage_schema_sha256"]:raise ValueError("usage contract differs from verified source")
+        files["protocol/control/usage.json"]=contract
+        for path in ("protocol/control/README.md","protocol/plugin/control/methods.json","protocol/admin/capabilities.json","protocol/admin/person-capabilities.json"):
+            files[path]=(ROOT/path).read_bytes()
+    if control:
+        permissions=receipt('original-permission-directory.json')
+        original=(ROOT/'fixtures/control/v4-permissions.json').read_bytes()
+        if digest(original)!=json.loads(permissions)['permission_oracle_sha256']:raise ValueError('permission directory differs from verified original')
+        files['evidence/original-permission-directory.json']=permissions
+        files['evidence/v4-permissions.json']=original
+        files['docs/permission-directory.md']=(ROOT/'docs/permission-directory.md').read_bytes()
+        for path,expected in [("protocol/plugin/control/methods.json","control_schema_sha256"),("protocol/baseline-v4/admin-openapi.json","admin_openapi_sha256")]:
+            raw_contract=(ROOT/path).read_bytes()
+            if digest(raw_contract)!=data[expected]:raise ValueError("control contract differs from verified source")
+            files[path]=raw_contract
+        for path in ("protocol/admin/capabilities.json","protocol/admin/person-capabilities.json","protocol/plugin/control/README.md"):
+            files[path]=(ROOT/path).read_bytes()
+    if profiles:
+        for path, expected in [("protocol/baseline-v4/admin-openapi.json", "admin_openapi_sha256"),
+                               ("protocol/admin/model-metadata.json", "profile_metadata_sha256")]:
+            member = (ROOT / path).read_bytes()
+            if digest(member) != data[expected]:
+                raise ValueError("model configuration contract differs from verified source")
+            files[path] = member
+        files["config/model_profiles.example.toml"] = (ROOT / "config/model_profiles.example.toml").read_bytes()
+        files["protocol/admin/capabilities.json"] = (ROOT / "protocol/admin/capabilities.json").read_bytes()
+        files["docs/model-profiles.md"] = (ROOT / "docs/model-profiles.md").read_bytes()
     if notifications:
         methods=(ROOT/"protocol/plugin/notifications/methods.json").read_bytes()
         if digest(methods)!=data["notification_schema_sha256"] or set(data["negotiated_notification_methods"])!=set(json.loads(methods)["methods"]):
@@ -133,6 +274,22 @@ def tested_contents(receipt, profile, personal=False, card=None):
         ) != set(json.loads(methods)["methods"]):
             raise ValueError("media methods differ from exercised original")
         files["protocol/media/methods.json"] = methods
+        gateway=receipt("gateway-inbound-media.json")
+        doc=json.loads(gateway)
+        oracle=(ROOT/"fixtures/media/gateway-media-v4.json").read_bytes()
+        if digest(oracle)!=doc["original_oracle_sha256"] or data["gateway_inbound"]!=doc:
+            raise ValueError("inbound gateway receipt differs from validated source")
+        files["evidence/gateway-inbound-media.json"]=gateway
+        files["evidence/gateway-media-v4.json"]=oracle
+        files["docs/gateway-inbound-media.md"]=(ROOT/"docs/gateway-inbound-media.md").read_bytes()
+        selected=receipt("main-selected-media.json")
+        oracle=(ROOT/"fixtures/media/main-selected-v4.json").read_bytes()
+        observed=json.loads(selected)
+        if digest(oracle)!=observed["original_oracle_sha256"] or data["selected_processor"]!=observed:
+            raise ValueError("Main attachment selection differs from validated source")
+        files["evidence/main-selected-media.json"]=selected
+        files["evidence/main-selected-v4.json"]=oracle
+        files["docs/main-selected-media.md"]=(ROOT/"docs/main-selected-media.md").read_bytes()
     if personal:
         methods = (ROOT / "protocol/plugin/personal/methods.json").read_bytes()
         if digest(methods) != data["personal_schema_sha256"] or set(
@@ -140,6 +297,34 @@ def tested_contents(receipt, profile, personal=False, card=None):
         ) != set(json.loads(methods)["methods"]):
             raise ValueError("personal interface differs from exercised methods")
         files["protocol/personal/methods.json"] = methods
+        proof=receipt('connector-authentication.json')
+        original=(ROOT/'fixtures/personal/connector-identity.json').read_bytes()
+        if digest(original)!=json.loads(proof)['original_oracle_sha256']:raise ValueError('connector identity oracle differs from validated input')
+        files['evidence/connector-authentication.json']=proof
+        files['evidence/connector-identity.json']=original
+        selected=receipt('client-entry-selection.json')
+        oracle=(ROOT/'fixtures/personal/entry-selection.json').read_bytes()
+        if digest(oracle)!=json.loads(selected)['original_oracle_sha256']:
+            raise ValueError('Client9 selection oracle differs from validated input')
+        files['evidence/client-entry-selection.json']=selected
+        files['evidence/entry-selection.json']=oracle
+        files['docs/client-entry-selection.md']=(ROOT/'docs/client-entry-selection.md').read_bytes()
+        uploads=receipt('client-upload-handoff.json')
+        oracle=(ROOT/'fixtures/personal/client-uploads-v4.json').read_bytes()
+        if digest(oracle)!=json.loads(uploads)['original_oracle_sha256']:
+            raise ValueError('client upload oracle differs from validated input')
+        files['evidence/client-upload-handoff.json']=uploads
+        files['evidence/client-uploads-v4.json']=oracle
+        files['docs/client-upload-receipts.md']=(ROOT/'docs/client-upload-receipts.md').read_bytes()
+        stream=receipt('client-outbound-stream.json')
+        source=(ROOT/'fixtures/personal/client-stream-v4.json').read_bytes()
+        if digest(source)!=json.loads(stream)['original_oracle_sha256']:
+            raise ValueError('Client9 stream oracle differs from validated input')
+        files['evidence/client-outbound-stream.json']=stream
+        files['evidence/client-stream-v4.json']=source
+        files['docs/client-stream.md']=(ROOT/'docs/client-stream.md').read_bytes()
+
+        files['docs/connector-authentication.md']=(ROOT/'docs/connector-authentication.md').read_bytes()
         for index in (
             "protocol/personal/source.json",
             "protocol/connector/4/source.json",
@@ -221,7 +406,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-058"}
+        m["card"] not in {"CORE-026", "CORE-013", "CORE-015", "CORE-014", "CORE-032", "CORE-033", "CORE-034", "CORE-038", "CORE-050", "CORE-036", "CORE-035", "CORE-051", "CORE-048", "CORE-058", "CORE-037", "CORE-055", "CORE-057"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -239,6 +424,14 @@ def build(manifest_path, out, development=False):
 
     personal = m["card"] == "CORE-033"
     media = m["card"] == "CORE-038"
+    control = m["card"] == "CORE-037"
+    importing = m["card"] == "CORE-057"
+    history = m["card"] == "CORE-014"
+    memory = m["card"] == "CORE-026"
+    artifact = m["card"] == "CORE-015"
+    observed_members = m["card"] == "CORE-013"
+    usage = m["card"] == "CORE-055"
+    profiles = m["card"] == "CORE-048"
     notifications = m["card"] == "CORE-058"
     sessions = m["card"] == "CORE-051"
     maintenance = m["card"] == "CORE-035"
@@ -246,6 +439,13 @@ def build(manifest_path, out, development=False):
     auxiliary = m["card"] == "CORE-050"
     composition = m["card"] == "CORE-034"
     proof_name = {
+        "CORE-057": "offline-config-reconciliation.json",
+        "CORE-014": "original-history-wire.json",
+        "CORE-015": "tool-result-pages.json",
+        "CORE-026": "fact-evidence-acl.json",
+        "CORE-013": "observed-members.json",
+        "CORE-055": "usage-field-coverage.json",
+        "CORE-037": "control-grants.json",
         "CORE-032": "host-delegation.json",
         "CORE-033": "personal-handoff.json",
         "CORE-038": "media-handle-bridge.json",
@@ -253,6 +453,7 @@ def build(manifest_path, out, development=False):
         "CORE-036": "promotion-vs-self.json",
         "CORE-035": "maintenance-grants.json",
         "CORE-051": "isolated-session-replay.json",
+        "CORE-048": "profile-apply-matrix.json",
         "CORE-058": "notification-publication.json",
         "CORE-034": "nested-boundary.json",
     }[m["card"]]
@@ -261,6 +462,13 @@ def build(manifest_path, out, development=False):
     target = (
         (
             {
+                "CORE-057": "yuki-model-import-preview-",
+                "CORE-014": "yuki-history-preview-",
+                "CORE-015": "yuki-artifact-preview-",
+                "CORE-026": "yuki-memory-preview-",
+                "CORE-013": "yuki-social-preview-",
+                "CORE-055": "yuki-usage-preview-",
+                "CORE-037": "yuki-control-preview-",
                 "CORE-032": "yuki-host-preview-",
                 "CORE-033": "yuki-personal-preview-",
                 "CORE-038": "yuki-media-preview-",
@@ -270,6 +478,7 @@ def build(manifest_path, out, development=False):
                 "CORE-051": "yuki-session-preview-",
                 "CORE-058": "yuki-notification-preview-",
                 "CORE-034": "yuki-code-preview-",
+                "CORE-048": "yuki-profile-preview-",
             }[m["card"]]
         )
         + source["commit"][:12]
@@ -307,15 +516,108 @@ def build(manifest_path, out, development=False):
         },
         "members": members,
     }
+    if importing:
+        candidate["legacy_input_schema_revision"]="0156"
+        candidate["validated_cli"]=["import-models --inspect","import-models","import-models --resume"]
+        candidate["database_schema_revision"]=None
+        candidate["validation"]["consumer"]="offline stopped-copy importer; no runtime owner or provider started"
+        candidate["validation"]["real_extension_consumers"]=False
+    if memory:
+        candidate['database_schema_revision']=m['schema_version']
+        candidate['validated_core_tools']=['memory_change','read_memory']
+        candidate['validated_memory_operations']=['create','correct','invalidate','restore','update_metadata']
+        candidate['validated_memory_selectors']=['current_speaker/person']
+        candidate['memory_selector_oracle_sha256']=json.loads(receipt('memory-selectors.json'))['oracle_sha256']
+        candidate['memory_temporal_oracle_sha256']=json.loads(receipt('memory-temporal.json'))['oracle_sha256']
+        candidate['validated_memory_temporal_fields']=['valid_from','valid_until']
+        candidate['memory_metadata_oracle_sha256']=json.loads(receipt('memory-metadata.json'))['oracle_sha256']
+        candidate['memory_restore_oracle_sha256']=json.loads(receipt('memory-restore.json'))['oracle_sha256']
+        candidate['validation']['consumer']='physical Main, QQ command and original writer fixtures; SDK packages independently installed'
+        candidate['validation']['real_extension_consumers']=False
+    if observed_members:
+        candidate['database_schema_revision']=m['schema_version']
+        candidate['validated_core_tools']=['get_group_members','recall_own_message','send']
+        candidate['send_target_oracle_sha256']=json.loads(receipt('canonical-send-entry.json'))['oracle_sha256']
+        candidate['model_send_receipt_scope']='confirmed QQ text or file plus caption, with original per-part events and visibility checks'
+        candidate['model_send_receipt_oracle_sha256']=json.loads(receipt('canonical-send-entry.json'))['model_send_receipt']['oracle_sha256']
+        candidate['send_target_scope']='original QQ Presence, current entry or scoped observed private/configured group entry'
+        candidate['recall_oracle_sha256']=json.loads(receipt('original-recall-wire.json'))['recall_oracle_sha256']
+        candidate['members_oracle_sha256']=data['members_oracle_sha256']
+        candidate['coverage']='observed'
+        candidate['validation']['consumer']='physical Main, authenticated original QQ recall and observed directory fixtures; SDK packages independently installed'
+        candidate['validation']['real_extension_consumers']=False
+    if artifact:
+        candidate["database_schema_revision"]=m["schema_version"]
+        candidate["artifact_declaration_sha256"]=data["artifact_declaration_sha256"]
+        candidate["validated_core_tools"]=["read_tool_artifact","lookup_tools","time_get_current","update_short_state"]
+        candidate["tool_views_oracle_sha256"]=json.loads(receipt("original-tool-views.json"))["oracle_sha256"]
+        candidate["validated_call_isolation_protocols"]=[p["protocol"] for p in json.loads(receipt("tool-call-isolation.json"))["protocols"]]
+        candidate["validated_artifact_operations"]=data["validated_operations"]
+        candidate["validation"]["consumer"]="physical Main tool continuation and fixed original JSON/text page fixtures; SDK packages independently installed"
+        candidate["validation"]["real_extension_consumers"]=False
+        candidate["native_image_artifacts_validated"]=False
+    if history:
+        candidate["database_schema_revision"]=m["schema_version"]
+        candidate["history_declaration_sha256"]=data["history_declaration_sha256"]
+        candidate["validated_core_tools"]=["query_chat_history"]
+        candidate["validation"]["consumer"]="physical Main Chat tool invocation and fixed v4 query fixtures; SDK packages independently installed"
+        candidate["validation"]["real_extension_consumers"]=False
+    if usage:
+        candidate["usage_schema_revision"]=1
+        candidate["usage_schema_sha256"]=data["usage_schema_sha256"]
+        candidate["database_schema_revision"]=data["database_schema_revision"]
+        candidate["validated_http_routes"]=["GET /admin/v1/models/stats"]
+        candidate["validation"]["consumer"]="native Admin HTTP and original billing ledger fixtures"
+        candidate["validation"]["real_extension_consumers"]="pending EXT-049"
+    if control:
+        candidate['validated_core_tools']=['get_my_capabilities']
+        candidate['permission_oracle_sha256']=json.loads(receipt('original-permission-directory.json'))['permission_oracle_sha256']
+        candidate["control_schema_revision"]=1
+        candidate["control_schema_sha256"]=data["control_schema_sha256"]
+        candidate["admin_openapi_sha256"]=data["admin_openapi_sha256"]
+        candidate["database_schema_revision"]=data["database_schema_revision"]
+        candidate["validated_control_methods"]=data["validated_control_methods"]
+        candidate["validated_action_families"]=data["validated_action_families"]
+        candidate["validation"]["consumer"]="installed Python wheel and external Rust crate consumer; native Admin and OS operator"
+        candidate["validation"]["real_extension_consumers"]="pending EXT-022, EXT-037, EXT-038, EXT-039 and EXT-049"
+    if profiles:
+        candidate["model_profile_schema_revision"] = 3
+        candidate["admin_openapi_sha256"] = data["admin_openapi_sha256"]
+        candidate["validated_http_routes"] = data["validated_http_routes"]
+        candidate["validated_profile_protocols"] = sorted(data["results"]["protocol_matrix"])
+        candidate["validated_model_tasks"] = ["chat_agent", "memory_extraction", *sorted(data["results"]["auxiliary_task_routes"])]
+        candidate["validated_runtime_connections"] = ["independent_search_profile", "embedding_restart"]
+        candidate["validation"]["consumer"] = "native operator and fixed Admin HTTP fixtures"
+        candidate["validation"]["real_extension_consumers"] = "pending EXT-049"
     if personal:
         candidate["personal_schema_revision"] = 1
+        selected=json.loads(receipt('client-entry-selection.json'))
+        candidate['validated_client_selection_headers']=selected['selected_headers']
+        candidate['client_selection_oracle_sha256']=selected['original_oracle_sha256']
+        stream=json.loads(receipt('client-outbound-stream.json'))
+        candidate['client_stream_oracle_sha256']=stream['original_oracle_sha256']
+        candidate['client_upload_oracle_sha256']=json.loads(receipt('client-upload-handoff.json'))['original_oracle_sha256']
+        candidate['validated_stream_recovery']='fresh sync and durable events after cursor'
+        candidate['database_schema_revision']=m['schema_version']
         candidate["personal_schema_sha256"] = data["personal_schema_sha256"]
         candidate["client_api_revision"] = 9
         candidate["connector_wire_revision"] = 4
+        connector=json.loads(receipt('connector-authentication.json'))
+        candidate['connector_identity_oracle_sha256']=connector['original_oracle_sha256']
+        candidate['validated_connector_methods']=connector['methods']
         candidate["validated_personal_methods"] = sorted(data["negotiated_methods"])
         candidate["validated_http_routes"] = data["validated_routes"]
+    if m["card"]=="CORE-032":
+        candidate["validated_terminal_methods"]=data["terminal_work"]["methods"]
+        candidate["terminal_work_oracle_sha256"]=data["terminal_work"]["original_oracle_sha256"]
+        candidate["database_schema_revision"]=m["schema_version"]
     if media:
+        candidate["validated_main_processor_tool"]=data["selected_processor"]["tool"]
+        candidate["main_selected_media_oracle_sha256"]=data["selected_processor"]["original_oracle_sha256"]
         candidate["media_schema_revision"] = 1
+        candidate["database_schema_revision"]=m["schema_version"]
+        candidate["validated_gateway_media_method"]=data["gateway_inbound"]["method"]
+        candidate["gateway_media_oracle_sha256"]=data["gateway_inbound"]["original_oracle_sha256"]
         candidate["media_schema_sha256"] = data["media_schema_sha256"]
         candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
     if notifications:

@@ -5,6 +5,16 @@
   "seed": 329,
   "clock": "2026-11-04T00:00:00Z",
   "cards": {
+    "CORE-057": {"case":"tests/cases/CORE-057.py","artifact":"offline-config-reconciliation.json","timeout_seconds":240,"rust":true,"capabilities":["offline-original-model-bundles","versioned-legacy-retirement"]},
+    "CORE-055": {"case":"tests/cases/CORE-055.py","artifact":"usage-field-coverage.json","timeout_seconds":180,"rust":true,"capabilities":["original-attempt-usage-coverage","same-attempt-cache-denominator","retained-only-usage"]},
+    "CORE-037": {"case":"tests/cases/CORE-037.py","artifact":"control-grants.json","timeout_seconds":300,"rust":true,"capabilities":["current-original-management-authority", "atomic-character-soul", "offline-plugin-configuration", "approved-plugin-lifecycle", "original-work-management", "bounded-trace-projection", "safe-original-notification-retry"]},
+    "CORE-048": {
+      "case": "tests/cases/CORE-048.py",
+      "artifact": "profile-apply-matrix.json",
+      "timeout_seconds": 360,
+      "rust": true,
+      "capabilities": ["original-profile-files", "scoped-model-configuration", "paid-profile-pinning", "recoverable-profile-save"]
+    },
     "CORE-058": {
       "case": "tests/cases/CORE-058.py",
       "artifact": "notification-publication.json",
@@ -229,7 +239,7 @@
       "artifact": "literal-search-gold.json",
       "timeout_seconds": 240,
       "rust": true,
-      "capabilities": ["source-authorized-history","literal-ngrams","durable-search-anchors"]
+      "capabilities": ["source-authorized-history","literal-ngrams","durable-search-anchors","original-query-chat-history","canonical-event-keyset-pages"]
     },
     "CORE-013": {
       "case": "tests/cases/CORE-013.py",
@@ -286,6 +296,11 @@
       "timeout_seconds": 150,
       "rust": true,
       "capabilities": ["source-publication-fence", "durable-owner-erasure"]
+    },
+    "CORE-040": {
+      "case": "tests/cases/CORE-040.py", "artifact": "slice-decision.json",
+      "timeout_seconds": 180, "rust": true,
+      "capabilities": ["four-native-qq-control-inputs", "model-visible-agent-mention", "two-public-checkpoints", "rejected-public-summary-retains-history"]
     },
     "CORE-050": {
       "case": "tests/cases/CORE-050.py",
