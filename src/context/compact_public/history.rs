@@ -105,7 +105,7 @@ pub async fn prepare(
     let generation: i64 = row.try_get("window")?;
     // A registered non-human source has only the material explicitly granted at registration.
     if row.try_get::<Option<i64>, _>("source")?.is_none() {
-        return Ok(Vec::new());
+        return crate::work::questions::resume_history(conn, exec).await;
     }
     let saved: bool =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM compact_views WHERE execution=?)")

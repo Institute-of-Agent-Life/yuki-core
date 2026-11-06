@@ -1,0 +1,422 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "patch_sha256": {
+    "A": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "B": "98b49f5949fb22b5e5ce44d4832a944dcbb9fcaf1d209aba2de860d46e309abb"
+  },
+  "original_receipts_sha256": {
+    "A": {
+      "run.json": "7e62cef17c7d10155520f84ab4dd272304dcded2404133240d20b84978149b4f",
+      "junit.xml": "2dcb7d68bb674fccb29d46c55f77e5d408052ec0edd54d6cecf3acff965588e2",
+      "public-compact.json": "99c9174af72311a83766258af7a743667a611b087b4b232ff46baf8fa59c89fd",
+      "public-compact-refused.json": "3fda1d7f9500693cbcb5eb3531d00dec0b10df68095a984369567e2bdb5d6a3f"
+    },
+    "B": {
+      "run.json": "9f681906033ebfe21f22e2d2c8dbe3ec02f6b91356814fa97529baf631dd1267",
+      "junit.xml": "e082fc710f7b6d1208f38d8572adf4e408628dd31d9da1a67213000517561b49",
+      "public-compact.json": "7cc2ae1e041981a2280872c59ba225a25c0cb189e0dd3b6463ca9704bb330907",
+      "public-compact-refused.json": "8ce07474b6f8eadaa43c8028501e11330e2904d2ea7948b423ad1d357e9def65"
+    }
+  },
+  "sqlite": {
+    "version": "3.46.0",
+    "journal": "wal",
+    "synchronous": 2,
+    "foreign_keys": 1,
+    "busy_timeout_ms": 5000,
+    "compile_options_sha256": "63d3630cc2fbb35380499508bcc1edd258f4dd70025a4e0c43bfe1414fc7dac6"
+  },
+  "stimulus_sha256": "0b6703bfd82886c0651754551b2ffbb4929099755ce64ada4a140d01c8e546ed",
+  "scope": "original source coverage, checkpoint chain and current tail on explicit public compaction",
+  "expected": {
+    "adopt": [
+      {
+        "turn": 0,
+        "kind": "normal",
+        "sources": [
+          "1-0"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 1,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 2,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 3,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 4,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3",
+          "1-4"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 5,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3",
+          "1-4",
+          "1-5"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 6,
+        "kind": "public_compact",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3",
+          "1-4",
+          "1-5"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 7,
+        "kind": "normal",
+        "sources": [
+          "2-0"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 8,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 9,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 10,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 11,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3",
+          "2-4"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 12,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3",
+          "2-4",
+          "2-5"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 13,
+        "kind": "public_compact",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3",
+          "2-4",
+          "2-5"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 14,
+        "kind": "normal",
+        "sources": [],
+        "checkpoints": [
+          2
+        ],
+        "tail": true
+      }
+    ],
+    "reject": [
+      {
+        "turn": 0,
+        "kind": "normal",
+        "sources": [
+          "1-0"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 1,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 2,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 3,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 4,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3",
+          "1-4"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 5,
+        "kind": "normal",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3",
+          "1-4",
+          "1-5"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 6,
+        "kind": "public_compact",
+        "sources": [
+          "1-0",
+          "1-1",
+          "1-2",
+          "1-3",
+          "1-4",
+          "1-5"
+        ],
+        "checkpoints": [],
+        "tail": false
+      },
+      {
+        "turn": 7,
+        "kind": "normal",
+        "sources": [
+          "2-0"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 8,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 9,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 10,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 11,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3",
+          "2-4"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 12,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3",
+          "2-4",
+          "2-5"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 13,
+        "kind": "public_compact",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3",
+          "2-4",
+          "2-5"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": false
+      },
+      {
+        "turn": 14,
+        "kind": "normal",
+        "sources": [
+          "2-0",
+          "2-1",
+          "2-2",
+          "2-3",
+          "2-4",
+          "2-5"
+        ],
+        "checkpoints": [
+          1
+        ],
+        "tail": true
+      }
+    ]
+  }
+}

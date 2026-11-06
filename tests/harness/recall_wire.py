@@ -35,8 +35,9 @@ def run(ctx):
                     key=f'original-send-{i}';reply(q,calls=[call(key,'send',{'text':f'original message {i}'})])
                     physical=peer.receive();ctx.equal('original send reaches the native group',physical['action'],'send_group_msg')
                     peer.send({'status':'ok','retcode':0,'data':{'message_id':4000+i},'echo':physical['echo']})
-                    wire,q=o.wire(model);ctx.equal('native send has a confirmed receipt',receipt(wire,key)['state'],'confirmed')
+                    wire,q=o.wire(model);data=receipt(wire,key)['data']
                     event=o.rows('SELECT d.event FROM personal_deliveries d JOIN social_outbound b ON b.id=d.outbound WHERE b.locator=?',str(4000+i))[0][0]
+                    ctx.equal('native send exposes its own confirmed delivery anchor and actual text',(data['status'],data['event_id'],data['original_event_id'],data['delivered_text']),('succeeded',event,event,f'original message {i}'))
                     sent.append(event)
                 reply(q);o.finished(source)
             finally:peer.close()

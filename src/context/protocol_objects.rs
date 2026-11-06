@@ -125,7 +125,7 @@ pub async fn history(
                 &receipt,
             )
             .await?;
-            p.output(&mut body, id, receipt)?;
+            p.output(&mut body, id, receipt.as_ref())?;
             calls.push(json!({"call_id":id,"effect_key":row.get::<String,_>("operation_id"),"tool":name,"arguments":args,"result":receipt}));
         }
         for row in &intents {

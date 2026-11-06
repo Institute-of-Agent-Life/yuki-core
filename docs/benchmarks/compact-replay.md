@@ -1,0 +1,9 @@
+# Two public checkpoints in one conversation
+
+Replay the same ordered public turns, two explicit compact requests and a final question in one authorized QQ group. For each public request, observe the actual model input and persist its response. Check that the second request carries the first checkpoint, that the final normal turn uses the second checkpoint and the current tail, and that covered original content no longer appears as raw public history. Preserve any failed projection, including a command that made no purchase.
+
+If the second request fails, keep the last adopted checkpoint; never substitute a private execution checkpoint. Measurements from this probe describe continuity only; do not combine them with performance timings.
+
+The runtime fixture sends 12 original public turns, two authorized commands and a final question. The A/B owners and Rust make 15 physical requests each. The fault arm returns a forbidden send tool call on the second public Compact: no public message is sent, the protected checkpoint remains the first one, and phase-two sources remain visible to the final question. Rust records one held response and 14 normal responses. A successful run adopts the second checkpoint and removes the phase-two raw sources. The frozen fixture compares source coverage, checkpoint presence and the current tail at every physical request.
+
+Run the v4 arms with the pinned SQLite library and `bench/legacy.py A|B --compact --checkout ... --library ... --out ...`. Rebuild the portable fixture using `python bench/compact_trace.py <A-output> <B-output> <new-file>`. Rust replays both scenarios under `python ci/check.py CORE-040 --out <new-directory>`. This probe uses local HTTP model peers; the original owner receives test QQ messages and the Rust owner receives accepted QQ envelopes. It does not measure transport speed or cover automatic private Compact.

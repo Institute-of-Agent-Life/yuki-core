@@ -161,6 +161,24 @@ class Scene:
         self.finished(event)
         return receipt["result"]
 
+    def confirmed_send(self, wire, call_id, locator, target_kind):
+        receipt = result(wire, call_id)
+        data = receipt["data"]
+        self.ctx.equal("scheduled send reports its committed status on " + call_id,
+                       (receipt["ok"], receipt["mutation_committed"], receipt["retryable"],
+                        data["action"], data["status"], data["target"]["kind"]),
+                       (True, True, False, "send_message", "succeeded", target_kind))
+        anchored = self.rows(
+            "SELECT i.operation_id,d.event,a.entry,a.stage FROM model_tool_intents i "
+            "JOIN social_parts s ON s.namespace=i.execution AND s.operation_id=i.operation_id "
+            "JOIN social_outbound a ON a.namespace=s.namespace AND a.child=s.child "
+            "JOIN personal_deliveries d ON d.outbound=a.id WHERE i.call_id=? AND a.locator=?",
+            call_id, str(locator),
+        )
+        self.ctx.equal("scheduled receipt is paired to its original QQ ACK on " + call_id,
+                       anchored, [(data["operation_id"], data["original_event_id"],
+                                   data["original_conversation_id"], data["presence_id"])])
+
     def deliver(self, peer, action, locator):
         while True:
             call = peer.receive()
@@ -318,11 +336,7 @@ def run(ctx):
                 "200",
             )
             paired, q = s.wire(http)
-            ctx.equal(
-                "original delivery has paired receipt",
-                result(paired, "wake-send")["state"],
-                "confirmed",
-            )
+            s.confirmed_send(paired, "wake-send", 1801, "person")
             answer(q)
             s.until(
                 lambda: s.rows(
@@ -511,11 +525,7 @@ def run(ctx):
                 "700",
             )
             paired, q = s.wire(http)
-            ctx.equal(
-                "SELF group delivery has its own physical receipt",
-                result(paired, "self-group-send")["state"],
-                "confirmed",
-            )
+            s.confirmed_send(paired, "self-group-send", 1803, "space")
             answer(q)
             s.until(
                 lambda: s.rows(
