@@ -762,3 +762,9 @@ CORE-033 Client9 stream，三平台候選與成員完整性已驗：
 - windows: 6872f69f4792809ab8cb3721f4f231764fa5ff2338d06df88da6b73be52f6168
 
 索引：/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-handoff-final-01/verified-candidates.json (SHA-256 739ecae7768f860e4d7a4e9801a5d7c51e38eac623e155a88cacd3e6f8cd08c1)。
+
+CORE-033 有序附件：來源 c616cf35e4424e2b9f3c99a4481bfab1c99a34f3，Host 2、reader 48、Python a12、Rust alpha.12。三平台各 666 項；候選索引 /Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-uploads-handoff-final-01/verified-candidates.json (SHA-256 4da11e14c4118f087c6535de7b973d60b195cb98eade2ed3a45b4d2404f2900c)。
+
+- macos: ed3e98ed0e203f5c80339f167132ee8e46c17967752117dc44492cac49dba474
+- linux: 173fddfcd1d12469844f6f7263d6573c1e4d23561ff96dca02336f3a0f170bf2
+- windows: 5260a4f063fa4d2598cec9f94a6547b0f9bfd8c6660188bdff233d177f9806a5
