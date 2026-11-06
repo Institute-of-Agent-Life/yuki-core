@@ -73,6 +73,14 @@ pub(super) async fn facts_full(
         let projection = item.as_object_mut().ok_or("invalid fact item")?;
         projection.remove("metadata");
         projection.remove("conflict_state");
+        projection.remove("authority");
+        if let Some(rows) = projection.get_mut("evidence").and_then(Value::as_array_mut) {
+            for row in rows {
+                if let Some(row) = row.as_object_mut() {
+                    row.remove("authority");
+                }
+            }
+        }
         if !evidence_granted {
             let object = item.as_object_mut().ok_or("invalid fact item")?;
             object.remove("proof");

@@ -1,0 +1,81 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/memory/service.py": "3b4447a2e16f8e431c4415e0157e145c095079130946d112960dfa3bf662ab30",
+    "src/yuki/memory/mutation/service.py": "92b3489a7fb00c3898da301597e1aa3f18e8ce8a5860b26bf29baa6ca0e62b76",
+    "src/yuki/memory/models.py": "fc6a276fa62dcf5cd07f72060f02bbd6b33711c6ef62f3750e5e74c059da96d6",
+    "tests/unit/test_memory_mutation.py": "398efbb285fd12410fadfa20e8f23e30bee763f7a8097c4bbeb4de0f3090ae47"
+  },
+  "junit_sha256": "47446f22fbfbfa9c6b96fcad45fe57025f295adedccfde49b27633e864684237",
+  "projection": {
+    "created": {
+      "subject": "1001",
+      "group": "3001",
+      "status": "active",
+      "scope": "person_group",
+      "content": "喜欢摄影",
+      "authority": "explicit",
+      "evidence": [
+        {
+          "author": "1001",
+          "quote": "我喜欢摄影",
+          "authority": "explicit"
+        }
+      ]
+    },
+    "superseded": {
+      "subject": "1001",
+      "group": "3001",
+      "status": "superseded",
+      "scope": "person_group",
+      "content": "喜欢摄影",
+      "authority": "explicit",
+      "evidence": [
+        {
+          "author": "1001",
+          "quote": "我喜欢摄影",
+          "authority": "explicit"
+        }
+      ]
+    },
+    "reassigned": {
+      "subject": "2002",
+      "group": "3001",
+      "status": "active",
+      "scope": "person_group",
+      "content": "喜欢摄影",
+      "authority": "third_party",
+      "evidence": [
+        {
+          "author": "1001",
+          "quote": "刚才那条其实说的是小明喜欢摄影",
+          "authority": "third_party"
+        },
+        {
+          "author": "1001",
+          "quote": "我喜欢摄影",
+          "authority": "third_party"
+        }
+      ]
+    },
+    "direct": {
+      "subject": "2002",
+      "group": "3001",
+      "status": "active",
+      "scope": "person_group",
+      "content": "江环是鬼頭桃菜",
+      "authority": "third_party",
+      "evidence": [
+        {
+          "author": "1001",
+          "quote": "江环是@鬼頭桃菜，你记错了",
+          "authority": "third_party"
+        }
+      ]
+    },
+    "distinct_version": true,
+    "ambiguous_reason": "mentioned_user_is_ambiguous",
+    "reassign_reason": "memory_reassigned",
+    "reassign_outcome": "committed"
+  }
+}

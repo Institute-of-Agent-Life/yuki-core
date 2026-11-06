@@ -14,6 +14,8 @@ CORE-026 記憶爭議（`codex/core-026-memory-contest`）：[正常與故障時
 
 [PR #80](https://github.com/Institute-of-Agent-Life/yuki-core/pull/80) 未發布候選來源 `2b0ba4394ba91d52efdb8602aaf88b3a37ca9f57`，reader 53、SDK alpha.14。HJW Windows／macOS／Linux 各 1,315 項通過；三個 ZIP 逐檔驗證。交接索引 `artifacts/CORE-026/memory-contest-handoff-final-01/verified-candidates.json`，SHA-256 `2bb49b728c12672653c7f18c01a98e8fefb36c6416a8392beaf104773313ef92`，內含每份 ZIP 的絕對路徑及完整雜湊。
 
+CORE-026 群內事實歸屬（`codex/core-026-group-attribution`，reader 54）：[版本與來源讀權](group-attribution.md)。固定 v4 的 A 談 B、歸屬更正及兩人歧義原測通過。Rust 保留原群、原作者及引文；更正另建 B 的第三方事實，保留 A 的原版本。混合已證／未證提及曾寫錯人，已加回歸測試；真實 writer 中途失敗、原來源撤回、冷啟回條均已驗。Mac CORE-026 1,397 項、CORE-039 148 項，另 7 張相關卡通過。原始、故障與修正回條：`artifacts/CORE-026/original-group-attribution-01/`、`group-attribution-mixed-red-01/`、`artifacts/CORE-*/group-attribution-check-0{1,2}/`。
+
 ## 完成與進行中
 
 已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；CORE-016 分段 #42 已合併至 `ce66753`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。

@@ -248,7 +248,11 @@ pub async fn readable(
         if proof.version != row.try_get::<String, _>("source_version")? {
             continue;
         }
-        allowed.push(json!({"id":row.try_get::<i64,_>("id")?,"kind":kind,"key":key,"version":proof.version,"entry":proof.entry,"author":proof.author,"quote":proof.quote}));
+        let mut item = json!({"id":row.try_get::<i64,_>("id")?,"kind":kind,"key":key,"version":proof.version,"entry":proof.entry,"author":proof.author,"quote":proof.quote});
+        if let Some(authority) = row.try_get::<Option<String>, _>("attribution")? {
+            item["authority"] = json!(authority);
+        }
+        allowed.push(item);
     }
     Ok(allowed)
 }

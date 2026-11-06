@@ -68,7 +68,7 @@ async fn summary(
     home_only: bool,
     detail: bool,
 ) -> Result<Value> {
-    let row=sqlx::query("SELECT f.*,state.status AS current_status,state.conflict_state,v.body,v.confidence FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id JOIN memory_versions v ON v.fact=f.id AND v.revision=f.revision WHERE f.id=?").bind(id).fetch_one(&mut *conn).await?;
+    let row=sqlx::query("SELECT f.*,state.status AS current_status,state.conflict_state,(SELECT authority FROM memory_attributions a WHERE a.fact=f.id) AS attribution,v.body,v.confidence FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id JOIN memory_versions v ON v.fact=f.id AND v.revision=f.revision WHERE f.id=?").bind(id).fetch_one(&mut *conn).await?;
     let revision: i64 = row.try_get("revision")?;
     let evidence = evidence::readable(conn, r, actor, id, home_only).await?;
     let metadata = super::metadata::read(conn, id).await?;
@@ -83,6 +83,9 @@ async fn summary(
        "person":row.try_get::<Option<String>,_>("person")?,"space":row.try_get::<Option<String>,_>("space")?,"visibility":row.try_get::<String,_>("visibility")?,
        "fact_key":row.try_get::<String,_>("fact_key")?,"body":row.try_get::<Option<String>,_>("body")?,"confidence":row.try_get::<Option<f64>,_>("confidence")?,
        "readable_evidence":evidence.len(),"proof":binding,"metadata":metadata});
+    if let Some(authority) = row.try_get::<Option<String>, _>("attribution")? {
+        result["authority"] = json!(authority);
+    }
     if detail {
         result["evidence"] = json!(evidence);
     }

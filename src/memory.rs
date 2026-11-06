@@ -1,3 +1,4 @@
+mod attribution;
 mod commands;
 mod contest;
 pub mod embedding;
