@@ -252,12 +252,14 @@ program={json.dumps(sys.executable)}
 args={argv("observer")}
 grants=["observe.metadata","tool.call"]
 """
-    cfg += f'\n[[plugins]]\nid="rust.sample"\nnamespace="rust.fixture"\nprogram={json.dumps(str(rust_binary))}\ngrants=["tool.call"]\n[[plugins.tools]]\nname="rust_host_probe"\ndescription="Probe installed Rust SDK."\nparallel_read=false\ncacheable=false\ncode_direct=true\nschema={{type="object",properties={{value={{type="string"}}}},required=["value"],additionalProperties=false}}\n'
+    rust_trace = ctx.output / "rust-peer-state.txt"
+    cfg += f'\n[[plugins]]\nid="rust.sample"\nnamespace="rust.fixture"\nprogram={json.dumps(str(rust_binary))}\nenv=["YUKI_HOST_TEST_RUST_STATE"]\ngrants=["tool.call"]\n[[plugins.tools]]\nname="rust_host_probe"\ndescription="Probe installed Rust SDK."\nparallel_read=false\ncacheable=false\ncode_direct=true\nschema={{type="object",properties={{value={{type="string"}}}},required=["value"],additionalProperties=false}}\n'
     environment = {
         **os.environ,
         "YUKI_HOST_QQ_TEST": "fixture-native-qq",
         "YUKI_PARENT_SENTINEL": "fixture-hidden",
         "YUKI_HOST_TEST_PUBLIC": "fixture-public",
+        "YUKI_HOST_TEST_RUST_STATE": str(rust_trace),
     }
     with Recorder() as peer:
         cfg += f'\n[main]\nendpoint="{peer.url}"\nmodel="fixture-host"\nname="Yuki"\nmerge_ms=0\nroot_slots=5\nmax_input_units=200000\nmax_output=128\n'
@@ -280,6 +282,8 @@ grants=["observe.metadata","tool.call"]
                     ready["allowlisted"],
                     "fixture-public" if who == "tg" else None,
                 )
+            until(lambda: rust_trace.is_file() and "negotiated" in rust_trace.read_text().splitlines(),
+                  "Rust consumer negotiated its installed SDK")
             first = frame("obs", "private source material", False)
             observation = record("tg", "gateway.inbound", first)["result"]
             same = record("tg", "gateway.inbound", first)["result"]
