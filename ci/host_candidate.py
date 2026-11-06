@@ -131,6 +131,15 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/v4-selectors.json']=original
         files['evidence/memory-selectors.json']=proof
         files['docs/memory-selectors.md']=(ROOT/'docs/memory-selectors.md').read_bytes()
+        proof=receipt('memory-temporal.json')
+        original=(ROOT/'fixtures/memory/v4-temporal.json').read_bytes()
+        if digest(original)!=json.loads(proof)['oracle_sha256']:raise ValueError('memory temporal oracle differs from validated input')
+        files['evidence/v4-temporal.json']=original
+        files['evidence/memory-temporal.json']=proof
+        old=(ROOT/'fixtures/memory/reader44-temporal.json').read_bytes()
+        if digest(old)!=json.loads(proof)['upgrade']['fixture_sha256']:raise ValueError('reader 44 temporal upgrade fixture differs from validated input')
+        files['evidence/reader44-temporal.json']=old
+        files['docs/memory-temporal.md']=(ROOT/'docs/memory-temporal.md').read_bytes()
     if importing:
         files["docs/model-config-import.md"]=(ROOT/"docs/model-config-import.md").read_bytes()
         files["evidence/legacy-import-provenance.json"]=(ROOT/"tests/fixtures/import/model-v4/provenance.json").read_bytes()
@@ -445,6 +454,8 @@ def build(manifest_path, out, development=False):
         candidate['validated_memory_operations']=['create','correct','invalidate','restore','update_metadata']
         candidate['validated_memory_selectors']=['current_speaker/person']
         candidate['memory_selector_oracle_sha256']=json.loads(receipt('memory-selectors.json'))['oracle_sha256']
+        candidate['memory_temporal_oracle_sha256']=json.loads(receipt('memory-temporal.json'))['oracle_sha256']
+        candidate['validated_memory_temporal_fields']=['valid_from','valid_until']
         candidate['memory_metadata_oracle_sha256']=json.loads(receipt('memory-metadata.json'))['oracle_sha256']
         candidate['memory_restore_oracle_sha256']=json.loads(receipt('memory-restore.json'))['oracle_sha256']
         candidate['validation']['consumer']='physical Main, QQ command and original writer fixtures; SDK packages independently installed'

@@ -340,6 +340,20 @@ pub async fn edit(
     if let Some(fields) = metadata {
         super::metadata::apply(conn, &fact, fields).await?;
     }
+    // Existing typed writes without a metadata patch leave the extraction
+    // projection to its original writer. The model adapter supplies a patch
+    // for create/correct, including its explicit empty temporal range.
+    let reset = metadata.is_some() && matches!(edit, Edit::Add { .. } | Edit::Correct { .. });
+    if reset || metadata.is_some() {
+        super::metadata::temporal(
+            conn,
+            &fact,
+            exec,
+            metadata.unwrap_or(&Default::default()),
+            reset,
+        )
+        .await?;
+    }
     sqlx::query("INSERT INTO memory_operations VALUES(?,?,?,?,?,?)")
         .bind(exec)
         .bind(key)

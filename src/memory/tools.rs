@@ -42,6 +42,8 @@ pub fn declaration(name: &str) -> Option<Tool> {
                 "category",
                 "kind",
                 "importance",
+                "valid_from",
+                "valid_until",
             ]
             .contains(&key.as_str())
         });
@@ -61,7 +63,7 @@ pub fn declaration(name: &str) -> Option<Tool> {
             .retain(|key, _| matches!(key.as_str(), "scope_type" | "subject_ref"));
         target["scope_type"]["enum"] = json!(["person"]);
         target["subject_ref"]["enum"] = json!(["current_speaker"]);
-        "按真实原事件写入本人事实。没有 fact_id 时可给 selector 和本人 target；只有唯一精确匹配才定位，模糊候选须先按原 ID 读取；selector 不代替已读版本。correct、invalidate、restore 或 update_metadata 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。category、kind、importance 和 memory_key 随原版本保存，省略字段保留原值。restore 仅恢复已撤回且未到期的原事实；已忘记内容不能恢复。"
+        "按真实原事件写入本人事实。没有 fact_id 时可给 selector 和本人 target；只有唯一精确匹配才定位，模糊候选须先按原 ID 读取；selector 不代替已读版本。correct、invalidate、restore 或 update_metadata 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。category、kind、importance 和 memory_key 随原版本保存，省略字段保留原值。valid_from／valid_until 按部署时区解读并保存 UTC；update_metadata 省略两者保留期间，给其中一个则替换整个期间；correct 省略两者清除期间。restore 仅恢复已撤回且未到期的原事实；已忘记内容不能恢复。"
     } else {
         item["description"].as_str()?
     };
@@ -165,11 +167,21 @@ async fn act(
         category: args["category"].as_str().map(str::to_owned),
         kind: args["kind"].as_str().map(str::to_owned),
         importance: args["importance"].as_i64(),
+        valid_from: args["valid_from"].as_str().map(str::to_owned),
+        valid_until: args["valid_until"].as_str().map(str::to_owned),
     };
-    let patch = ["memory_key", "category", "kind", "importance"]
+    let patch = (matches!(requested, "create" | "correct")
+        || [
+            "memory_key",
+            "category",
+            "kind",
+            "importance",
+            "valid_from",
+            "valid_until",
+        ]
         .iter()
-        .any(|name| !args[name].is_null())
-        .then_some(metadata.clone());
+        .any(|name| !args[name].is_null()))
+    .then_some(metadata.clone());
     if requested == "create" && !args["selector"].is_null() {
         return Err("create_does_not_accept_selector".into());
     }

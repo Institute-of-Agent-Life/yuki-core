@@ -10,6 +10,7 @@ pub(crate) mod retrieve;
 pub(crate) mod scope;
 pub(crate) mod search_tool;
 mod selectors;
+mod temporal;
 pub mod tools;
 use crate::{
     Result,

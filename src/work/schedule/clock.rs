@@ -125,7 +125,7 @@ impl Trigger {
     }
 }
 
-fn wall_to_utc(wall: NaiveDateTime, zone: Tz) -> Result<i64> {
+pub(crate) fn wall_to_utc(wall: NaiveDateTime, zone: Tz) -> Result<i64> {
     match zone.from_local_datetime(&wall) {
         LocalResult::Single(t) => Ok(t.timestamp_millis()),
         LocalResult::Ambiguous(first, second) => Ok(first.min(second).timestamp_millis()),

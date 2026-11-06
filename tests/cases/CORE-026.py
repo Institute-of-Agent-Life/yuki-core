@@ -378,6 +378,8 @@ def run(ctx):
     from tests.harness.memory_selectors import run as selectors
     selector_result=selectors(ctx)
     ctx.write("memory-selectors.json",selector_result)
+    from tests.harness.memory_temporal import run as temporal
+    ctx.write("memory-temporal.json",temporal(ctx))
     built=subprocess.run([sys.executable,str(ctx.root/"ci/publish-contract.py"),"build","--out",str(ctx.output/"sdk-distributions"),"--verify-work",str(ctx.working/"memory-sdk")],capture_output=True,text=True,timeout=120)
     ctx.write("memory-sdk-build.json",{"exit_code":built.returncode,"stderr":built.stderr})
     ctx.equal("memory candidate has independently verified SDK packages",built.returncode,0)

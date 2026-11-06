@@ -700,3 +700,17 @@ PR #64，來源 `fed00d2ca4519daf0857a03d6b054dd10b640dab`、tree `3228881039b03
 - windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-handoff-final-01/windows-validation/handoff/yuki-memory-preview-fed00d2ca451-windows-x86_64.zip`；SHA-256 `5b4cf3c36f0ef16742fafda2643114f8e5fc293b85a11610717d628b2ddb72e0`。
 
 Windows 原目錄 `D:\yuki-core-validation-20261104\CORE-026-3228881039b0-f5ca16d6`。Host 2／handshake 1／reader 44／SDK alpha.11、a11；實含 current_speaker/person selector，尚未發布，不替代真擴展消費。下一補核為原有效期間。
+
+## CORE-026 原有效期間補核
+
+分支 `codex/core-026-memory-temporal` 接 #64 的 `a8b145d`。模型 create／correct／update_metadata 支援原 valid_from／valid_until，從凍結的部署 tool view 取得時區，拒絕模型自報時區。Rust 轉 UTC、保留微秒，支援原 ISO 日期、週日期、offset 與 ZoneInfo fold=0 夏令時間行為；72 組固定原解析及 8 步原 mutation 結果見 `fixtures/memory/v4-temporal.json`。原版 oracle 在 `original-memory-temporal-oracle-03`，未改舊倉。
+
+`memory-temporal-adjacent-02/CORE-026` 共 1181 項；CORE-035／027／029／030／012／015／017 全通過。模型修改按原已讀 revision／proof 同交易保存期間與歷史；無效期間不留下事實、metadata 或版本，冷啟保持回執。既有無 metadata patch 的有型別操作不搶先建立提取 projection；原提取流程保持完整分類。
+
+reader 45 清除目前 erased fact 的 category／kind／importance／期間，覆蓋提取與明確修改兩種來源。`reader44-temporal-fixture-generation-01` 用已驗 selector 候選的真 binary 建立原事實及原 privacy erase，日期作為舊 extraction-compatible metadata 明確注入；其殘留與一筆活躍對照均保存在 `fixtures/memory/reader44-temporal.json`。升級保留原 hash、操作及活躍期間，只清已忘記內容；reader 43 原回執升級亦通過。
+
+失敗保留：mac-01 舊過期 fixture 碰到重複 projection；mac-02 單次 parser batch 到普通 24 請求段上限，測試改每十組完成原輪；mac-03 發現目前 metadata 仍留日期，已用 reader 45 修正。mac-04 本卡 1181 項通過後，adjacent-01 的 CORE-035 捕獲空期間列先於提取 metadata；修正 typed patch 邊界後 mac-05 及 adjacent-02 全過，原測試的 INSERT 亦保留。oracle-02 的捕獲器遇日期 OverflowError，oracle-03 如實記為原拒絕。
+
+打包自測 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-package-development-01/yuki-memory-preview-fed00d2ca451-darwin-arm64.zip`，SHA-256 `87879ba3dec5309f7db26b26ae5d5132d8984df9e48409a0779c39ff9e4a00ec`。dirty source，僅自測；乾淨三平台候選接續。Host 2／handshake 1／SDK alpha.11、a11；未發布。
+
+CI 維護：PR #35 的原 Mac job 四小時無 runner；直接 rerun 被 GitHub 以仍在運行拒絕。核對同 head、另外兩平台成功且沒有運行中的 job 後，取消該待分配工作並以 --failed 重排 Mac；run `42102562779` attempt 2 保留原 Windows／Linux 成功，仍等待 Mac 真實結果。未跳過合併條件。

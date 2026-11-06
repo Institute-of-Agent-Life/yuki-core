@@ -10,6 +10,10 @@ pub struct Patch {
     pub category: Option<String>,
     pub kind: Option<String>,
     pub importance: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub valid_from: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub valid_until: Option<String>,
 }
 
 // Original normalize_memory_text: control runs and Unicode whitespace become a single space.
@@ -63,5 +67,31 @@ pub(super) async fn apply(db: &mut SqliteConnection, fact: &str, patch: &Patch) 
             .execute(db)
             .await?;
     }
+    Ok(())
+}
+
+pub(super) async fn temporal(
+    db: &mut SqliteConnection,
+    fact: &str,
+    exec: &str,
+    patch: &Patch,
+    reset: bool,
+) -> Result<()> {
+    if !reset && patch.valid_from.is_none() && patch.valid_until.is_none() {
+        return Ok(());
+    }
+    // The immutable deployed view supplies the time zone; model arguments cannot replace it.
+    let zone: Option<String> =
+        sqlx::query_scalar("SELECT timezone FROM execution_tool_views WHERE execution=?")
+            .bind(exec)
+            .fetch_optional(&mut *db)
+            .await?;
+    let range = super::temporal::resolve(
+        patch.valid_from.as_deref(),
+        patch.valid_until.as_deref(),
+        zone.as_deref().unwrap_or("Asia/Shanghai"),
+    )?;
+    sqlx::query("INSERT INTO extract_fact_details(fact,temporal_mode,valid_from,valid_until) VALUES(?,?,?,?) ON CONFLICT(fact) DO UPDATE SET temporal_mode=excluded.temporal_mode,valid_from=excluded.valid_from,valid_until=excluded.valid_until")
+        .bind(fact).bind(range.mode).bind(range.start).bind(range.end).execute(db).await?;
     Ok(())
 }

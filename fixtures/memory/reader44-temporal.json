@@ -1,0 +1,681 @@
+{
+  "schema_version": 44,
+  "source_commit": "fed00d2ca4519daf0857a03d6b054dd10b640dab",
+  "binary_sha256": "c6a4a5ad36347066e68792ccfa40593abb934f550953da0d025b63f97540c078",
+  "scope": "Actual reader 44 owner-created add and privacy erase. Dates explicitly seeded as prior extraction-compatible metadata; original erasure leaves current dates, kind and importance.",
+  "actor": "00000000-0000-4000-8000-000000000022",
+  "erased_fact": "711ed803-bcfb-4e26-a338-b54ad959843e",
+  "active_fact": "25e4df92-20a0-48f3-8806-369b604c5dee",
+  "operations": [
+    {
+      "execution": "6ebf495f-19c6-44d0-9d07-73179a72c8ab",
+      "key": "create-0",
+      "body": {
+        "action": "add",
+        "subject": {
+          "kind": "person",
+          "person": "00000000-0000-4000-8000-000000000022"
+        },
+        "fact_key": "dates-0",
+        "body": "original date content 0",
+        "confidence": 0.63,
+        "evidence": [
+          {
+            "kind": "event",
+            "id": 1,
+            "quote": "original reader 44 dates 0"
+          }
+        ],
+        "metadata": {
+          "category": "private dates",
+          "kind": "episode",
+          "importance": 4
+        }
+      },
+      "result": {
+        "fact": "711ed803-bcfb-4e26-a338-b54ad959843e",
+        "outcome": "active",
+        "revision": 1
+      }
+    },
+    {
+      "execution": "b3fd048e-bea8-45b6-96ed-1b33c52ca030",
+      "key": "create-1",
+      "body": {
+        "action": "add",
+        "subject": {
+          "kind": "person",
+          "person": "00000000-0000-4000-8000-000000000022"
+        },
+        "fact_key": "dates-1",
+        "body": "original date content 1",
+        "confidence": 0.63,
+        "evidence": [
+          {
+            "kind": "event",
+            "id": 2,
+            "quote": "original reader 44 dates 1"
+          }
+        ],
+        "metadata": {
+          "category": "private dates",
+          "kind": "episode",
+          "importance": 4
+        }
+      },
+      "result": {
+        "fact": "25e4df92-20a0-48f3-8806-369b604c5dee",
+        "outcome": "active",
+        "revision": 1
+      }
+    }
+  ],
+  "tables": {
+    "control_trace_entries": {
+      "columns": [
+        "id",
+        "execution",
+        "kind",
+        "operation",
+        "attempt",
+        "state",
+        "created",
+        "expires"
+      ],
+      "rows": [
+        [
+          2,
+          "b3fd048e-bea8-45b6-96ed-1b33c52ca030",
+          "execution",
+          null,
+          null,
+          "pending",
+          1793924720,
+          1796516720
+        ]
+      ]
+    },
+    "extract_fact_details": {
+      "columns": [
+        "fact",
+        "category",
+        "kind",
+        "importance",
+        "temporal_mode",
+        "valid_from",
+        "valid_until"
+      ],
+      "rows": [
+        [
+          "711ed803-bcfb-4e26-a338-b54ad959843e",
+          null,
+          "episode",
+          4,
+          "temporary",
+          "2031-01-01T00:00:00Z",
+          "2032-01-01T00:00:00Z"
+        ],
+        [
+          "25e4df92-20a0-48f3-8806-369b604c5dee",
+          "private dates",
+          "episode",
+          4,
+          "temporary",
+          "2031-01-01T00:00:00Z",
+          "2032-01-01T00:00:00Z"
+        ]
+      ]
+    },
+    "memory_evidence": {
+      "columns": [
+        "id",
+        "fact",
+        "kind",
+        "source_key",
+        "source_version",
+        "entry",
+        "author",
+        "origin_execution",
+        "event",
+        "quote"
+      ],
+      "rows": [
+        [
+          1,
+          "711ed803-bcfb-4e26-a338-b54ad959843e",
+          "event",
+          "1",
+          "796425da2bed9581e2861074fd560b59aebbdffe62bb4e17d6343c7ccca1cd89",
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          "00000000-0000-4000-8000-000000000022",
+          null,
+          1,
+          null
+        ],
+        [
+          2,
+          "25e4df92-20a0-48f3-8806-369b604c5dee",
+          "event",
+          "2",
+          "820e0acb69e6d1a27e580bbc0b2a0e50d8e8c83beb05e40f350b4e8ffbb509c5",
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          "00000000-0000-4000-8000-000000000022",
+          null,
+          2,
+          "original reader 44 dates 1"
+        ]
+      ]
+    },
+    "memory_facts": {
+      "columns": [
+        "number",
+        "id",
+        "kind",
+        "person",
+        "space",
+        "visibility",
+        "visibility_entry",
+        "fact_key",
+        "created_execution",
+        "revision",
+        "status"
+      ],
+      "rows": [
+        [
+          1,
+          "711ed803-bcfb-4e26-a338-b54ad959843e",
+          "person",
+          "00000000-0000-4000-8000-000000000022",
+          null,
+          "subject",
+          null,
+          "erased-1",
+          "6ebf495f-19c6-44d0-9d07-73179a72c8ab",
+          1,
+          "erased"
+        ],
+        [
+          2,
+          "25e4df92-20a0-48f3-8806-369b604c5dee",
+          "person",
+          "00000000-0000-4000-8000-000000000022",
+          null,
+          "subject",
+          null,
+          "dates-1",
+          "b3fd048e-bea8-45b6-96ed-1b33c52ca030",
+          1,
+          "active"
+        ]
+      ]
+    },
+    "fact_metadata_versions": {
+      "columns": [
+        "fact",
+        "revision",
+        "memory_key",
+        "category",
+        "kind",
+        "importance",
+        "temporal_mode",
+        "valid_from",
+        "valid_until"
+      ],
+      "rows": [
+        [
+          "711ed803-bcfb-4e26-a338-b54ad959843e",
+          1,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "25e4df92-20a0-48f3-8806-369b604c5dee",
+          1,
+          "dates-1",
+          "private dates",
+          "episode",
+          4,
+          "temporary",
+          "2031-01-01T00:00:00Z",
+          "2032-01-01T00:00:00Z"
+        ]
+      ]
+    },
+    "extraction_policy": {
+      "columns": [
+        "id",
+        "enabled"
+      ],
+      "rows": [
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    "history_fields": {
+      "columns": [
+        "item",
+        "label",
+        "raw",
+        "base",
+        "simplified"
+      ],
+      "rows": [
+        [
+          2,
+          "content",
+          "original reader 44 dates 1",
+          "original reader 44 dates 1",
+          "original reader 44 dates 1"
+        ]
+      ]
+    },
+    "history_items": {
+      "columns": [
+        "id",
+        "entry",
+        "source_event",
+        "outbound",
+        "actor",
+        "kind",
+        "revision",
+        "indexed",
+        "visible"
+      ],
+      "rows": [
+        [
+          1,
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          1,
+          null,
+          "00000000-0000-4000-8000-000000000022",
+          "message",
+          2,
+          2,
+          0
+        ],
+        [
+          2,
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          2,
+          null,
+          "00000000-0000-4000-8000-000000000022",
+          "message",
+          1,
+          1,
+          1
+        ]
+      ]
+    },
+    "assignments": {
+      "columns": [
+        "id",
+        "account_id",
+        "original_person",
+        "kind",
+        "status",
+        "first_observed",
+        "started_at",
+        "ended_at",
+        "previous",
+        "display_name",
+        "revision",
+        "ingest_eligible"
+      ],
+      "rows": [
+        [
+          "d6809f2f-fc4a-469e-82e9-f6ae47bb4bd5",
+          "8893c5cf-7129-4c8c-ab05-5866ec057534",
+          "00000000-0000-4000-8000-000000000022",
+          "person",
+          "active",
+          1,
+          1,
+          null,
+          null,
+          "",
+          1,
+          1
+        ],
+        [
+          "ebf7a752-6c49-4362-88e8-44e8e5ab1b8d",
+          "439a4e8b-2206-4cf7-9be0-6ba2bdd56c26",
+          null,
+          "self",
+          "active",
+          1,
+          1,
+          null,
+          null,
+          "",
+          1,
+          1
+        ]
+      ]
+    },
+    "accounts": {
+      "columns": [
+        "id",
+        "platform",
+        "namespace",
+        "native"
+      ],
+      "rows": [
+        [
+          "8893c5cf-7129-4c8c-ab05-5866ec057534",
+          "qq",
+          "compact",
+          "200"
+        ],
+        [
+          "439a4e8b-2206-4cf7-9be0-6ba2bdd56c26",
+          "qq",
+          "compact",
+          "100"
+        ]
+      ]
+    },
+    "entries": {
+      "columns": [
+        "id",
+        "scope",
+        "actor_stage",
+        "bot_stage",
+        "space",
+        "topic",
+        "closed_at"
+      ],
+      "rows": [
+        [
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          "private",
+          "d6809f2f-fc4a-469e-82e9-f6ae47bb4bd5",
+          "ebf7a752-6c49-4362-88e8-44e8e5ab1b8d",
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    "persons": {
+      "columns": [
+        "id",
+        "current_root",
+        "name",
+        "enabled",
+        "admin",
+        "revision"
+      ],
+      "rows": [
+        [
+          "00000000-0000-4000-8000-000000000022",
+          null,
+          "",
+          1,
+          0,
+          1
+        ]
+      ]
+    },
+    "core_meta": {
+      "columns": [
+        "key",
+        "value",
+        "revision"
+      ],
+      "rows": [
+        [
+          "character-profile",
+          "{\"accent\":{\"dark\":\"#7FA4FF\",\"light\":\"#3A6BD6\"},\"avatar\":null,\"avatar_revision\":0,\"bio\":\"\",\"default_avatar\":null,\"display_name\":\"Yuki\",\"id\":\"9e2622d8-5138-4099-bdd0-2d62e0dcf3ba\",\"revision\":1,\"slug\":\"9e2622d8-5138-4099-bdd0-2d62e0dcf3ba\"}",
+          3
+        ],
+        [
+          "character-soul-active",
+          "{\"content\":\"Fixed public character.\",\"revision\":\"sha256:4267293f9af5581ef71c5e16e64492adf5ad80c84d15d0708ee1c53512e39d20\"}",
+          3
+        ]
+      ]
+    },
+    "qq_social_names": {
+      "columns": [
+        "entry",
+        "source",
+        "account",
+        "name",
+        "occurred"
+      ],
+      "rows": [
+        [
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          2,
+          "8893c5cf-7129-4c8c-ab05-5866ec057534",
+          "",
+          200
+        ],
+        [
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          2,
+          "8893c5cf-7129-4c8c-ab05-5866ec057534",
+          "Alice",
+          200
+        ]
+      ]
+    },
+    "embedding_privacy": {
+      "columns": [
+        "id",
+        "epoch"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    "accepted_sources": {
+      "columns": [
+        "event_id"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    "invalidated_sources": {
+      "columns": [
+        "source",
+        "subject",
+        "watermark"
+      ],
+      "rows": [
+        [
+          1,
+          "00000000-0000-4000-8000-000000000022",
+          1
+        ]
+      ]
+    },
+    "memory_versions": {
+      "columns": [
+        "fact",
+        "revision",
+        "body",
+        "confidence",
+        "execution",
+        "created_at"
+      ],
+      "rows": [
+        [
+          "711ed803-bcfb-4e26-a338-b54ad959843e",
+          1,
+          null,
+          0.63,
+          "6ebf495f-19c6-44d0-9d07-73179a72c8ab",
+          "2026-11-06 00:25:20"
+        ],
+        [
+          "25e4df92-20a0-48f3-8806-369b604c5dee",
+          1,
+          "original date content 1",
+          0.63,
+          "b3fd048e-bea8-45b6-96ed-1b33c52ca030",
+          "2026-11-06 00:25:20"
+        ]
+      ]
+    },
+    "events": {
+      "columns": [
+        "id",
+        "source_scope",
+        "source_key",
+        "entry_id",
+        "account_id",
+        "raw_actor",
+        "actor_stage",
+        "bot_stage",
+        "occurred_at",
+        "observed_at",
+        "envelope",
+        "mentions"
+      ],
+      "rows": [
+        [
+          1,
+          "[\"private\",\"d6809f2f-fc4a-469e-82e9-f6ae47bb4bd5\",null,\"ebf7a752-6c49-4362-88e8-44e8e5ab1b8d\"]",
+          "P-1",
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          "8893c5cf-7129-4c8c-ab05-5866ec057534",
+          "00000000-0000-4000-8000-000000000022",
+          "d6809f2f-fc4a-469e-82e9-f6ae47bb4bd5",
+          "ebf7a752-6c49-4362-88e8-44e8e5ab1b8d",
+          100,
+          100,
+          "{}",
+          "[]"
+        ],
+        [
+          2,
+          "[\"private\",\"d6809f2f-fc4a-469e-82e9-f6ae47bb4bd5\",null,\"ebf7a752-6c49-4362-88e8-44e8e5ab1b8d\"]",
+          "P-2",
+          "7b2ceac1-1e76-4dac-8685-838ce065a56d",
+          "8893c5cf-7129-4c8c-ab05-5866ec057534",
+          "00000000-0000-4000-8000-000000000022",
+          "d6809f2f-fc4a-469e-82e9-f6ae47bb4bd5",
+          "ebf7a752-6c49-4362-88e8-44e8e5ab1b8d",
+          200,
+          200,
+          "{\"source\":\"P-2\",\"native_id\":null,\"account\":\"8893c5cf-7129-4c8c-ab05-5866ec057534\",\"bot_stage\":\"ebf7a752-6c49-4362-88e8-44e8e5ab1b8d\",\"space\":null,\"topic\":null,\"occurred\":200,\"observed\":200,\"kind\":\"message\",\"segments\":[{\"type\":\"text\",\"text\":\"original reader 44 dates 1\"}],\"sender\":{\"nickname\":\"Alice\"},\"reply_bot\":\"100\"}",
+          "[]"
+        ]
+      ]
+    },
+    "source_erasure_requests": {
+      "columns": [
+        "watermark",
+        "erase_key",
+        "subject",
+        "sources"
+      ],
+      "rows": [
+        [
+          1,
+          "original-erase",
+          "00000000-0000-4000-8000-000000000022",
+          "[1]"
+        ]
+      ]
+    },
+    "executions": {
+      "columns": [
+        "id",
+        "source",
+        "original_actor",
+        "state",
+        "cancelled",
+        "work_id",
+        "origin",
+        "source_occurrence"
+      ],
+      "rows": [
+        [
+          "6ebf495f-19c6-44d0-9d07-73179a72c8ab",
+          1,
+          "00000000-0000-4000-8000-000000000022",
+          "pending",
+          0,
+          null,
+          null,
+          null
+        ],
+        [
+          "b3fd048e-bea8-45b6-96ed-1b33c52ca030",
+          2,
+          "00000000-0000-4000-8000-000000000022",
+          "pending",
+          0,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    "memory_operations": {
+      "columns": [
+        "execution",
+        "original_key",
+        "request_hash",
+        "fact",
+        "revision",
+        "outcome"
+      ],
+      "rows": [
+        [
+          "6ebf495f-19c6-44d0-9d07-73179a72c8ab",
+          "create-0",
+          "a9ca4efe1f5ea873ed373ba22de76a714a96c6ce9ec270b463b8d2f47b12ebe7",
+          "711ed803-bcfb-4e26-a338-b54ad959843e",
+          1,
+          "active"
+        ],
+        [
+          "b3fd048e-bea8-45b6-96ed-1b33c52ca030",
+          "create-1",
+          "54fdbe7d50e3a157b6211a72c30ba179dcc2727a640961fed91bd9e56934ce4e",
+          "25e4df92-20a0-48f3-8806-369b604c5dee",
+          1,
+          "active"
+        ]
+      ]
+    },
+    "assignment_states": {
+      "columns": [
+        "stage",
+        "at",
+        "status"
+      ],
+      "rows": [
+        [
+          "d6809f2f-fc4a-469e-82e9-f6ae47bb4bd5",
+          1,
+          "active"
+        ],
+        [
+          "ebf7a752-6c49-4362-88e8-44e8e5ab1b8d",
+          1,
+          "active"
+        ]
+      ]
+    }
+  }
+}
