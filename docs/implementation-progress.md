@@ -8,6 +8,7 @@
 | #85 已合併 main。三端各驗 49 張已註冊卡，HJW 的終端與個人 SDK 檔案鎖故障均有獨立重放 | head `2385907a1b9a`，受測合併樹 `02a8bcf9d7c8`，main `9c17975ed11b`；`artifacts/ci/local-pr/85/receipt.json`，SHA-256 `85ed285396114ad52141fced3842096a66f411f5275ce9329cc0a2ee87de9b1f` |
 | #92 已合併 main，三端各驗 49 卡；含 Windows SSH 會話的驗簽修正 | head `808318b5de08`，受測合併樹 `eb0a7c49f3f3`，main `fb8806c5f718`，`artifacts/ci/local-pr/92/receipt.json`，SHA-256 `3396de1f14f9face9e576e6498d8fb099c0b525c7b2e7f76a9727be7337e1da7` |
 | #95 已合併 main，三端各驗 49 卡，實際合併與受測樹一致 | head `92dcccde08a6`，受測 `4a41470e89b4`，main `f27749ef4b4f`，`artifacts/ci/local-pr/95/receipt.json`，SHA-256 `3383655d958b8a9895488aa0f511eef00d33bda0aa07c1e54faddf29c81a0500` |
+| #96 已合併 main，三端各驗 49 卡，合併樹與受測樹一致 | head `671b5274e7e9`，受測 `aedda2b1045e`，main `7809b26ec3a1`，`artifacts/ci/local-pr/96/receipt.json`，SHA-256 `df20355130faefb25f938c567fcbd71c9769d4b60e6e87c57a8f0db4bd94885a` |
 | CORE-026 已修正帶既有 fact_id 的 create，Mac 1,398 項；CORE-013 已修正六段文字回條、撤回第三段後停止下一次派發 | #91 `8555755a439b`，`artifacts/CORE-026/create-identity-after-01/`；#87 `d344d7d51ff5`，`artifacts/CORE-013/automatic-split-check-01/` |
 | CORE-040 已重放二十個雙裝置長 Work、兩種公開檢查點結果與拒絕後的四次模型請求。冷暖工具已綁定 CORE-039 執行檔 | #86–#90，`463acb44b754`、`5261421aeea5`。見 `artifacts/CORE-040/{long-work-matrix-C-02,private-fallback-check-01,native-trials-smoke-02}/` 與 `docs/benchmarks/slice.md` |
 
@@ -34,6 +35,8 @@ CORE-040 的 #96 `codex/core-040-failed-trial-accounting`（實作 `0833ba9bb7c4
 **真實消費者。** Telegram 0.1.0-alpha.2（擴展 `5ad17ab4507b`）在 Mac、Linux 與 HJW Windows 上分別消費上述原生核心。正確 Bot 綁定時，兩頁共取 29,367 bytes，重選附件命中快取。授權給另一個 Bot 時，原生下載與游標推進均為零。三端回條在 `artifacts/CORE-038/telegram-5ad17ab-three-platform-01/consumer-receipts.json`，SHA-256 `994fe32d31bc6ffd1f597166f8698ad510f6d66a171f715dd61e06a69685b2cb`。Telegram 出站分段與 EXT-067 的聯合見證仍待擴展倉交付。
 
 在同一個 Host 串接 Telegram 入站、Main、web-fetch 和出站請求時，原核心把沒有發送授權的輪次停在 `held/runner_failed`。分支 `codex/core-038-inbound-only-send` 現在把未派發的 send 記為失敗，模型可以繼續，已確認的網頁操作仍可讀。Mac 的 CORE-038 通過 322 項斷言。修正前後的真插件記錄分別在 `artifacts/CORE-038/paired-consumers-pr95-macos-02/`、`artifacts/CORE-038/paired-consumers-fix-macos-01/`，後者的 `observed/actual.json` SHA-256 為 `fb38e01d76ff818af9a7436b74d7aa84a13578ff0e502ef18be62ff9c087fe94`。原生三端候選的交接索引路徑為 `artifacts/CORE-039/pr97/verified-candidates.json`，生成時逐包記錄來源、SDK、能力與 SHA-256。
+
+在 `codex/core-038-gateway-media-refusals`，Telegram alpha.3 與 web-fetch 先重現不支援的媒體和缺少讀權令 Main 停在 `held`。修正後 Main 可取得原操作的失敗原因，重啟後兩例的原生發送均為零。無權讀取版本和附件類型不符也會在產生計畫前拒絕。Mac 的 CORE-038 通過 338 項斷言，回條在 `artifacts/CORE-038/preflight-media-refusals-isolated-01/manifest.json`；雙插件記錄在 `artifacts/CORE-038/paired-media-{emoji-refusal,missing-reader}-after-01/observed/actual.json`。
 
 web-fetch 0.1.0-alpha.1 在同一版三端 Host 上各完成兩次工具派發、四次原 handle 狀態查詢，重組 19 頁正文及 49 頁原件。固定回條在 `artifacts/CORE-040/installed-web-fetch-pr95-01/consumer-receipts.json`，SHA-256 `e217a127f0947f7f80c7921c90bd7d655a77a8a0deda41ba5d281dbfbcd84e48`。其模型方法名是 `web_fetch`；v4 切片使用 `read_webpage`。已核對擴展 main `d3f231b2fc02` 的 Telegram、web-fetch 和 env 插件源碼樹均與對拍版本一致。
 

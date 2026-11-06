@@ -15,3 +15,5 @@ EXT-004 和 EXT-006 需要在本來的 Bot 或 app／tenant 取回 Telegram file
 核心來源 `4a41470e89b4`，插件來源 `5ad17ab4507b`，插件使用的 SDK 為 Rust 1.0.0-alpha.13。三份原生執行檔及逐幀記錄的雜湊均可從 `artifacts/CORE-038/telegram-5ad17ab-three-platform-01/consumer-receipts.json` 核對。出站逐段和穩定協議由各自的見證卡驗收。
 
 當安裝只授權收件與媒體時，Main 仍可呼叫其他已安裝的工具。若 Main 隨後要求這個安裝發送，Host 應在派發前記下本次拒絕，向原模型交還失敗回執。故障重放查核確認過的網頁回條仍在、發送計畫與原生發送均為零，並再次讀取同一筆拒絕回執。
+
+有發送權的網關收到未支援的媒體請求時，Main 可從原操作讀到 `gateway_media_unsupported`。選定附件另需安裝具備 `media.open`，缺少授權回傳 `gateway_media_read_not_granted`。版本不存在或原執行無權讀取都回傳 `gateway_artifact_unavailable`；可讀版本的類型與請求不同時回傳 `gateway_attachment_kind_mismatch`。這四種拒絕均發生在規劃與派發前。
