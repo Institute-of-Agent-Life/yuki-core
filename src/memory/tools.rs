@@ -50,16 +50,6 @@ pub fn declaration(name: &str) -> Option<Tool> {
             ]
             .contains(&key.as_str())
         });
-        props.get_mut("operation")?["enum"] = json!([
-            "create",
-            "correct",
-            "invalidate",
-            "restore",
-            "update_metadata",
-            "merge",
-            "contest",
-            "reassign"
-        ]);
         props.get_mut("expected_fact_state")?["enum"] = json!(["active", "invalidated"]);
         props.get_mut("request_basis")?["enum"] = json!(["user_requested"]);
         props.get_mut("evidence_refs")?["items"] = json!({"type":"string","const":"current_event"});
@@ -198,6 +188,9 @@ async fn act(
     let requested = args["operation"]
         .as_str()
         .ok_or("missing memory operation")?;
+    if requested == "create" && !args["fact_id"].is_null() {
+        return Err("create_does_not_accept_fact_id".into());
+    }
     let group_target = args["target"]["scope_type"] == "person_group";
     if group_target && !matches!(requested, "create" | "reassign")
         || args["target"]["subject_ref"] == "mentioned_user" && !group_target

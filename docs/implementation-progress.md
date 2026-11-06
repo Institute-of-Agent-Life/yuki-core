@@ -1,5 +1,7 @@
 # 核心實作進度
 
+CORE-026（`codex/core-026-original-create-identity`）補回原版 create 的身份檢查。舊 Rust 在模型請求同時帶有效新 key 與既有 fact_id 時建立了第二筆事實。修正後依原版拒絕，保留原有事實、版本與原模型八種操作的宣告順序。回歸輸入及驗證在 `artifacts/CORE-026/create-identity-{before,after}-01/`。
+
 CORE-040 冷暖重放（`codex/core-040-native-trials`）已用 CORE-039 的 Mac 執行檔 `b74a91582f22` 跑六個獨立程序，24 個測量事件全部正確。原始資料、候選來源雜湊、歷史 14,400 個效果的重核與工具集差異見 `artifacts/CORE-040/native-trials-smoke-02/` 和 `docs/benchmarks/slice.md`。全平台的投資裁決仍開放。
 
 #43 三端合併後，#85 的 Windows 原始重放及三端候選已交接在 `artifacts/CORE-013/file-caption-04139ad30742/verified-candidates.json`。HJW 可重現檔案共享拒絕，修正後的終端流程在 release、debug、release 各過 62 項，見 `artifacts/CORE-032/terminal-owner-replay-9b752105/windows.json`。#85 的最新合併檢查另存 `artifacts/ci/local-pr/85/`。Mac 已清除三處閒置 incremental 快取並驗回保留的產物，釋出 11.03 GiB；回執在 `artifacts/ci/cleanup-20261106/three-pr-mac-incremental-verified.json`。

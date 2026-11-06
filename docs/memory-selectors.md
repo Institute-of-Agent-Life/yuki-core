@@ -7,3 +7,5 @@
 固定來源為 329ca7c487414d2f54ddd98ff4727446ed2446cd 的 mutation/service.py::_locate_fact 與 repository.py::list_mutation_locator_candidates。保留原 normalizer、exact-first、最多四筆比較及三筆提示的規則；Rust 本卡 K07 的已讀原版本要求仍適用。此補核先實作 current_speaker/person；其他主體不宣告。
 
 恢復定位讀取原 retracted 版本之前最後一份真實正文；withdraw 本身的 NULL 正文不是可搜尋內容。所有來源版本均已擦除時不產生候選。歧義候選屬於實際讀取，即使修改回滾也仍登記來源依賴，確保忘記後原候選回執被清除。測試種子透過真實 Main 原執行寫入，再逐一完成原輪，避免把尚未完成的種子輪誤當待測 selector 請求。
+
+新增事實時，若同時提供已有的 fact_id，原版會以 `create_does_not_accept_fact_id` 拒絕。Rust 在選擇人物或群主體前執行同一檢查。付費模型故障重放使用另一個合法 key，並在拒絕後核對事實與版本數均未增加；正常建立、按原 ID 讀取及唯一 selector 更正仍走原流程。

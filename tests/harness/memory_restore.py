@@ -87,7 +87,11 @@ def paid(ctx):
             event=o.human('restore my original tea observation')
             wire,q=o.wire(model)
             declaration=next(t['function'] for t in wire['tools'] if t['function']['name']=='memory_change')
-            ctx.check('restore is declared only with implemented operations','restore' in declaration['parameters']['properties']['operation']['enum'])
+            original = json.loads((ctx.root / 'src/memory/v4-declarations.json').read_bytes())
+            operations = next(t for t in original['tools'] if t['name'] == 'memory_change')
+            ctx.equal('paid wire advertises the eight original operations in order',
+                      declaration['parameters']['properties']['operation'],
+                      operations['parameters']['properties']['operation'])
             def tool(id,name,args):
                 nonlocal wire,q
                 reply(q,calls=[call(id,name,args)])
