@@ -452,8 +452,10 @@ PR #47 已接入維護分支 d658db3 的 Work 與分發修正。macOS CORE-051�
 
 PR #48 已接入 #47 的 Work 與分發修正 8a47f56。macOS 058=321, 051=735, 039=84 項均通過，詳見各卡 `sessions-058-work-main-01/`。等本 head 的六項 CI。
 
-CI 排隊修正（[PR #83](https://github.com/Institute-of-Agent-Life/yuki-core/pull/83)，`codex/ci-pr-queue`）：40 個開放 PR 的當時 head 有 58 個 Intel Mac job 在等。逐筆重查已過期的 45 個 run，GitHub 確認取消 43 個；2 個已有 job 執行，保留。新配置讓每個 PR 的合併版本跑一次 Windows、Linux、Apple Silicon macOS；改基底會重驗，同 PR 新提交取消舊任務。main 推送及手動完整檢查保留 Intel Mac。
+CI 排隊修正（[PR #83](https://github.com/Institute-of-Agent-Life/yuki-core/pull/83)，`codex/ci-pr-queue`）：40 個開放 PR 的當時 head 有 58 個 Intel Mac job 在等。逐筆重查已過期的 45 個 run，GitHub 確認取消 43 個；2 個已有 job 執行，保留。以其他任務分支為基底的 PR 先跑 Linux 全套；以 main 為基底或轉向 main 的 PR 跑 Windows、Linux、Apple Silicon macOS 三平台完整合併檢查。同 PR 新提交取消舊任務。main 推送及手動完整檢查保留 Intel Mac。
 
 `python ci/suite.py --out <新目錄>` 從 `ci/checks.json` 取完整清單。每台先跑含 release 的卡、fmt、clippy、writer tests、debug／release build；兩個分開的程序執行其餘案例，同一工作內依來源與 SHA-256 綁定編譯證據。快取只供 Cargo 依賴及編譯中間物，仍執行本倉的編譯與測試。卡片的斷言、期限及具名輸出保留。失敗或未跑完時，`suite.json` 列出缺口，整體回非零。SQLite 歷史測試庫分 migration 提交；reader 5、20、29 的 schema／資料相同，注入錯誤可回滾。原 Mac CORE-032 曾等不到 Rust 回呼；兩段獨立案例現在等前一回合完成，失敗時保留操作與預算診斷。佇列與測試紀錄在 [artifacts/ci](/Volumes/huawei/項目實戰/yuki-core/artifacts/ci/)。
 
 PR #48 CI：原 Windows PR job `127695758613` 的 CORE-050 在案例上限 360 秒中斷；同提交另一 Windows job 的該步為 210 秒。沿用歷史 migration 交易修正，九段案例現在各寫起迄，逾時也看得出停在哪一段。macOS 與 HJW 的同一來源樹 `8de4b1e2f9d3` 各通過 561 項，九段合計 34.3／54.9 秒（不含編譯），見 `artifacts/CORE-050/pr48-timeout-fix-{mac-02,windows-01}/`。原失敗保留，等新提交的 GitHub 三平台檢查。
+
+PR #48 完整合併工作樹在 Mac 已驗 44/44 卡、6,520 項斷言，見 `artifacts/ci/pr48-suite-mac-01/suite.json`。此分支目前以 #47 為基底，GitHub 先跑 Linux；轉向 main 時重驗三平台。
