@@ -50,16 +50,16 @@ def deterministic_zip(path, content):
             archive.writestr(entry, data)
 
 
-def wheel(path, meta):
+def wheel(path, meta, root=ROOT, description="Unpublished plugin handshake preview"):
     version = meta["sdk_versions"]["python"]
     pyproject = tomllib.loads(
-        (ROOT / "sdk/python/pyproject.toml").read_text(encoding="utf-8")
+        (root / "sdk/python/pyproject.toml").read_text(encoding="utf-8")
     )
     if pyproject["project"]["version"] != version:
         raise ValueError("Python distribution version differs from IDL")
     name = "yuki_plugin_sdk"
     dist = f"{name}-{version}.dist-info"
-    package = ROOT / "sdk/python" / name
+    package = root / "sdk/python" / name
     content = {
         name + "/" + f.name: f.read_bytes()
         for f in package.iterdir()
@@ -71,14 +71,14 @@ def wheel(path, meta):
     )
     content[dist + "/METADATA"] = (
         f"Metadata-Version: 2.4\nName: yuki-plugin-sdk\nVersion: {version}\n"
-        "Summary: Unpublished plugin handshake preview\nRequires-Python: >=3.12\nLicense-Expression: AGPL-3.0-only\n"
+        f"Summary: {description}\nRequires-Python: >=3.12\nLicense-Expression: AGPL-3.0-only\n"
         "License-File: LICENSE\nLicense-File: NOTICE\n"
     ).encode()
     content[dist + "/entry_points.txt"] = (
         b"[console_scripts]\nyuki-plugin-peer = yuki_plugin_sdk.peer:main\n"
     )
     for file in ("LICENSE", "NOTICE"):
-        content[dist + "/licenses/" + file] = (ROOT / file).read_bytes()
+        content[dist + "/licenses/" + file] = (root / file).read_bytes()
     record = io.StringIO(newline="")
     rows = csv.writer(record, lineterminator="\n")
     for member, data in sorted(content.items()):
@@ -91,7 +91,7 @@ def wheel(path, meta):
     filename = f"{name}-{version}-py3-none-any.whl"
     deterministic_zip(path / filename, content)
     python_files["__main__.py"] = b"from yuki_plugin_sdk.peer import main\nmain()\n"
-    python_files.update({n: (ROOT / n).read_bytes() for n in ("LICENSE", "NOTICE")})
+    python_files.update({n: (root / n).read_bytes() for n in ("LICENSE", "NOTICE")})
     deterministic_zip(path / "yuki-conformance-peer.pyz", python_files)
     return filename
 
@@ -117,16 +117,16 @@ def rust_env():
     return env
 
 
-def crate(path, work, meta, source):
+def crate(path, work, meta, source, root=ROOT):
     version = meta["sdk_versions"]["rust"]
-    package = ROOT / "sdk/rust/Cargo.toml"
+    package = root / "sdk/rust/Cargo.toml"
     if (
         tomllib.loads(package.read_text(encoding="utf-8"))["package"]["version"]
         != version
     ):
         raise ValueError("Rust distribution version differs from IDL")
     for name in ("LICENSE", "NOTICE"):
-        if (package.parent / name).read_bytes() != (ROOT / name).read_bytes():
+        if (package.parent / name).read_bytes() != (root / name).read_bytes():
             raise ValueError("Rust notice differs from core")
     target = work / "cargo-package"
     result = subprocess.run(

@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-IDL = ROOT / "protocol/plugin/handshake.schema.json"
 
 
 def rust_type(field):
@@ -25,8 +24,8 @@ def py_type(field):
     return {"string": "str", "integer": "int"}[field["type"]]
 
 
-def generate():
-    raw = IDL.read_bytes()
+def generate(root=ROOT, host_schema=None):
+    raw = (root / "protocol/plugin/handshake.schema.json").read_bytes()
     schema = json.loads(raw)
     meta = schema["x-yuki"]
     rust = [
@@ -147,25 +146,27 @@ def generate():
             k: meta[k] for k in ("status", "schema_revision", "sdk_versions", "methods")
         },
     }
-    host=json.loads((ROOT/"protocol/plugin/gateway/host-preview.json").read_bytes())
-    for group in ("personal","media","composition","aux-model","participation","maintenance","sessions","notifications","control"):
-        extension=json.loads((ROOT/f"protocol/plugin/{group}/methods.json").read_bytes())
-        if host["methods"].keys() & extension["methods"].keys():
-            raise ValueError("duplicate host methods")
-        host["methods"].update(extension["methods"])
+    host = host_schema
+    if host is None:
+        host = json.loads((root / "protocol/plugin/gateway/host-preview.json").read_bytes())
+        for group in ("personal", "media", "composition", "aux-model", "participation", "maintenance", "sessions", "notifications", "control"):
+            extension = json.loads((root / f"protocol/plugin/{group}/methods.json").read_bytes())
+            if host["methods"].keys() & extension["methods"].keys():
+                raise ValueError("duplicate host methods")
+            host["methods"].update(extension["methods"])
     host_bytes=(json.dumps(host,indent=2,ensure_ascii=False)+"\n").encode()
     return {
-        ROOT / "sdk/rust/src/generated.rs": ("\n".join(rust) + "\n").encode(),
-        ROOT / "sdk/python/yuki_plugin_sdk/generated.py": (
+        root / "sdk/rust/src/generated.rs": ("\n".join(rust) + "\n").encode(),
+        root / "sdk/python/yuki_plugin_sdk/generated.py": (
             "\n".join(py) + "\n"
         ).encode(),
-        ROOT / "sdk/python/yuki_plugin_sdk/handshake.schema.json": raw,
-        ROOT / "sdk/python/yuki_plugin_sdk/host-preview.json": host_bytes,
-        ROOT / "sdk/rust/src/host-preview.json": host_bytes,
-        ROOT / "protocol/plugin/method-index.json": (
+        root / "sdk/python/yuki_plugin_sdk/handshake.schema.json": raw,
+        root / "sdk/python/yuki_plugin_sdk/host-preview.json": host_bytes,
+        root / "sdk/rust/src/host-preview.json": host_bytes,
+        root / "protocol/plugin/method-index.json": (
             json.dumps(index, sort_keys=True, indent=2) + "\n"
         ).encode(),
-        ROOT / "protocol/plugin/handshake.ndjson": "".join(
+        root / "protocol/plugin/handshake.ndjson": "".join(
             json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n"
             for row in lines
         ).encode(),

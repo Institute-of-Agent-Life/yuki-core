@@ -720,6 +720,7 @@ async fn schedule_crash_child() {
 async fn run_owner_child() {
     let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
     crate::execute(crate::Args {
+        plugin_base_1: false,
         data: Some(data),
         command: crate::Action::Run,
     })
@@ -732,6 +733,7 @@ async fn run_owner_child() {
 async fn compact_crash_child() {
     let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
     crate::execute(crate::Args {
+        plugin_base_1: false,
         data: Some(data),
         command: crate::Action::Run,
     })
@@ -744,6 +746,7 @@ async fn compact_crash_child() {
 async fn extract_crash_child() {
     let data = PathBuf::from(std::env::var_os("YUKI_WRITER_TEST_DATA").unwrap());
     crate::execute(crate::Args {
+        plugin_base_1: false,
         data: Some(data),
         command: crate::Action::Run,
     })

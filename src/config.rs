@@ -35,9 +35,30 @@ pub struct Config {
 
 impl Config {
     pub fn read(data: &Path) -> Result<Self> {
+        if data.join("plugin-base-1.0").try_exists()? != crate::host::grants::stable_base() {
+            return Err("plugin base changed while opening the data directory".into());
+        }
         let mut config: Self = toml::from_str(&fs::read_to_string(data.join("yuki.toml"))?)?;
         if config.format_version != 1 {
             return Err("unsupported configuration format".into());
+        }
+        if crate::host::grants::stable_base() {
+            let methods = crate::host::grants::methods()["methods"]
+                .as_object()
+                .unwrap();
+            config.plugins.retain(|install| {
+                let supported = install
+                    .grants
+                    .iter()
+                    .all(|g| methods.values().any(|m| m["grant"] == *g));
+                if !supported {
+                    eprintln!(
+                        "plugin {} requires an unsupported base-1.0 grant",
+                        install.id
+                    );
+                }
+                supported
+            });
         }
         config.memory.validate()?;
         config.work_segments.validate()?;
@@ -82,10 +103,13 @@ pub fn init(data: &Path, mode: crate::memory::embedding::Mode) -> Result<Owner> 
     #[cfg(not(unix))]
     fs::create_dir_all(data)?;
     let owner = Owner::acquire(data)?;
-    for name in ["yuki.toml", "SOUL.md", "core.sqlite"] {
+    for name in ["yuki.toml", "SOUL.md", "core.sqlite", "plugin-base-1.0"] {
         if data.join(name).exists() {
             return Err(format!("init preserves existing {name}; use run/migrate").into());
         }
+    }
+    if crate::host::grants::stable_base() {
+        create_file(&data.join("plugin-base-1.0"), b"1.0.0\n")?;
     }
     create_file(
         &data.join("yuki.toml"),

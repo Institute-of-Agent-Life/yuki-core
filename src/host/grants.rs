@@ -55,6 +55,19 @@ fn initially_enabled() -> bool {
 fn is_enabled(value: &bool) -> bool {
     *value
 }
+static BASE_1: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+
+pub(crate) fn select_base(stable: bool) -> Result<()> {
+    if *BASE_1.get_or_init(|| stable) != stable {
+        return Err("plugin base already selected".into());
+    }
+    Ok(())
+}
+
+pub(crate) fn stable_base() -> bool {
+    BASE_1.get().copied().unwrap_or(false)
+}
+
 pub fn methods() -> &'static Value {
     static IDL: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
     IDL.get_or_init(|| {
@@ -83,6 +96,15 @@ pub fn methods() -> &'static Value {
                         .is_none()
                 );
             }
+        }
+        if stable_base() {
+            let freeze: Value =
+                serde_json::from_str(include_str!("../../protocol/plugin/stable/1.0/freeze.json"))
+                    .expect("witnessed base freeze");
+            base["methods"]
+                .as_object_mut()
+                .unwrap()
+                .retain(|name, _| freeze["methods"].get(name).is_some());
         }
         base
     })

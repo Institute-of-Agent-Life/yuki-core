@@ -95,6 +95,19 @@ impl Session {
         handle: Option<String>,
         fetch: Option<super::gateway_media::Gate>,
     ) -> Result<Value> {
+        if grants::stable_base() && grants::methods()["methods"].get(method).is_none() {
+            if let Some(handle) = handle {
+                write(
+                    store,
+                    Change::Call(calls::Change::Unsent {
+                        handle,
+                        generation: self.generation.clone(),
+                    }),
+                )
+                .await?;
+            }
+            return Err("method not supported by this base".into());
+        }
         let id = Id::Text(format!(
             "host-{}",
             NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
@@ -305,6 +318,7 @@ pub async fn launch(
         let mut peer = Peer::new(binding).expect("validated binding");
         let mut input = BufReader::new(stdout);
         let mut ready = Some(ready);
+        let mut rejected_offer = false;
         let mut callbacks = tokio::task::JoinSet::new();
         loop {
             let mut bytes = Vec::new();
@@ -347,7 +361,11 @@ pub async fn launch(
                     {
                         break;
                     }
-                    if link.reply(reply).await.is_err() || !accepted {
+                    if link.reply(reply).await.is_err() {
+                        break;
+                    }
+                    if !accepted {
+                        rejected_offer = true;
                         break;
                     }
                     if let Some(tx) = ready.take() {
@@ -360,6 +378,12 @@ pub async fn launch(
                     }
                     if ready.is_some() || callbacks.len() >= 32 {
                         if !link.notify(json!({"jsonrpc":"2.0","id":msg["id"],"error":{"code":-32001,"message":"instance unavailable"}})){break;}
+                        continue;
+                    }
+                    if grants::stable_base() && grants::methods()["methods"].get(method).is_none() {
+                        if !link.notify(json!({"jsonrpc":"2.0","id":msg["id"],"error":{"code":-32601,"message":"method not supported by this base"}})) {
+                            break;
+                        }
                         continue;
                     }
                     let s = store.clone();
@@ -422,8 +446,16 @@ pub async fn launch(
         writer.abort();
         let _ = writer.await;
         callbacks.abort_all();
-        let _ = child.kill().await;
-        let _ = child.wait().await;
+        // Closing stdin lets a rejected peer consume the flushed reason and exit.
+        // A peer that ignores EOF cannot hold up the owner indefinitely.
+        if !rejected_offer
+            || tokio::time::timeout(Duration::from_secs(1), child.wait())
+                .await
+                .is_err()
+        {
+            let _ = child.kill().await;
+            let _ = child.wait().await;
+        }
         let _ = write(
             &store,
             Change::Close(link.plugin.clone(), link.generation.clone()),

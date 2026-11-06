@@ -1,0 +1,27 @@
+{
+  "task": "EXT-067",
+  "status": "PASS",
+  "phase": "acceptance",
+  "card_status": "JOINT_CANDIDATE_WITNESSED",
+  "platform": "Windows-11-10.0.22000-SP0",
+  "python": "3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)]",
+  "source_commit": "49f7b190406c59adb15b1a5fe70f442942addbb7",
+  "source_snapshot_sha256": null,
+  "command": [
+    "C:\\Users\\Hilbert\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "ci/check.py",
+    "EXT-067",
+    "--out",
+    "D:\\yuki-extension-tests\\local-joint-pr95-01\\native-02"
+  ],
+  "files": {
+    "base-consumer-witness.json": "d735e535b30c41c32fc62ade3b5ae3863c9cbf39404856f3401640b7544034e1",
+    "confirmed.zip": "7b1dc7545f6086777e4c11682ee0a0b745e5c2b9d4ded507fedb466e538c63ba",
+    "erased-readback.zip": "ea57bd8b31bc669828e797aeeeedc2d20ed9f157c03908a53986f5886eed1da5",
+    "lost-second.zip": "7f0f6f6455dc3c753f5f8084afaf625364ccbf8091a35835e03688dd68f1bc6b",
+    "missing-method.zip": "3505f8705024ef33a02f67460a2df87d6b6db6b1a1844ad73135bfce10e72f08",
+    "revoked.zip": "c0dc3323fed5df8f2bfef8e34edfccdaeeed737dd90036df86cbf40f8166db65",
+    "swapped.zip": "487db4470d4fdfc272505626fd03a285110734c77706706c0c6aaa64bac5221d",
+    "wrong-handle.zip": "aa0cfb30da4a7db56bbc342c61f308de8703216d83abd66a8fa20d7e49e2be3a"
+  }
+}

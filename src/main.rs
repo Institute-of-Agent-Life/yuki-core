@@ -30,6 +30,9 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 struct Args {
     #[arg(long, global = true)]
     data: Option<PathBuf>,
+    /// Use the witnessed plugin wire 1.0 for a new installation or its existing volume.
+    #[arg(long, global = true)]
+    plugin_base_1: bool,
     #[command(subcommand)]
     command: Action,
 }
@@ -90,6 +93,13 @@ async fn close_writer(store: &store::Store) {
 
 async fn execute(args: Args) -> Result<()> {
     let data = args.data.ok_or("--data is required")?;
+    let marked = data.join("plugin-base-1.0").try_exists()?;
+    let stable = args.plugin_base_1
+        || std::env::current_exe()?.file_stem() == Some(std::ffi::OsStr::new("yuki-base"));
+    if stable && !marked && !matches!(args.command, Action::Init { .. }) {
+        return Err("stable plugin base requires its own initialized data directory".into());
+    }
+    host::grants::select_base(stable || marked)?;
     match args.command {
         Action::Init { memory_mode } => {
             let owner = config::init(&data, memory_mode)?;
