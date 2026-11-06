@@ -786,3 +786,5 @@ CORE-038 選讀原件的乾淨候選，來源 0ef956a9c6d90fae79c0d4488296c064cc
 - Windows: `a81c49a722b9e1e420d5084856f7a13aed116865f7ca0a4c1304ac10881c62f3`
 
 [未發布交接索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/main-selected-handoff-final-01/verified-candidates.json)，SHA-256 `49437652505a0881fc14576502036101412042542d642f7eeea4f98bbdc7c459`。
+
+CORE-038 × EXT-031：HJW 以原擴展 candidate-03 與本倉 `0ef956a` 實測。兩個案例均在同一 Main 走完一次原工具及一次正常續輪。回條 `3e43a514cee1abce0873da4393c610a02c48e65956a1ec359367ae244c09dcd7`，含輸入、輸出、核心包、插件與 FFmpeg 雜湊；[原始 HTTP 回條目錄](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/main-selected-real-ext031-01)。
