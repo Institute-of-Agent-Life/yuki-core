@@ -257,3 +257,5 @@ PR #39 最新前置整合後，Mac CORE-016、CORE-029、CORE-030 通過，具�
 另核對 17 筆重複 push，取消仍只排隊等待 Intel Mac 的 16 筆。#67 已開始執行並最終通過，全部 17 筆 PR run 保留。逐筆回執位於 `artifacts/ci/queue-triage-01/verified-duplicate-push-cancellations.json`。#35 合併後的 Mac 全套 35 卡見 `artifacts/ci/pr83-vectors-main-mac-01/suite.json`。#37 合併後以 `3c16aaf` 為基底重新驗證 36 卡，Mac 產物位於 `artifacts/ci/pr83-retrieval-main-mac-01/suite.json`。
 
 PR #39 將 CORE-030 的遺忘測試接上 #83 工作流，Mac 37 卡全部通過，見 `artifacts/ci/pr39-current-main-mac-01/suite.json`。#83 提交 `11e5a5b` 的同一來源樹已在 HJW Windows、Mac 與 Linux 各驗過 36 卡，逐卡 SHA-256 見 `artifacts/ci/queue-triage-01/pr83-retrieval-native-matrix.json`。GitHub Windows、Linux 亦各通過 36 卡，見同目錄 `hosted-pr83-retrieval-main-windows-linux.json`。#39 先以 #83 為基底驗 Linux，之後轉回 main 驗三平台。
+
+日常 PR 改用本地 Mac mini、同機 Linux ARM64 容器與 HJW Windows。三端均執行完整註冊套件。合併入口 `ci/local_matrix.py` 核對目前 PR 合併 SHA、來源樹、三個平台、全部斷言與具名產物雜湊，再寫入三個 GitHub commit status。#83 的首份本地合併回執位置為 `artifacts/ci/local-pr/83/receipt.json`。Intel Mac 候選驗證可手動執行。

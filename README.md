@@ -77,7 +77,14 @@ then retrieves the original evidence. See [evidence](docs/evidence.md),
 
 The verifier builds with the lockfile and offline cache, runs Rust cleanup-boundary
 tests, then checks the service through real HTTP, local IPC and SQLite. CI covers
-Windows, macOS and Linux. Current completion and candidate status are recorded in
+Windows, macOS and Linux. For a PR, fetch its merge ref with
+`git fetch origin refs/pull/NUMBER/merge` and create a clean detached checkout
+of `FETCH_HEAD`. Run `python ci/suite.py --out OUTPUT` on each local system
+from that checkout or its verified source snapshot. Run
+`python ci/local_matrix.py NUMBER --checkout CHECKOUT --macos MAC_OUTPUT --linux LINUX_OUTPUT --windows WINDOWS_OUTPUT --out RECEIPT --merge`
+to verify every card and artifact, post three PR statuses, and merge on the
+current main base. A base or head change requires the new merge checkout.
+Hosted checks can still be started manually. Current completion and candidate status are recorded in
 the progress document.
 
 The private operator can create accountless persons, merge them, and manage
