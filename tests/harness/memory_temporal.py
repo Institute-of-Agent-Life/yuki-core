@@ -34,7 +34,7 @@ def run(ctx):
                         reply(q,'done');o.finished(event)
                         event=o.human('Please remember my original dates');wire,q=o.wire(model);seen=0
                     seen+=1
-                    args={'operation':'create','memory_key':'date-'+str(number),'category':'dated','new_content':'original date '+str(number)}
+                    args={'operation':'create','target':{'scope_type':'person','subject_ref':'current_speaker'},'memory_key':'date-'+str(number),'category':'dated','new_content':'original date '+str(number)}
                     args.update({k:v[k] for k in ['valid_from','valid_until'] if v[k] is not None})
                     before=o.rows('SELECT count(*) FROM memory_versions')[0][0]
                     result=tool('date-'+str(number),'memory_change',args)
@@ -47,7 +47,7 @@ def run(ctx):
                     else:
                         ctx.equal('invalid time rolls back new fact and version '+str(number),o.rows('SELECT (SELECT count(*) FROM memory_versions),(SELECT count(*) FROM memory_facts),(SELECT count(*) FROM extract_fact_details)'),[(before,before,before)])
                     results.append({'vector':number,'state':result['state']})
-                forged=tool('forged-zone','memory_change',{'operation':'create','memory_key':'forged','new_content':'date','valid_from':'2032-01-01','timezone':'UTC'})
+                forged=tool('forged-zone','memory_change',{'operation':'create','target':{'scope_type':'person','subject_ref':'current_speaker'},'category':'dated','memory_key':'forged','new_content':'date','valid_from':'2032-01-01','timezone':'UTC'})
                 ctx.equal('model cannot override deployment timezone',forged['state'],'failed')
                 reply(q,'done');o.finished(event)
                 receipts=o.rows('SELECT operation_id,state,result FROM operations ORDER BY rowid')
@@ -70,7 +70,7 @@ def operations(ctx,original):
             for index,step in enumerate(original['operations']):
                 if number is not None:tool('read-'+str(index),'read_memory',{'view':'fact','fact_id':number})
                 args={'operation':step['operation'],**step['fields']}
-                if number is None:args.update(memory_key='tea',category='drink',new_content='tea dates')
+                if number is None:args.update(target={'scope_type':'person','subject_ref':'current_speaker'},memory_key='tea',category='drink',new_content='tea dates')
                 else:args['fact_id']=number
                 result=tool('change-'+str(index),'memory_change',args)
                 ctx.equal('real original temporal mutation '+str(index),result['state'],'confirmed')

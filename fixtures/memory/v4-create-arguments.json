@@ -1,0 +1,115 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/services/agent_tools.py": "e55c2a7d747d5eca82cf418d711f809cd81e7206efab8ab12060a786a2a8c830",
+    "src/yuki/memory/mutation/service.py": "92b3489a7fb00c3898da301597e1aa3f18e8ce8a5860b26bf29baa6ca0e62b76",
+    "src/yuki/memory/mutation/models.py": "ee16c01a51db05faca77e5ec84b9b5193a6de64a1283b189c7190f55c3cf3f22"
+  },
+  "cases": [
+    {
+      "case": "missing-target",
+      "arguments": {
+        "operation": "create",
+        "new_content": "喜欢爵士乐0",
+        "memory_key": "music:jazz-0",
+        "category": "music"
+      },
+      "reason": "target_required",
+      "created": 0
+    },
+    {
+      "case": "missing-category",
+      "arguments": {
+        "operation": "create",
+        "target": {
+          "scope_type": "person",
+          "subject_ref": "current_speaker"
+        },
+        "new_content": "喜欢爵士乐1",
+        "memory_key": "music:jazz-1"
+      },
+      "reason": "memory_content_key_and_category_required",
+      "created": 0
+    },
+    {
+      "case": "blank-category",
+      "arguments": {
+        "operation": "create",
+        "target": {
+          "scope_type": "person",
+          "subject_ref": "current_speaker"
+        },
+        "new_content": "喜欢爵士乐2",
+        "memory_key": "music:jazz-2",
+        "category": " \t "
+      },
+      "reason": "memory_content_key_and_category_required",
+      "created": 0
+    },
+    {
+      "case": "missing-key",
+      "arguments": {
+        "operation": "create",
+        "target": {
+          "scope_type": "person",
+          "subject_ref": "current_speaker"
+        },
+        "new_content": "喜欢爵士乐3",
+        "category": "music"
+      },
+      "reason": "memory_content_key_and_category_required",
+      "created": 0
+    },
+    {
+      "case": "blank-content",
+      "arguments": {
+        "operation": "create",
+        "target": {
+          "scope_type": "person",
+          "subject_ref": "current_speaker"
+        },
+        "new_content": " \t ",
+        "memory_key": "music:jazz-4",
+        "category": "music"
+      },
+      "reason": "memory_content_key_and_category_required",
+      "created": 0
+    },
+    {
+      "case": "global-hint",
+      "arguments": {
+        "operation": "create",
+        "target": {
+          "scope_type": "person",
+          "subject_ref": "current_speaker"
+        },
+        "new_content": "喜欢爵士乐5",
+        "memory_key": "music:jazz-5",
+        "category": "music",
+        "visibility": "global"
+      },
+      "reason": "independent_claim",
+      "created": 1,
+      "scope": "person",
+      "visibility": null
+    },
+    {
+      "case": "current-hint",
+      "arguments": {
+        "operation": "create",
+        "target": {
+          "scope_type": "person",
+          "subject_ref": "current_speaker"
+        },
+        "new_content": "喜欢爵士乐6",
+        "memory_key": "music:jazz-6",
+        "category": "music",
+        "visibility": "current_scope"
+      },
+      "reason": "independent_claim",
+      "created": 1,
+      "scope": "person",
+      "visibility": null
+    }
+  ]
+}
