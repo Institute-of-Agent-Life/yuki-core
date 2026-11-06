@@ -11,7 +11,7 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 
-def run(ctx, index, *, withdraw_question=False):
+def run(ctx, index, *, withdraw_question=False, erase_file=False):
     from tests.harness.compact import Owner, call, reply
     from bench.work_trace import projection
     from tests.peers.chat.recorder import Recorder
@@ -302,7 +302,55 @@ def run(ctx, index, *, withdraw_question=False):
                 ("send_private_msg", 200),
             )
             ack(peer, text_part)
-            _, q = wire()
+            body, q = wire()
+            if erase_file:
+                import sqlite3
+                from bench.file_receipt import delivered
+
+                file_result = delivered(body)["data"]["parts"][0]
+                ctx.equal(
+                    "fault targets the immutable file from the acknowledged part",
+                    file_result["artifact_id"],
+                    artifact["artifact_id"],
+                )
+                with closing(sqlite3.connect(o.svc.data / "core.sqlite")) as db:
+                    db.execute(
+                        "CREATE TABLE file_receipt_fault(version TEXT PRIMARY KEY)"
+                    )
+                    db.execute(
+                        "INSERT INTO file_receipt_fault VALUES(?)",
+                        (artifact["artifact_id"],),
+                    )
+                    db.executescript("""
+                        CREATE TRIGGER erase_version_after_next_reservation AFTER INSERT ON model_requests
+                        BEGIN
+                            UPDATE media_versions SET digest=NULL,filename='erased'
+                            WHERE id=(SELECT version FROM file_receipt_fault);
+                        END;
+                    """)
+                    db.commit()
+                reply(q, calls=[call("after-file-erasure", "time_get_current", {})])
+                o.until(
+                    lambda: o.rows(
+                        "SELECT x.id FROM executions x JOIN main_turns t ON t.execution=x.id "
+                        "WHERE x.state='held' AND t.diagnostic='send_receipt_source_changed'"
+                    )
+                )
+                ctx.equal(
+                    "a withdrawn file stops the next physically dispatched attempt",
+                    o.rows("SELECT COUNT(*) FROM model_attempts"),
+                    [(6,)],
+                )
+                ctx.equal(
+                    "the original acknowledged question and both file-send parts stay single",
+                    o.rows("SELECT COUNT(*) FROM social_outbound"),
+                    [(3,)],
+                )
+                return {
+                    "physical_calls": len(wires),
+                    "seventh_dispatch": "held",
+                    "acknowledged_parts": len(physical),
+                }
             reply(
                 q,
                 calls=[
@@ -419,6 +467,22 @@ def run(ctx, index, *, withdraw_question=False):
                 ),
                 "elapsed_seconds": time.perf_counter() - begin,
             }
+    from bench.file_receipt import delivered, projection as file_projection
+
+    expected_receipt = json.loads(
+        (ctx.root / "fixtures/oracle/v4/file-caption-receipt.json").read_bytes()
+    )
+    actual = delivered(wires[-1])
+    ctx.equal(
+        "the file and caption retain the entire original model-visible receipt",
+        file_projection(actual),
+        expected_receipt["receipt"],
+    )
+    ctx.equal(
+        "model reads the version delivered to both devices",
+        actual["data"]["artifact_id"],
+        artifact["artifact_id"],
+    )
     ctx.write(f"C-long-{index:02}-wire.json", wires)
     ctx.write(f"C-long-{index:02}-proof.json", proof)
     return {

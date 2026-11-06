@@ -648,6 +648,8 @@ def run(ctx):
                 [(0,)],
             )
 
+    from bench.core_long import run as original_work
+    ctx.write("file-caption-withdrawal.json", original_work(ctx, 0, erase_file=True))
     from tests.harness.send_entry import run as send_entry
     ctx.write("canonical-send-entry.json",send_entry(ctx))
     from tests.harness.recall_wire import run as recall
