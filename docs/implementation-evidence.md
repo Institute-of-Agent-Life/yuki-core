@@ -754,3 +754,11 @@ Mac `connector-auth-mac-04` 369 項通過；真 HTTP、獨立安裝 SDK 與三�
 - macos：`04dc4215d1e9a1eefc4d9732133aa2a9efc62d60f602206b41c6712fe68ec0e5`
 - linux：`b1fc245c7636988383e2d3e68d92683e2bb6211036f4a5440a44585e326392b4`
 - windows：`a353c206f3a11ba5ed0f70da7d7f5b384eca536728842b7cdd1f15b34dc6f491`
+
+CORE-033 Client9 stream，三平台候選與成員完整性已驗：
+
+- macos: 50fe077b21574e57fe8dc671b92955379cbaab722742baac1224ef3eee3216f2
+- linux: a4c511aa4ee2aa830e677a12dcf02305dd372f8d337930371c76526e99729fd9
+- windows: 6872f69f4792809ab8cb3721f4f231764fa5ff2338d06df88da6b73be52f6168
+
+索引：/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/client-stream-handoff-final-01/verified-candidates.json (SHA-256 739ecae7768f860e4d7a4e9801a5d7c51e38eac623e155a88cacd3e6f8cd08c1)。
