@@ -109,6 +109,10 @@
       "rust": true,
       "capabilities": ["authenticated-native-group-recovery","session-bound-membership-proof"]
     },
+    "CORE-030": {
+      "case":"tests/cases/CORE-030.py","artifact":"forget-canaries.json","timeout_seconds":360,"rust":true,
+      "capabilities":["historical-person-closure","scoped-source-publication-fence","recoverable-owner-cleanup"]
+    },
     "CORE-029": {
       "case":"tests/cases/CORE-029.py","artifact":"authorized-topk.json","timeout_seconds":300,"rust":true,
       "capabilities":["authorized-exact-hybrid-ranking","scoped-result-freshness","event-time-memory-filter"]

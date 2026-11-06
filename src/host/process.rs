@@ -135,8 +135,9 @@ pub async fn launch(
     store: &Store,
     install: &Install,
     data: &Path,
+    cleanup: bool,
 ) -> Result<(Session, oneshot::Receiver<bool>)> {
-    let generation = write(store, Change::Start(install.id.clone()))
+    let generation = write(store, Change::Start(install.id.clone(), cleanup))
         .await?
         .as_str()
         .ok_or("missing generation")?
@@ -157,7 +158,14 @@ pub async fn launch(
     std::fs::create_dir_all(&wd)?;
     let mut command = Command::new(&install.program);
     command
-        .args(&install.args)
+        .args(if cleanup {
+            install
+                .erasure_args
+                .as_ref()
+                .ok_or("missing cleanup entry")?
+        } else {
+            &install.args
+        })
         .current_dir(&wd)
         .env_clear()
         .stdin(Stdio::piped())
@@ -173,6 +181,10 @@ pub async fn launch(
     if let Some(system) = std::env::var_os("SystemRoot") {
         command.env("SystemRoot", system);
     }
+    command.env(
+        "YUKI_PLUGIN_START_MODE",
+        if cleanup { "erasure_only" } else { "normal" },
+    );
     let binding = install.binding()?;
     command.env("YUKI_PLUGIN_BINDING", serde_json::to_string(&binding)?);
     let mut child = command.spawn()?;
@@ -255,28 +267,28 @@ pub async fn launch(
                     if accepted {
                         let revisions = reply["result"]["method_revisions"].as_array_mut().unwrap();
                         for (name, d) in grants::methods()["methods"].as_object().unwrap() {
-                            if install.grants.contains(d["grant"].as_str().unwrap()) {
+                            if install.grants.contains(d["grant"].as_str().unwrap())
+                                && (!cleanup || d["grant"] == "forget.owner")
+                            {
                                 revisions.push(json!({"name":name,"revision":d["revision"]}));
                             }
                         }
                         reply["result"]["host_schema_revision"] = json!(2);
                     }
-                    if link.reply(reply).await.is_err() {
-                        break;
-                    }
-                    if !accepted {
-                        break;
-                    }
-                    if let Some(tx) = ready.take() {
-                        if write(
+                    if accepted
+                        && write(
                             &store,
                             Change::Online(link.plugin.clone(), link.generation.clone()),
                         )
                         .await
                         .is_err()
-                        {
-                            break;
-                        }
+                    {
+                        break;
+                    }
+                    if link.reply(reply).await.is_err() || !accepted {
+                        break;
+                    }
+                    if let Some(tx) = ready.take() {
                         let _ = tx.send(true);
                     }
                 } else {

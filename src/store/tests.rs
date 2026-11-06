@@ -413,6 +413,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
     sqlx::raw_sql("INSERT INTO accepted_sources VALUES(1);
        INSERT INTO executions(id,source,original_actor,state) VALUES('run',1,'00000000-0000-4000-8000-000000000088','running')").execute(&mut *conn).await.unwrap();
     let install = Install {
+        erasure_args: None,
         id: "fixture".into(),
         namespace: "history".into(),
         program: std::env::current_exe().unwrap(),
@@ -438,13 +439,33 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
     domain::apply(conn, &Change::Configure(vec![install]))
         .await
         .unwrap();
-    let g = domain::apply(conn, &Change::Start("fixture".into()))
+    let g = domain::apply(conn, &Change::Start("fixture".into(), false))
         .await
         .unwrap()
         .as_str()
         .unwrap()
         .to_owned();
     domain::apply(conn, &Change::Online("fixture".into(), g.clone()))
+        .await
+        .unwrap();
+    assert!(
+        domain::active(conn, "fixture", &g, "gateway.send")
+            .await
+            .is_ok()
+    );
+    sqlx::query("INSERT INTO host_cleanup_generations VALUES('fixture',?)")
+        .bind(&g)
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    assert!(
+        domain::active(conn, "fixture", &g, "gateway.send")
+            .await
+            .is_err(),
+        "raw business methods must remain denied in a cleanup-only generation, even after the last ACK"
+    );
+    sqlx::query("DELETE FROM host_cleanup_generations WHERE plugin='fixture'")
+        .execute(&mut *conn)
         .await
         .unwrap();
     let original = calls::apply(conn, &calls::Change::Open(r.clone()))
@@ -458,7 +479,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
         (host.as_str(), effect.as_str()),
         ("not_dispatched", "intent")
     );
-    let new_gen = domain::apply(conn, &Change::Start("fixture".into()))
+    let new_gen = domain::apply(conn, &Change::Start("fixture".into(), false))
         .await
         .unwrap()
         .as_str()

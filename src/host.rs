@@ -22,7 +22,7 @@ use tokio::sync::Mutex;
 
 pub enum Change {
     Configure(Vec<Install>),
-    Start(String),
+    Start(String, bool),
     Online(String, String),
     Close(String, String),
     Enable(String, bool),
@@ -112,14 +112,25 @@ impl Hub {
             old.wait_closed().await;
             write(store, Change::Close(id.into(), old.generation)).await?;
         }
-        let (session, ready) = process::launch(store, &slot.spec, &self.data).await?;
-        if !matches!(
-            tokio::time::timeout(Duration::from_secs(5), ready).await,
-            Ok(Ok(true))
-        ) {
-            session.stop();
-            return Err("plugin initialization unavailable".into());
+        let pending = pending_erasure(store, id).await?;
+        if !pending.is_empty() {
+            if slot.spec.erasure_args.is_none() {
+                return Err("erasure pending; no cleanup-only entry installed".into());
+            }
+            let cleanup = start_session(store, &slot.spec, &self.data, true).await?;
+            let res = async {
+                for ob in pending {
+                    acknowledge(store, id, &cleanup, &ob).await?;
+                }
+                Ok::<(), Box<dyn std::error::Error + Send + Sync>>(())
+            }
+            .await;
+            cleanup.stop();
+            cleanup.wait_closed().await;
+            write(store, Change::Close(id.into(), cleanup.generation.clone())).await?;
+            res?;
         }
+        let session = start_session(store, &slot.spec, &self.data, false).await?;
         *guard = Some(session.clone());
         let result = json!({"plugin":id,"generation":session.generation,"online":true});
         let (s, i) = (store.clone(), slot.spec.clone());
@@ -241,6 +252,52 @@ impl Hub {
         ))
     }
 }
+async fn start_session(
+    store: &Store,
+    install: &Install,
+    data: &Path,
+    cleanup: bool,
+) -> Result<process::Session> {
+    let (session, ready) = process::launch(store, install, data, cleanup).await?;
+    if !matches!(
+        tokio::time::timeout(Duration::from_secs(5), ready).await,
+        Ok(Ok(true))
+    ) {
+        session.stop();
+        return Err("plugin initialization unavailable".into());
+    }
+    Ok(session)
+}
+async fn pending_erasure(store: &Store, id: &str) -> Result<Vec<Value>> {
+    let value =
+        crate::privacy::invoke(store, crate::privacy::Action::Pending { owner: id.into() }).await?;
+    Ok(serde_json::from_value(value["obligations"].clone())?)
+}
+async fn acknowledge(
+    store: &Store,
+    id: &str,
+    session: &process::Session,
+    ob: &Value,
+) -> Result<()> {
+    let params = json!({"key":ob["key"],"watermark":ob["watermark"],"sources":ob["sources"]});
+    let reply = session
+        .call(store, "forget.request", params.clone(), None)
+        .await?;
+    if reply["key"] != params["key"] || reply["watermark"] != params["watermark"] {
+        return Err("cleanup acknowledgment differs from assigned watermark".into());
+    }
+    write(
+        store,
+        Change::Callback(
+            id.into(),
+            session.generation.clone(),
+            "forget.ack".into(),
+            reply,
+        ),
+    )
+    .await?;
+    Ok(())
+}
 async fn maintain(store: Store, install: Install, session: process::Session) {
     let mut watermark = 0i64;
     let mut hints = store.subscribe_commits();
@@ -252,6 +309,19 @@ async fn maintain(store: Store, install: Install, session: process::Session) {
         let _ = tokio::time::timeout(Duration::from_millis(500), hints.recv()).await;
         if session.stopped() {
             break;
+        }
+        let pending = match pending_erasure(&store, &install.id).await {
+            Ok(items) => items,
+            Err(_) => continue,
+        };
+        if let Some(ob) = pending.first() {
+            if install.grants.contains("forget.owner")
+                && last_forget.elapsed() >= Duration::from_secs(2)
+            {
+                last_forget = std::time::Instant::now();
+                let _ = acknowledge(&store, &install.id, &session, ob).await;
+            }
+            continue;
         }
         if install.grants.contains("observe.metadata") && let Ok(rows)=sqlx::query("SELECT o.event,e.entry_id,json_extract(e.envelope,'$.kind') AS kind FROM host_observations o JOIN events e ON e.id=o.event JOIN host_installations i ON i.plugin=o.plugin AND i.online AND i.enabled AND i.generation=o.generation
             WHERE o.plugin=? AND o.generation=? AND o.event>? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=o.event) ORDER BY o.event LIMIT 64").bind(&install.id).bind(&session.generation).bind(watermark).fetch_all(store.readers()).await{
@@ -296,41 +366,6 @@ async fn maintain(store: Store, install: Install, session: process::Session) {
                         _ => "unavailable",
                     };
                     let _ = write(&store, Change::CommandDone(event, state.into())).await;
-                }
-            }
-        }
-        if install.grants.contains("forget.owner")
-            && last_forget.elapsed() >= Duration::from_secs(2)
-        {
-            last_forget = std::time::Instant::now();
-            let pending = crate::privacy::invoke(
-                &store,
-                crate::privacy::Action::Pending {
-                    owner: install.id.clone(),
-                },
-            )
-            .await;
-            if let Ok(p) = pending
-                && let Some(ob) = p["obligations"].as_array().and_then(|v| v.first())
-            {
-                let params =
-                    json!({"key":ob["key"],"watermark":ob["watermark"],"sources":ob["sources"]});
-                if let Ok(reply) = session
-                    .call(&store, "forget.request", params.clone(), None)
-                    .await
-                    && reply["key"] == params["key"]
-                    && reply["watermark"] == params["watermark"]
-                {
-                    let _ = write(
-                        &store,
-                        Change::Callback(
-                            install.id.clone(),
-                            session.generation.clone(),
-                            "forget.ack".into(),
-                            reply,
-                        ),
-                    )
-                    .await;
                 }
             }
         }
