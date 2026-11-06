@@ -6,6 +6,8 @@ CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；�
 
 CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux 各 1052 項及超時診斷](control-fixture-timing.md)。
 
+PR #71：Windows CI 的 Rust SDK 測試讀取完整 JSON 時，寫入端可能尚未關檔。兩個 SDK 的測試現在先關閉暫存檔，再原子交給獨立程序；逾時會記錄卡住的方法與程序狀態。Mac、HJW 同一工作樹 d839315809be 各通過 CORE-037 全部 1052 項。回條：`artifacts/CORE-037/client-stream-atomic-inbox{,-hjw}-01/manifest.json`。
+
 ## 完成與進行中
 
 已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；CORE-016 分段 #42 已合併至 `ce66753`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。
