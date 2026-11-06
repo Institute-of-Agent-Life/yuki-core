@@ -749,3 +749,8 @@ Mac `connector-auth-mac-04` 369 項通過；真 HTTP、獨立安裝 SDK 與三�
 分支 `codex/core-033-entry-selection`。EXT-015 在 Windows 重現的 A token 明選 B 入口，現在由 Rust 在同一讀快照／寫交易重新授權。reader 47 保存所選的 Work 委派與原 native operation；原 App 按請求人物，ACP 按會話隔離。候選可見範圍與舊 NULL 規則見 [Client9 入口](client-entry-selection.md)。
 
 固定 v4 的 `artifacts/CORE-033/original-entry-selection-oracle-02/original-entry-selection.json` 為 15 組真實身份投影及原 NULL 回執的來源。Mac 全卡 558 項，加驗 CORE-006、007、026、030、032、037、035；回條在 `artifacts/CORE-033/entry-selection-adjacent-01/<卡號>/manifest.json`。開發 ZIP SHA-256 `27ad7bc25f022809ac4075dd6b445ee17fc5e00b37d07bfba0225e96c1b6039f`，此包取自工作樹，僅用於打包驗證。真 EXT-015 對拍尚待擴展；SSE 與原 Client9 上傳／一般消息 agent_target 不在這個包的驗證範圍。
+
+乾淨 Client9 明選候選 `389d586149aef49bbcfffae20abf6c48269f4e1c`，tree `e9227aaab2b135f07cd751799570e7fdfa5be6a989b9b3c05ed9e11f7afcd674`；HJW／Mac／Linux 各 558 項，SDK 安裝、乾淨路徑啟動、每個成員與原 oracle 均驗。索引 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-033/entry-selection-handoff-final-01/verified-candidates.json` SHA-256 `11123ac0502c2f86a74dc31c52ca81f05e50b6cd0b561db1377d86853650e080`。本機開發候選、未發布。
+- macos：`04dc4215d1e9a1eefc4d9732133aa2a9efc62d60f602206b41c6712fe68ec0e5`
+- linux：`b1fc245c7636988383e2d3e68d92683e2bb6211036f4a5440a44585e326392b4`
+- windows：`a353c206f3a11ba5ed0f70da7d7f5b384eca536728842b7cdd1f15b34dc6f491`
