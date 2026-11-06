@@ -37,7 +37,9 @@ CORE-040 的 #96 `codex/core-040-failed-trial-accounting`（實作 `0833ba9bb7c4
 
 web-fetch 0.1.0-alpha.1 在同一版三端 Host 上各完成兩次工具派發、四次原 handle 狀態查詢，重組 19 頁正文及 49 頁原件。固定回條在 `artifacts/CORE-040/installed-web-fetch-pr95-01/consumer-receipts.json`，SHA-256 `e217a127f0947f7f80c7921c90bd7d655a77a8a0deda41ba5d281dbfbcd84e48`。其模型方法名是 `web_fetch`；v4 切片使用 `read_webpage`。已核對擴展 main `d3f231b2fc02` 的 Telegram、web-fetch 和 env 插件源碼樹均與對拍版本一致。
 
-EXT-020 alpha.1 在 Linux 可交付原 Manager 的 readiness，Mac 原 Manager 拒絕同一請求。兩端均有 Manager 離線時的回條。CORE-040 下一輪需要的已安裝方法、原授權範圍、版本與消費證據列在 `artifacts/CORE-040/installed-inputs-pr95-01/consumer-requirements.json`，SHA-256 `c8f93f4dda5ef532b1d8f859b0de9130f4878d9533527a8d7488001db1662ea6`。
+EXT-020 alpha.1 在 Linux 可交付原 Manager 的 readiness，Mac 原 Manager 拒絕同一請求。兩端均有 Manager 離線時的回條。CORE-040 下一輪需要的已安裝方法、原授權範圍、版本與消費證據列在 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，SHA-256 `5ca9c5025502235dcc9d70bb3cb850b7cd058cf5d531ce05747664df0c4879b3`。
+
+固定 v4 的終端客戶端與 Manager 已用原事件及會話接納普通輪次，保存原 request_id／run_id；缺少錨點時在接觸 Manager 前拒絕。已驗的 Rust `terminal.work` 路徑另有 Work 租約。EXT-020 目前只宣告 `environment_status`，交接需分別覆蓋普通輪次與 Work，見 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。
 
 | 待辦卡 | 下一步需要的輸入 |
 |---|---|
