@@ -2,7 +2,15 @@
 
 截至 2026-11-06 04:20（洛杉磯），main 已合併 #83、#39、#40（`5557e35`），三端逐次各驗 36、37、38 卡。回執在 `artifacts/ci/local-pr/{83,39,40}/receipt.json`。#43 的 Linux 回執已完成，仍待完整三端合併檢查。Mac 的舊原生編譯產物和內建 Docker 增量快取合計釋出約 85 GiB；驗證在 `artifacts/ci/cleanup-20261106/`。
 
-CORE-013 `04139ad30742` 檔案及文字回條在本地 Mac／Linux／HJW Windows 各通過 349 項，清單在 `artifacts/CORE-013/file-caption-04139ad30742/{macos,linux,windows}/manifest.json`。Mac、Linux 有本地候選；Windows 在後續 CORE-040 與打包期間中斷，三端候選組待齊。
+CORE-013（#85，`codex/core-013-file-send-receipt`，來源 `04139ad30742`）的三端候選均已打包。每端 CORE-013 通過 349 項、CORE-040 通過 152 項。Windows 檔案傳送回條和重放分別保存在 `windows/manifest.json`、`windows/related-core040/manifest.json`。候選可供擴展倉唯讀對拍，狀態為未發布，schema 51，Rust SDK 1.0.0-alpha.14，Python SDK 1.0.0a14。各包位於 `artifacts/CORE-013/file-caption-04139ad30742/<平台>/handoff/`，實含方法以包中清單為準。
+
+| 平台 | ZIP | SHA-256 |
+| --- | --- | --- |
+| macos | `yuki-social-preview-04139ad30742-darwin-arm64.zip` | `2e8064dcbb9cc77cf0640c49ba417905f5962b9bbc1273937e459f0e792041cf` |
+| linux | `yuki-social-preview-04139ad30742-linux-arm64.zip` | `d5cf02c45034ac3e97f5a5067bd34a24b78b9e42038fd1483bcba85693f81a17` |
+| windows | `yuki-social-preview-04139ad30742-windows-x86_64.zip` | `75f871ed9889c0ca13c4da2712448d0a277635d4f917bdf41dad886768af51b4` |
+
+三端清單 `artifacts/CORE-013/file-caption-04139ad30742/verified-candidates.json` 的 SHA-256 為 `561bdbfdf1bdc0bc1084803021496438b40a569123812002e14fc3de5ae6b708`。
 
 CORE-040 `a5b7fb71f55b`（`codex/core-040-long-work-matrix`），固定舊版 A／B 與 Rust C 各跑 20 個 Work。60 個 Work 共 360 次模型請求；20 組在初始 QQ 內容、原問題與手機回答的角色、檔案及文字回條等本輪觀察項目均相符。`artifacts/CORE-040/long-work-matrix-C-02/long-work-matrix.json` SHA-256 `78d37cc6547cb486fb3874c1dd92fe25869bab7efd377697d3ebe474ebc1188e`。這一組是 Mac 對照；CORE-040 全切片與效能裁決仍待驗。下一步為完成 #43 的本地合併檢查及 Windows 檔案回條候選。EXT-067 的 `base-consumer-witness.json` 仍是穩定協議凍結的必要輸入。
 
