@@ -13,12 +13,15 @@ pub struct Patch {
 }
 
 // Original normalize_memory_text: control runs and Unicode whitespace become a single space.
-fn text(value: &str) -> Result<String> {
-    let value = value
+pub(super) fn normalize(value: &str) -> String {
+    value
         .split(|c: char| c.is_whitespace() || c <= '\u{1f}' || c == '\u{7f}')
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
-        .join(" ");
+        .join(" ")
+}
+fn text(value: &str) -> Result<String> {
+    let value = normalize(value);
     if value.is_empty() {
         return Err("empty memory metadata text".into());
     }

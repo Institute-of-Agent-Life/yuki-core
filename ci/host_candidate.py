@@ -125,6 +125,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
             files['evidence/'+name]=raw_fixture
         files['evidence/memory-metadata.json']=proof
         files['docs/memory-metadata.md']=(ROOT/'docs/memory-metadata.md').read_bytes()
+        proof=receipt('memory-selectors.json')
+        original=(ROOT/'fixtures/memory/v4-selectors.json').read_bytes()
+        if digest(original)!=json.loads(proof)['oracle_sha256']:raise ValueError('memory selector oracle differs from validated input')
+        files['evidence/v4-selectors.json']=original
+        files['evidence/memory-selectors.json']=proof
+        files['docs/memory-selectors.md']=(ROOT/'docs/memory-selectors.md').read_bytes()
     if importing:
         files["docs/model-config-import.md"]=(ROOT/"docs/model-config-import.md").read_bytes()
         files["evidence/legacy-import-provenance.json"]=(ROOT/"tests/fixtures/import/model-v4/provenance.json").read_bytes()
@@ -437,6 +443,8 @@ def build(manifest_path, out, development=False):
         candidate['database_schema_revision']=m['schema_version']
         candidate['validated_core_tools']=['memory_change','read_memory']
         candidate['validated_memory_operations']=['create','correct','invalidate','restore','update_metadata']
+        candidate['validated_memory_selectors']=['current_speaker/person']
+        candidate['memory_selector_oracle_sha256']=json.loads(receipt('memory-selectors.json'))['oracle_sha256']
         candidate['memory_metadata_oracle_sha256']=json.loads(receipt('memory-metadata.json'))['oracle_sha256']
         candidate['memory_restore_oracle_sha256']=json.loads(receipt('memory-restore.json'))['oracle_sha256']
         candidate['validation']['consumer']='physical Main, QQ command and original writer fixtures; SDK packages independently installed'

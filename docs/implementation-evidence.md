@@ -678,3 +678,15 @@ PR #63，來源 `f5855e54b543dd59171feb23508fd923edadd55e`，tree `6d7b26bfda369
 Host 2／handshake 1／reader 44／Rust SDK alpha.11、Python SDK a11。實含 memory_change／read_memory 的 create、correct、invalidate、restore、update_metadata；候選未發布，沒有真擴展新消費回條。
 
 CORE-023 容量補修亦於 Windows `artifacts/CORE-023/hard-capacity-windows-01` 通過；HJW 根 `D:\yuki-core-validation-20261104\CORE-023-25645f363b0b-c3fa0b2b`。來源與 Linux 相同為 `94d441c`，與 Mac 的原場景斷言一致：首輪原宣告進入容量、超大必要未觀察輪拒絕、恰好一次物理 attempt、零任意 Compact。GitHub 六項檢查繼續按最新 head 等待。
+
+## CORE-026 selector 原定位補核
+
+分支 `codex/core-026-memory-selectors`，接 #63 的 `3517b56`。先按目前 canonical person／active 或 retracted 狀態與有效期在 SQL 授權，再以每頁 128 筆掃描，保留原 exact-first 最多四筆比較及三筆提示。使用固定原版本 normalizer、Unicode casefold、SQLite LIKE 的 ASCII 比較／literal 萬用字元；唯一精確項目仍須原 paid read revision／proof，候選不授予更正權。
+
+`original-memory-selectors-oracle-03` 實收固定 `329ca7c487414d2f54ddd98ff4727446ed2446cd` 的九組原操作結果：key／content 精確、空白正規化、原大小寫行為、category 篩選、重複精確、部分文字、literal `%_`、其他人物。來源 commit／檔案 SHA、候選欄位、原 updated_at 及終態保存在 `fixtures/memory/v4-selectors.json`。Rust 對同輸入逐欄比對。
+
+Mac `memory-selectors-mac-05` 823 項通過；包括唯一精確項在第 129 筆、未讀／過時 proof 拒絕、create 與 ID／selector 衝突、缺 target、空白／僅分類、過期及忘記後不出候選。恢復讀最後一份有效原正文，核目前 retracted 原 revision。歧義結果雖無寫入，仍按實際候選保留來源依賴；忘記後清除原回執內容，保留其 operation ID。五張相鄰 CORE-012／015／023／030／035 在 `memory-selectors-adjacent-01` 全通過。
+
+失敗記錄保留：mac-01／02 捕獲 fixture 把未結束種子輪當成待測請求，現逐一以真 Main 寫入並完成；mac-03 捕獲 withdrawn 的 NULL 正文令 restore selector 找不到原事實，已改取最後有效正文。mac-04 679 項通過後補上第 129 筆的分頁測試。
+
+開發打包自測 `/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/selectors-package-development-01/yuki-memory-preview-f5855e54b543-darwin-arm64.zip`，SHA-256 `a7758a7035e4a059de3f96d6817352febbeafa6fa51754b7d2750d845855bed0`。來源 dirty，僅自測；乾淨三平台候選接續產生。Host／SDK／reader 均沿 #63；只增加模型 current_speaker/person selector，不宣告其他主體或狀態。

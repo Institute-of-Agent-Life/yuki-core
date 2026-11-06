@@ -375,6 +375,9 @@ def run(ctx):
     from tests.harness.memory_metadata import run as metadata
     metadata_result=metadata(ctx)
     ctx.write("memory-metadata.json",metadata_result)
+    from tests.harness.memory_selectors import run as selectors
+    selector_result=selectors(ctx)
+    ctx.write("memory-selectors.json",selector_result)
     built=subprocess.run([sys.executable,str(ctx.root/"ci/publish-contract.py"),"build","--out",str(ctx.output/"sdk-distributions"),"--verify-work",str(ctx.working/"memory-sdk")],capture_output=True,text=True,timeout=120)
     ctx.write("memory-sdk-build.json",{"exit_code":built.returncode,"stderr":built.stderr})
     ctx.equal("memory candidate has independently verified SDK packages",built.returncode,0)
@@ -384,6 +387,7 @@ def run(ctx):
         "host_idl_sha256":hashlib.sha256((ctx.root/"sdk/rust/src/host-preview.json").read_bytes()).hexdigest(),
         "restore":restored,
         "metadata":metadata_result,
+        "selectors":selector_result,
         "cases": {"R16": notes},
         "paid_tools": paid_memory(ctx),
         "replay": first,
