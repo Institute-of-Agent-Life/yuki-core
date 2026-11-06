@@ -1,4 +1,5 @@
 mod artifacts;
+mod connector;
 pub(crate) mod credentials;
 mod domains;
 mod http;
@@ -11,7 +12,6 @@ use crate::{
 };
 use credentials::Purpose;
 pub use http::router;
-pub(crate) use native::callback;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::SqliteConnection;
@@ -43,6 +43,7 @@ pub enum Request {
     },
 }
 pub enum Command {
+    ConnectionProof(String),
     Issue(String, Purpose),
     Revoke(String),
     Work(String, Value, bool),
@@ -87,6 +88,9 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
         } => {
             let who = credentials::authenticate(conn, token_hash, *purpose).await?;
             match command {
+                Command::ConnectionProof(plugin) if *purpose == Purpose::Connector => {
+                    connector::proof(conn, &who, plugin).await
+                }
                 Command::Proof(plugin, w, native)
                     if *native == (*purpose == Purpose::Connector) =>
                 {
@@ -106,5 +110,19 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
                 _ => Err("scope_unavailable".into()),
             }
         }
+    }
+}
+
+pub(crate) async fn callback(
+    conn: &mut SqliteConnection,
+    plugin: &str,
+    generation: &str,
+    method: &str,
+    args: &Value,
+) -> Result<Value> {
+    if matches!(method, "device.connect" | "device.check" | "device.close") {
+        connector::callback(conn, plugin, generation, method, args).await
+    } else {
+        native::callback(conn, plugin, generation, method, args).await
     }
 }

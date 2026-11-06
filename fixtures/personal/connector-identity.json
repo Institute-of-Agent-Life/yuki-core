@@ -1,0 +1,14 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/identity/credentials.py": "f45d7d630ba350b18b8a3c661a108a24b47a54d33f0f54e5f8ed62c9a7817468",
+    "src/yuki/external_agents/identity.py": "a3184d4f6fa2a389b498f8b40e5ccdbb97cf400474553ba05356223a4fd0fce8",
+    "src/yuki/external_agents/repository.py": "f077b24674c7e2a52c3466db793b8b77b1b9a7b3e95469311c775345be3c4d19",
+    "tests/unit/test_connector_identity.py": "5e148b75788aac4a30cfc4c9932f996ff6048b1e7ad3ac39d7d6fea58801d88d"
+  },
+  "cases": [
+    "tests/unit/test_connector_identity.py"
+  ],
+  "pytest_exit": 0,
+  "scope": "Original purpose, Person, account transfer, merge, revoke and accountless credential behavior; not a Rust or extension acceptance result"
+}

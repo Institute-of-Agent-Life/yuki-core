@@ -726,3 +726,15 @@ PR #65，來源 `6d474640a3b6212b87c1f724be69cb76e6af0014`，tree `99cf0af807fae
 - windows：`/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-026/temporal-handoff-final-01/windows-validation/handoff/yuki-memory-preview-6d474640a3b6-windows-x86_64.zip`；SHA-256 `dd690dea32b0b8120de4064871944ef004fcd495212aa10f83e964c81e8ad8b6`。
 
 Windows 原執行目錄 `D:\yuki-core-validation-20261104\CORE-026-99cf0af807fa-c7ed1819`。PR #64 最新 head 的 Windows CORE-037 逾時正在定位，尚未合併；候選驗證結果不改寫為整倉 CI 通過。
+
+## CORE-033 未選 Work 的 Connector 身份
+
+分支 `codex/core-033-connector-auth`，接 #65 的 `d9c798f`。既有 Connector Bearer 可在私有 exchange 省略 Work，以已批准安裝換取 60 秒一次性 proof。新增可選 `device.connect/check/close` 與 `device.connections` grant；核心驗原 device、原 Person／目前 root、當前 grant／generation、持久 connection epoch，再回穩定 journal namespace。新連線取代舊 epoch；舊 close 不關新連線，300 秒 handle 到期須重新認證。instance、catalog 及 native journal 仍由擴展管理，Work 業務授權仍用既有 scope。具體流程見 [Connector 認證合同](connector-authentication.md)。
+
+Mac `connector-auth-mac-04` 369 項通過；真 HTTP、獨立安裝 SDK 與三個插件子程序覆蓋 chat 憑證／偽造欄位拒絕、換安裝、當前 grant 撤除、一次性 proof、過期、重連／晚到 close、停用 chat、帳號換人、A→B 合併、撤設備、原人物與 root 停用、無帳號裝置、冷啟 generation 與穩定原 namespace。撤設備發生在 mint／redeem 中間時拒絕且回滾 proof 消耗，零 Work／模型請求／業務事件；raw token／proof／handle 不存資料庫或證據。
+
+`connector-auth-adjacent-01` 的 CORE-031／032／006／030／026／035 全通過，包含兩 SDK 安裝、既有 Host、身份、忘記、reader 46 的舊記憶回執升級與維護投影。原固定版本 `test_connector_identity.py` 八項實測通過，fixture 及原來源 SHA 在 `fixtures/personal/connector-identity.json`，oracle 於 `original-connector-identity-oracle-01`；舊倉無 tracked 修改。
+
+失敗記錄：mac-01 在同一秒配對與停用測試入口，碰到原 assignment 同時點衝突；mac-02 隨執行時間偶然通過，故保留失敗並改以原狀態時間加一，mac-03／04 通過。沒有刪除或放寬產品時序檢查。reader 46 新增授權表；Host 2／handshake 1 不變，新增可選方法分發 SDK alpha.12／a12。此為未發布核心生產者合同，真 EXT-011 消費仍待取得。
+
+打包自測 `artifacts/CORE-033/connector-auth-package-development-01/yuki-personal-preview-d9c798fa99aa-darwin-arm64.zip`，SHA-256 `b16f5bfe64a8dbc91c0d99133fc72a98d1b738b8768b38cc61ae0c1d2ef8ef63`；dirty source 僅自測，mac-05 仍為 369 項。乾淨三平台交接候選接續。

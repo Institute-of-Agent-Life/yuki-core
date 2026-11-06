@@ -630,6 +630,9 @@ def run(ctx):
     from tests.harness.personal_files import observe
 
     delivered_files = observe(ctx, docs, routes, wire)
+    from tests.harness.connector_auth import run as connector_auth
+    connector=connector_auth(ctx,sdk,Plugin,wire)
+    ctx.write("connector-authentication.json",connector)
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     return {
         "binary_sha256": sha(
@@ -662,7 +665,7 @@ def run(ctx):
             },
         },
         "wire4_ack_replay": connector_wires,
-        "negotiated_methods": caps["methods"],
+        "negotiated_methods": sorted(set(caps["methods"])|set(connector['methods'])),
         "client_revision": 9,
         "connector_revision": 4,
     }

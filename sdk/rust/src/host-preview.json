@@ -1014,6 +1014,186 @@
         "type": "object"
       }
     },
+    "device.connect": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "device.connections",
+      "params": {
+        "type": "object",
+        "properties": {
+          "proof": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "proof"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "purpose": {
+            "const": "connector"
+          },
+          "connection_epoch": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "journal_namespace": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "device_id",
+          "purpose",
+          "connection_epoch",
+          "journal_namespace",
+          "expires_at",
+          "closed",
+          "handle"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "device.check": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "device.connections",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "purpose": {
+            "const": "connector"
+          },
+          "connection_epoch": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "journal_namespace": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "closed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "device_id",
+          "purpose",
+          "connection_epoch",
+          "journal_namespace",
+          "expires_at",
+          "closed"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "device.close": {
+      "direction": "plugin_to_host",
+      "revision": 1,
+      "grant": "device.connections",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "purpose": {
+            "const": "connector"
+          },
+          "connection_epoch": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "journal_namespace": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "closed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "device_id",
+          "purpose",
+          "connection_epoch",
+          "journal_namespace",
+          "expires_at",
+          "closed"
+        ],
+        "additionalProperties": false
+      }
+    },
     "media.process": {
       "revision": 1,
       "direction": "host_to_plugin",

@@ -251,6 +251,12 @@ def tested_contents(receipt, profile, personal=False, card=None):
         ) != set(json.loads(methods)["methods"]):
             raise ValueError("personal interface differs from exercised methods")
         files["protocol/personal/methods.json"] = methods
+        proof=receipt('connector-authentication.json')
+        original=(ROOT/'fixtures/personal/connector-identity.json').read_bytes()
+        if digest(original)!=json.loads(proof)['original_oracle_sha256']:raise ValueError('connector identity oracle differs from validated input')
+        files['evidence/connector-authentication.json']=proof
+        files['evidence/connector-identity.json']=original
+        files['docs/connector-authentication.md']=(ROOT/'docs/connector-authentication.md').read_bytes()
         for index in (
             "protocol/personal/source.json",
             "protocol/connector/4/source.json",
@@ -516,6 +522,9 @@ def build(manifest_path, out, development=False):
         candidate["personal_schema_sha256"] = data["personal_schema_sha256"]
         candidate["client_api_revision"] = 9
         candidate["connector_wire_revision"] = 4
+        connector=json.loads(receipt('connector-authentication.json'))
+        candidate['connector_identity_oracle_sha256']=connector['original_oracle_sha256']
+        candidate['validated_connector_methods']=connector['methods']
         candidate["validated_personal_methods"] = sorted(data["negotiated_methods"])
         candidate["validated_http_routes"] = data["validated_routes"]
     if media:

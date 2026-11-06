@@ -25,6 +25,7 @@ CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；�
 | CORE-026 metadata | PR #63，`f5855e5` | Windows／Linux／Mac 乾淨候選各 370 項；9 張相鄰卡、原版 7 項與逐 ZIP 成員檢查通過；reader 44，尚未發布。 |
 | CORE-026 selector | PR #64，`fed00d2` | Windows／Linux／Mac 乾淨候選各 823 項；原版 9 組、5 張相鄰卡及逐 ZIP 檢查通過，尚未發布。 |
 | CORE-026 有效期間 | PR #65，`6d47464`，`codex/core-026-memory-temporal` | Windows／Linux／Mac 各 1181 項；7 張相鄰卡、72 組原解析、8 步原修改及逐 ZIP 檢查通過。reader 45，尚未發布。 |
+| CORE-033 未選 Work 認證 | `codex/core-033-connector-auth`，本次提交 | Mac 369 項、原版 8 項與 6 張相鄰卡通過。reader 46，SDK alpha.12／a12；乾淨三平台候選接續。 |
 | CORE-040 | #55 `400c9b8`，部分完成 | 12 次冷暖 A/B/C 各 1200 輸入已逐筆核效果；完整工具／DTO／Compact 等價與受控資源比較未完成，不判 Rust 勝出。 |
 
 每個 PR 均等其前置合併與最新 head 的 push／PR × Windows／Linux／Mac 六項檢查全通過才合併。待合併分支以 PR 的 head ref 為準；本地 worktree 在 `.cache/worktrees/`。不直接提交 main。
@@ -61,4 +62,4 @@ CORE-037 權限目錄候選根目錄：`/Volumes/huawei/項目實戰/yuki-core/a
 - 真擴展消費：EXT-023 需對已修的原 feed ACK 再測；EXT-022／037／038／039／049 需消費最新管理、權限與用量候選。未取得回條，不凍結穩定協議。
 - 外部能力：EXT-004／006 附件授權與 fetch、EXT-031 vision slot/version/bytes、EXT-020 gVisor/execd/PTY 旋轉、EXT-015 agent_target/附件/SSE、SnowLuma 映像 digest 與雙向包仍待真實方法、版本或證據。
 - 安裝與切換：CORE-043 等 EXT-041 與核心分發／移轉輸入；044 等 EXT-067 B0 實測；045 等 EXT-043 已發布 tuple 與 044；046 等 EXT-044／045 安裝證據；047、053、054 依各前置。CORE-041／042 等 CORE-040 等價切片判斷；不把未滿足前置的卡標完成。
-- 下一個可獨立工作：有效期間乾淨候選已完成；`codex/core-033-connector-auth` 已開始處理 EXT-011 明確要求的未選 Work 裝置認證，原版 8 項身份測試通過。這是核心生產者應補的入口，不列為等待擴展提供的方法。其後補原 Client9 明選入口／會話及 send／workspace 的本倉責任；CORE-040 仍需完整等功能切片。擴展倉保持只讀。
+- 下一個可獨立工作：有效期間乾淨候選已完成；`codex/core-033-connector-auth` 已實作 EXT-011 明確要求的未選 Work 裝置認證，正準備乾淨候選。這是核心生產者應補的入口，不列為等待擴展提供的方法。其後補原 Client9 明選入口／會話及 send／workspace 的本倉責任；CORE-040 仍需完整等功能切片。擴展倉保持只讀。

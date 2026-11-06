@@ -138,20 +138,16 @@ async fn revoke(State(s): State<Store>, h: HeaderMap, Path(id): Path<String>) ->
 #[serde(deny_unknown_fields)]
 struct Proof {
     plugin: String,
-    work: String,
+    work: Option<String>,
     purpose: Purpose,
 }
 async fn exchange(State(s): State<Store>, h: HeaderMap, Json(p): Json<Proof>) -> Response {
-    reply(
-        action(
-            &s,
-            &h,
-            p.purpose,
-            Command::Proof(p.plugin, p.work, p.purpose == Purpose::Connector),
-        )
-        .await,
-        true,
-    )
+    let command = match p.work {
+        Some(work) => Command::Proof(p.plugin, work, p.purpose == Purpose::Connector),
+        None if p.purpose == Purpose::Connector => Command::ConnectionProof(p.plugin),
+        None => return reply(Err("validation_error".into()), true),
+    };
+    reply(action(&s, &h, p.purpose, command).await, true)
 }
 enum Read {
     Facts(String, Option<String>, i64),
