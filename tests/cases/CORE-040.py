@@ -94,7 +94,9 @@ def run(ctx):
     ctx.equal("the original question and phone answer keep their roles across both cold owners",
               work["requests"], original_work["requests"])
     lost = long_work(ctx, 1, withdraw_question=True)
+    from bench.core_automatic import run as automatic
     return {
+        "automatic_compact": [automatic(ctx), automatic(ctx, withdraw=True), automatic(ctx, refused=True)],
         "long_work": {"oracle_sha256": sha(work_fixture.read_bytes()), "normal": work, "withdrawn": lost},
         "explicit_public_compact":{"oracle_sha256":sha(compact_fixture.read_bytes()),"scenarios":compact_results},
         "scope": original["scope"],

@@ -94,7 +94,7 @@ def execute(a):
         YUKI_LONG_WORKS=str(a.works),
         PYTHONDONTWRITEBYTECODE="1",
     )
-    if not a.works and not a.compact:
+    if not a.works and not a.compact and not a.automatic_compact:
         os.environ.update(
             YUKI_SLICE_FRAMES=str(a.frames.resolve(strict=True)),
             YUKI_SLICE_FRAMES_SHA256=a.frames_sha256,
@@ -104,6 +104,13 @@ def execute(a):
     offline()
     import pytest
 
+    case = "legacy_case.py"
+    if a.automatic_compact:
+        case = "automatic_compact_case.py"
+    elif a.compact:
+        case = "compact_case.py"
+    elif a.works:
+        case = "long_work_case.py"
     begin = time.perf_counter()
     cpu = time.process_time()
     with tempfile.TemporaryDirectory(
@@ -118,11 +125,7 @@ def execute(a):
                 *([] if a.works else ["--maxfail=1"]),
                 "-c",
                 str(source / "pyproject.toml"),
-                str(
-                    ROOT
-                    / "bench/controls"
-                    / ("compact_case.py" if a.compact else "long_work_case.py" if a.works else "legacy_case.py")
-                ),
+                str(ROOT / "bench/controls" / case),
                 "--basetemp",
                 str(Path(working) / "pytest"),
                 "--junitxml",
@@ -139,10 +142,11 @@ def execute(a):
         "driver_cpu_seconds": time.process_time() - cpu,
         "sqlite": settings[-1] if settings else None,
         "sqlite_library_sha256": hashlib.sha256(a.library.read_bytes()).hexdigest(),
-        "count": 15 if a.compact else a.count,
+        "count": 2 if a.automatic_compact else 15 if a.compact else a.count,
         "warmup": a.warmup,
         "long_works": a.works,
         "public_compact": a.compact,
+        "automatic_compact": a.automatic_compact,
         "data_device": data_device,
         "paid_calls": 0,
     }
@@ -161,12 +165,13 @@ if __name__ == "__main__":
     )
     p.add_argument("--count", type=int, default=1200)
     p.add_argument("--warmup", type=int, default=0)
-    p.add_argument("--compact",action="store_true",help="compare two checkpoints in one conversation")
-    p.add_argument("--works", type=int, choices=range(0, 21), default=0)
+    scenarios = p.add_mutually_exclusive_group()
+    scenarios.add_argument("--automatic-compact", action="store_true", help="replay v4 automatic compaction after send and public-planner refusal")
+    scenarios.add_argument("--compact",action="store_true",help="compare two checkpoints in one conversation")
+    scenarios.add_argument("--works", type=int, choices=range(0, 21), default=0)
     p.add_argument("--frames", type=Path)
     p.add_argument("--frames-sha256")
     args = p.parse_args()
-    if args.compact and args.works:p.error("choose one scenario")
-    if not args.compact and not args.works and not (args.frames and args.frames_sha256):
+    if not args.automatic_compact and not args.compact and not args.works and not (args.frames and args.frames_sha256):
         p.error("QQ arrivals require --frames and --frames-sha256")
     sys.exit(execute(args))

@@ -42,7 +42,7 @@ fn date(raw: &Option<String>) -> Result<Option<i64>> {
         .map(|v| Ok(DateTime::parse_from_rfc3339(v)?.timestamp_millis()))
         .transpose()
 }
-const ELIGIBLE:&str="SELECT d.* FROM retrieval_documents d JOIN json_each(?1) a ON d.id=a.value WHERE
+const ELIGIBLE:&str="SELECT d.*,s.conflict_state FROM retrieval_documents d JOIN memory_fact_states s ON s.id=d.id JOIN json_each(?1) a ON d.id=a.value WHERE
  (d.valid_until IS NULL OR julianday(d.valid_until)>julianday('now')) AND
  (?2 IS NULL OR unixepoch(d.valid_from,'subsec')*1000>=?2) AND (?3 IS NULL OR unixepoch(d.valid_from,'subsec')*1000<?3)";
 struct Index {
@@ -280,6 +280,7 @@ fn hit(r: &sqlx::sqlite::SqliteRow) -> Result<Hit> {
         revision: r.try_get("revision")?,
         id: r.try_get("id")?,
         text: r.try_get("content")?,
+        conflict: r.try_get("conflict_state")?,
         importance: r.try_get("importance")?,
         key: r.try_get("fact_key")?,
         category: r.try_get("category")?,
@@ -431,7 +432,7 @@ async fn native(
     flags.approximate = verified.len() > route.limit;
     flags.truncated |= flags.approximate;
     let ids = super::index::nearest(conn, &idx.profile, &verified, query, route.limit).await?;
-    let selected=sqlx::query("SELECT d.*,v.vector FROM json_each(?1) selected JOIN retrieval_documents d ON d.number=selected.value JOIN retrieval_index_members m ON m.fact=d.id AND m.profile=?2 JOIN fact_vectors v ON v.fact=d.id AND v.profile=m.profile AND v.content_hash=m.content_hash AND v.revision=d.revision")
+    let selected=sqlx::query("SELECT d.*,s.conflict_state,v.vector FROM json_each(?1) selected JOIN retrieval_documents d ON d.number=selected.value JOIN memory_fact_states s ON s.id=d.id JOIN retrieval_index_members m ON m.fact=d.id AND m.profile=?2 JOIN fact_vectors v ON v.fact=d.id AND v.profile=m.profile AND v.content_hash=m.content_hash AND v.revision=d.revision")
         .bind(serde_json::to_string(&ids)?).bind(&idx.profile).fetch_all(conn).await?;
     for row in selected {
         let mut h = hit(&row)?;

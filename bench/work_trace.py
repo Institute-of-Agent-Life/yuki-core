@@ -3,11 +3,24 @@
 import gzip
 import hashlib
 import json
+import re
 from pathlib import Path
 
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def initial(requests):
+    first = requests[0]["messages"][-1]
+    match = re.fullmatch(
+        r"(当前是私聊。\n资料：[^\n]+)\n\n\[[^｜\n]+｜([^|\n]+)\|person:[0-9a-f-]{36}\]\n#[1-9][0-9]*>(.+)",
+        first["content"],
+        re.DOTALL,
+    )
+    if first["role"] != "user" or not match:
+        raise ValueError("unexpected first public QQ input")
+    return list(match.groups())
 
 
 def projection(requests):
@@ -28,6 +41,7 @@ def original_fixture(a, b):
     receipts = {}
     observations = []
     sqlite = []
+    initial_inputs = []
     for arm, path, patch in (
         ("A", a, b""),
         (
@@ -62,6 +76,7 @@ def original_fixture(a, b):
                 or wire["input"] != "long-0"
             ):
                 raise ValueError("request differs from the physical recording")
+        initial_inputs.append(initial(requests))
         observations.append(projection(requests))
         receipts[arm] = {
             name: sha((path / name).read_bytes())
@@ -72,9 +87,18 @@ def original_fixture(a, b):
                 "work-00-requests.json",
             )
         }
-    if observations[0] != observations[1] or sqlite[0] != sqlite[1]:
+    if (
+        observations[0] != observations[1]
+        or initial_inputs[0] != initial_inputs[1]
+        or sqlite[0] != sqlite[1]
+    ):
         raise ValueError("independent baselines disagree")
-    return {"source_commit": source, "receipts": receipts, "requests": observations[0]}
+    return {
+        "source_commit": source,
+        "receipts": receipts,
+        "requests": observations[0],
+        "initial": initial_inputs[0],
+    }
 
 
 if __name__ == "__main__":

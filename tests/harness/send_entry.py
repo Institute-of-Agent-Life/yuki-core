@@ -10,6 +10,25 @@ from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer
 
 
+def recall_after_reserve(owner, execution, original_event):
+    # Interleave the withdrawal in the real reservation commit (no synthetic
+    # second reservation while a physical request is awaiting its response).
+    with closing(sqlite3.connect(owner.svc.data/'core.sqlite')) as lost:
+        lost.execute("CREATE TABLE send_receipt_fault(execution TEXT, original_event INTEGER, reserved_logical TEXT)")
+        lost.execute("INSERT INTO send_receipt_fault VALUES(?,?,NULL)",(execution,original_event))
+        lost.executescript("""
+        CREATE TRIGGER test_recall_between_reserve_and_dispatch AFTER INSERT ON model_requests
+        WHEN NEW.activation=(SELECT 'main:'||execution FROM send_receipt_fault)
+            AND (SELECT reserved_logical FROM send_receipt_fault) IS NULL
+        BEGIN
+          UPDATE social_outbound SET recalled=1,body='{}' WHERE id=(
+              SELECT outbound FROM personal_deliveries WHERE event=(SELECT original_event FROM send_receipt_fault));
+          UPDATE send_receipt_fault SET reserved_logical=NEW.id;
+        END;
+        """)
+        lost.commit()
+
+
 def run(ctx):
     owner = Owner(ctx, 'canonical-send', 42)
     fixture = json.loads((ctx.root/'fixtures/social/v4-send-target.json').read_bytes())
@@ -92,22 +111,7 @@ def run(ctx):
                 captured=proof['original-before-recall'];later=proof['later-distinct-send']
                 execution=owner.rows('SELECT id FROM executions WHERE source=?',trigger)[0][0]
                 attempts=owner.rows('SELECT count(*) FROM model_attempts')[0][0]
-                # Interleave the withdrawal in the real reservation commit (no synthetic
-                # second reservation while a physical request is awaiting its response).
-                with closing(sqlite3.connect(owner.svc.data/'core.sqlite')) as lost:
-                    lost.execute("CREATE TABLE send_receipt_fault(execution TEXT, original_event INTEGER, reserved_logical TEXT)")
-                    lost.execute("INSERT INTO send_receipt_fault VALUES(?,?,NULL)",(execution,captured['original_event_id']))
-                    lost.executescript("""
-                    CREATE TRIGGER test_recall_between_reserve_and_dispatch AFTER INSERT ON model_requests
-                    WHEN NEW.activation=(SELECT 'main:'||execution FROM send_receipt_fault)
-                        AND (SELECT reserved_logical FROM send_receipt_fault) IS NULL
-                    BEGIN
-                      UPDATE social_outbound SET recalled=1,body='{}' WHERE id=(
-                          SELECT outbound FROM personal_deliveries WHERE event=(SELECT original_event FROM send_receipt_fault));
-                      UPDATE send_receipt_fault SET reserved_logical=NEW.id;
-                    END;
-                    """)
-                    lost.commit()
+                recall_after_reserve(owner,execution,captured['original_event_id'])
                 reply(answer,calls=[call('after-privacy-change','time_get_current',{})])
                 owner.until(lambda: owner.rows("SELECT diagnostic FROM main_turns JOIN executions x ON x.id=execution WHERE x.id=? AND x.state='held'", execution)==[('send_receipt_source_changed',)])
                 original_logical=owner.rows("SELECT reserved_logical FROM send_receipt_fault")[0][0]

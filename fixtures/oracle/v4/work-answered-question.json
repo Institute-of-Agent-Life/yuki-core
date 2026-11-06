@@ -53,5 +53,10 @@
         "user"
       ]
     }
+  ],
+  "initial": [
+    "\u5f53\u524d\u662f\u79c1\u804a\u3002\n\u8d44\u6599\uff1a{\"platform\":\"qq\"}",
+    "\u771f\u5b9e\u53c2\u4e0e\u8005",
+    "CURRENT_CHAT_INSTRUCTION"
   ]
 }

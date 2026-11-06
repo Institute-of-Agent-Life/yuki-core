@@ -72,6 +72,7 @@ def boundaries(ctx):
                 {'operation':'invalidate','selector':{'category':'drink'},'target':target},
                 {'operation':'invalidate','selector':{'memory_key':'tea'},'fact_id':n,'target':target},
                 {'operation':'create','selector':{'memory_key':'tea'},'memory_key':'new','new_content':'must not create','target':target},
+                {'operation':'create','fact_id':n,'memory_key':'other-key','new_content':'must not create','target':target},
                 {'operation':'invalidate','selector':{'memory_key':' \x00\n '},'target':target},
             ]
             for i,args in enumerate(invalid):

@@ -83,8 +83,20 @@ def run(ctx, index, *, withdraw_question=False, erase_file=False):
             desktop = http(
                 "/client/v1/pair", body={"code": code, "device_label": "desktop"}
             )
-            event = o.human("continue the original task on another device")
-            _, q = wire()
+            event = o.human("CURRENT_CHAT_INSTRUCTION", nickname="真实参与者")
+            initial_body, q = wire()
+            from bench.work_trace import initial
+
+            expected_input = json.loads(
+                (
+                    ctx.root / "fixtures/oracle/v4/work-answered-question.json"
+                ).read_bytes()
+            )["initial"]
+            ctx.equal(
+                "the physical QQ trigger matches v4 content, profile and sender",
+                initial([initial_body]),
+                expected_input,
+            )
             reply(
                 q,
                 calls=[
