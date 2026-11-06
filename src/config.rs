@@ -16,6 +16,8 @@ pub struct Config {
     #[serde(default)]
     pub memory: crate::memory::embedding::Config,
     #[serde(default)]
+    pub work_segments: crate::runtime::main::segment::Config,
+    #[serde(default)]
     pub extraction: Option<crate::memory::extract::Config>,
     #[serde(default)]
     pub search: Option<crate::model::search::Config>,
@@ -32,6 +34,7 @@ impl Config {
             return Err("unsupported configuration format".into());
         }
         config.memory.validate()?;
+        config.work_segments.validate()?;
         if let Some(search) = &config.search {
             search.validate()?;
         }
