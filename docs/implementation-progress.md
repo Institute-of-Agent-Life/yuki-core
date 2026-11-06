@@ -1,5 +1,9 @@
 # 核心實作進度
 
+日常 CI 已於 #83 合併 main `b2cfe37`，Mac mini、同機 Linux ARM64 容器與 HJW Windows 各驗 36 卡；#39 於 main `d74e70e` 各驗 37 卡。合併回執在 `artifacts/ci/local-pr/{83,39}/receipt.json`。Mac 清理已合併分支的舊增量及依賴編譯檔約 64.1 GiB，詳見 `artifacts/ci/cleanup-20261106/`。
+
+CORE-040 本地對拍交接包 `artifacts/CORE-040/work-question-b5bc5fd0a5a7/yuki-core-work-replay-evidence-b5bc5fd0a5a7.zip`，SHA-256 `a6c7245177c5543b728294b6fa581d26c8593b6fe81e9705477556e846164b70`。來源 `b5bc5fd0a5a7`，schema 51，SDK alpha.14；三端各 150 項。包內含原始雙臂的六次請求、三平台清單及修正結果，未發布。
+
 CORE-040 跨裝置續接（`codex/core-040-work-replay`）。固定 v4 A/B 各重放同一個 Work 的六次實際模型請求。Mac 修正前連續三次遺失已確認的提問，修正後兩次冷啟動均保留原問題與手機答案，撤回原問題則停止下一次派發。Mac 150 項斷言見 `artifacts/CORE-040/work-question-fixed-01/manifest.json`。本卡仍待完整等功能與效能判定。正常與故障時序見 [Work replay](benchmarks/work-replay.md)。
 
 CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；明示 64,000 容量並放大必要未觀察輪，保留硬上限拒絕並加驗恰好一次物理 attempt。Windows／Mac／Linux 全卡通過；詳見 [故障與修正證據](compact-capacity-fixture.md)。
