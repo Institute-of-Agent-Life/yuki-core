@@ -6,7 +6,9 @@ CORE-023 CI 補修：完整原工具宣告已超過舊 fixture 首輪上限；�
 
 CORE-037：修正歷史資料庫 fixture 的逐條落盤；[HJW、Mac、Linux 各 1052 項及超時診斷](control-fixture-timing.md)。
 
-CORE-026 原證據合併（`codex/core-026-memory-merge`，reader 52）：[合同及故障時序](memory-merge.md)。固定 v4 十項原測及原狀態轉移通過；Mac 此卡 1250 項，CORE-027／029／030／035／003／039 各 172／73／120／304／20／148 項通過。驗證：`artifacts/CORE-*/memory-merge-proof-02/`。來源與保留事實需各自提供仍有效的讀證；原證據移轉、撤銷來源與第二筆寫入失敗均已實測。
+CORE-026 原證據合併（[PR #77](https://github.com/Institute-of-Agent-Life/yuki-core/pull/77)，`codex/core-026-memory-merge`，來源 `163a953734479df1bd3825dff595f94ffdf582fb`，reader 52）：[合同及故障時序](memory-merge.md)。固定 v4 十項原測及原狀態轉移通過；Mac 此卡 1250 項，CORE-027／029／030／035／003／039 各 172／73／120／304／20／148 項通過。驗證：`artifacts/CORE-*/memory-merge-proof-02/`。來源與保留事實需各自提供仍有效的讀證；原證據移轉、撤銷來源與第二筆寫入失敗均已實測。
+
+未發布候選：`artifacts/CORE-026/memory-merge-handoff-final-01/verified-candidates.json`（SHA-256 `567fee374a56d902689db3f094d5f6a33d710fc43ef02c301d7bc102b266d968`）。Rust SDK 1.0.0-alpha.14／Python 1.0.0a14，HJW Windows、Mac、Linux 各 1250 項；索引列出每個 ZIP 的絕對路徑。macOS `dab154bc13bcb7eefb24f36a39391cceff5977845fa7c25932fd46afc66fb18a`；Linux `34ae512c53fbb63b8def8885f0497355c5a1f0dd1860c6a775ac9e523cdca86e`；Windows `f245dab6bc38b15ca99b341bce212916949fec69ee83c1d71bff424241679937`。
 
 ## 完成與進行中
 
