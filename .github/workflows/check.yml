@@ -20,8 +20,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # PRs exercise native Apple Silicon; main and manual candidate builds retain Intel.
-        os: ${{ fromJSON(github.event_name == 'pull_request' && '["windows-latest","macos-15","ubuntu-latest"]' || '["windows-latest","macos-15-intel","ubuntu-latest"]') }}
+        # Stacked PRs get Linux feedback; changing the base to main runs the full merge gate.
+        os: >-
+          ${{ fromJSON(github.event_name != 'pull_request' && '["windows-latest","macos-15-intel","ubuntu-latest"]'
+              || github.base_ref == 'main' && '["windows-latest","macos-15","ubuntu-latest"]'
+              || '["ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     env:
