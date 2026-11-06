@@ -77,7 +77,7 @@ CORE-038 Main 選讀：[PR #74](https://github.com/Institute-of-Agent-Life/yuki-
 
 CORE-032 終端：`codex/core-032-terminal-work`，[原 Work／run 時序](terminal-work-scope.md)。SDK alpha.14／a14、reader 51。Mac CORE-032 127 項、CORE-039 release 146 項及 6 張相鄰卡通過；Linux 固定舊版 16 個原 Manager／Work 回歸全過。正式三平台包與 EXT-020 獨立消費分列。
 
-CORE-013 目標：`codex/core-013-send-entry`；[原 QQ 目標、時序及界線](social-send-entry.md)。固定舊版四例、Rust Mac 013=296、014=667、032=129、015=363、023=225、026=1181 項通過。四條實際 QQ 動作、五個零派發拒絕（含委派 Work），原網關亦驗證錯誤選擇不抵達插件。Mac 及固定源回條在各卡 `canonical-send-delegation-01`、`send-entry-integration-01` 與 `artifacts/CORE-013/original-send-entry-oracle-01`。乾淨三平台封包另驗。
+CORE-013 目標：`codex/core-013-send-entry`；[原 QQ 目標、時序及界線](social-send-entry.md)。固定舊版四例、Rust Mac 013=296、014=667、032=129、015=363、023=225、026=1181 項通過。四條實際 QQ 動作、五個零派發拒絕（含委派 Work），原網關亦驗證錯誤選擇不抵達插件。Mac 及固定源回條在各卡 `canonical-send-delegation-01`、`send-entry-integration-01` 與 `artifacts/CORE-013/original-send-entry-oracle-01`。來源 `fece2511985036e6e349c43e1b437562dd4fac42`，Mac、Linux、HJW 各 296 項；[未發布候選及各包 SHA-256](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-013/send-entry-handoff-final-01/verified-candidates.json)，索引 `79f6db0b19318987d2a300dc0ec789e35830feba5e6226cb4384d20464d85c9f`。
 
 ## 缺少輸入與下一步
 
