@@ -776,3 +776,5 @@ CORE-038 入站附件：原件來源 b99b01a924439b4104bd087808d789ba46809202，
 - Windows: `684504f4ccc69a8947eec47de2cd98db68fa4bdc68b6a4aff63613155f48c24d`
 
 [交接索引](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/inbound-gateway-handoff-final-01/verified-candidates.json)；本地候選，待 EXT-004／006 回條。
+
+CORE-038 Main 選讀：固定舊版 `329ca7c` 的 22 個測例（`artifacts/CORE-038/original-main-selected-oracle-01/`）。Rust 原生 macOS CORE-038 的 318 項核對使用兩個獨立 SDK 程序，攔取原 Main 的模型 HTTP；兩張輸出影格的 SHA、順序及調用數見 `artifacts/CORE-038/main-selected-mac-01/main-selected-media.json`。另通過 CORE-025、012、015、016、023、034、026 各卡的 `main-selected-integration-01/`。實際 EXT-031 消費這版仍待回條。

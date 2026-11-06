@@ -1,0 +1,15 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "tests/unit/test_plugin_native_media.py": "152759e52254b2f38db2fce150e36ba8e0f7b0f1f6bb47f7c1083bccb550d966",
+    "tests/unit/test_native_media_inputs.py": "4afb76a20dfda87572f5eaa7920dfb9f554058e752d66691e0394615dfab37a9"
+  },
+  "cases": [
+    "tests/unit/test_plugin_native_media.py",
+    "tests/unit/test_native_media_inputs.py"
+  ],
+  "pytest_exit": 0,
+  "scope": "Original native image inputs, owned handle selection, invalid origins, source revocation and presentable result boundaries.",
+  "case_count": 22,
+  "junit_sha256": "9f6be59d31cba2f7c4b9f255e968d3068bd962fca001cc45b6f7305a67424ec5"
+}

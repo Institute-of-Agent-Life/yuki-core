@@ -118,7 +118,14 @@ pub async fn history(
             };
             let native_args = original_arguments(p, &raw, id);
             let args = native_args.unwrap_or_else(|| row.get::<String, _>("payload"));
-            p.output(&mut body, id, &receipt)?;
+            let receipt = crate::host::selected_processor::receipt(
+                conn,
+                exec,
+                row.try_get("operation_id")?,
+                &receipt,
+            )
+            .await?;
+            p.output(&mut body, id, receipt)?;
             calls.push(json!({"call_id":id,"effect_key":row.get::<String,_>("operation_id"),"tool":name,"arguments":args,"result":receipt}));
         }
         for row in &intents {

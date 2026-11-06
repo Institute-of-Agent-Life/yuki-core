@@ -47,6 +47,35 @@ rpc = Calls(confirmed["result"])
 note("ready", {"pid": os.getpid(), "methods": sorted(rpc.allowed)})
 
 
+def publish_frames(handle):
+    images = []
+    for n in range(2):
+        image = (folder / f"image-{n}.png").read_bytes()
+        h = hashlib.sha256(image).hexdigest()
+        p0 = {
+            "handle": handle,
+            "key": "image-" + str(n),
+            "filename": f"image-{n}.png",
+            "mime": "image/png",
+            "kind": "image",
+            "size": len(image),
+            "digest": h,
+        }
+        for off in range(0, len(image), 16384):
+            body = dict(
+                p0,
+                offset=off,
+                bytes=base64.b64encode(image[off : off + 16384]).decode(),
+            )
+            part = call("media.publish", body)["result"]
+            repeated = call("media.publish", body)["result"]
+            assert part == repeated
+        images.append(
+            {"artifact_id": part["artifact_id"], "version": part["version"]}
+        )
+    return images
+
+
 def serve(frame):
     p = frame["params"]
     method = frame["method"]
@@ -141,32 +170,19 @@ def serve(frame):
                     "digest": hashlib.sha256(data).hexdigest(),
                 },
             }
+            if p["name"] == "inspect_conversation_attachment":
+                purpose=p["arguments"]["purpose"]
+                if purpose=="frames":
+                    images=publish_frames(handle)
+                    images.append({"artifact_id":"foreign","version":"0"*64})
+                    result={"ok":True,"data":{"images":images,"text":"controlled selected frames"}}
+                else:
+                    result={"ok":True,"data":{"text":"controlled selected PDF page"}}
+                note("selected-ready",{"operation":name,"handle":handle,"purpose":purpose,"media":p["arguments"]["media"],"digest":hashlib.sha256(data).hexdigest()})
+                deadline=time.monotonic()+9
+                while (folder/"hold-selected").exists() and time.monotonic()<deadline:time.sleep(.02)
         elif method == "tool.call":
-            images = []
-            for n in range(2):
-                image = (folder / f"image-{n}.png").read_bytes()
-                h = hashlib.sha256(image).hexdigest()
-                p0 = {
-                    "handle": p["handle"],
-                    "key": "image-" + str(n),
-                    "filename": f"image-{n}.png",
-                    "mime": "image/png",
-                    "kind": "image",
-                    "size": len(image),
-                    "digest": h,
-                }
-                for off in range(0, len(image), 16384):
-                    body = dict(
-                        p0,
-                        offset=off,
-                        bytes=base64.b64encode(image[off : off + 16384]).decode(),
-                    )
-                    part = call("media.publish", body)["result"]
-                    repeated = call("media.publish", body)["result"]
-                    assert part == repeated
-                images.append(
-                    {"artifact_id": part["artifact_id"], "version": part["version"]}
-                )
+            images = publish_frames(p["handle"])
             images.append(json.loads((folder / "foreign.json").read_text()))
             file = folder / "paper.dat"
             doc = None

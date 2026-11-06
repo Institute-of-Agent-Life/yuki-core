@@ -256,6 +256,14 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files["evidence/gateway-inbound-media.json"]=gateway
         files["evidence/gateway-media-v4.json"]=oracle
         files["docs/gateway-inbound-media.md"]=(ROOT/"docs/gateway-inbound-media.md").read_bytes()
+        selected=receipt("main-selected-media.json")
+        oracle=(ROOT/"fixtures/media/main-selected-v4.json").read_bytes()
+        observed=json.loads(selected)
+        if digest(oracle)!=observed["original_oracle_sha256"] or data["selected_processor"]!=observed:
+            raise ValueError("Main attachment selection differs from validated source")
+        files["evidence/main-selected-media.json"]=selected
+        files["evidence/main-selected-v4.json"]=oracle
+        files["docs/main-selected-media.md"]=(ROOT/"docs/main-selected-media.md").read_bytes()
     if personal:
         methods = (ROOT / "protocol/plugin/personal/methods.json").read_bytes()
         if digest(methods) != data["personal_schema_sha256"] or set(
@@ -570,6 +578,8 @@ def build(manifest_path, out, development=False):
         candidate["validated_personal_methods"] = sorted(data["negotiated_methods"])
         candidate["validated_http_routes"] = data["validated_routes"]
     if media:
+        candidate["validated_main_processor_tool"]=data["selected_processor"]["tool"]
+        candidate["main_selected_media_oracle_sha256"]=data["selected_processor"]["original_oracle_sha256"]
         candidate["media_schema_revision"] = 1
         candidate["database_schema_revision"]=m["schema_version"]
         candidate["validated_gateway_media_method"]=data["gateway_inbound"]["method"]

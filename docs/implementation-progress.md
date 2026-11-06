@@ -73,6 +73,8 @@ CORE-033 Client9 上傳：[三平台完整性索引](/Volumes/huawei/項目實�
 
 CORE-038 入站附件：來源 `b99b01a92443`，Windows、macOS、Linux 各通過 207 項。[候選包與逐平台 SHA-256](/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/inbound-gateway-handoff-final-01/verified-candidates.json)，索引 SHA-256 `ad9f55a0434d54e3b8adc74c26f1e0a29d699621588eed9e668b5c48764585bb`。SDK alpha.13／a13、reader 49，供 EXT-004／006 重放原收件與過期案例；尚未發布。
 
+CORE-038 Main 選讀：`codex/core-038-selected-processor`，macOS 原生 318 項、固定舊版 22 個案例已通過。讀取原 PDF 及兩張影片幀，核對當次 Main HTTP 的兩組實際 bytes；原件到期與處理器換代後不呈現。驗證：`artifacts/CORE-038/main-selected-mac-01/`，待乾淨三平台候選與 EXT-031 對拍。
+
 ## 缺少輸入與下一步
 
 - 真擴展消費：EXT-023 需對已修的原 feed ACK 再測；EXT-022／037／038／039／049 需消費最新管理、權限與用量候選。未取得回條，不凍結穩定協議。

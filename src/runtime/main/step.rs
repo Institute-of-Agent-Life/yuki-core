@@ -114,7 +114,13 @@ pub async fn prepare(
                         cfg.protocol.output(
                             &mut body,
                             t.try_get("call_id")?,
-                            t.try_get("paired_receipt")?,
+                            crate::host::selected_processor::receipt(
+                                conn,
+                                exec,
+                                t.try_get("operation_id")?,
+                                t.try_get("paired_receipt")?,
+                            )
+                            .await?,
                         )?;
                     }
                     for t in tools {

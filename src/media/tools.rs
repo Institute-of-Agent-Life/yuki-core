@@ -60,7 +60,7 @@ async fn inspect(
     ctx: &Call<'_>,
     name: &str,
     args: &Value,
-) -> Result<(Value, Option<Value>)> {
+) -> Result<Option<(Value, Option<Value>)>> {
     let Call {
         cfg,
         exec,
@@ -83,12 +83,35 @@ async fn inspect(
         )
         .await?;
         if original["state"] == "expired" || (original["kind"] == "image" && !cfg.vision_input) {
-            return Ok((
+            return Ok(Some((
                 json!({"event_id":event,"attachment_index":slot,"state":"unread","reason":if original["state"]=="expired"{"expired"}else{"profile_has_no_vision"}}),
                 None,
-            ));
+            )));
         }
         let mut proof = acquire(store, hub, exec, actor, event, slot, None).await?;
+        if crate::host::selected_processor::configured(&mut *store.readers().acquire().await?, exec)
+            .await?
+        {
+            let purpose = if original["kind"] == "video" && cfg.vision_input {
+                Some("frames")
+            } else if proof["mime"] == "application/pdf" {
+                Some("inspect")
+            } else {
+                None
+            };
+            if let Some(purpose) = purpose {
+                crate::host::selected_processor::process(
+                    store,
+                    exec,
+                    op,
+                    (event, slot),
+                    purpose,
+                    cfg.vision_input,
+                )
+                .await?;
+                return Ok(None);
+            }
+        }
         let bytes: Vec<u8> = sqlx::query_scalar("SELECT bytes FROM media_objects WHERE digest=?")
             .bind(proof["digest"].as_str())
             .fetch_one(store.readers())
@@ -102,7 +125,7 @@ async fn inspect(
         out["mime"] = json!(kind);
         proof["event"] = json!(event);
         proof["handle"] = json!(slot);
-        return Ok((out, Some(proof)));
+        return Ok(Some((out, Some(proof))));
     }
     if args.get("device_id").is_some() {
         return Err("device workspace requires its registered owner".into());
@@ -162,10 +185,10 @@ async fn inspect(
     out["artifact_id"] = json!(id);
     out["sha256"] = json!(data.digest);
     out["mime"] = json!(row.get::<String, _>("mime"));
-    Ok((
+    Ok(Some((
         out,
         Some(json!({"artifact_id":id,"digest":data.digest,"mime":row.get::<String,_>("mime")})),
-    ))
+    )))
 }
 struct Call<'a> {
     cfg: &'a Profile,
@@ -201,7 +224,8 @@ pub async fn perform(
     )
     .await
     {
-        Ok((out, proof)) => (out, proof, true),
+        Ok(None) => return Ok(()),
+        Ok(Some((out, proof))) => (out, proof, true),
         Err(e) => (json!({"error":e.to_string()}), None, false),
     };
     write(
@@ -274,7 +298,7 @@ pub async fn append_image(
     op: &str,
     body: &mut Value,
 ) -> Result<()> {
-    if !cfg.vision_input {
+    if !cfg.vision_input || !crate::host::selected_processor::presentable(conn, exec, op).await? {
         return Ok(());
     }
     let rows=sqlx::query("SELECT r.mime,b.bytes,0 AS n FROM media_reads r JOIN media_sources s ON s.event=r.source AND s.slot=r.slot JOIN media_objects b ON b.digest=r.digest WHERE r.execution=?1 AND r.operation=?2 AND s.state='cached' AND s.expires>?3

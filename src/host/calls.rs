@@ -120,6 +120,12 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             }
             gate(conn, r, &r.plugin, &generation).await?;
             let who = actor(conn, &r.execution).await?;
+            let selected = super::selected_processor::selected(r);
+            let payload = if selected {
+                super::selected_processor::original_payload(conn, r).await?
+            } else {
+                r.args.to_string()
+            };
             effects::apply(
                 conn,
                 &effects::Action::Intent {
@@ -128,7 +134,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     actor: who.clone(),
                     action: effects::Operation::External,
                     target: r.name.clone(),
-                    payload: r.args.to_string(),
+                    payload,
                     parent: r.parent.clone(),
                     ordinal: r.ordinal,
                 },
@@ -179,6 +185,14 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .execute(&mut *conn)
                     .await?;
             }
+            if selected {
+                super::selected_processor::record(conn, r, &handle).await?;
+                sqlx::query("INSERT OR IGNORE INTO host_media_profiles VALUES(?,?)")
+                    .bind(&handle)
+                    .bind(r.vision)
+                    .execute(&mut *conn)
+                    .await?;
+            }
             let params = json!({"handle":handle,"operation":r.operation,"parent":r.parent,"ordinal":r.ordinal,"revision":revision,"name":r.name,"arguments":r.args});
             grants::schema(&r.method, "host_to_plugin", &params)?;
             if r.method=="media.process" || (r.method=="gateway.dispatch_part" && r.args.get("media").is_some()) || (r.method=="tool.call" && r.args.get("media").is_some() && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i,json_each(i.grants) g WHERE i.plugin=? AND g.value='media.open')").bind(&r.plugin).fetch_one(&mut *conn).await?) {
@@ -206,6 +220,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .ok_or("unknown grant")?,
             )
             .await?;
+            super::selected_processor::check(conn, handle).await?;
             let resume=sqlx::query("UPDATE code_resume_attempts SET state='dispatched' WHERE handle=? AND generation=? AND state='queued'").bind(handle).bind(generation).execute(&mut *conn).await?.rows_affected()==1;
             if resume {
                 domain::active(conn, plugin, generation, "composition.execute").await?;
@@ -254,6 +269,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 && row.try_get::<bool, _>("same_generation")?;
             let who = actor(conn, &exec).await?;
             let publish = permitted
+                && super::selected_processor::check(conn, handle).await.is_ok()
                 && effects::authorize(conn, &exec, &who, true).await.is_ok()
                 && !source::execution_erased(conn, &exec, None).await?;
             let valid = !*error

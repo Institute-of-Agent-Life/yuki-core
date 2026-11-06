@@ -186,6 +186,9 @@ pub(crate) fn mime(snapshot: &Snapshot) -> &'static str {
     mime_bytes(&snapshot.data)
 }
 pub(crate) fn mime_bytes(b: &[u8]) -> &'static str {
+    if b.starts_with(b"%PDF-") {
+        return "application/pdf";
+    }
     if b.starts_with(b"\x89PNG\r\n\x1a\n") {
         "image/png"
     } else if b.starts_with(&[0xff, 0xd8, 0xff]) {

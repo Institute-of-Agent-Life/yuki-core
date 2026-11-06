@@ -29,6 +29,8 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile_task: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachment_processor: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile_binding: Option<crate::model::profile_store::runtime::Binding>,
     #[serde(skip)]
     pub credentials: Option<Arc<crate::model::profile_store::runtime::Credentials>>,

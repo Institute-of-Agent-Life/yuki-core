@@ -311,8 +311,9 @@ pub async fn pinned(
                 .unwrap_or(super::results::DEFAULT_QUOTA),
         )
         .bind(cfg.timezone.as_deref().unwrap_or("Asia/Shanghai"))
-        .execute(conn)
+        .execute(&mut *conn)
         .await?;
+    crate::host::selected_processor::pin(conn, exec, cfg.attachment_processor.as_deref()).await?;
     Ok((manifest, code))
 }
 
