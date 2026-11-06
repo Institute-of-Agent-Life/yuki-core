@@ -25,7 +25,7 @@ pub(super) async fn intent(
     if !jsonschema::validator_for(&tool.schema)?.is_valid(&p["arguments"]) {
         return Err("original child schema rejected arguments".into());
     }
-    let normalized = crate::model::chat::intent(engine, name, p["arguments"].clone())?;
+    let normalized = crate::model::chat::intent(engine, name, p["arguments"].clone());
     if let Some(r)=sqlx::query("SELECT c.*,o.action,o.target,o.payload FROM code_children c JOIN operations o ON o.namespace=c.execution AND o.operation_id=c.operation WHERE c.handle=? AND c.ordinal=?")
         .bind(&parent.handle).bind(ordinal).fetch_optional(&mut *db).await? {
         if r.get::<i64,_>("feed_index")!=feed || r.get::<&str,_>("engine_call_id")!=engine || r.get::<&str,_>("snapshot")!=snapshot

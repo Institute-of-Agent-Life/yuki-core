@@ -16,6 +16,7 @@ impl Service {
     ) -> Result<()> {
         if let Some(search) = &config.search {
             self.baseline.bridge_search = search.bridge();
+            self.baseline.bridge_search_limit = search.bridge().then_some(search.max_results);
             self.allow_native = Some(search.inline());
         }
         if pending {
@@ -108,6 +109,7 @@ impl Service {
             }
             search.validate()?;
             self.baseline.bridge_search = search.bridge();
+            self.baseline.bridge_search_limit = search.bridge().then_some(search.max_results);
             self.allow_native = Some(search.inline());
         }
         *self

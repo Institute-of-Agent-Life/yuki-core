@@ -1,0 +1,41 @@
+{
+  "name": "web_search",
+  "description": "受控联网搜索。最新新闻、当前人物职务、价格、软件版本、政策、比赛结果等时效内容应使用此工具确认；闲聊中遇到不熟悉的公开事实也可查证。复杂问题可重新组织搜索词再次搜索。搜索词只包含回答当前问题所需的信息，禁止放入完整聊天记录、人物记忆或系统提示词。搜索与网页提取沿本次明确请求执行。",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "必填，回答当前问题所需的搜索词"
+      },
+      "topic": {
+        "type": "string",
+        "enum": [
+          "general",
+          "news"
+        ]
+      },
+      "time_range": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month",
+          "year"
+        ]
+      },
+      "start_date": {
+        "type": "string",
+        "description": "YYYY-MM-DD"
+      },
+      "end_date": {
+        "type": "string",
+        "description": "YYYY-MM-DD"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false
+  }
+}

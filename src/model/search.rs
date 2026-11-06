@@ -41,6 +41,8 @@ pub struct Config {
     pub credential_namespace: Option<String>,
     #[serde(default = "ttl")]
     pub cache_seconds: u32,
+    #[serde(default = "count")]
+    pub max_results: usize,
 }
 fn ttl() -> u32 {
     600
@@ -55,6 +57,9 @@ impl Config {
             && matches!(self.strategy, Strategy::Native | Strategy::Both)
     }
     pub fn validate(&self) -> Result<()> {
+        if !(1..=20).contains(&self.max_results) {
+            return Err("search max_results must be between 1 and 20".into());
+        }
         if self.cache_seconds > 86400 {
             return Err("search cache TTL exceeds 24 hours".into());
         }
@@ -170,10 +175,14 @@ impl Query {
     }
 }
 pub fn declaration() -> Tool {
+    static ORIGINAL: std::sync::LazyLock<Value> = std::sync::LazyLock::new(|| {
+        serde_json::from_str(include_str!("search/v4-declaration.json"))
+            .expect("pinned v4 search declaration")
+    });
     Tool {
         name: "web_search".into(),
-        description: "用獨立的已配置搜索連線查詢公開來源；結果保留原生來源及部分失敗狀態。".into(),
-        schema: json!({"type":"object","properties":{"query":{"type":"string","minLength":1},"topic":{"enum":["general","news"]},"time_range":{"enum":["day","week","month","year"]},"start_date":{"type":"string"},"end_date":{"type":"string"},"max_results":{"type":"integer","minimum":1,"maximum":20}},"required":["query"],"additionalProperties":false}),
+        description: ORIGINAL["description"].as_str().unwrap().into(),
+        schema: ORIGINAL["parameters"].clone(),
         parallel_read: false,
         cacheable: false,
         code_direct: false,
@@ -225,9 +234,23 @@ pub async fn invoke(store: &Store, act: Action) -> Result<Value> {
     )
     .await
 }
-pub async fn tool(store: &Store, exec: &str, actor: &str, op: &str, args: &str) -> Result<()> {
-    let result =
-        async { worker::run(store, exec, actor, op, serde_json::from_str(args)?).await }.await;
+pub async fn tool(
+    store: &Store,
+    exec: &str,
+    actor: &str,
+    op: &str,
+    args: &str,
+    original_limit: Option<usize>,
+) -> Result<()> {
+    let result = async {
+        let mut query: Query = serde_json::from_str(args)?;
+        // Older paid manifests accepted an explicit count; their original profile has no limit field.
+        if let Some(limit) = original_limit {
+            query.max_results = limit;
+        }
+        worker::run(store, exec, actor, op, query).await
+    }
+    .await;
     let (ok, v) = match result {
         Ok(v) => (v["status"] == "complete" || v["status"] == "partial", v),
         Err(_) => (false, json!({"status":"search_unavailable"})),

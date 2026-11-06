@@ -247,4 +247,30 @@ mod tests {
             Rejection::ToolNotDeclared
         );
     }
+    #[test]
+    fn decode_uses_the_paid_schema_after_a_builtin_changes() {
+        let cfg: Config = serde_json::from_value(json!({
+            "endpoint":"http://127.0.0.1", "model":"fixture", "name":"Yuki",
+            "merge_ms":0, "root_slots":4, "max_input_units":10000, "max_output":100
+        }))
+        .unwrap();
+        let paid = json!({"tools":[{"type":"function","function":{"name":"web_search","parameters":{
+            "type":"object","properties":{"query":{"type":"string"},"max_results":{"type":"integer"}},
+            "required":["query"],"additionalProperties":false
+        }}}]});
+        let calls = [
+            ("original","web_search",json!({"query":"tea","max_results":7})),
+            ("bad","web_search",json!({"query":"tea","max_results":"seven"})),
+            ("absent","get",json!({})),
+        ].map(|(id,name,args)| json!({"id":id,"type":"function","function":{"name":name,"arguments":args.to_string()}}));
+        let response = json!({"choices":[{"finish_reason":"tool_calls","message":{
+            "role":"assistant","content":null,"tool_calls":calls}}]});
+        let turn = Protocol::Chat
+            .decode(&response.to_string(), None, &cfg, &paid)
+            .unwrap();
+        assert!(turn.intents[0].get("rejected").is_none());
+        assert_eq!(turn.intents[0]["payload"]["max_results"], 7);
+        assert_eq!(turn.intents[1]["rejected"], "invalid_tool_arguments");
+        assert_eq!(turn.intents[2]["rejected"], "tool_not_declared");
+    }
 }

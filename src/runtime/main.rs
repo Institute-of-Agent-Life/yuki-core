@@ -52,6 +52,8 @@ pub struct Config {
     pub vision_input: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub bridge_search: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bridge_search_limit: Option<usize>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub code_projection: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]

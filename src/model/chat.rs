@@ -55,24 +55,23 @@ pub struct Turn {
     pub intents: Value,
     pub result: Value,
 }
-pub fn intent(id: &str, name: &str, arguments: Value) -> Result<Value> {
-    // The physical protocol has already checked the exact paid declaration (including plugin schemas).
-    if let Some(tool) = crate::tools::registry::builtin(name)
-        && !jsonschema::validator_for(&tool.schema)?.is_valid(&arguments)
-    {
-        return Ok(super::tool_rejection::intent(
-            id,
-            name,
-            arguments,
-            super::tool_rejection::Rejection::InvalidToolArguments,
-        ));
-    }
+pub fn intent(id: &str, name: &str, arguments: Value) -> Value {
+    // The caller validates the declaration saved with the request or composition.
+    // get/put also need a string target to construct their internal operation.
     let (action, target) = if matches!(name, "get" | "put") {
-        (name, arguments["target"].as_str().unwrap())
+        let Some(target) = arguments["target"].as_str() else {
+            return super::tool_rejection::intent(
+                id,
+                name,
+                arguments,
+                super::tool_rejection::Rejection::InvalidToolArguments,
+            );
+        };
+        (name, target)
     } else {
         ("external", name)
     };
-    Ok(json!({"call_id":id,"action":action,"target":target,"payload":arguments}))
+    json!({"call_id":id,"action":action,"target":target,"payload":arguments})
 }
 pub fn validate_result(task: &Task, value: Value) -> Result<Value> {
     if !value.is_object() || !jsonschema::validator_for(&task.schema)?.is_valid(&value) {
@@ -141,7 +140,7 @@ pub fn decode(raw: &str, task: Option<&Task>) -> Result<Turn> {
             emitted = Some(arguments);
             continue;
         }
-        intents.push(intent(id, name, arguments)?);
+        intents.push(intent(id, name, arguments));
     }
     let result = if let Some(task) = task {
         let value = if task.mode == Mode::FunctionTool {

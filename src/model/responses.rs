@@ -162,7 +162,7 @@ pub fn decode(raw: &str, task: Option<&Task>, cfg: &Config) -> Result<Turn> {
                     structured = Some(args);
                 } else {
                     let choice = cfg.tool_choice.as_deref().unwrap_or("auto");
-                    let mut intent = chat::intent(id, name, args)?;
+                    let mut intent = chat::intent(id, name, args);
                     if !matches!(choice, "auto" | "required") && choice != name {
                         super::tool_rejection::mark(
                             &mut intent,

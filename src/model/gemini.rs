@@ -225,7 +225,7 @@ pub fn decode(v: &Value, task: Option<&Task>, paid: &Value) -> Result<Turn> {
                 }
                 emitted = Some(args);
             } else {
-                let mut intent = chat::intent(&id, name, args)?;
+                let mut intent = chat::intent(&id, name, args);
                 if let Some(error) = error {
                     super::tool_rejection::mark(&mut intent, error);
                 }
