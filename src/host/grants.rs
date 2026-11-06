@@ -35,17 +35,20 @@ pub fn methods() -> &'static Value {
             "../../protocol/plugin/gateway/host-preview.json"
         ))
         .expect("gateway IDL");
-        let personal: Value =
-            serde_json::from_str(include_str!("../../protocol/plugin/personal/methods.json"))
-                .expect("personal IDL");
-        for (name, method) in personal["methods"].as_object().expect("personal methods") {
-            assert!(
-                base["methods"]
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(name.clone(), method.clone())
-                    .is_none()
-            );
+        for schema in [
+            include_str!("../../protocol/plugin/personal/methods.json"),
+            include_str!("../../protocol/plugin/media/methods.json"),
+        ] {
+            let group: Value = serde_json::from_str(schema).expect("host extension IDL");
+            for (name, method) in group["methods"].as_object().expect("extension methods") {
+                assert!(
+                    base["methods"]
+                        .as_object_mut()
+                        .unwrap()
+                        .insert(name.clone(), method.clone())
+                        .is_none()
+                );
+            }
         }
         base
     })
@@ -72,6 +75,11 @@ impl Install {
             .any(|g| !known.values().any(|m| m["grant"] == *g))
         {
             return Err("unknown host grant".into());
+        }
+        if self.grants.iter().any(|g| g.starts_with("media."))
+            && !self.grants.contains("forget.owner")
+        {
+            return Err("media readers and publishers require source erasure support".into());
         }
         if (!self.commands.is_empty() && !self.grants.contains("command.invoke"))
             || (!self.tools.is_empty() && !self.grants.contains("tool.call"))

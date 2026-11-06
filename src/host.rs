@@ -2,6 +2,7 @@ pub(crate) mod calls;
 mod commands;
 pub(crate) mod domain;
 mod grants;
+mod media;
 pub(crate) mod personal;
 mod process;
 mod send;
@@ -47,6 +48,15 @@ pub struct Hub {
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Action {
     Status,
+    Process {
+        plugin: String,
+        execution: String,
+        actor: String,
+        operation: String,
+        /// Exact event/slot or immutable artifact ID and digest.
+        source: String,
+        purpose: String,
+    },
     Restart {
         id: String,
     },
@@ -148,6 +158,25 @@ impl Hub {
     }
     pub async fn operator(&self, store: &Store, action: Action) -> Result<Value> {
         match action {
+            Action::Process {
+                plugin,
+                execution,
+                actor,
+                operation,
+                source,
+                purpose,
+            } => {
+                let mut tx = store.readers().begin().await?;
+                crate::runtime::effects::authorize(&mut tx, &execution, &actor, true).await?;
+                tx.commit().await?;
+                let spec = &self
+                    .slots
+                    .get(&plugin)
+                    .ok_or("selected processor unavailable")?
+                    .spec;
+                self.execute(store,calls::Request{
+ vision:false,plugin:plugin.clone(),revision:spec.revision()?,execution,operation,method:"media.process".into(),name:"media.process".into(),args:json!({"media":serde_json::from_str::<Value>(&source)?,"purpose":purpose}),parent:None,ordinal:None}).await
+            }
             Action::Status => {
                 let rows=sqlx::query("SELECT plugin,namespace,revision,enabled,generation,online FROM host_installations ORDER BY plugin").fetch_all(store.readers()).await?;
                 let items=rows.iter().map(|r|Ok(json!({"plugin":r.try_get::<String,_>("plugin")?,"namespace":r.try_get::<String,_>("namespace")?,"enabled":r.try_get::<bool,_>("enabled")?,"online":r.try_get::<bool,_>("online")?,"generation":r.try_get::<Option<String>,_>("generation")?,"revision":r.try_get::<String,_>("revision")?}))).collect::<Result<Vec<_>>>()?;
@@ -223,6 +252,7 @@ impl Hub {
         operation: &str,
         name: &str,
         args: Value,
+        vision: bool,
     ) -> Result<Option<Value>> {
         let frozen:Option<String>=sqlx::query_scalar("SELECT m.body FROM tool_manifests m JOIN execution_tool_views v USING(revision) WHERE v.execution=?").bind(exec).fetch_optional(store.readers()).await?;
         let Some(provider) = frozen
@@ -237,6 +267,7 @@ impl Hub {
             self.execute(
                 store,
                 calls::Request {
+                    vision,
                     plugin: provider.id,
                     revision: provider.revision,
                     execution: exec.into(),
@@ -348,6 +379,7 @@ async fn maintain(store: Store, install: Install, session: process::Session) {
                         .execute(
                             &store,
                             calls::Request {
+                                vision: false,
                                 plugin: install.id.clone(),
                                 revision: install.revision().unwrap_or_default(),
                                 execution: exec,

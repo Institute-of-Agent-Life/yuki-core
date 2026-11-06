@@ -426,6 +426,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
         tools: vec![],
     };
     let r = calls::Request {
+        vision: false,
         plugin: install.id.clone(),
         revision: install.revision().unwrap(),
         execution: "run".into(),

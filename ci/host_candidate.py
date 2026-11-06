@@ -13,8 +13,8 @@ from source import digest, source_identity
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def tested_contents(receipt, profile, personal=False):
-    proof_name = "personal-handoff.json" if personal else "host-delegation.json"
+def tested_contents(receipt, profile, personal=False, media=False):
+    proof_name = "media-handle-bridge.json" if media else ("personal-handoff.json" if personal else "host-delegation.json")
     proof = receipt(proof_name)
     data = json.loads(proof)
     sdk = json.loads(receipt("sdk-distributions/candidate.json"))
@@ -29,7 +29,7 @@ def tested_contents(receipt, profile, personal=False):
         raise ValueError("binary differs from exercised host")
     idl_path = (
         "sdk/rust/src/host-preview.json"
-        if personal
+        if personal or media
         else "protocol/plugin/gateway/host-preview.json"
     )
     idl = (ROOT / idl_path).read_bytes()
@@ -53,6 +53,13 @@ def tested_contents(receipt, profile, personal=False):
         "NOTICE": (ROOT / "NOTICE").read_bytes(),
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
+    if media:
+        methods = (ROOT / "protocol/plugin/media/methods.json").read_bytes()
+        if digest(methods) != data["media_schema_sha256"] or set(
+            data["negotiated_media_methods"]
+        ) != set(json.loads(methods)["methods"]):
+            raise ValueError("media methods differ from exercised original")
+        files["protocol/media/methods.json"] = methods
     if personal:
         methods = (ROOT / "protocol/plugin/personal/methods.json").read_bytes()
         if digest(methods) != data["personal_schema_sha256"] or set(
@@ -133,6 +140,7 @@ def tested_contents(receipt, profile, personal=False):
                     + result.stderr.decode(errors="replace")[:200]
                 )
             json.loads(result.stdout)
+
     return files, os_name, arch, host, sdk, idl
 
 
@@ -141,7 +149,7 @@ def build(manifest_path, out, development=False):
     m = json.loads(manifest_path.read_bytes())
     source = source_identity(ROOT)
     if (
-        m["card"] not in {"CORE-032", "CORE-033"}
+        m["card"] not in {"CORE-032", "CORE-033", "CORE-038"}
         or m["status"] != "verified"
         or m["exit_code"] != 0
         or not m["assertions"]
@@ -158,9 +166,11 @@ def build(manifest_path, out, development=False):
         return raw
 
     personal = m["card"] == "CORE-033"
-    data = json.loads(receipt("personal-handoff.json" if personal else "host-delegation.json"))
-    files, os_name, arch, host, sdk, idl = tested_contents(receipt, "debug", personal)
-    target = ("yuki-personal-preview-" if personal else "yuki-host-preview-") + source["commit"][:12] + "-" + os_name + "-" + arch
+    media = m["card"] == "CORE-038"
+    data = json.loads(receipt("media-handle-bridge.json" if media else ("personal-handoff.json" if personal else "host-delegation.json")))
+    files, os_name, arch, host, sdk, idl = tested_contents(receipt, "debug", personal, media)
+    target = ("yuki-media-preview-" if media else ("yuki-personal-preview-" if personal else "yuki-host-preview-")) + source["commit"][:12] + "-" + os_name + "-" + arch
+
     members = {
         n: {"sha256": digest(content), "bytes": len(content)}
         for n, content in sorted(files.items())
@@ -197,6 +207,10 @@ def build(manifest_path, out, development=False):
         candidate["connector_wire_revision"] = 4
         candidate["validated_personal_methods"] = sorted(data["negotiated_methods"])
         candidate["validated_http_routes"] = data["validated_routes"]
+    if media:
+        candidate["media_schema_revision"] = 1
+        candidate["media_schema_sha256"] = data["media_schema_sha256"]
+        candidate["validated_media_methods"] = sorted(data["negotiated_media_methods"])
     files["candidate.json"] = (
         json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     ).encode()

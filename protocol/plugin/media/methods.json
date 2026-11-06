@@ -1,0 +1,302 @@
+{
+  "status": "unpublished-media-preview",
+  "revision": 1,
+  "methods": {
+    "media.process": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "media.process",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ordinal": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object",
+            "properties": {
+              "media": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "event": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "slot": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 4095
+                      }
+                    },
+                    "required": [
+                      "event",
+                      "slot"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "artifact_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "version": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    },
+                    "required": [
+                      "artifact_id",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "purpose": {
+                "enum": [
+                  "transcript",
+                  "inspect",
+                  "frames"
+                ]
+              }
+            },
+            "required": [
+              "media",
+              "purpose"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "parent",
+          "ordinal",
+          "revision",
+          "name",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "data": {},
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "media.open": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "media.open",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16384
+          }
+        },
+        "required": [
+          "handle",
+          "offset",
+          "length"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "mime": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "bytes": {
+            "type": "string",
+            "maxLength": 21848
+          },
+          "done": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "total",
+          "offset",
+          "mime",
+          "bytes",
+          "done"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "media.publish": {
+      "revision": 1,
+      "direction": "plugin_to_host",
+      "grant": "media.publish",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "kind": {
+            "enum": [
+              "file",
+              "image"
+            ]
+          },
+          "mime": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "bytes": {
+            "type": "string",
+            "maxLength": 21848
+          }
+        },
+        "required": [
+          "handle",
+          "key",
+          "filename",
+          "kind",
+          "mime",
+          "digest",
+          "size",
+          "offset",
+          "bytes"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "next_offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16777216
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "artifact_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "next_offset",
+          "complete",
+          "artifact_id",
+          "version"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

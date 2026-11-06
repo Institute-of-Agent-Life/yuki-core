@@ -1,5 +1,5 @@
 pub mod blob;
-mod handles;
+pub(crate) mod handles;
 mod tools;
 use crate::{
     Result,
@@ -182,7 +182,7 @@ fn decode(encoded: &str) -> Result<Snapshot> {
     }
     Snapshot::new(STANDARD.decode(encoded)?)
 }
-fn mime(snapshot: &Snapshot) -> &'static str {
+pub(crate) fn mime(snapshot: &Snapshot) -> &'static str {
     let b = &snapshot.data;
     if b.starts_with(b"\x89PNG\r\n\x1a\n") {
         "image/png"
@@ -333,7 +333,8 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             version,
         } => {
             effects::authorize(conn, exec, actor, true).await?;
-            let r=sqlx::query("SELECT v.digest FROM media_versions v JOIN media_objects b ON b.digest=v.digest WHERE v.id=? AND v.execution=?").bind(version).bind(exec).fetch_one(&mut *conn).await?;
+            bind_version_sources(conn, exec, version).await?;
+            let r=sqlx::query("SELECT v.digest FROM media_versions v JOIN media_objects b ON b.digest=v.digest WHERE v.id=? AND EXISTS(SELECT 1 FROM media_version_readers r WHERE r.version=v.id AND r.reader=?)").bind(version).bind(exec).fetch_one(&mut *conn).await?;
             let id = crate::identity::new_id(conn).await?;
             let rel = format!("yuki-{id}.bin");
             sqlx::query("INSERT INTO media_transfer_files VALUES(?,?,?,'pending')")
@@ -352,6 +353,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             reference,
         } => {
             effects::authorize(conn, exec, actor, true).await?;
+            bind_version_sources(conn, exec, version).await?;
             if let Some(rel) = relative {
                 let existing: Option<String> = sqlx::query_scalar(
                     "SELECT relative FROM media_transfer_files WHERE version=? AND state='ready'",
@@ -363,10 +365,10 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     sqlx::query("UPDATE media_transfer_files SET state='stale' WHERE relative=? AND version=?").bind(rel).bind(version).execute(conn).await?;
                     return Ok(json!({"existing":true}));
                 }
-                sqlx::query_scalar::<_,String>("UPDATE media_transfer_files SET state='ready' WHERE version=? AND relative=? AND digest=(SELECT digest FROM media_versions WHERE id=? AND execution=?) RETURNING relative")
+                sqlx::query_scalar::<_,String>("UPDATE media_transfer_files SET state='ready' WHERE version=? AND relative=? AND digest=(SELECT digest FROM media_versions v WHERE id=? AND EXISTS(SELECT 1 FROM media_version_readers r WHERE r.version=v.id AND r.reader=?)) RETURNING relative")
                     .bind(version).bind(rel).bind(version).bind(exec).fetch_one(&mut *conn).await?;
             }
-            sqlx::query_scalar::<_,String>("INSERT INTO social_media_bindings SELECT id,execution,kind,filename,?1 FROM media_versions WHERE id=?2 AND execution=?3 AND digest IS NOT NULL ON CONFLICT(id) DO UPDATE SET id=excluded.id WHERE social_media_bindings.execution=excluded.execution AND social_media_bindings.peer_reference=excluded.peer_reference RETURNING id")
+            sqlx::query_scalar::<_,String>("INSERT INTO social_media_bindings SELECT id,execution,kind,filename,?1 FROM media_versions v WHERE id=?2 AND EXISTS(SELECT 1 FROM media_version_readers r WHERE r.version=v.id AND r.reader=?3) AND digest IS NOT NULL ON CONFLICT(id) DO UPDATE SET id=excluded.id WHERE social_media_bindings.execution=excluded.execution AND social_media_bindings.peer_reference=excluded.peer_reference RETURNING id")
                 .bind(reference).bind(version).bind(exec).fetch_one(conn).await?;
             Ok(json!({"bound":true}))
         }
@@ -474,10 +476,29 @@ pub(crate) async fn bind_version_sources(
     sqlx::query("INSERT OR IGNORE INTO main_dependencies SELECT ?1,e.id FROM events e WHERE e.id IN(SELECT source FROM media_versions WHERE id=?2 UNION SELECT source FROM executions WHERE id=?3 UNION SELECT event FROM main_dependencies WHERE execution=?3)").bind(exec).bind(version).bind(producer).execute(conn).await?;
     Ok(())
 }
+pub(crate) async fn prepare_host_delivery(
+    store: &Store,
+    exec: &str,
+    actor: &str,
+    args: &str,
+) -> Result<()> {
+    let message: Value = serde_json::from_str(args)?;
+    let Some(id) = message["artifact_id"].as_str() else {
+        return Ok(());
+    };
+    let mut tx = store.readers().begin().await?;
+    effects::authorize(&mut tx, exec, actor, true).await?;
+    let value=sqlx::query_scalar::<_,String>("SELECT v.kind FROM host_media_uploads h JOIN media_versions v ON v.id=h.version AND v.digest=h.digest JOIN media_version_readers r ON r.version=v.id WHERE h.version=? AND r.reader=?").bind(id).bind(exec).fetch_optional(&mut *tx).await?;
+    tx.commit().await?;
+    if let Some(kind) = value {
+        bind(store, exec, actor, &json!({"artifact_id":id,"kind":kind})).await?;
+    }
+    Ok(())
+}
 async fn bind(store: &Store, exec: &str, actor: &str, v: &Value) -> Result<()> {
     let id = v["artifact_id"].as_str().ok_or("missing version")?;
     if sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(SELECT 1 FROM social_media_bindings WHERE id=? AND execution=?)",
+        "SELECT EXISTS(SELECT 1 FROM social_media_bindings b JOIN media_version_readers r ON r.version=b.id AND r.producer=b.execution WHERE b.id=? AND r.reader=?)",
     )
     .bind(id)
     .bind(exec)
@@ -487,7 +508,7 @@ async fn bind(store: &Store, exec: &str, actor: &str, v: &Value) -> Result<()> {
         return Ok(());
     }
     let rt = runtime(store)?;
-    let bytes:Vec<u8>=sqlx::query_scalar("SELECT b.bytes FROM media_versions v JOIN media_objects b ON b.digest=v.digest WHERE v.id=? AND v.execution=?").bind(id).bind(exec).fetch_one(store.readers()).await?;
+    let bytes:Vec<u8>=sqlx::query_scalar("SELECT b.bytes FROM media_versions v JOIN media_objects b ON b.digest=v.digest JOIN media_version_readers r ON r.version=v.id WHERE v.id=? AND r.reader=?").bind(id).bind(exec).fetch_one(store.readers()).await?;
     let (relative, reference) = if v["kind"] == "image" {
         (None, format!("base64://{}", STANDARD.encode(bytes)))
     } else {

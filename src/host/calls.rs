@@ -5,6 +5,7 @@ use sqlx::{Row, SqliteConnection};
 
 #[derive(Clone)]
 pub struct Request {
+    pub vision: bool,
     pub plugin: String,
     pub revision: String,
     pub execution: String,
@@ -116,7 +117,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 &effects::Action::Intent {
                     execution: r.execution.clone(),
                     id: r.operation.clone(),
-                    actor: who,
+                    actor: who.clone(),
                     action: effects::Operation::External,
                     target: r.name.clone(),
                     payload: r.args.to_string(),
@@ -161,8 +162,19 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .await?;
                 h
             };
+            if r.method == "tool.call" {
+                super::media::retain_inputs(conn, r, &handle).await?;
+                sqlx::query("INSERT OR IGNORE INTO host_media_profiles VALUES(?,?)")
+                    .bind(&handle)
+                    .bind(r.vision)
+                    .execute(&mut *conn)
+                    .await?;
+            }
             let params = json!({"handle":handle,"operation":r.operation,"parent":r.parent,"ordinal":r.ordinal,"revision":revision,"name":r.name,"arguments":r.args});
             grants::schema(&r.method, "host_to_plugin", &params)?;
+            if r.method=="media.process" || (r.method=="gateway.dispatch_part" && r.args.get("media").is_some()) || (r.method=="tool.call" && r.args.get("media").is_some() && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i,json_each(i.grants) g WHERE i.plugin=? AND g.value='media.open')").bind(&r.plugin).fetch_one(&mut *conn).await?) {
+                super::media::select(conn,r,&handle,&who).await?;
+            }
             Ok(
                 json!({"handle":handle,"generation":generation,"params":params,"state":"queued","send":true}),
             )
@@ -272,6 +284,10 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 }
                 return Ok(json!({"handle":handle,"state":"unknown","observed_state":state}));
             }
+            let mut data = data;
+            if state == "confirmed" && publish {
+                super::media::project(conn, handle, &exec, &who, &method, &mut data).await?;
+            }
             let outcome = match state {
                 "confirmed" => effects::Outcome::Confirmed,
                 "failed" => effects::Outcome::Failed,
@@ -280,7 +296,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             effects::apply(
                 conn,
                 &effects::Action::Settle {
-                    execution: exec,
+                    execution: exec.clone(),
                     id: row.try_get("operation")?,
                     outcome,
                     result: data.to_string(),
@@ -292,6 +308,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 let entry = args["route"]["entry"]
                     .as_str()
                     .ok_or("missing original delivery route")?;
+                if let Some(version) = args["media"]["artifact_id"].as_str() {
+                    sqlx::query("INSERT OR IGNORE INTO social_part_versions SELECT ?1,?2,v.id FROM media_versions v JOIN host_media_selected sel ON sel.version=v.id AND sel.digest=v.digest WHERE sel.handle=?3 AND v.id=?4").bind(&exec).bind(row.get::<String,_>("operation")).bind(handle).bind(version).execute(&mut *conn).await?;
+                }
                 sqlx::query("INSERT INTO social_outbound(stage,entry,locator,namespace,child,original_actor,body,observed_at) SELECT e.bot_stage,e.entry_id,?,x.id,?,e.raw_actor,?,CAST(unixepoch('subsec')*1000 AS INTEGER) FROM executions x JOIN events e ON e.id=x.source WHERE x.id=? AND e.entry_id=?")
                     .bind(body["locator"].as_str()).bind(row.try_get::<String,_>("operation")?).bind(args["part"].to_string()).bind(row.try_get::<String,_>("execution")?).bind(entry).execute(&mut *conn).await?;
             }

@@ -149,6 +149,7 @@ impl Dispatch {
                     return Ok(());
                 }
 
+                crate::media::prepare_host_delivery(&store, &exec, &actor, &t.payload).await?;
                 let result = crate::social::deliver(&store, &hub, &exec, &id, &actor).await?;
                 if !matches!(
                     result["state"].as_str(),
@@ -166,6 +167,7 @@ impl Dispatch {
                             &id,
                             &t.target,
                             serde_json::from_str(&t.payload)?,
+                            cfg.vision_input,
                         )
                         .await?
                 {

@@ -277,10 +277,16 @@ pub async fn append_image(
     if !cfg.vision_input {
         return Ok(());
     }
-    let row=sqlx::query("SELECT r.mime,b.bytes FROM media_reads r JOIN media_sources s ON s.event=r.source AND s.slot=r.slot JOIN media_objects b ON b.digest=r.digest WHERE r.execution=?1 AND r.operation=?2 AND s.state='cached' AND s.expires>?3
-       UNION ALL SELECT v.mime,b.bytes FROM media_version_reads r JOIN media_versions v ON v.id=r.version JOIN media_objects b ON b.digest=v.digest WHERE r.execution=?1 AND r.operation=?2")
-        .bind(exec).bind(op).bind(handles::now()?).fetch_optional(&mut *conn).await?;
-    let Some(row) = row else { return Ok(()) };
+    let rows=sqlx::query("SELECT r.mime,b.bytes,0 AS n FROM media_reads r JOIN media_sources s ON s.event=r.source AND s.slot=r.slot JOIN media_objects b ON b.digest=r.digest WHERE r.execution=?1 AND r.operation=?2 AND s.state='cached' AND s.expires>?3
+       UNION ALL SELECT v.mime,b.bytes,0 FROM media_version_reads r JOIN media_versions v ON v.id=r.version JOIN media_objects b ON b.digest=v.digest WHERE r.execution=?1 AND r.operation=?2
+       UNION ALL SELECT v.mime,b.bytes,p.ordinal FROM host_calls h JOIN host_media_presentations p ON p.handle=h.handle AND p.status='ready' JOIN media_versions v ON v.id=p.version JOIN media_objects b ON b.digest=v.digest WHERE h.execution=?1 AND h.operation=?2 ORDER BY n")
+        .bind(exec).bind(op).bind(handles::now()?).fetch_all(&mut *conn).await?;
+    for row in rows {
+        append_one(cfg, body, row)?;
+    }
+    Ok(())
+}
+fn append_one(cfg: &Profile, body: &mut Value, row: sqlx::sqlite::SqliteRow) -> Result<()> {
     let content_type: String = row.try_get("mime")?;
     let encoded = STANDARD.encode(row.get::<Vec<u8>, _>("bytes"));
     native_image(cfg.protocol, body, &content_type, &encoded)
