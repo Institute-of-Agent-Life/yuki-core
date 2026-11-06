@@ -13,6 +13,7 @@ pub async fn prepare(
     cfg: &Config,
     exec: &str,
     soul: &str,
+    policy: &super::segment::Config,
 ) -> Result<Value> {
     let actor = execution::eligible(conn, exec).await?;
     let turn=sqlx::query("SELECT t.material,t.conversation,t.window,t.rowid,t.origin,x.state FROM main_turns t JOIN executions x ON x.id=t.execution WHERE x.id=?")
@@ -23,6 +24,7 @@ pub async fn prepare(
     ) {
         return Ok(Value::Null);
     }
+    super::segment::begin(conn, exec, policy).await?;
     if let Some(next) =
         crate::context::compact_public::job::recover(conn, cfg, exec, &actor).await?
     {
@@ -151,6 +153,9 @@ pub async fn prepare(
                 cfg.protocol
                     .user(&mut body, &format!("Correct the structured result: {err}"))?;
             }
+        }
+        if let Some(yielded) = super::segment::exhausted(conn, exec, policy).await? {
+            return Ok(yielded);
         }
         if crate::work::bound(conn, exec).await?.is_some() {
             let mut state = crate::work::context(conn, exec).await?;

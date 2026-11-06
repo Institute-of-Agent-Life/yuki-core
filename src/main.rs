@@ -115,6 +115,7 @@ async fn execute(args: Args) -> Result<()> {
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let mut store = store::Store::open(&owner.data).await?;
             store.main = config.main.map(Arc::new);
+            store.work_segments = config.work_segments;
             store.media = Some(media::Runtime::open(&owner.data, config.media)?);
             media::recover(&store).await?;
             let vectors = memory::embedding::start(&mut store, config.memory).await?;
