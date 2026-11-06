@@ -10,6 +10,8 @@ CORE-040 同封包對拍（`codex/core-040-native-arrivals`）：[重現與故�
 
 CORE-013 單段文字送達回條（`codex/core-013-model-send-receipt`）：[模型可見字段與撤回競態](model-send-receipt.md)。原版 14 項通過。Mac CORE-013 通過 314 項；CORE-040 的 10 項包含真實第二次 Chat 與舊版實收欄位逐項對拍。CORE-011／012／016／023／014／038／039 各 117／166／184／225／667／318／148 項通過。證據 `artifacts/CORE-*/model-send-receipt-check-05/`。實測在正常預留後撤回正文，原邏輯請求零物理 attempt，沒有重發 QQ。多段和未知送達沿用原有物理狀態。
 
+CORE-013 未發布候選（PR #79，來源 `9597513f82d3f42a4ababcb750362bf15326ac98`；schema 51，SDK alpha.14）：HJW Windows、macOS、Linux 各通過 314 項。交接清單 `artifacts/CORE-013/send-receipt-handoff-final-01/verified-candidates.json`，SHA-256 `e0fb3ed1562270cf8e75b8b796653b900e0063ee689105475c13f9aaed290bdc`；內含各 ZIP 的絕對路徑、SHA-256 及逐檔驗證記錄。
+
 ## 完成與進行中
 
 已合併 main：CORE-001～027、031～033、039、049、052、056 的原卡實作；CORE-016 分段 #42 已合併至 `ce66753`。後續原工具相容性補核見下表；實作與離線驗證不替代真擴展消費或實際供應商驗收。
