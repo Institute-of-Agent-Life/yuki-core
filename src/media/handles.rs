@@ -181,6 +181,15 @@ pub async fn expire(conn: &mut SqliteConnection, at: i64) -> Result<Value> {
     .await?
     .rows_affected();
     sqlx::query("UPDATE media_reads SET digest=NULL WHERE digest IS NOT NULL AND EXISTS(SELECT 1 FROM media_sources s WHERE s.event=media_reads.source AND s.slot=media_reads.slot AND s.state IN('expired','erased'))").execute(&mut *conn).await?;
-    let freed=sqlx::query("DELETE FROM media_objects WHERE digest NOT IN(SELECT digest FROM media_sources WHERE digest IS NOT NULL UNION SELECT digest FROM media_versions WHERE digest IS NOT NULL UNION SELECT digest FROM media_reads WHERE digest IS NOT NULL)").execute(conn).await?.rows_affected();
+    sqlx::query("UPDATE client_uploads SET digest=NULL WHERE digest IS NOT NULL AND expires<=?")
+        .bind(at / 1000)
+        .execute(&mut *conn)
+        .await?;
+    let freed = sqlx::query(
+        "DELETE FROM media_objects WHERE digest NOT IN(SELECT digest FROM live_media_digests)",
+    )
+    .execute(conn)
+    .await?
+    .rows_affected();
     Ok(json!({"expired":expired,"unreferenced_blobs_removed":freed}))
 }

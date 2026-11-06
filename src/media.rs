@@ -750,7 +750,7 @@ pub fn start(store: Store) -> tokio::task::JoinHandle<()> {
         let mut timer = tokio::time::interval(std::time::Duration::from_secs(5));
         loop {
             timer.tick().await;
-            let needed=sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM media_sources WHERE state='cached' AND expires<=CAST(unixepoch('subsec')*1000 AS INTEGER)) OR EXISTS(SELECT 1 FROM media_transfer_files f JOIN media_versions v ON v.id=f.version WHERE f.state='stale' OR v.digest IS NULL) OR EXISTS(SELECT 1 FROM media_objects WHERE digest NOT IN(SELECT digest FROM media_sources WHERE digest IS NOT NULL UNION SELECT digest FROM media_versions WHERE digest IS NOT NULL UNION SELECT digest FROM media_reads WHERE digest IS NOT NULL))").fetch_one(store.readers()).await;
+            let needed=sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM client_uploads WHERE digest IS NOT NULL AND expires<=unixepoch()) OR EXISTS(SELECT 1 FROM media_sources WHERE state='cached' AND expires<=CAST(unixepoch('subsec')*1000 AS INTEGER)) OR EXISTS(SELECT 1 FROM media_transfer_files f JOIN media_versions v ON v.id=f.version WHERE f.state='stale' OR v.digest IS NULL) OR EXISTS(SELECT 1 FROM media_objects WHERE digest NOT IN(SELECT digest FROM live_media_digests))").fetch_one(store.readers()).await;
             if matches!(needed, Ok(true))
                 && let Err(e) = gc(&store).await
             {

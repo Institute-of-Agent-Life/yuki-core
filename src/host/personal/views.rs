@@ -118,6 +118,7 @@ pub async fn events(
         };
         let observed = ts(r.get("observed_at"))?;
         let mut attachments:Vec<_>=crate::media::display(conn,event).await?.into_iter().map(|a|json!({"attachment_index":a["attachment_index"],"segment_index":a["segment_index"],"kind":a["type"]})).collect();
+        super::uploads::metadata(conn, event, &mut attachments).await?;
         if outbound.is_some() {
             attachments.extend(super::artifacts::parts(conn, event).await?);
         }

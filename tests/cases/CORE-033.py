@@ -636,6 +636,8 @@ def run(ctx):
     ctx.write("connector-authentication.json",connector)
     from tests.harness.entry_selection import run as entry_selection
     ctx.write("client-entry-selection.json",entry_selection(ctx,wire,sdk,Plugin))
+    from tests.harness.client_uploads import run as client_uploads
+    ctx.write("client-upload-handoff.json",client_uploads(ctx,wire,routes))
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     return {
         "binary_sha256": sha(

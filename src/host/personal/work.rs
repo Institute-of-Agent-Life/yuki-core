@@ -117,6 +117,9 @@ pub async fn receipt(conn: &mut SqliteConnection, who: &Principal, op: &str) -> 
     let Some(r) = row else {
         return Ok(code.unwrap_or(json!({"found":false})));
     };
+    if r.get::<&str, _>("class") == "client.upload" {
+        return super::uploads::project_receipt(conn, who, &r).await;
+    }
     if let Some(id) = r.try_get::<Option<&str>, _>("target")? {
         match r.get::<&str, _>("class") {
             "client.work_cancel" | "client.work_input" => {
@@ -182,20 +185,27 @@ pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value)
     let key = body["request_id"].as_str().ok_or("invalid_request_id")?;
     credentials::uuid(key)?;
     let text = body["text"].as_str().ok_or("validation_error")?.trim();
-    if text.is_empty() || text.len() > 1024 * 1024 {
+    let ids: Vec<String> = body
+        .get("attachments")
+        .map(|v| serde_json::from_value(v.clone()))
+        .transpose()?
+        .unwrap_or_default();
+    if (text.is_empty() && ids.is_empty()) || text.len() > 1024 * 1024 {
         return Err("validation_error".into());
     }
-    if body["attachments"]
-        .as_array()
-        .is_some_and(|v| !v.is_empty())
-        || body["agent_target"].is_object()
-    {
+    if body["agent_target"].is_object() {
+        if super::receipts::before_mutation(conn, who, key)
+            .await?
+            .is_some()
+        {
+            return Err("request_conflict".into());
+        }
         return Err("selected_input_unavailable".into());
     }
     let fp = credentials::fingerprint(
         "client.message",
         entry,
-        &json!({"text":text,"attachments":[]}),
+        &json!({"text":text,"attachments":ids}),
     );
     if let Some(row) = super::receipts::before_mutation(conn, who, key).await? {
         let s: &str = row.get("digest");
@@ -211,6 +221,16 @@ pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value)
         return Ok(result);
     }
     let row=sqlx::query("SELECT a.account_id,e.bot_stage FROM entries e JOIN assignments a ON a.id=e.actor_stage WHERE e.id=?").bind(entry).fetch_one(&mut *conn).await?;
+    let parts = super::uploads::parts(conn, who, &ids).await?;
+    let mut segments = vec![admit::Segment::Text { text: text.into() }];
+    let mut rendered = text.to_owned();
+    for (i, part) in parts.iter().enumerate() {
+        segments.push(admit::Segment::Media {
+            kind: part.kind.clone(),
+            reference: part.id.clone(),
+        });
+        rendered.push_str(&format!(" [{}附件{}：{}]", part.kind, i, part.name));
+    }
     let at = credentials::now()? * 1000;
     let frame = admit::Frame {
         source: format!("personal:{entry}:{key}"),
@@ -222,14 +242,15 @@ pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value)
         occurred: Some(at),
         observed: at,
         kind: admit::Kind::Message,
-        segments: vec![admit::Segment::Text { text: text.into() }],
+        segments,
         sender: None,
         reply_bot: None,
         answer_work_id: None,
-        text: None,
+        text: (!parts.is_empty()).then_some(rendered),
     };
     let admitted = admit::from_gateway(conn, frame, true).await?;
     let event = admitted["event"].as_i64().ok_or("message_unavailable")?;
+    super::uploads::attach(conn, event, &parts).await?;
     let original: (String, String) =
         sqlx::query_as("SELECT entry_id,raw_actor FROM events WHERE id=?")
             .bind(event)

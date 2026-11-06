@@ -7,6 +7,8 @@ mod native;
 mod receipts;
 mod selection;
 mod stream;
+mod upload_body;
+mod uploads;
 mod views;
 mod work;
 use crate::{
@@ -53,6 +55,7 @@ pub enum Command {
     Work(String, Value, bool),
     Proof(String, String, bool),
     Message(Value),
+    Upload(uploads::Spec, String, std::fs::File),
     Correct(i64, Value),
     Schedule(i64, String, Value),
 }
@@ -128,6 +131,9 @@ pub async fn apply(conn: &mut SqliteConnection, r: &Request) -> Result<Value> {
                 Command::Correct(n, v) => domains::correct(conn, &who, *n, v).await,
                 Command::Schedule(n, action, v) => {
                     domains::change_schedule(conn, &who, *n, action, v).await
+                }
+                Command::Upload(spec, entry, file) => {
+                    uploads::register(conn, &who, spec, entry, file).await
                 }
                 Command::Message(v) => work::message(conn, &who, v).await,
                 _ => Err("scope_unavailable".into()),

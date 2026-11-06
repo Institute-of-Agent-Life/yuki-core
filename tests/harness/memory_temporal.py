@@ -120,7 +120,7 @@ def upgrade(ctx):
     active_details=rows('SELECT * FROM extract_fact_details WHERE fact=?',active)
     count=rows('SELECT count(*) FROM memory_versions')
     ctx.equal('old reader really retained erased dates',rows('SELECT kind,importance,valid_until FROM extract_fact_details WHERE fact=?',erased),[('episode',4,'2032-01-01T00:00:00Z')])
-    ctx.equal('populated reader 44 upgrades without a down migration',svc.command('migrate')['schema_version'],47)
+    ctx.equal('populated reader 44 upgrades without a down migration',svc.command('migrate')['schema_version'],48)
     ctx.equal('upgrade clears only erased detail content',rows('SELECT category,kind,importance,temporal_mode,valid_from,valid_until FROM extract_fact_details WHERE fact=?',erased),[(None,)*6])
     ctx.equal('upgrade keeps active original dates',rows('SELECT * FROM extract_fact_details WHERE fact=?',active),active_details)
     ctx.equal('upgrade preserves original operation identities and hashes',rows('SELECT * FROM memory_operations ORDER BY original_key'),original)

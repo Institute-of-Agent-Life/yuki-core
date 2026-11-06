@@ -436,6 +436,11 @@ pub fn router(store: Store) -> Router {
         .route("/client/v1/me", get(me))
         .route("/client/v1/home", get(home))
         .route("/client/v1/conversations/{id}/events", get(events))
+        .route("/client/v1/uploads", post(super::uploads::upload))
+        .route(
+            "/client/v1/conversations/{entry}/events/{event}/attachments/{slot}",
+            get(super::uploads::download),
+        )
         .route("/client/v1/stream", get(super::stream::open))
         .route("/client/v1/messages", post(message))
         .route("/client/v1/works", get(works))
