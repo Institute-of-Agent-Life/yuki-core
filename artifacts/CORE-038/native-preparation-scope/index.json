@@ -1,0 +1,33 @@
+{
+  "status": "verified-local-preflight",
+  "published": false,
+  "platform": "darwin-arm64",
+  "checks": [
+    {
+      "card": "CORE-039",
+      "assertions": 583,
+      "archive": "CORE-039.zip",
+      "sha256": "7e5070bc25c5cf142ab90bcf3c87cd12beaf6078a1a17a3f0fd1c64f1f02ba1d",
+      "source": {
+        "commit": "8c02f02a3c0fcda75573f7d6b2bdce0e839b172a",
+        "branch": "codex/core-038-native-preparation",
+        "dirty": true,
+        "tree_sha256": "234e58881746b77d14c0bbe3875c0ee0fc731ae3c9f85e5ba33ef4fd400d8151"
+      },
+      "full_source_manifest": "manifest.json inside CORE-039.zip"
+    },
+    {
+      "card": "CORE-038",
+      "assertions": 380,
+      "archive": "CORE-038.zip",
+      "sha256": "969ec1456c0ba341b6133ac3097ad8dbecdfc824680c2fa3780710c27266b684",
+      "source": {
+        "commit": "8c02f02a3c0fcda75573f7d6b2bdce0e839b172a",
+        "branch": "codex/core-038-native-preparation",
+        "dirty": true,
+        "tree_sha256": "559acbec38f21e24e88cbbe5b7f54a6a6e8780be2bc74b8675383050ee5263fa"
+      },
+      "full_source_manifest": "manifest.json inside CORE-038.zip"
+    }
+  ]
+}

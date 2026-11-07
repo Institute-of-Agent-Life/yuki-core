@@ -153,7 +153,7 @@ impl Hub {
         } else {
             None
         };
-        let mut address = json!({"entry":row.try_get::<String,_>("entry_id")?,"bot":row.try_get::<String,_>("bot")?,"chat":native_group.as_deref().unwrap_or(row.try_get("sender")?),"topic":row.try_get::<Option<String>,_>("topic")?});
+        let mut address = json!({"scope":row.try_get::<String,_>("scope")?,"entry":row.try_get::<String,_>("entry_id")?,"bot":row.try_get::<String,_>("bot")?,"chat":native_group.as_deref().unwrap_or(row.try_get("sender")?),"topic":row.try_get::<Option<String>,_>("topic")?});
         let plugin: String = row.try_get("plugin")?;
         if let Some(root) =
             super::native_route::original(&mut tx, &plugin, exec, row.get("entry_id")).await?

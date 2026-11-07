@@ -189,6 +189,11 @@ def run(ctx, sdk, profile="debug"):
                     if json.loads(p.read_bytes())["mode"] == mode
                 ]
                 ctx.equal(
+                    "preparation route retains the canonical private scope",
+                    [p["arguments"]["route"]["scope"] for p in prepared],
+                    ["private"] * uploads,
+                )
+                ctx.equal(
                     mode + " reads only original bytes",
                     [p["sha256"] for p in prepared],
                     [hashlib.sha256(payload).hexdigest()] * uploads,

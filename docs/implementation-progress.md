@@ -1,8 +1,8 @@
-**CORE-038 原生附件準備進行中。** 分支 `codex/core-038-native-preparation`，SDK Rust alpha.19／Python a19、reader 56。新增 `gateway.prepare_part`，把上傳與後續可見訊息分成原 parent 下各自的物理回條。Mac 的 CORE-039 發行構建通過 573 項斷言，CORE-038 媒體回歸通過 380 項，獨立預驗通過 120 項。具名原記錄與來源雜湊在 `artifacts/CORE-038/native-preparation-preflight/`。三端全量驗收及飛書真消費見證繼續進行。
+**CORE-038 原生附件準備進行中。** 分支 `codex/core-038-native-preparation`，SDK Rust alpha.19／Python a19、reader 56。新增 `gateway.prepare_part`，把上傳與後續可見訊息分成原 parent 下各自的物理回條。Mac 的 CORE-039 發行構建通過 583 項斷言，CORE-038 媒體回歸通過 380 項，獨立預驗通過 120 項。具名原記錄與來源雜湊在 `artifacts/CORE-038/native-preparation-preflight/`。原路由的 `scope` 明確區分 private／group，新增分組驗證與媒體回歸見 `artifacts/CORE-038/native-preparation-scope/`。三端全量驗收及飛書真消費見證繼續進行。
 
 **CORE-053 受限原生 Host 已合併。** #112 head `76272a48fb77`，main `5b53f8b9a041`。Mac／Linux／HJW Windows 各 52 張檢查及 42 項選面原生重放通過，回條 `artifacts/ci/local-pr/112/receipt.json` 的 SHA-256 為 `b8b32f7136f4219afcfe8aaa5eee5504ac9cb922108f27c57a62b6249c6e6a68`。選面用例採合成消費者，真擴展 minor 見證仍待完成。
 
-**CORE-038 原話題路由。** #113 head `fda690440380`，受測合併來源 `e6e4972a76911`。Mac／Linux 各 52 張檢查及 42 項選面重放已通過，Windows 全量進行中。三端 CORE-039 原生候選已驗簽，SDK alpha.18、reader 56，索引位於本倉 `artifacts/CORE-039/pr113-original-topic/verified-candidates.json`。Mac `2ba57db7107492688a12a2713b7bce7773a902336748adc8948dbe5e534b7706`、Linux `127472d66b20897792990d8026ebb3cc97e57b7fb0be2c06a81b50240dbc3fe4`、Windows `afe39aef7726c29dbcc9ad0f0a272ccb5bcce34e81ad184a185d2d56be27b0d6`。三包均為未發布本地候選。
+**CORE-038 原話題路由。** #113 head `fda690440380`，受測合併來源 `e6e4972a76911`。已合併 main `4cfc6b3542a1`，Mac／Linux／HJW Windows 各 52 張檢查及 42 項選面重放通過。回條 `artifacts/ci/local-pr/113/receipt.json` 的 SHA-256 為 `885fde9e72340c98507c819b735dc02092560339f298504a56f234c6096d38ee`。三端 CORE-039 原生候選已驗簽，SDK alpha.18、reader 56，索引位於本倉 `artifacts/CORE-039/pr113-original-topic/verified-candidates.json`。Mac `2ba57db7107492688a12a2713b7bce7773a902336748adc8948dbe5e534b7706`、Linux `127472d66b20897792990d8026ebb3cc97e57b7fb0be2c06a81b50240dbc3fe4`、Windows `afe39aef7726c29dbcc9ad0f0a272ccb5bcce34e81ad184a185d2d56be27b0d6`。三包均為未發布本地候選。
 
 # 核心實作進度
 
