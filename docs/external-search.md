@@ -1,6 +1,10 @@
-# EXT-029 external search (development preview)
+# Optional Tavily plugin (archived development path)
+
+The current EXT-029 acceptance route uses the selected model’s server-side web search. [Native search configuration](native-web-search.md).
 
 A deployment selects Tavily explicitly. Native search and the external tool have separate names. A failed native search never requests an external permit. The extension owns the credentials, provider request and result translation. The Host owns the original operation, authority and root ledger.
+
+Main offers this tool to a new execution after the plugin completes its handshake and the operator has approved all three grants. A plugin that becomes available later can serve the next execution. If a grant is revoked or the plugin disconnects after the model received its tool list, the Host refuses dispatch before reserving a provider call.
 
 1. On the original `tool.call`, send `search.begin` with its `handle`, `provider: "tavily"` and `purpose: "web_search"`. The Host checks the approved installation, tool, current search mode and original actor. It commits one root request slot and a physical attempt in the same transaction. Token reservation is zero for this non-model request.
 2. Only a receipt with `dispatch_now: true` permits one HTTP request to the returned endpoint. Disable automatic retries and redirects. A duplicate begin returns the original attempt with no dispatch authority.

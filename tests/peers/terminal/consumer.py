@@ -26,6 +26,10 @@ def record(name, value):
     stage.replace(dest)
 
 
+if (folder / "withhold-handshake").is_file():
+    record("pre-handshake", {"pid": os.getpid()})
+    sys.exit(0)
+
 binding = Binding.from_json(json.loads(os.environ["YUKI_PLUGIN_BINDING"]))
 peer = Peer(binding)
 send(peer.request(1, binding.offer()))

@@ -117,7 +117,7 @@ pub async fn status(
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
     match change {
         Change::Open(r) => {
-            let install=sqlx::query("SELECT revision,generation FROM host_installations WHERE plugin=? AND enabled AND online").bind(&r.plugin).fetch_one(&mut *conn).await?;
+            let install=sqlx::query("SELECT revision,generation FROM host_installations WHERE plugin=? AND enabled AND online").bind(&r.plugin).fetch_optional(&mut *conn).await?.ok_or("original plugin instance unavailable")?;
             let revision: String = install.try_get("revision")?;
             let generation: String = install.try_get("generation")?;
             if revision != r.revision {

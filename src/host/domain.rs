@@ -7,14 +7,22 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use sqlx::SqliteConnection;
 
+pub(super) async fn granted(
+    conn: &mut SqliteConnection,
+    id: &str,
+    generation: &str,
+    grant: &str,
+) -> Result<bool> {
+    Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i WHERE plugin=?1 AND generation=?2 AND online AND enabled AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value=?3) AND (?3='forget.owner' OR (NOT EXISTS(SELECT 1 FROM host_cleanup_generations c WHERE c.plugin=i.plugin AND c.generation=i.generation) AND NOT EXISTS(SELECT 1 FROM owner_erasures e WHERE e.owner=i.plugin AND e.proof IS NULL))))").bind(id).bind(generation).bind(grant).fetch_one(conn).await?)
+}
+
 pub async fn active(
     conn: &mut SqliteConnection,
     id: &str,
     generation: &str,
     grant: &str,
 ) -> Result<()> {
-    let ok:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i WHERE plugin=?1 AND generation=?2 AND online AND enabled AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value=?3) AND (?3='forget.owner' OR (NOT EXISTS(SELECT 1 FROM host_cleanup_generations c WHERE c.plugin=i.plugin AND c.generation=i.generation) AND NOT EXISTS(SELECT 1 FROM owner_erasures e WHERE e.owner=i.plugin AND e.proof IS NULL))))").bind(id).bind(generation).bind(grant).fetch_one(conn).await?;
-    if !ok {
+    if !granted(conn, id, generation, grant).await? {
         return Err("plugin instance or grant unavailable".into());
     }
     Ok(())

@@ -57,12 +57,12 @@ pub fn declaration(name: &str) -> Option<Tool> {
         target
             .as_object_mut()?
             .retain(|key, _| matches!(key.as_str(), "scope_type" | "subject_ref"));
-        target["scope_type"]["enum"] = json!(["person", "person_group"]);
+        target["scope_type"]["enum"] = json!(["person", "person_group", "group"]);
         target["subject_ref"]["anyOf"] = json!([
-            {"enum":["current_speaker","mentioned_user"]},
+            {"enum":["current_speaker","mentioned_user","current_group"]},
             {"pattern":"^member_.+$"}
         ]);
-        "按真实原事件写入事实。create 须给 target、new_content、memory_key 和 category。对人物或群内人物的写入忽略 SELF 专用的 visibility，不改变授权范围。没有 fact_id 时可给 selector 和本人 target；只有唯一精确匹配才定位，模糊候选须先按原 ID 读取；selector 不代替已读版本。correct、invalidate、restore 或 update_metadata 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。category、kind、importance 和 memory_key 随原版本保存，省略字段保留原值。valid_from／valid_until 按部署时区解读并保存 UTC；update_metadata 省略两者保留期间，给其中一个则替换整个期间；correct 省略两者清除期间。restore 仅恢复已撤回且未到期的原事实；已忘记内容不能恢复。merge 需要先分别读取活跃或有争议的来源和活跃的保留事实；用 merge_fact_id 或 merge_selector 明确同一人物的目标。contest 需要原事实的已读版本；只标争议保留原文，提供 new_content 则创建独立的争议说法。群内 person_group 可选当前说话人、唯一被提及者，或用 member_<person_id> 指定原消息实际提及的人。reassign 须先读取本人在本群明确记录的原事实，再指明原消息提及的新人物。"
+        "按真实原事件写入事实。create 须给 target、new_content、memory_key 和 category。对人物或群内人物的写入忽略 SELF 专用的 visibility，不改变授权范围。没有 fact_id 时可给 selector 和本人 target；只有唯一精确匹配才定位，模糊候选须先按原 ID 读取；selector 不代替已读版本。correct、invalidate、restore 或 update_metadata 须先按原 fact_id 读取事实；更正只修改所读版本，保留未指定的 confidence。category、kind、importance 和 memory_key 随原版本保存，省略字段保留原值。valid_from／valid_until 按部署时区解读并保存 UTC；update_metadata 省略两者保留期间，给其中一个则替换整个期间；correct 省略两者清除期间。restore 仅恢复已撤回且未到期的原事实；已忘记内容不能恢复。merge 需要先分别读取活跃或有争议的来源和活跃的保留事实；用 merge_fact_id 或 merge_selector 明确同一人物的目标。contest 需要原事实的已读版本；只标争议保留原文，提供 new_content 则创建独立的争议说法。要记录本群的独立陈述，create 用 group 和 current_group，证据取当前群的原消息。群内 person_group 可选当前说话人、唯一被提及者，或用 member_<person_id> 指定原消息实际提及的人。reassign 须先读取本人在本群明确记录的原事实，再指明原消息提及的新人物。"
     } else {
         item["description"].as_str()?
     };
@@ -214,8 +214,12 @@ async fn act(
             return Err("memory_content_key_and_category_required".into());
         }
     }
+    let group_report = args["target"]["scope_type"] == "group";
     let group_target = args["target"]["scope_type"] == "person_group";
     let reference = args["target"]["subject_ref"].as_str().unwrap_or_default();
+    if group_report != (reference == "current_group") || group_report && requested != "create" {
+        return Err("target_not_available_in_current_event".into());
+    }
     if group_target && !matches!(requested, "create" | "reassign")
         || (reference == "mentioned_user" || reference.starts_with("member_")) && !group_target
     {
@@ -247,7 +251,7 @@ async fn act(
         .iter()
         .any(|name| !args[name].is_null()))
     .then_some(metadata.clone());
-    if group_target || requested == "reassign" {
+    if group_target || group_report || requested == "reassign" {
         return super::attribution::apply(conn, r, exec, op, &args, metadata).await;
     }
     let edit = if requested == "create" {

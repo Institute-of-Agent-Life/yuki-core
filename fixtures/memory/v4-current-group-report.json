@@ -1,0 +1,63 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "modules": {
+    "subjects.py": "f017c8e69190c0b63292c5beb6a7f0ceadebc4f34935fc669d89bfa2c6cdf569",
+    "mutation/service.py": "92b3489a7fb00c3898da301597e1aa3f18e8ce8a5860b26bf29baa6ca0e62b76"
+  },
+  "cases": {
+    "group": {
+      "ok": true,
+      "reason": "independent_claim",
+      "operation": "create",
+      "actual_scope": "group",
+      "authority": "group_report",
+      "source_type": "automatic",
+      "space_bound": true,
+      "person_bound": false,
+      "evidence": [
+        "group_statement"
+      ]
+    },
+    "same": {
+      "ok": true,
+      "reason": "independent_claim",
+      "operation": "create",
+      "actual_scope": "group",
+      "authority": "group_report",
+      "source_type": "automatic",
+      "space_bound": true,
+      "person_bound": false,
+      "evidence": [
+        "group_statement"
+      ]
+    },
+    "conflict": {
+      "ok": true,
+      "reason": "independent_claim",
+      "operation": "create",
+      "actual_scope": "group",
+      "authority": "group_report",
+      "source_type": "automatic",
+      "space_bound": true,
+      "person_bound": false,
+      "evidence": [
+        "group_statement"
+      ]
+    },
+    "private": {
+      "ok": false,
+      "reason": "target_not_available_in_current_event",
+      "operation": "noop"
+    },
+    "wrong_scope": {
+      "ok": false,
+      "reason": "target_not_available_in_current_event",
+      "operation": "noop"
+    },
+    "speaker_as_group": {
+      "ok": false,
+      "reason": "target_not_available_in_current_event",
+      "operation": "noop"
+    }
+  }
+}

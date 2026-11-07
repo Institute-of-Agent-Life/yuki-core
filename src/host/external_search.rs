@@ -52,11 +52,36 @@ async fn enabled(db: &mut SqliteConnection) -> Result<bool> {
     Ok(crate::operator::domain::get(db, "external-search-enabled").await? == Some(json!(true)))
 }
 
-async fn grants(db: &mut SqliteConnection, plugin: &str, generation: &str) -> Result<()> {
+async fn permitted(db: &mut SqliteConnection, plugin: &str, generation: &str) -> Result<bool> {
     for grant in ["search.external", "tool.call", "forget.owner"] {
-        domain::active(db, plugin, generation, grant).await?;
+        if !domain::granted(db, plugin, generation, grant).await? {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+async fn grants(db: &mut SqliteConnection, plugin: &str, generation: &str) -> Result<()> {
+    if !permitted(db, plugin, generation).await? {
+        return Err("plugin instance or grant unavailable".into());
     }
     Ok(())
+}
+
+/// Only new tool views consult readiness. A paid view retains its original
+/// declaration and rechecks the live grants at dispatch.
+pub(crate) async fn can_offer_external_search(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    generation: Option<&str>,
+) -> Result<bool> {
+    let Some(generation) = generation else {
+        return Ok(false);
+    };
+    if super::grants::stable_base() || !enabled(db).await? {
+        return Ok(false);
+    }
+    permitted(db, plugin, generation).await
 }
 
 /// Fence a previously pinned tool view before releasing its query to the peer.

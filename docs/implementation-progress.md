@@ -20,6 +20,8 @@
 
 各 PR 的受測合併提交、三端逐卡雜湊在 `artifacts/ci/local-pr/<PR>/receipt.json`。#99 的回執 SHA-256 為 `5abbfe3d54fe3aea254dd96a9a9bc3ed2e61a108078d2c9ca204aea97a811969`。#100 的回執 SHA-256 為 `3da2d2ed7b847f79f437bf8aece3602dec77fd891dbf48140a9100c529a6feeb`。#101 的回執 SHA-256 為 `c40e5f62f60902adaf3d73b875bee00ae410644b9bfc1d1b608ba9f2452858ca`。#102 的回執 SHA-256 為 `71aadf32e4ba5e60c7faa1ac1f1b32d7f3be1d37e746bc53f7c033f3025a22da`。41 個已整合的堆疊 PR 均逐一核對 head 已進入 main，並核驗 147 份清單；見 `artifacts/ci/pr-reconciliation-20261106/closed-41-confirmed.json`。
 
+**目前搜尋驗收走模型原生路徑。** 依部署者補正，EXT-029 本輪以 Main 所選的 DeepSeek Responses `deepseek-v4-pro` 執行服務端 `web_search`，供應商失敗不轉 Tavily。`codex/core-024-native-web-search` 在固定原生策略下同步驗證服務端搜尋及讀頁、未用搜尋的普通回答、429 與回應中斷。Mac 的 CORE-024 通過 434 項斷言，回執見 `artifacts/CORE-024/native-profile-preflight-02/manifest.json`。原物理請求保留 `tool_search`、`tool_fetch` 和原生事件；未報費用維持未知。見 [部署設定](native-web-search.md)。本輪簽署候選和各平台的實測回執由 `artifacts/CORE-024/native-search-handoff/index.json` 交接。#104 的 Tavily 介面保留為歷史可選開發產物，擴展倉毋須安裝它以驗證本輪配置。
+
 **三端開發候選（本地未發布）。** #102 原生 Host 來源 `c942da9d39e0e237908cf3a5b9345c6fb1239a2c`，實際合併樹相同。資料庫 reader 54、握手 schema 1、Host schema 2、Rust SDK 1.0.0-alpha.14、Python SDK 1.0.0a14。共 14 個實作方法，完整包路徑與驗簽結果見 `artifacts/CORE-039/pr102/verified-candidates.json`（SHA-256 `2a8a60fe14110e14d83693fc1e2a60721568fa282da86c89be724021ac4a9f93`）。
 
 | 平台 | 本地未發布 ZIP 的 SHA-256 |
@@ -38,9 +40,22 @@
 
 **CORE-026 爭議記憶的合併。** 分支 `codex/core-026-contested-merge`，實作 `d101a2a12758`（#102）。固定 v4 與 Rust 均可將已讀的爭議記憶合入同一人的活躍記憶。狀態預期錯誤或寫入關聯時中斷，兩端版本與證據都保留。合併成功後，原先的矛盾關係與新合併關係皆可查，重開能讀回原回條。固定 v4 重放在 `artifacts/CORE-026/original-guarded-merge-01/`，Rust 的預驗在 `artifacts/CORE-026/guarded-merge-preflight-01/memory-contest.json`。本 PR 三端的驗收回執在 `artifacts/ci/local-pr/102/receipt.json`；CORE-039 候選及逐平台 SHA-256 由 `artifacts/CORE-039/pr102/verified-candidates.json` 交接。macOS 用前後兩個簽署包升級同一個資料卷的重放路徑為 `artifacts/CORE-026/guarded-merge-native-upgrade-01/native-upgrade.json`。
 
+**CORE-026／040 當前群陳述。** 分支 `codex/core-026-current-group-report`。[PR #105](https://github.com/Institute-of-Agent-Life/yuki-core/pull/105) 實作 `addd6c2ae834`。Mac 的 `artifacts/CORE-026/current-group-preflight-03/manifest.json` 通過 1,515 個斷言。對應的三端回執與候選索引路徑為 `artifacts/ci/local-pr/105/receipt.json`、`artifacts/CORE-039/pr105-native/verified-candidates.json`。固定 v4 的原始群陳述、同鍵相同和不同內容都各自建立群事實；私聊及兩種主體錯配拒絕。隔離副本逐例證據在 `artifacts/CORE-040/original-group-create-03/original-group-create.json`。reader 55 將群事實綁到原群及發言來源；三端 CORE-026 的 `current-group-report.json` 記錄讀回、串群拒絕、重啟及來源清除。這縮小 E13 的 Memory 差異，完整同功能重放仍需下表所列的安裝。
+
+#105 首輪的 Mac 與 Linux 各 50／50；HJW 在 CORE-039 搜尋預算用例確認了握手前提尚未成立，未合併該提交。Mac 用前後兩個簽署 Host 升級同一資料卷；舊拒絕和新群陳述均可冷重開讀回，見 `artifacts/CORE-026/current-group-native-upgrade-01/upgrade.json`。reader 55 的 E13 同輸入重放四筆均送達，八項工具缺少、四項有差異；見 `artifacts/CORE-040/installed-group-pr105-01/installed-search-replay.json`。舊版 A、B 在相同模型工具及 writer 設定下的 9,600 筆冷暖配對觀測見 `artifacts/CORE-040/original-ab-paired-01/original-ab.json`。
+
+**EXT-029 握手及撤權。** 分支 `codex/core-024-search-readiness` 的修正 `926af0817dd3` 已納入 #105。用 #104 的簽署 Host 和包內 Rust SDK 復驗，握手後實發一次回環請求，入帳兩個 provider credits；重複 begin 沒有再派。逐幀回執、Host 和兩個編譯產物的雜湊見 `artifacts/CORE-024/ext029-rust-sdk-package-03/rust-sdk-wire.json`。原包在握手前曾把搜尋工具列給模型；故障重放見 `artifacts/CORE-024/readiness-red-01/assertions.json`。修正後，依當次實例與三項實際授權公布新輪次的工具。凍結後斷線或撤權不派發、不占根額度。Mac 的 CORE-032 通過 290 個斷言，見 `artifacts/CORE-032/ext029-readiness-01/manifest.json`。該可選介面的獨立交付已停止；本輪改取上列原生搜尋交接。
+
 **CORE-024 搜尋宣告與上限。** 分支 `codex/core-024-original-search-limits`，實作 `c0dd72c38311`、解碼修正 `62c45c94b8f1`（#101）。舊版普通工具取部署上限的實測在 `artifacts/CORE-024/original-result-limit-04/original-search-policy.json`。Rust 獨立搜尋已對回原 E13 的完整模型工具宣告，原 wire SHA-256 為 `fb18802b8b4e2e5187ae8e853808ac085ad862e3ca9d4764dee65fd0c76a016e`。部署值 3 傳到獨立搜尋請求，模型覆寫 20 在派發前被拒。同批成功與拒絕兩份回條在 `artifacts/CORE-024/e13-bridge-preflight-02/search-tool-policy.json`。原簽署版已接納的 Work 跨版本重開後仍可依舊合同搜尋 7 筆，實際送出的獨立請求及原回條見 `artifacts/CORE-024/e13-original-paid-upgrade-04/previous-paid-search.json`。
 
-**CORE-024／032 給 EXT-029 的開發接口。** 分支 `codex/core-024-ext029-search-accounting`。部署可將 Tavily 工具綁定到明選的 provider、目的及 endpoint。`search.begin` 以原 handle 在同一筆交易預留根額度並登記物理 attempt，`search.finish` 登記實際回應和可得費用，`search.status` 可在重啟後讀原回條。安裝配置與故障時序見 [external-search.md](external-search.md)。Rust SDK `1.0.0-alpha.15`、Python SDK `1.0.0a15`、Host schema 2。逐平台驗收檔為 CORE-032／039 的 `external-search-ledger.json`；三端完成後，簽署候選和雜湊從 `artifacts/CORE-024/ext029-handoff/index.json` 交接。這三個方法屬開發版，EXT-029 的真插件消費和業務結果由擴展倉驗收。
+**CORE-024／032 給 EXT-029 的開發接口。** 分支 `codex/core-024-ext029-search-accounting`。部署可將 Tavily 工具綁定到明選的 provider、目的及 endpoint。`search.begin` 以原 handle 在同一筆交易預留根額度並登記物理 attempt，`search.finish` 登記實際回應和可得費用，`search.status` 可在重啟後讀原回條。安裝配置與故障時序見 [external-search.md](external-search.md)。Rust SDK `1.0.0-alpha.15`、Python SDK `1.0.0a15`、Host schema 2。逐平台驗收檔為 CORE-032／039 的 `external-search-ledger.json`；[PR #104](https://github.com/Institute-of-Agent-Life/yuki-core/pull/104) 實作 `29d5225ce545`，已合併至 `3fb011eb6337`。Mac／Linux／HJW Windows 各 50 卡通過；Mac 首輪因兩個檢出共用 debug 產物失敗，重新隔離後全量通過。受測來源 `e74e468e0485`，根回執 SHA-256 `a5a176db18f3cec039418639e07c9bcbe12d79d8c921a583ffc9411e19580d58`。三端簽署候選、實含方法、SDK 成員與重放回執見 `artifacts/CORE-024/ext029-handoff/index.json`（SHA-256 `bab0b4e0dd36e0f49f82b173283154e6c1cd5fe1740e7de1bea152f6cc0a0947`）。這三個方法屬開發版，EXT-029 的真插件消費和業務結果由擴展倉驗收。
+
+| EXT-029 本地未發布包 | ZIP SHA-256 |
+|---|---|
+| darwin / arm64 | `ff2c47baf9bf8f4f4cc47e0a2a9070afc3c22d5c650571e9d2bd159bcf21e518` |
+| linux / arm64 | `9550f2bd4b7e28e9fdce6e141e880d19db257b80b08ff846605e0a427642a2c7` |
+| windows / x86_64 | `bbf6d5380c384d923b4859917b359ef83b281ca571bb845328e93748dcf9f4d9` |
+
 
 **CORE-044 插件基底 1.0.0。** 分支 `codex/core-044-witnessed-base`，實作 `4860314c2e8e`。以實際 main 合併提交 `c6bd0c75e38717abc71373201d31a77982428d5b` 再驗 CORE-039／044、打包。握手 revision 1、Host schema 2、資料庫 reader 54、Rust／Python SDK 1.0.0。凍結 `initialize`、`gateway.inbound`、`gateway.plan_send`、`gateway.dispatch_part`、`tool.call` 及 `tool.status`。
 

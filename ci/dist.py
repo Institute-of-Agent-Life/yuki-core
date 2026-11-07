@@ -94,10 +94,13 @@ def archive(out, evidence, key, source, *, development=False, validation=None):
         "protocol/method-index.json": "protocol/plugin/method-index.json",
         "fixtures/python-peer.py": "tests/peers/host/peer.py",
         "fixtures/rust-peer.rs": "tests/peers/host/rust.rs",
+        "docs/native-web-search.md": "docs/native-web-search.md",
+        "config/model_profiles.deepseek-native.example.toml": "config/model_profiles.deepseek-native.example.toml",
         "Cargo.lock": "Cargo.lock",
         "verify_dist.py": "ci/verify_dist.py",
     }.items():
         files[name] = (ROOT / src).read_bytes()
+    files["evidence/native-only-search.json"] = evidence("native-only-search.json")
     files["sdk/distributions.json"] = evidence("sdk-distributions/candidate.json")
     files["sbom.json"] = json_bytes(sbom(files, host))
     files["source-files.json"] = json_bytes(source["files"])

@@ -5,6 +5,7 @@ import os
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
+from tests.harness.native_only_search import exercise as native_only_search
 from tests.harness.service import Service
 from tests.peers.chat.recorder import Recorder
 
@@ -576,6 +577,7 @@ def run(ctx):
         "main": normal_main(ctx),
         "ttl_budget_erasure": budget_and_erasure(ctx),
         "claude_physical_declarations": inline_modes(ctx),
+        "native_only": native_only_search(ctx),
     }
     ctx.write("search-proof-cache.json", report)
     return report

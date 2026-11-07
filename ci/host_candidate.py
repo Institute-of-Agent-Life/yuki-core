@@ -135,6 +135,13 @@ def tested_contents(receipt, profile, personal=False, card=None):
         files['evidence/memory-restore.json']=proof
         files['evidence/v4-restore.json']=raw_fixture
         files['docs/memory-restore.md']=(ROOT/'docs/memory-restore.md').read_bytes()
+        group = receipt("current-group-report.json")
+        original = (ROOT/"fixtures/memory/v4-current-group-report.json").read_bytes()
+        if json.loads(group)["oracle_sha256"] != digest(original):
+            raise ValueError("group statement differs from its fixed original")
+        files["evidence/current-group-report.json"] = group
+        files["evidence/v4-current-group-report.json"] = original
+        files["docs/memory-group-reports.md"] = (ROOT/"docs/memory-group-reports.md").read_bytes()
         proof=receipt('group-attribution.json')
         oracle=(ROOT/'fixtures/memory/v4-group-attribution.json').read_bytes()
         if digest(oracle)!=json.loads(proof)['oracle_sha256'] or json.loads(oracle)['projection']!=json.loads(proof)['projection']:raise ValueError('group attribution differs from original transition')

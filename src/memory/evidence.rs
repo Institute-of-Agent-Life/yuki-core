@@ -252,6 +252,9 @@ pub async fn readable(
         if let Some(authority) = row.try_get::<Option<String>, _>("attribution")? {
             item["authority"] = json!(authority);
         }
+        if row.try_get::<Option<&str>, _>("relation")? == Some("group_statement") {
+            item["relation"] = json!("group_statement");
+        }
         allowed.push(item);
     }
     Ok(allowed)

@@ -9,6 +9,8 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+from tests.harness.native_only_search import exercise as native_search
+
 
 def run(ctx):
     sys.path.insert(0, str(ctx.root / "ci"))
@@ -23,6 +25,7 @@ def run(ctx):
     )
     case = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(case)
+    native_search(ctx, "release")
     host_receipt = case.run(ctx, "release")
     ctx.write("host-delegation.json", host_receipt)
     private = ctx.working / "test-signer"
