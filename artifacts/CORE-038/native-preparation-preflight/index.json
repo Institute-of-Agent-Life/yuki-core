@@ -1,0 +1,52 @@
+{
+  "status": "verified-local-preflight",
+  "published": false,
+  "platform": "darwin-arm64",
+  "checks": [
+    {
+      "card": "CORE-032",
+      "archive": "CORE-032.zip",
+      "sha256": "3aa58e7c040459627a148eb940f8b504eba44c38272f60ce5e73f43c529f25b4",
+      "assertions": 479,
+      "source": {
+        "commit": "fda6904403803ddd7418f911722e624e51a96f8a",
+        "branch": "codex/core-038-native-preparation",
+        "dirty": true,
+        "tree_sha256": "353653d525418c20e5fe9878190bd248e04c2841f747783d11d22687e9604656"
+      },
+      "status": "verified",
+      "source_file_count": 1091,
+      "full_source_manifest": "manifest.json inside CORE-032.zip"
+    },
+    {
+      "card": "CORE-039",
+      "archive": "CORE-039.zip",
+      "sha256": "5f97fbcca47686b262efce5a08d1848e5e8d9491025f8f2435000d172dbd4a52",
+      "assertions": 573,
+      "source": {
+        "commit": "fda6904403803ddd7418f911722e624e51a96f8a",
+        "branch": "codex/core-038-native-preparation",
+        "dirty": true,
+        "tree_sha256": "00b4613f931823a290c1e5b4182c60bdd6942e3e4e2b6d0a4401f1026718b411"
+      },
+      "status": "verified",
+      "source_file_count": 1091,
+      "full_source_manifest": "manifest.json inside CORE-039.zip"
+    },
+    {
+      "card": "CORE-038",
+      "archive": "CORE-038.zip",
+      "sha256": "7fdbd552652449249636d4a40881fe3a07d185bd968afc43e0e2384617361efa",
+      "assertions": 380,
+      "source": {
+        "commit": "fda6904403803ddd7418f911722e624e51a96f8a",
+        "branch": "codex/core-038-native-preparation",
+        "dirty": true,
+        "tree_sha256": "00b4613f931823a290c1e5b4182c60bdd6942e3e4e2b6d0a4401f1026718b411"
+      },
+      "status": "verified",
+      "source_file_count": 1091,
+      "full_source_manifest": "manifest.json inside CORE-038.zip"
+    }
+  ]
+}

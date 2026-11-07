@@ -1678,6 +1678,109 @@
         ],
         "additionalProperties": false
       }
+    },
+    "gateway.prepare_part": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "gateway.send",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ordinal": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "parent",
+          "ordinal",
+          "revision",
+          "name",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "enum": [
+              "confirmed",
+              "failed",
+              "unknown"
+            ]
+          },
+          "resource": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "image",
+                  "file"
+                ]
+              },
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            },
+            "required": [
+              "kind",
+              "key"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "state": {
+              "const": "confirmed"
+            }
+          },
+          "required": [
+            "state"
+          ]
+        },
+        "then": {
+          "required": [
+            "resource"
+          ]
+        }
+      }
     }
   }
 }

@@ -1,3 +1,9 @@
+**CORE-038 原生附件準備進行中。** 分支 `codex/core-038-native-preparation`，SDK Rust alpha.19／Python a19、reader 56。新增 `gateway.prepare_part`，把上傳與後續可見訊息分成原 parent 下各自的物理回條。Mac 的 CORE-039 發行構建通過 573 項斷言，CORE-038 媒體回歸通過 380 項，獨立預驗通過 120 項。具名原記錄與來源雜湊在 `artifacts/CORE-038/native-preparation-preflight/`。三端全量驗收及飛書真消費見證繼續進行。
+
+**CORE-053 受限原生 Host 已合併。** #112 head `76272a48fb77`，main `5b53f8b9a041`。Mac／Linux／HJW Windows 各 52 張檢查及 42 項選面原生重放通過，回條 `artifacts/ci/local-pr/112/receipt.json` 的 SHA-256 為 `b8b32f7136f4219afcfe8aaa5eee5504ac9cb922108f27c57a62b6249c6e6a68`。選面用例採合成消費者，真擴展 minor 見證仍待完成。
+
+**CORE-038 原話題路由。** #113 head `fda690440380`，受測合併來源 `e6e4972a76911`。Mac／Linux 各 52 張檢查及 42 項選面重放已通過，Windows 全量進行中。三端 CORE-039 原生候選已驗簽，SDK alpha.18、reader 56，索引位於本倉 `artifacts/CORE-039/pr113-original-topic/verified-candidates.json`。Mac `2ba57db7107492688a12a2713b7bce7773a902336748adc8948dbe5e534b7706`、Linux `127472d66b20897792990d8026ebb3cc97e57b7fb0be2c06a81b50240dbc3fe4`、Windows `afe39aef7726c29dbcc9ad0f0a272ccb5bcce34e81ad184a185d2d56be27b0d6`。三包均為未發布本地候選。
+
 # 核心實作進度
 
 **CORE-038 原生話題路由正在驗證。** 分支 `codex/core-038-native-route`。SDK alpha.18 以可選 `topic_root` 保存原根，資料 migration 56 與原事件同筆接納。既有 `topic` 與防重鍵沿用。Mac 已用實際安裝 SDK 與 Rust Host 通過 88 項預驗，涵蓋舊訊息重投、缺證拒絕、兩租戶、冷啟、忘記與規劃後替換部署。原預驗位於本分支 `artifacts/CORE-032/native-topic-preflight-02/`。正常 CORE-032 入口已過 377 項斷言，CORE-039 release 入口過 454 項，含格式、Clippy 及 writer 測試。具名驗收包與完整 SHA-256 在 `artifacts/CORE-038/native-topic-preflight/index.json`。首輪 writer 測試揭示舊的無原根呼叫形狀需繼續接納，已修正並重跑通過。三端全量仍待驗證，後續交給飛書 alpha.5 真插件消費。
@@ -98,9 +104,11 @@ GitHub 已正式發布 `plugin-base-v1.0.0`。九個附件均已重新下載，�
 | 待辦 | 下一步與交接物 |
 |---|---|
 | CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；A／B／C 的搜尋設定還需在同一安裝對齊。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
-| CORE-053 後續原生候選 | #112 的受限 Host 構建正在本地三端全量加選面重放。真 minor 選面仍需同來源、逐方法及新增欄位的真擴展見證。 |
+| CORE-053 後續原生候選 | #112 的受限 Host 構建已通過三端全量及選面重放。真 minor 選面仍需同來源、逐方法及新增欄位的真擴展見證。 |
 | CORE-043 → 046 → 047 | 待 EXT-041 的 `extension-import-diff.json`、EXT-044 的 `desktop-package-matrix.json`、EXT-045 的 `install-restore-matrix.json` 及 EXT-042 的實物逐字稿。 |
 
 本輪 Mac 清理回執見 `artifacts/ci/cleanup-20261106/`。先前五個閒置 incremental 目錄合計回收 17.61 GiB，Telegram 建置後另清理約 130 MiB 的中間檔案。#98 的獨立 Mac 預驗再回收 4.39 GiB，保留核心、測試執行檔和回條並重驗 SHA-256（`pr98-mac-preflight-intermediates-verified.json`）。 #99 的專用編譯中間檔另回收 Mac 8.32 GiB、HJW 1.75 GiB；執行檔與保留記錄均已重驗（`core044-mac-build-verified.json` 和 `core044-windows-owned-build-verified.json`）。 #101 完成後另回收 0.57 GiB 已被替代的本機編譯快取，保留包及回條雜湊均相符（`core101-mac-superseded-verified.json`）。
 
 Mac 的閒置受限 Host 預驗快取已清理 4,494,281,162 logical bytes，4,364 個來源與驗收檔雜湊相符。回執在 `artifacts/ci/cleanup-20261106/native-surface-cache.json`。
+
+Mac 原話題預驗的閒置編譯快取已清理 6,896,683,013 logical bytes，4,462 個來源、原包和驗收檔雜湊一致，詳見 `artifacts/ci/cleanup-20261106/native-route-cache.json`。

@@ -226,12 +226,6 @@ async fn inbound(
     if !bot_ok {
         return Err("gateway bot does not belong to this installed namespace".into());
     }
-    let previous: bool =
-        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_ingress WHERE plugin=? AND source=?)")
-            .bind(id)
-            .bind(&key)
-            .fetch_one(&mut *conn)
-            .await?;
     let media = super::gateway_media::inbound_identity(conn, id, generation, p).await?;
     let account = new_id(conn).await?;
     sqlx::query("INSERT INTO accounts(id,platform,namespace,native) VALUES(?,?,?,?) ON CONFLICT(platform,namespace,native) DO NOTHING").bind(account).bind(&platform).bind(&namespace).bind(sender).execute(&mut *conn).await?;
@@ -305,7 +299,7 @@ async fn inbound(
             p,
             &identity,
             result["event"].as_i64().ok_or("missing gateway event")?,
-            previous,
+            !created,
         )
         .await?;
     }

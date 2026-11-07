@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "target": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/native-route-target",
+  "logical_bytes_removed": 6896683013,
+  "seconds": 5.155,
+  "active_handles": 0,
+  "protected_file_count": 4462,
+  "preserved_sources_evidence_candidates": true,
+  "full_receipt_archive": "native-route-cache.zip",
+  "archive_sha256": "60aa5a967cacf943bdbf1d93fd63c1c9af6f718a92284c9336171ec4b5c22b04",
+  "full_receipt_sha256": "5cbc890951b5689c0c1df7004775b5ed9b65d069ef93a9530727f27e0b2b97f3"
+}

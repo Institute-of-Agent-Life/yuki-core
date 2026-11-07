@@ -13,6 +13,7 @@ from contextlib import closing
 from tests.harness.external_search import exercise as external_search
 from tests.harness.terminal_work import exercise as terminal_work
 from tests.harness.native_topic_route import run as native_topic_route
+from tests.harness.native_preparation import run as native_preparation
 from tests.harness.service import Service, previous_schema
 from tests.peers.chat.recorder import Recorder
 from tests.peers.onebot.peer import Peer as OneBot
@@ -732,6 +733,7 @@ grants=["observe.metadata","tool.call"]
             statuses = op("host", "status")
     return {
         "native_topic_route": native_topic_route(ctx, sdkdir, profile),
+        "native_preparation": native_preparation(ctx, sdkdir, profile),
         "external_search": external_search(ctx,sdkdir,profile),
         "terminal_work":terminal_work(ctx,sdkdir,profile),
         "normal": {
