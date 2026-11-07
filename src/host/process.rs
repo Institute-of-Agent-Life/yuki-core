@@ -16,6 +16,7 @@ use yuki_plugin_sdk::{Id, MAX_FRAME_BYTES, Peer, Received};
 static NEXT_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 struct Message {
     frame: Value,
+    activity: Option<super::activity::Gate>,
     handle: Option<String>,
     flushed: Option<oneshot::Sender<()>>,
     fetch: Option<(Id, super::gateway_media::Gate)>,
@@ -50,17 +51,30 @@ impl Session {
         self.send
             .try_send(Message {
                 frame,
+                activity: None,
                 handle: None,
                 fetch: None,
                 flushed: None,
             })
             .is_ok()
     }
+    pub(super) fn activity(&self, gate: super::activity::Gate) {
+        let frame = json!({"jsonrpc":"2.0","method":"gateway.activity","params":{
+            "lease_id":gate.execution,"route":gate.route,"enabled":gate.enabled,"ttl_ms":5000}});
+        let _ = self.send.try_send(Message {
+            frame,
+            activity: Some(gate),
+            handle: None,
+            fetch: None,
+            flushed: None,
+        });
+    }
     async fn reply(&self, frame: Value) -> Result<()> {
         let (tx, rx) = oneshot::channel();
         self.send
             .send(Message {
                 frame,
+                activity: None,
                 handle: None,
                 fetch: None,
                 flushed: Some(tx),
@@ -139,6 +153,7 @@ impl Session {
         }
         let msg = Message {
             frame: json!({"jsonrpc":"2.0","id":id,"method":method,"params":params}),
+            activity: None,
             handle: handle.clone(),
             fetch: fetch.map(|gate| (id.clone(), gate)),
             flushed: None,
@@ -265,6 +280,26 @@ pub async fn launch(
                 break;
             }
             // Check at dequeue, not at the earlier time the request entered the pipe queue.
+            if let Some(gate) = &msg.activity {
+                if gate.enabled
+                    && !store_writer
+                        .active_turns
+                        .subscribe()
+                        .borrow()
+                        .contains_key(&gate.execution)
+                {
+                    continue;
+                }
+                if write(
+                    &store_writer,
+                    Change::ActivityDispatch(gate.clone(), id.clone(), instance.clone()),
+                )
+                .await
+                .is_err()
+                {
+                    continue;
+                }
+            }
             if let Some((request, gate)) = &msg.fetch
                 && write(
                     &store_writer,

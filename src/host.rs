@@ -1,3 +1,4 @@
+mod activity;
 mod aux_model;
 pub(crate) mod calls;
 mod commands;
@@ -50,6 +51,7 @@ pub enum Change {
     Callback(String, String, String, Value),
     Call(calls::Change),
     FetchDispatch(Box<gateway_media::Gate>, String, String),
+    ActivityDispatch(activity::Gate, String, String),
     Composition(Box<composition::Change>),
     CommandDone(i64, String),
     Reported(i64, String),
@@ -390,6 +392,13 @@ impl Hub {
         }
         let session = start_session(store, &slot.spec, &self.data, false).await?;
         *guard = Some(session.clone());
+        if slot.spec.grants.contains("gateway.activity")
+            && grants::methods()["methods"]
+                .get("gateway.activity")
+                .is_some()
+        {
+            tokio::spawn(activity::serve(store.clone(), id.into(), session.clone()));
+        }
         let result = json!({"plugin":id,"generation":session.generation,"online":true});
         let (s, i) = (store.clone(), slot.spec.clone());
         tokio::spawn(maintain(s, i, session));

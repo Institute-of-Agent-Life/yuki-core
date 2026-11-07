@@ -79,6 +79,10 @@ def publish_frames(handle):
 def serve(frame):
     p = frame["params"]
     method = frame["method"]
+    if method == "gateway.activity":
+        with lock, (folder / "activity.ndjson").open("a", encoding="utf-8") as records:
+            records.write(json.dumps(p) + "\n")
+        return
     try:
         if method == "forget.request":
             note("forget-" + p["key"], {"key": p["key"], "watermark": p["watermark"], "sources": p["sources"]})

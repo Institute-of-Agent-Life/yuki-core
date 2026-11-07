@@ -1,6 +1,6 @@
 # Host candidate
 
-The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.16` and Python SDK `1.0.0a16`.
+The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.17` and Python SDK `1.0.0a17`.
 
 Install an executable through a `[[plugins]]` entry in the owner's private `yuki.toml`. Specify `id`, `namespace`, an absolute `program` and `args`. A gateway also needs its `platform` and the installed SELF assignment's `bot_stage`. Configure `grants` individually. `commands` lists full command paths. `[[plugins.tools]]` records the name, description, JSON Schema and visibility that the host freezes for the next activation. The `env` list selects which environment variables reach this executable.
 
@@ -17,3 +17,9 @@ Quoted delivery uses the existing argument object. Native recall adds its own ne
 Metadata observation is instance-bound and may drop under backpressure. Forget uses the durable owner, watermark and key. Cleanup acknowledges the original obligation even when its first acknowledgement was lost. The first candidate contains no approved third-party QQ native action. A maintainer must supply the actual action and scope before that method can be included.
 
 Run `python ci/check.py CORE-032 --out <new-directory>` to exercise the host and install both SDKs. Run `python ci/host_candidate.py --manifest <verified-manifest> --out <new-directory>` on the same clean checkout to package the tested binary. The manifest records its build profile, platform, source SHA, schema and SDK versions, verification digest and contained methods.
+
+## Gateway activity lifecycle
+
+The opt-in `gateway.activity` notification carries an execution lease, original route, enabled flag and 5-second expiry. A live Main turn opens the lease and the Host refreshes it every 2 seconds. The gateway sends typing only to that original Bot, chat and topic. Finishing the turn closes its lease. An expired lease stops renewal.
+
+Notifications use the bounded process queue and have no business receipt. The writer checks the current grant, original source and active turn before flushing a renewal. Disable, forget, disconnect, queue pressure and native chat-action failure must leave message delivery and its receipt independent. Telegram closes the local lease and allows the platform status to expire.
