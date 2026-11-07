@@ -17,8 +17,28 @@ def run(ctx):
     from source import digest, source_identity
     from verify_dist import verify, native_target
     from tests.harness.portable_cleanup import check_workspace
+    from tests.harness.json_file import take_command
 
     check_workspace(ctx)
+    mailbox = ctx.working / "original-command.json"
+    original = {"method": "gateway.inbound", "params": {"source": "original"}}
+    mailbox.write_text(json.dumps(original), encoding="utf8")
+    if os.name == "nt":
+        with mailbox.open("rb"):
+            ctx.equal(
+                "locked mailbox is deferred before dispatch",
+                take_command(mailbox),
+                None,
+            )
+            ctx.equal(
+                "deferred mailbox retains its original bytes",
+                json.loads(mailbox.read_bytes()),
+                original,
+            )
+    ctx.equal(
+        "released mailbox returns the original command", take_command(mailbox), original
+    )
+    ctx.equal("claimed mailbox cannot dispatch twice", take_command(mailbox), None)
 
     spec = importlib.util.spec_from_file_location(
         "host_case", ctx.root / "tests/cases/CORE-032.py"

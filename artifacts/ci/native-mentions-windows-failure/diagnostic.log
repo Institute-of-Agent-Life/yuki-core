@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\artifacts\preparation-diagnostic-01\run.py", line 25, in <module>
+    result=run(ctx,root/'sdk/python','release');ctx.write('result.json',result);print(n,'PASS',len(ctx.assertions),flush=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\harness\native_preparation.py", line 294, in run
+    event = submit(params)["event"]
+            ^^^^^^^^^^^^^^
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\harness\native_preparation.py", line 87, in submit
+    owner.until(lambda: (peer / "probed.json").exists())
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\harness\compact.py", line 133, in until
+    raise AssertionError(
+AssertionError: [('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('held', 'runner_failed')]

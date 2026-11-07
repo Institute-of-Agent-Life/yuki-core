@@ -1,0 +1,11 @@
+{
+  "source_commit": "91e694e0dc7a25d7e20e8274fffc7dc329e843c4",
+  "status": "FAIL",
+  "cause": "Windows transient EACCES reading the fixture mailbox ended the peer command thread",
+  "correction": "Reuse tests.harness.json_file.take_command before physical dispatch",
+  "files": {
+    "diagnostic.log": "2b5c574ccaa4df69de899875b0153ca768700052b3f4e2c917b09af17db1d0cc",
+    "peer-stderr.txt": "370cc91b3a95843dbca7b425e73bb49823ede6df5e4a7d5d0ff1e755218154e6",
+    "first-failure.txt": "0004fb4cb810895197202df462cafedfcdc9e64b4a3b9be607f028252d05fa5e"
+  }
+}

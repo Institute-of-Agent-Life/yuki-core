@@ -1,3 +1,5 @@
+**#117 三端重驗中。** 首輪 Mac、Linux 各 52 張與 42 項原生驗證通過。Windows 的測試 mailbox 遇到暫時性 EACCES，已改用既有 `take_command`，三次隔離附件重放各 152 個斷言及真檔案鎖回歸通過。失敗與修正證據見 `artifacts/ci/native-mentions-windows-failure/`。本輪補丁仍須完成最新提交的三端完整 CI。
+
 **CORE-025／CORE-038 原帳號提及準備完成。** 分支 `codex/core-025-native-mentions`，Rust／Python SDK alpha.21／a21，reader 56。同 app／namespace 的原 account、原事件名稱與 UTF-8 範圍交給 Host；`gateway.read_mentions` 以原 call handle 分頁。計畫完整覆蓋原文字且保留整個提及，派發前重核原階段與來源，來源持有同時登記 execution dependency，遺忘後清除 Host 材料。
 
 Mac 正常 `CORE-032` 入口已通過 837 項斷言，回條 `artifacts/CORE-032/native-mentions-preflight-02/manifest.json`，SHA-256 `58e82e6e5eea44db16554c88566b41e76c456c248b751451af61b7794e2f32fe`。其後補私聊僅解析原參與者，連同同名、明確 account、未知文字、大段分頁、unknown、錯區間、偽 native、換階段與遺忘共 12 情境已在 `artifacts/CORE-032/native-mentions-focused-06/` 重驗。固定舊版文字 oracle 位於 `fixtures/social/v4-native-mentions.json`。較早的群來源篩選與測試命令／參數故障均保留原失敗回條。

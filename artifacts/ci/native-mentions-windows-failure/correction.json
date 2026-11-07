@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "scope": "three isolated Windows native-preparation replays and original file-lock regression",
+  "host_source_commit": "91e694e0dc7a25d7e20e8274fffc7dc329e843c4",
+  "peer_sha256": "5d38a46ac33c45e29f8ea3aac5f320c6f65c52de617dfd392efde5bf0a97ce8c",
+  "replays": 3,
+  "assertions_per_replay": 152,
+  "files": {
+    "diagnostic.log": "2b5c574ccaa4df69de899875b0153ca768700052b3f4e2c917b09af17db1d0cc",
+    "peer-stderr.txt": "370cc91b3a95843dbca7b425e73bb49823ede6df5e4a7d5d0ff1e755218154e6",
+    "first-failure.txt": "0004fb4cb810895197202df462cafedfcdc9e64b4a3b9be607f028252d05fa5e",
+    "failure-index.json": "eb3a17e4169ca9ea942615f2751dea7a01a1c2a7e3a6e4e352c412a5ec149a1b",
+    "0-result.json": "0221f4e674da752e5bc251a80d24beac672056dd788efbc62ad70e4abe26075f",
+    "0-assertions.json": "f3f8d5606896f93cd8e3e4062e1a88e40f9f3cf345f9beca90f2671a63714f24",
+    "1-result.json": "dd1bd12169ae61251f9fdc44640f4e37a16a866466eca6091ca7ad3d549d90dc",
+    "1-assertions.json": "f3f8d5606896f93cd8e3e4062e1a88e40f9f3cf345f9beca90f2671a63714f24",
+    "2-result.json": "8e9f4447cc5a482a762ab073f0b1ffab4b12ecbd95d11d7ef0d000f40726a4b9",
+    "2-assertions.json": "f3f8d5606896f93cd8e3e4062e1a88e40f9f3cf345f9beca90f2671a63714f24",
+    "mailbox-regression.json": "47e0c7e7100bffe40dbb058b22d43549df25178170171e9996e27d3cce6a2260"
+  }
+}
