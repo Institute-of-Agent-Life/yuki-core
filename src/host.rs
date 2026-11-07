@@ -23,6 +23,7 @@ use crate::{
     Result,
     store::{Mutation, Store},
 };
+pub(crate) use external_search::can_offer_external_search;
 pub use grants::Install;
 use serde_json::{Value, json};
 use sqlx::Row;

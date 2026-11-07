@@ -3,6 +3,7 @@
 import hashlib
 import json
 import sys
+import uuid
 from tests.harness.compact import Owner, call, reply
 from tests.harness.json_file import read_json
 from tests.harness.terminal_work import Peer
@@ -35,6 +36,94 @@ parallel_read=false
 code_direct=false
 schema={{type="object",required=["query"],properties={{query={{type="string"}}}},additionalProperties=false}}
 '''
+
+
+def search_readiness(ctx, owner, model, provider, folder):
+    permissions = {"search.external", "tool.call", "forget.owner"}
+
+    def offered(prompt):
+        event = owner.human(prompt)
+        wire, response = owner.wire(model)
+        return event, {t["function"]["name"] for t in wire["tools"]}, response
+
+    def refused(event, response, label):
+        reply(response, calls=[call("search", "tavily_search", {"query": label})])
+        wire, response = owner.wire(model)
+        result = json.loads(
+            next(
+                m["content"]
+                for m in wire["messages"]
+                if m.get("tool_call_id") == "search"
+            )
+        )
+        ctx.equal(label, result["state"], "failed")
+        reply(response, "")
+        owner.finished(event)
+        return result["result"]
+
+    def approve(selected):
+        state = owner.op("control", "read", "plugin.get", '{"plugin_id":"search"}')
+        body = {
+            "plugin_id": "search",
+            "expected_revision": state["revision"],
+            "request_id": str(uuid.uuid4()),
+            "permissions": sorted(selected),
+        }
+        owner.op("control", "write", "plugin.approve", json.dumps(body))
+        owner.op("host", "enable", "search", "true")
+
+    owner.until(lambda: (folder / "pre-handshake.json").is_file())
+    ev, tools, q = offered("before search handshake")
+    ctx.check(
+        "new view excludes offline search and retains the other peer",
+        "tavily_search" not in tools and "other_search" in tools,
+    )
+    (folder / "withhold-handshake").unlink()
+    owner.op("host", "restart", "search")
+    refused(ev, q, "handshake cannot widen the original model view")
+
+    ev, tools, q = offered("before disconnect")
+    ctx.check("ready search is offered", "tavily_search" in tools)
+    owner.op("host", "enable", "search", "false")
+    error = refused(ev, q, "disconnect after pinning prevents dispatch")
+    ctx.equal(
+        "unavailable original peer has an explicit reason",
+        error.get("error"),
+        "original plugin instance unavailable",
+    )
+    owner.op("host", "enable", "search", "true")
+
+    ev, tools, q = offered("before revocation")
+    ctx.check("restored search is offered", "tavily_search" in tools)
+    approve(permissions - {"forget.owner"})
+    refused(ev, q, "frozen view never grants a newly revoked dispatch")
+    for missing in ("forget.owner", "tool.call", "search.external"):
+        if missing != "forget.owner":
+            approve(permissions - {missing})
+        ev, tools, q = offered("missing " + missing)
+        ctx.check(
+            "partial approval omits search without " + missing,
+            "tavily_search" not in tools and "other_search" in tools,
+        )
+        reply(q, "")
+        owner.finished(ev)
+    ctx.equal(
+        "unavailable search makes no provider requests", len(provider.header_shapes), 0
+    )
+    ctx.equal(
+        "unavailable search makes no paid attempts",
+        owner.rows(
+            "SELECT count(*) FROM model_attempts WHERE logical LIKE 'external-search:%'"
+        ),
+        [(0,)],
+    )
+    approve(permissions)
+    return {
+        "new_views_without_all_grants": len(permissions),
+        "physical_http": 0,
+        "frozen_view_extended_after_handshake": False,
+        "original_disconnect": error["error"],
+    }
 
 
 def exercise(ctx, sdk, profile="debug"):
@@ -106,9 +195,14 @@ native_web_search=true
             reply(q, "")
             owner.finished(ev)
 
+        # An installed peer can be unavailable while the rest of Main is ready.
+        hold = plugin.folder / "withhold-handshake"
+        hold.write_text("offline", encoding="utf-8")
         with owner.svc.running():
-            ready(plugin)
             ready(foreign)
+            receipts["readiness"] = search_readiness(
+                ctx, owner, model, provider, plugin.folder
+            )
             ev = owner.human("native only")
             _, q = owner.wire(model)
             reply(q, calls=[call("native", "web_search", {"query": "no fallback"})])
@@ -342,6 +436,12 @@ native_web_search=true
             .replace("root_slots=8", "root_slots=1")
         )
         with owner.svc.running():
+            owner.until(
+                lambda: owner.rows(
+                    "SELECT online FROM host_installations WHERE plugin='search'"
+                )
+                == [(1,)]
+            )
             ev, frame = tool("exhausted original root")
             h = {"handle": frame["params"]["handle"]}
             plugin.rpc("search.begin", {**h, **paid}, False)

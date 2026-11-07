@@ -2,7 +2,7 @@ use crate::{Result, history, social};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use sqlx::SqliteConnection;
+use sqlx::{Row, SqliteConnection};
 use std::collections::BTreeMap;
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -277,14 +277,22 @@ pub async fn pinned(
     if cfg.bridge_search {
         tools.push(builtin("web_search").expect("built-in configured search"));
     }
-    let installed: Vec<(String, String, String, Option<String>)> = sqlx::query_as(
-        "SELECT i.plugin,i.revision,i.tools,CASE WHEN coalesce((SELECT value FROM core_meta WHERE key='external-search-enabled'),'false')!='true' OR NOT EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='search.external') THEN json_extract(m.value,'$.external_search.tool') END FROM host_installations i LEFT JOIN core_meta m ON m.key='plugin-install:'||i.plugin WHERE i.enabled ORDER BY i.plugin",
+    let installed = sqlx::query(
+        "SELECT i.plugin,i.revision,i.tools,i.generation,json_extract(m.value,'$.external_search.tool') AS search_tool
+         FROM host_installations i LEFT JOIN core_meta m ON m.key='plugin-install:'||i.plugin
+         WHERE i.enabled ORDER BY i.plugin",
     )
     .fetch_all(&mut *conn)
     .await?;
-    for (id, revision, raw, disabled_search) in installed {
-        for mut tool in serde_json::from_str::<Vec<Tool>>(&raw)? {
-            if disabled_search.as_deref() == Some(&tool.name) {
+    for row in installed {
+        let id: String = row.try_get("plugin")?;
+        let revision: String = row.try_get("revision")?;
+        let search_tool = row.try_get::<Option<&str>, _>("search_tool")?;
+        let suppress_search = search_tool.is_some()
+            && !crate::host::can_offer_external_search(conn, &id, row.try_get("generation")?)
+                .await?;
+        for mut tool in serde_json::from_str::<Vec<Tool>>(row.try_get("tools")?)? {
+            if suppress_search && search_tool == Some(tool.name.as_str()) {
                 continue;
             }
             tool.provider = Some(Provider {
