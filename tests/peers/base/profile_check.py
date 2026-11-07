@@ -49,7 +49,7 @@ def exercise(ctx, binary, installed, profile):
             "account",
             "open",
             "telegram",
-            "surface",
+            "selected",
             "1001",
             "1",
             "--start",
@@ -85,6 +85,7 @@ def exercise(ctx, binary, installed, profile):
             )
             if name == "selected":
                 definition.update(platform="telegram", bot_stage=bot["assignment"])
+                definition["args"].append("original-inbound")
             definitions.append(
                 "\n[[plugins]]\n"
                 + "\n".join(
@@ -144,13 +145,34 @@ def exercise(ctx, binary, installed, profile):
                     -32601,
                 )
                 ctx.write(cycle + "-" + name + ".json", result)
+                if name == "selected":
+                    admitted = result["inbound"].get("result", {})
+                    ctx.check(
+                        cycle + " admits the original namespace",
+                        type(admitted.get("event")) is int
+                        and admitted["event"] > 0
+                        and admitted["accepted"] is False,
+                    )
+                    if runs:
+                        ctx.equal(
+                            "cold replay returns the original event",
+                            admitted["event"],
+                            runs[0]["event"],
+                        )
             info = owner.command("operator", "database-info")
             ctx.equal(
                 cycle + " actual storage reader",
                 info["minimum_reader"],
                 storage["schema_version"],
             )
-            runs.append({"case": cycle, "plugins": status["plugins"], "storage": info})
+            runs.append(
+                {
+                    "case": cycle,
+                    "plugins": status["plugins"],
+                    "storage": info,
+                    "event": admitted["event"],
+                }
+            )
     return {
         "status": "PASS",
         "scope": "native-selected-profile-admission",
