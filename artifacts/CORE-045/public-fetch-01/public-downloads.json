@@ -1,0 +1,12 @@
+{
+  "stable": {
+    "sha256": "0b8aaa1b53cfd3c61ea9d8a7af4eb941780587fa421c54b8b8f9f76e71098af3",
+    "url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/telegram-0.1.0-darwin-arm64.zip",
+    "status": "PASS"
+  },
+  "candidate": {
+    "sha256": "0350a691d603963fa504420edcc8426257e3940f0983c63be19bb93da6af58ea",
+    "url": "https://raw.githubusercontent.com/Institute-of-Agent-Life/yuki-extensions/aade42205aaba6e32da08ea548ca46aeb6508126/artifacts/EXT-004/original-activity-17/macos.zip",
+    "status": "PASS"
+  }
+}

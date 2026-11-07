@@ -1,0 +1,29 @@
+{
+  "host_schema_revision": 2,
+  "plugins": [
+    {
+      "enabled": true,
+      "generation": "59e4e684-81bb-4085-ba8b-001feb0bb845",
+      "namespace": "tg.compat",
+      "online": true,
+      "plugin": "healthy",
+      "revision": "4d488522ba0783ea84a1f782b70dd1945a40a5b122ae9a04da0ffbf1832001f7"
+    },
+    {
+      "enabled": true,
+      "generation": "b33e0bbe-55ea-4447-a655-9695b2b643e7",
+      "namespace": "missing-field",
+      "online": true,
+      "plugin": "missing-field",
+      "revision": "3de563315d9bf2f9b0cce0003b6dfe06c31ee7efd547115ad08a43d4741b4c4c"
+    },
+    {
+      "enabled": true,
+      "generation": "0dc5aea0-2733-464e-8392-cb46d9534e57",
+      "namespace": "too-old",
+      "online": false,
+      "plugin": "too-old",
+      "revision": "063c13b6fe5aa8774c22d760c71b8581be3fbb9fb33c8e753015bae7f32c20cc"
+    }
+  ]
+}

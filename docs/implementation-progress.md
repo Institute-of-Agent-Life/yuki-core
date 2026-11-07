@@ -2,10 +2,11 @@
 
 2026-11-06。固定 v4 行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；任務書工作副本的 CORE-011 已採用 K05 的邏輯請求預留規則。下列證據路徑相對於 yuki-core 工作目錄。
 
-**CORE-032 Gateway activity 進行中。** 分支 `codex/core-032-gateway-activity`。SDK alpha.17 新增明選的 `gateway.activity` 通知。Main 的原執行存活時每兩秒續期，通知有五秒期限，結束時關閉該 lease。派發前重新檢查原 source、Bot／chat／topic、授權與 Main 存活狀態。有限佇列中的 UI 通知獨立於業務效果。Mac 預驗 `artifacts/CORE-038/gateway-activity-preflight-03/manifest.json` 已通過 380 項，包含原 chat 續期、結束、來源刪除後停止續期及原消息投遞。三端完整 CI 和 Telegram UI 故障重放接續執行。
+**CORE-045 進行中。** 分支 `codex/core-045-published-consumer`。擴展正式發布 `plugin/telegram/v0.1.0`，來源 `e9e012d761da`、SDK 1.0.0。五個附件下載後逐檔 SHA-256 相符，發布回條在 `fixtures/compat/telegram-0.1.0/published-receipt.json`。固定 B0、此 stable 插件與擴展 #58 alpha.9，Mac 四格正常／失回應重放已過，兩種不相容實例均被單獨拒絕。正常卡入口 `artifacts/CORE-045/preflight-04/manifest.json` 已通過 25 項斷言與 Rust 檢查。前輪缺少 SQLite 建置回條已補取真 Host 資訊並重驗。本地三端完整 CI 接續執行，未計入完成數。
 
-**CORE-025／038 原消息撤回。** #108 head `78df98498670`，分支 `codex/core-025-host-recall`。SDK alpha.16、明選 `gateway.recall` 權限。原消息共享一筆物理撤回，回應遺失保留 unknown，冷啟讀原回條。Mac 預驗通過 376 項，隨後 Mac／Linux 各 50 卡通過，HJW 正在建置 release。Linux 首次輸出路徑撞到已追蹤的收據目錄，改用 `artifacts/run` 後同來源全套通過。具體結果見 `artifacts/ci/local-pr/108/108-120db2d663af-bfbde1/`。Mac／Linux 簽署候選在 `artifacts/CORE-039/pr108-original-recall/`，均未發布。Telegram Rust alpha.8 在 Mac 原包已通過十五組實際 Host 重放，擴展倉三端驗收待完成。
+**CORE-032 activity 與 CORE-025 撤回已合併。** #108 head `78df98498670` 合併 `427ffdf8a937`，#109 head `f5a488f46c16` 合併 `dc698f5a88dd`。兩個 PR 在 Mac／Linux／HJW 各通過 50 卡。三端簽署候選與完整 SHA-256 分別在 `artifacts/CORE-039/pr108-original-recall/verified-candidates.json`、`artifacts/CORE-039/pr109-original-activity/verified-candidates.json`。後者來源 `78394082d8ea`、SDK alpha.17。全部仍為未發布候選。
 
+擴展 #57 撤回已合併 `f2bb0c977eaf`，#58 的 Telegram alpha.9 已合併 `e7dad7c8888c`。Mac／Linux／HJW 各以 #109 同平台原包通過 22 組附件、引用、撤回及 typing 重放。真消費回條在 `artifacts/CORE-032/ext004-activity-pr58/`，完整原線路與插件原包在擴展 `artifacts/EXT-004/original-activity-17/`。本輪清理三個已閒置 SDK 驗證 target，共 197,545,414 logical bytes，71 個原包／來源／回條雜湊保持一致，清單與結果在 `artifacts/ci/cleanup-20261106/completed-sdk-verified.json`。
 
 **CORE-038 原事件引用已合併。** #107 head `a01fdc14cb2a`，main `ddd42728b760`，本地 Mac／Linux／HJW Windows 各 50 卡通過。候選來源 `7965392bd7de`，reader 55、握手 1、Host 2、SDK alpha.15，三端簽署原包及 SHA-256 在 `artifacts/CORE-039/pr107-original-reply/verified-candidates.json`，狀態為本地未發布。擴展 #56 head `372484a836a8`、main `5ba070ca10f8`，以同平台原包各重放 10 種情境，原 Bot、群話題和首段引用皆有見證。具名回條及逐檔雜湊在擴展倉 `artifacts/EXT-004/original-reply-13/telegram-delivery.json`。核心保留交接索引 `artifacts/CORE-038/ext004-original-reply-pr56/witness.json`。
 
@@ -91,7 +92,7 @@ GitHub 已正式發布 `plugin-base-v1.0.0`。九個附件均已重新下載，�
 | 待辦 | 下一步與交接物 |
 |---|---|
 | CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；A／B／C 的搜尋設定還需在同一安裝對齊。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
-| CORE-045 → 053 | 核心基底 1.0.0 已可供 EXT-043 下載。擴展倉已交 `artifacts/EXT-043/01/extension-release-lock.json`，其中 `extension_published=false`。取得對應的正式 Telegram 包與發布回執後，執行 CORE-045 版本組合驗收。 |
+| CORE-045 → 053 | Telegram 0.1.0 已正式發布並逐檔回取驗 SHA。#110 的 Mac 51 卡通過，Linux 首輪因原插件要求 glibc 2.39 而失敗。符合要求的本地 Linux 鏡像已通過四格八次原包重放，三端全量重跑後才完成 CORE-045，再接 CORE-053。 |
 | CORE-043 → 046 → 047 | 待 EXT-041 的 `extension-import-diff.json`、EXT-044 的 `desktop-package-matrix.json`、EXT-045 的 `install-restore-matrix.json` 及 EXT-042 的實物逐字稿。 |
 
 本輪 Mac 清理回執見 `artifacts/ci/cleanup-20261106/`。先前五個閒置 incremental 目錄合計回收 17.61 GiB，Telegram 建置後另清理約 130 MiB 的中間檔案。#98 的獨立 Mac 預驗再回收 4.39 GiB，保留核心、測試執行檔和回條並重驗 SHA-256（`pr98-mac-preflight-intermediates-verified.json`）。 #99 的專用編譯中間檔另回收 Mac 8.32 GiB、HJW 1.75 GiB；執行檔與保留記錄均已重驗（`core044-mac-build-verified.json` 和 `core044-windows-owned-build-verified.json`）。 #101 完成後另回收 0.57 GiB 已被替代的本機編譯快取，保留包及回條雜湊均相符（`core101-mac-superseded-verified.json`）。

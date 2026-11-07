@@ -1,6 +1,7 @@
 """Record a test installation's real child; optionally omit one negotiated test method."""
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -11,9 +12,14 @@ import time
 def main():
     program, log_name, workspace, fault = sys.argv[1:]
     log = Path(log_name)
-    child = subprocess.Popen(
-        [program], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=workspace
-    )
+    environment = dict(os.environ)
+    if fault in {"unsupported-version", "missing-required-field"}:
+        environment["YUKI_TELEGRAM_TOKEN"] = "101:" + fault
+    with log.with_suffix(".stderr.log").open("ab") as errors:
+        child = subprocess.Popen(
+            [program], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=workspace,
+            env=environment, stderr=errors,
+        )
     lock = threading.Lock()
     killed_for_test = threading.Event()
 
@@ -26,6 +32,26 @@ def main():
             for line in stream:
                 frame = json.loads(line)
                 result = frame.get("result", {})
+                if (
+                    fault == "unsupported-version"
+                    and direction == "from_plugin"
+                    and frame.get("method") == "initialize"
+                ):
+                    record({"direction": "before_fault", "frame": frame})
+                    frame["params"]["versions"] = {
+                        "min": {"major": 0, "minor": 0},
+                        "max": {"major": 0, "minor": 0},
+                    }
+                    line = (json.dumps(frame) + "\n").encode()
+                if (
+                    fault == "missing-required-field"
+                    and direction == "from_host"
+                    and isinstance(result, dict)
+                    and "namespace" in result
+                ):
+                    record({"direction": "before_fault", "frame": frame})
+                    del result["namespace"]
+                    line = (json.dumps(frame) + "\n").encode()
                 if (
                     fault == "missing-method"
                     and direction == "from_host"

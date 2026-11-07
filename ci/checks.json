@@ -297,6 +297,11 @@
       "rust": true,
       "capabilities": ["source-publication-fence", "durable-owner-erasure"]
     },
+    "CORE-045": {
+      "case": "tests/cases/CORE-045.py", "artifact": "compat-cells.json",
+      "timeout_seconds": 360, "rust": true, "release": true, "consumer_matrix": true,
+      "capabilities": ["published-stable-consumer", "four-native-version-cells", "isolated-version-rejection", "required-field-negative-replay"]
+    },
     "CORE-044": {
       "case": "tests/cases/CORE-044.py", "artifact": "frozen-wire.json",
       "timeout_seconds": 300, "rust": true, "release": true,

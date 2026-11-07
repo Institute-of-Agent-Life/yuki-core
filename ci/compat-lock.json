@@ -1,0 +1,91 @@
+{
+  "format": 1,
+  "minimum_protocol_version": "1.0",
+  "linux_runtime": {
+    "minimum_glibc": "2.39",
+    "required_commands": ["curl"],
+    "qualified_local_image": "sha256:3668e80e411d173fd09120481df76baa4c50e2c2e3620f192cffdc49a0623e96"
+  },
+  "base_commit": "c6bd0c75e38717abc71373201d31a77982428d5b",
+  "base_version": "1.0.0",
+  "stable_commit": "e9e012d761da06548ecdd7ae2f39deeaf2b4b33d",
+  "stable_version": "0.1.0",
+  "stable_sdk": "1.0.0",
+  "candidate_commit": "aade42205aaba6e32da08ea548ca46aeb6508126",
+  "candidate_version": "0.1.0-alpha.9",
+  "candidate_sdk": "1.0.0-alpha.17",
+  "previous_stable": {
+    "status": "N/A",
+    "reason": "first published stable plugin; B0 provides transition coverage"
+  },
+  "platforms": {
+    "darwin-arm64": {
+      "base": {
+        "name": "yuki-plugin-base-1.0.0-darwin-arm64.zip",
+        "sha256": "ed0aef8a02d216133a21dc784c67d2c344f5bd667f168884ae5475ea1465e533",
+        "size": 13780295,
+        "url": "https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/plugin-base-v1.0.0/yuki-plugin-base-1.0.0-darwin-arm64.zip"
+      },
+      "stable": {
+        "name": "telegram-0.1.0-darwin-arm64.zip",
+        "size": 481778,
+        "sha256": "0b8aaa1b53cfd3c61ea9d8a7af4eb941780587fa421c54b8b8f9f76e71098af3",
+        "url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/telegram-0.1.0-darwin-arm64.zip"
+      },
+      "candidate": {
+        "name": "macos.zip",
+        "size": 2347241,
+        "sha256": "0350a691d603963fa504420edcc8426257e3940f0983c63be19bb93da6af58ea",
+        "url": "https://raw.githubusercontent.com/Institute-of-Agent-Life/yuki-extensions/aade42205aaba6e32da08ea548ca46aeb6508126/artifacts/EXT-004/original-activity-17/macos.zip"
+      }
+    },
+    "linux-arm64": {
+      "base": {
+        "name": "yuki-plugin-base-1.0.0-linux-arm64.zip",
+        "sha256": "737d5d0ff9ec8e77adc898f5a6112f742c7785bc395730b65a1e4b13310eb69f",
+        "size": 14550465,
+        "url": "https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/plugin-base-v1.0.0/yuki-plugin-base-1.0.0-linux-arm64.zip"
+      },
+      "stable": {
+        "name": "telegram-0.1.0-linux-arm64.zip",
+        "size": 516894,
+        "sha256": "8d92721c543b4e78d2e9ff46ea02dfbdaef44b0ead2eaf90554f30db1dfdae73",
+        "url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/telegram-0.1.0-linux-arm64.zip"
+      },
+      "candidate": {
+        "name": "linux.zip",
+        "size": 2384042,
+        "sha256": "55e35665def3149934cd1086996c1331b00d4aa62b8a25ca9caaea630fefb82f",
+        "url": "https://raw.githubusercontent.com/Institute-of-Agent-Life/yuki-extensions/aade42205aaba6e32da08ea548ca46aeb6508126/artifacts/EXT-004/original-activity-17/linux.zip"
+      }
+    },
+    "windows-x86_64": {
+      "base": {
+        "name": "yuki-plugin-base-1.0.0-windows-x86_64.zip",
+        "sha256": "287167dae7b2b1222efd22fa5a0aa58e1c39f7129c7112e5b81cebb6278a7ecd",
+        "size": 17597555,
+        "url": "https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/plugin-base-v1.0.0/yuki-plugin-base-1.0.0-windows-x86_64.zip"
+      },
+      "stable": {
+        "name": "telegram-0.1.0-windows-x86_64.zip",
+        "size": 1099355,
+        "sha256": "15bb4f2c76d145c74b2ecc6b8c1631edff02bcd6826998ac4d1da823c1cec417",
+        "url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/telegram-0.1.0-windows-x86_64.zip"
+      },
+      "candidate": {
+        "name": "windows.zip",
+        "size": 2684714,
+        "sha256": "db9ae891b1363d89045e82adbf4c29a44f80fcd55ab34dad38c80409aa74dc95",
+        "url": "https://raw.githubusercontent.com/Institute-of-Agent-Life/yuki-extensions/aade42205aaba6e32da08ea548ca46aeb6508126/artifacts/EXT-004/original-activity-17/windows.zip"
+      }
+    }
+  },
+  "signer": {
+    "name": "signer.pub",
+    "sha256": "b94f861a2d7a4a53ae689cea4990cbff6387ae9f019bba1780a1f832fadb8541",
+    "size": 104,
+    "url": "https://github.com/Institute-of-Agent-Life/yuki-core/releases/download/plugin-base-v1.0.0/signer.pub"
+  },
+  "stable_sdk_sha256": "21aceed53a465aaefe6a74560a4d283b947c55dc6f5fb3fd5d5e10f4dc842711",
+  "candidate_sdk_sha256": "0aa6b01703908dc86fb9026eeaba3278842c089bd97832db09102dcd3496956b"
+}

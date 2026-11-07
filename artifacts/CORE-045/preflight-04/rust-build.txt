@@ -1,0 +1,10 @@
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `/Volumes/huawei/項目實戰/yuki-core/.cache/local-ci-checkouts/104-e74e468e0485-3fbd3a/target/debug/incremental/build_script_build-2qhdd770arxaj/s-hnxg8denvz-1iqn145-working`
+
+warning: `yuki-core` (build script) generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `/Volumes/huawei/項目實戰/yuki-core/.cache/local-ci-checkouts/104-e74e468e0485-3fbd3a/target/debug/incremental/yuki_plugin_sdk-19kb8gmacdorx/s-hnxg8deoed-0wsz4ec-working`
+
+warning: `yuki-plugin-sdk` (lib) generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `/Volumes/huawei/項目實戰/yuki-core/.cache/local-ci-checkouts/104-e74e468e0485-3fbd3a/target/debug/incremental/yuki_core-2zu5p2yeaim1t/s-hnxg98b8oq-135o0ti-working`
+
+warning: `yuki-core` (bin "yuki-core") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.37s

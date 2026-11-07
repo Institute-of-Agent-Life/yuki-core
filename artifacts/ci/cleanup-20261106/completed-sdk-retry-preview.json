@@ -1,0 +1,18 @@
+{
+  "prior_failure": "cargo clean encountered an automatically removed AppleDouble CACHEDIR.TAG sidecar",
+  "targets": [
+    {
+      "target": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/recall-sdk-alpha16-verify/rust-target",
+      "remaining_bytes": 85059126
+    },
+    {
+      "target": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/activity-sdk-alpha17-verify/rust-target",
+      "remaining_bytes": 85071216
+    },
+    {
+      "target": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/worktrees/gateway-recall/sdk/rust/target",
+      "remaining_bytes": 27410799
+    }
+  ],
+  "protected_files_verified": 71
+}
