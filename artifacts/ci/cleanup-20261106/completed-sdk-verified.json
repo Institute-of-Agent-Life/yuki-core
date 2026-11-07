@@ -1,0 +1,12 @@
+{
+  "status": "verified",
+  "targets": [
+    "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/recall-sdk-alpha16-verify/rust-target",
+    "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/activity-sdk-alpha17-verify/rust-target",
+    "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/worktrees/gateway-recall/sdk/rust/target"
+  ],
+  "removed_logical_bytes": 197545414,
+  "protected_files": 71,
+  "preview_sha256": "eef74d5fb97f27393de9427d65d556fea290ea3b3cc9198a66e1cb7cfd8cd2bc",
+  "retry": "removed exact previewed build targets after checking sidecar race and protected hashes"
+}

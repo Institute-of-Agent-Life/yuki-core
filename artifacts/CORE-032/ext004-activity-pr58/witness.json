@@ -1,0 +1,19 @@
+{
+  "status": "verified-real-consumer-on-candidate",
+  "extension_pr": 58,
+  "extension_head": "aade422",
+  "extension_merge": "e7dad7c8888c0db723298cb5eacbf1d832645217",
+  "core_pr": 109,
+  "core_merge": "dc698f5a88dd57f32f7e13762162c5c94fa2e554",
+  "candidate_manifest": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/artifacts/CORE-039/pr109-original-activity/verified-candidates.json",
+  "consumer_receipt": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-extensions/.ci-transfer/work-tg-typing/artifacts/EXT-004/original-activity-17/telegram-delivery.json",
+  "consumer_receipt_sha256": "6ee8ab0867e0d80f1b25adc059a209cf23e0af1050d04ce6e57cfc43c4f31e64",
+  "merge_receipt_sha256": "a119202029e5126ffb1f79c2f487f76fbdf5a380be4722cb4eeb9344d2b4a561",
+  "platforms": [
+    "macos",
+    "linux",
+    "windows"
+  ],
+  "cases_per_platform": 22,
+  "published": false
+}

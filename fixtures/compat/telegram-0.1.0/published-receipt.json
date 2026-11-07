@@ -1,0 +1,65 @@
+{
+  "status": "published-and-downloaded-verified",
+  "repository": "Institute-of-Agent-Life/yuki-extensions",
+  "tag": "plugin/telegram/v0.1.0",
+  "source_commit": "e9e012d761da06548ecdd7ae2f39deeaf2b4b33d",
+  "release_id": 437330686,
+  "url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/tag/plugin/telegram/v0.1.0",
+  "published_at": "2026-11-07T04:28:38Z",
+  "assets": [
+    {
+      "id": 719599313,
+      "name": "release-preparation.json",
+      "size": 1499,
+      "digest": "sha256:2c159681c8b835508845e7224b542d631dba2b274cfd4f33c18abbcbac6113c7",
+      "browser_download_url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/release-preparation.json"
+    },
+    {
+      "id": 719599294,
+      "name": "SHA256SUMS",
+      "size": 386,
+      "digest": "sha256:a34290ed7a6e24a09df04984b9ed265061eaf39d4d1315e4daabf097102c84e0",
+      "browser_download_url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/SHA256SUMS"
+    },
+    {
+      "id": 719599315,
+      "name": "telegram-0.1.0-darwin-arm64.zip",
+      "size": 481778,
+      "digest": "sha256:0b8aaa1b53cfd3c61ea9d8a7af4eb941780587fa421c54b8b8f9f76e71098af3",
+      "browser_download_url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/telegram-0.1.0-darwin-arm64.zip"
+    },
+    {
+      "id": 719599317,
+      "name": "telegram-0.1.0-linux-arm64.zip",
+      "size": 516894,
+      "digest": "sha256:8d92721c543b4e78d2e9ff46ea02dfbdaef44b0ead2eaf90554f30db1dfdae73",
+      "browser_download_url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/telegram-0.1.0-linux-arm64.zip"
+    },
+    {
+      "id": 719599293,
+      "name": "telegram-0.1.0-windows-x86_64.zip",
+      "size": 1099355,
+      "digest": "sha256:15bb4f2c76d145c74b2ecc6b8c1631edff02bcd6826998ac4d1da823c1cec417",
+      "browser_download_url": "https://github.com/Institute-of-Agent-Life/yuki-extensions/releases/download/plugin/telegram/v0.1.0/telegram-0.1.0-windows-x86_64.zip"
+    }
+  ],
+  "sha256": {
+    "release-preparation.json": "2c159681c8b835508845e7224b542d631dba2b274cfd4f33c18abbcbac6113c7",
+    "telegram-0.1.0-darwin-arm64.zip": "0b8aaa1b53cfd3c61ea9d8a7af4eb941780587fa421c54b8b8f9f76e71098af3",
+    "telegram-0.1.0-linux-arm64.zip": "8d92721c543b4e78d2e9ff46ea02dfbdaef44b0ead2eaf90554f30db1dfdae73",
+    "telegram-0.1.0-windows-x86_64.zip": "15bb4f2c76d145c74b2ecc6b8c1631edff02bcd6826998ac4d1da823c1cec417",
+    "SHA256SUMS": "a34290ed7a6e24a09df04984b9ed265061eaf39d4d1315e4daabf097102c84e0"
+  },
+  "workflow": {
+    "id": 409839290,
+    "prior_state": "active",
+    "state": "disabled_manually"
+  },
+  "capabilities": [
+    "gateway.inbound",
+    "gateway.plan_send",
+    "gateway.dispatch_part"
+  ],
+  "sdk": "1.0.0",
+  "paid_calls": 0
+}

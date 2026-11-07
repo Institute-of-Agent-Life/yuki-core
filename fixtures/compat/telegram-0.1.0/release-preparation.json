@@ -1,0 +1,41 @@
+{
+  "status": "prepared-unpublished",
+  "tag": "plugin/telegram/v0.1.0",
+  "source_commit": "e9e012d761da06548ecdd7ae2f39deeaf2b4b33d",
+  "sdk": "1.0.0",
+  "capabilities": [
+    "gateway.inbound",
+    "gateway.plan_send",
+    "gateway.dispatch_part"
+  ],
+  "assets": [
+    {
+      "platform": "macos",
+      "archive": "telegram-0.1.0-darwin-arm64.zip",
+      "sha256": "0b8aaa1b53cfd3c61ea9d8a7af4eb941780587fa421c54b8b8f9f76e71098af3",
+      "binary_sha256": {
+        "yuki-telegram": "cebe1da133bb712467b0b9e1cf80ed22b8dedc075708c6276234fbaf38142884"
+      },
+      "verification": "native unit tests, locked build and source qualification"
+    },
+    {
+      "platform": "linux",
+      "archive": "telegram-0.1.0-linux-arm64.zip",
+      "sha256": "8d92721c543b4e78d2e9ff46ea02dfbdaef44b0ead2eaf90554f30db1dfdae73",
+      "binary_sha256": {
+        "yuki-telegram": "5a83952107a64df46280d3d5ceea16e644ab8a19d3e48bd868bc13d75842eee8"
+      },
+      "verification": "native unit tests, locked build and source qualification"
+    },
+    {
+      "platform": "windows",
+      "archive": "telegram-0.1.0-windows-x86_64.zip",
+      "sha256": "15bb4f2c76d145c74b2ecc6b8c1631edff02bcd6826998ac4d1da823c1cec417",
+      "binary_sha256": {
+        "yuki-telegram.exe": "0b8f372765044534aafbcec5209330f1b0346fad988109ee53cc4d413caccafe"
+      },
+      "verification": "native unit tests, locked build and source qualification, fresh public Host normal/unknown/rollback replay"
+    }
+  ],
+  "paid_calls": 0
+}

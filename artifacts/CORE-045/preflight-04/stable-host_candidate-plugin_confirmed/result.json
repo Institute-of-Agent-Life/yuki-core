@@ -1,0 +1,126 @@
+{
+  "status": "PASS",
+  "scenario": "confirmed",
+  "state": "confirmed",
+  "native_parts": 3,
+  "post_restart_effects": 0,
+  "receipt": {
+    "id": "c86524e1-da3e-46b8-a0ab-c2a1048ab3ab",
+    "namespace": "23e1a70d-c2dc-4eb3-928f-56a583ee9ce0",
+    "ordinal": null,
+    "parent": null,
+    "result": {
+      "parts": [
+        {
+          "id": "c86524e1-da3e-46b8-a0ab-c2a1048ab3ab:gateway:1",
+          "namespace": "23e1a70d-c2dc-4eb3-928f-56a583ee9ce0",
+          "ordinal": 1,
+          "parent": "c86524e1-da3e-46b8-a0ab-c2a1048ab3ab",
+          "result": {
+            "locator": "8:701",
+            "state": "confirmed"
+          },
+          "state": "confirmed"
+        },
+        {
+          "id": "c86524e1-da3e-46b8-a0ab-c2a1048ab3ab:gateway:2",
+          "namespace": "23e1a70d-c2dc-4eb3-928f-56a583ee9ce0",
+          "ordinal": 2,
+          "parent": "c86524e1-da3e-46b8-a0ab-c2a1048ab3ab",
+          "result": {
+            "locator": "8:702",
+            "state": "confirmed"
+          },
+          "state": "confirmed"
+        },
+        {
+          "id": "c86524e1-da3e-46b8-a0ab-c2a1048ab3ab:gateway:3",
+          "namespace": "23e1a70d-c2dc-4eb3-928f-56a583ee9ce0",
+          "ordinal": 3,
+          "parent": "c86524e1-da3e-46b8-a0ab-c2a1048ab3ab",
+          "result": {
+            "locator": "8:703",
+            "state": "confirmed"
+          },
+          "state": "confirmed"
+        }
+      ],
+      "planned": 3
+    },
+    "state": "confirmed"
+  },
+  "host_sha256": "8768e4cf17fe2a355e11570002bb37d7adfc81c5f8ae77063f90094e025ea4cb",
+  "consumer_sha256": "1eb79c7523db16b74c151609c1a147850879b0e6d88156496b6f79c650276bb8",
+  "database_info": {
+    "busy_timeout_ms": 5000,
+    "compile_options": [
+      "ATOMIC_INTRINSICS=1",
+      "COMPILER=clang-21.0.0",
+      "DEFAULT_AUTOVACUUM",
+      "DEFAULT_CACHE_SIZE=-2000",
+      "DEFAULT_FILE_FORMAT=4",
+      "DEFAULT_FOREIGN_KEYS",
+      "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+      "DEFAULT_MMAP_SIZE=0",
+      "DEFAULT_PAGE_SIZE=4096",
+      "DEFAULT_PCACHE_INITSZ=20",
+      "DEFAULT_RECURSIVE_TRIGGERS",
+      "DEFAULT_SECTOR_SIZE=4096",
+      "DEFAULT_SYNCHRONOUS=2",
+      "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+      "DEFAULT_WAL_SYNCHRONOUS=2",
+      "DEFAULT_WORKER_THREADS=0",
+      "DIRECT_OVERFLOW_READ",
+      "ENABLE_API_ARMOR",
+      "ENABLE_COLUMN_METADATA",
+      "ENABLE_DBSTAT_VTAB",
+      "ENABLE_FTS3",
+      "ENABLE_FTS3_PARENTHESIS",
+      "ENABLE_FTS5",
+      "ENABLE_LOAD_EXTENSION",
+      "ENABLE_MEMORY_MANAGEMENT",
+      "ENABLE_RTREE",
+      "ENABLE_STAT4",
+      "ENABLE_UNLOCK_NOTIFY",
+      "HAVE_ISNAN",
+      "MALLOC_SOFT_LIMIT=1024",
+      "MAX_ATTACHED=10",
+      "MAX_COLUMN=2000",
+      "MAX_COMPOUND_SELECT=500",
+      "MAX_DEFAULT_PAGE_SIZE=8192",
+      "MAX_EXPR_DEPTH=1000",
+      "MAX_FUNCTION_ARG=127",
+      "MAX_LENGTH=1000000000",
+      "MAX_LIKE_PATTERN_LENGTH=50000",
+      "MAX_MMAP_SIZE=0x7fff0000",
+      "MAX_PAGE_COUNT=0xfffffffe",
+      "MAX_PAGE_SIZE=65536",
+      "MAX_SQL_LENGTH=1000000000",
+      "MAX_TRIGGER_DEPTH=1000",
+      "MAX_VARIABLE_NUMBER=32766",
+      "MAX_VDBE_OP=250000000",
+      "MAX_WORKER_THREADS=8",
+      "MUTEX_PTHREADS",
+      "SOUNDEX",
+      "SYSTEM_MALLOC",
+      "TEMP_STORE=1",
+      "THREADSAFE=1",
+      "USE_URI"
+    ],
+    "foreign_keys": 1,
+    "journal_mode": "wal",
+    "minimum_reader": 54,
+    "observed_connection": "writer",
+    "schema_version": 54,
+    "sqlite_version": "3.46.0",
+    "synchronous": 2
+  },
+  "isolated_rejections": {
+    "too-old": {
+      "code": -32010,
+      "message": "unsupported_version"
+    },
+    "missing-field": "native SDK rejected missing initialize namespace"
+  },
+  "paid_calls": 0
+}

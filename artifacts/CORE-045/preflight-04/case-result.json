@@ -1,0 +1,105 @@
+{
+  "assertions": [
+    {
+      "name": "changed published bytes are rejected",
+      "passed": true
+    },
+    {
+      "name": "stable-host_stable-plugin confirmed preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "stable-host_stable-plugin confirmed has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "stable-host_stable-plugin rejects only incompatible installations",
+      "passed": true
+    },
+    {
+      "name": "stable-host_stable-plugin lost-second preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "stable-host_stable-plugin lost-second has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "stable-host_stable-plugin rejects only incompatible installations",
+      "passed": true
+    },
+    {
+      "name": "stable-host_candidate-plugin confirmed preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "stable-host_candidate-plugin confirmed has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "stable-host_candidate-plugin rejects only incompatible installations",
+      "passed": true
+    },
+    {
+      "name": "stable-host_candidate-plugin lost-second preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "stable-host_candidate-plugin lost-second has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "stable-host_candidate-plugin rejects only incompatible installations",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_stable-plugin confirmed preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_stable-plugin confirmed has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_stable-plugin rejects only incompatible installations",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_stable-plugin lost-second preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_stable-plugin lost-second has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_stable-plugin rejects only incompatible installations",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_candidate-plugin confirmed preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_candidate-plugin confirmed has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_candidate-plugin rejects only incompatible installations",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_candidate-plugin lost-second preserves the original effect",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_candidate-plugin lost-second has zero restart effects",
+      "passed": true
+    },
+    {
+      "name": "candidate-host_candidate-plugin rejects only incompatible installations",
+      "passed": true
+    }
+  ],
+  "failure": null
+}

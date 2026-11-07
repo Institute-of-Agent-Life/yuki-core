@@ -64,6 +64,11 @@ def run_card(args, prepared=None):
             raise RuntimeError("locked Python " + lock["python"] + " required")
         spec = lock["cards"][args.card]
         manifest["capabilities"] = spec["capabilities"]
+        if spec.get("consumer_matrix"):
+            from compat_matrix import prepare
+
+            manifest["network"] = "fixed-public-inputs-then-python-loopback-only"
+            manifest["consumer_inputs"] = prepare(ROOT)
         if spec.get("rust") and prepared is not None:
             # The suite creates this in memory from a successful card in THIS job.
             # A standalone card always runs the compiler, lint and writer checks.
