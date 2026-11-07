@@ -440,6 +440,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 "media.open" | "media.publish" => {
                     super::media::callback(conn, id, instance, method, params).await
                 }
+                "gateway.read_text" => {
+                    super::gateway_text::callback(conn, id, instance, params).await
+                }
                 "device.auth" | "device.connect" | "device.check" | "device.close" | "work.get"
                 | "work.input" | "work.cancel" | "native.notify" | "native.queryAck" => {
                     super::personal::callback(conn, id, instance, method, params).await

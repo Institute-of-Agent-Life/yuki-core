@@ -224,7 +224,8 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .execute(&mut *conn)
                     .await?;
             }
-            let params = json!({"handle":handle,"operation":r.operation,"parent":r.parent,"ordinal":r.ordinal,"revision":revision,"name":r.name,"arguments":r.args});
+            let mut params = json!({"handle":handle,"operation":r.operation,"parent":r.parent,"ordinal":r.ordinal,"revision":revision,"name":r.name,"arguments":r.args});
+            super::gateway_text::project(&r.method, &mut params)?;
             grants::schema(&r.method, "host_to_plugin", &params)?;
             if r.method=="media.process" || (matches!(r.method.as_str(),"gateway.dispatch_part" | "gateway.prepare_part") && r.args.get("media").is_some()) || (r.method=="tool.call" && r.args.get("media").is_some() && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i,json_each(i.grants) g WHERE i.plugin=? AND g.value='media.open')").bind(&r.plugin).fetch_one(&mut *conn).await?) {
                 super::media::select(conn,r,&handle,&who).await?;

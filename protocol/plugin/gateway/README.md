@@ -1,6 +1,6 @@
 # Host candidate
 
-The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.19` and Python SDK `1.0.0a19`.
+The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.20` and Python SDK `1.0.0a20`.
 
 Install an executable through a `[[plugins]]` entry in the owner's private `yuki.toml`. Specify `id`, `namespace`, an absolute `program` and `args`. A gateway also needs its `platform` and the installed SELF assignment's `bot_stage`. Configure `grants` individually. `commands` lists full command paths. `[[plugins.tools]]` records the name, description, JSON Schema and visibility that the host freezes for the next activation. The `env` list selects which environment variables reach this executable.
 
@@ -33,3 +33,21 @@ SDK alpha.19 adds `gateway.prepare_part` under `gateway.send`. A pure plan can r
 The Host supplies a separate operation and handle for each upload and visible delivery. The upload reads the selected bytes through `media.open` and returns `{ "state": "confirmed", "resource": { "kind": "image", "key": "native-key" } }`. Failed and unknown results stop the sequence. Missing resource data leaves the upload unknown. A confirmed upload creates an immutable receipt and the later visible dispatch receives it in `arguments.prepared`, bound to the original parent, media version, namespace, application and deployment. Before dispatch the writer rechecks that receipt, source and media authority. Only a confirmed visible delivery enters `social_outbound`. Cold restart reads original outcomes without retrying an unknown physical request.
 
 The original gateway route includes `scope` from its canonical entry (`private` or `group`). Native gateways use this value to choose the recipient identifier type. The Host copies the original route into each planned physical step.
+
+## Bounded original text
+
+SDK alpha.20 adds `gateway.read_text`. Large `gateway.plan_send` calls carry
+`arguments.text_source` with the original UTF-8 byte count and SHA-256, while
+`message.text` is omitted on the wire. The immutable Host call retains the text.
+The gateway reads pages through that call's envelope handle. Parameters are
+`handle`, byte `offset` and `length` up to 12 KiB. Replies contain `offset`,
+`total`, `sha256`, base64 `bytes` and `done`. `gateway.send` and an enabled
+`forget.owner` are required. Every read rechecks the original execution,
+installation revision, connection generation and source erasure fences.
+
+The planner returns ordered `text_range` parts with `start`, `length` and the
+selected range's `sha256`. Ranges cover the entire original text exactly once
+on UTF-8 boundaries. A range part carries no inline text or media selection.
+Only the first visible part keeps the original quote. A dispatch handle can
+read only its own confirmed plan's range, using offsets relative to that range.
+Each physical native send retains its own operation and locator. Each protocol frame is bounded at 64 KiB.
