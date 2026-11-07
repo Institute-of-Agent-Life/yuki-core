@@ -277,13 +277,16 @@ pub async fn pinned(
     if cfg.bridge_search {
         tools.push(builtin("web_search").expect("built-in configured search"));
     }
-    let installed: Vec<(String, String, String)> = sqlx::query_as(
-        "SELECT plugin,revision,tools FROM host_installations WHERE enabled ORDER BY plugin",
+    let installed: Vec<(String, String, String, Option<String>)> = sqlx::query_as(
+        "SELECT i.plugin,i.revision,i.tools,CASE WHEN coalesce((SELECT value FROM core_meta WHERE key='external-search-enabled'),'false')!='true' OR NOT EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='search.external') THEN json_extract(m.value,'$.external_search.tool') END FROM host_installations i LEFT JOIN core_meta m ON m.key='plugin-install:'||i.plugin WHERE i.enabled ORDER BY i.plugin",
     )
     .fetch_all(&mut *conn)
     .await?;
-    for (id, revision, raw) in installed {
+    for (id, revision, raw, disabled_search) in installed {
         for mut tool in serde_json::from_str::<Vec<Tool>>(&raw)? {
+            if disabled_search.as_deref() == Some(&tool.name) {
+                continue;
+            }
             tool.provider = Some(Provider {
                 id: id.clone(),
                 revision: revision.clone(),

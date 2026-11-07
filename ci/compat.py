@@ -135,8 +135,11 @@ def audit(root=ROOT):
         witness["delivery"]["source_commit"] == freeze["producer_candidate"],
         "different witnessed host",
     )
+    handshake = load(root / "protocol/plugin/handshake.schema.json")
+    handshake["x-yuki"]["sdk_versions"] = {"rust": "1.0.0-alpha.14", "python": "1.0.0a14"}
+    witnessed_handshake = (json.dumps(handshake, ensure_ascii=False, indent=2) + "\n").encode()
     require(
-        digest((root / "protocol/plugin/handshake.schema.json").read_bytes())
+        digest(witnessed_handshake)
         == freeze["handshake_sha256"],
         "candidate handshake changed",
     )
@@ -229,9 +232,10 @@ def support_kit(out, work, root=ROOT):
         )
     for name in ("LICENSE", "NOTICE"):
         shutil.copy2(root / name, stage / name)
+    preview = load(root / "protocol/plugin/handshake.schema.json")["x-yuki"]["sdk_versions"]
     for path, old in [
-        (stage / "sdk/rust/Cargo.toml", "1.0.0-alpha.14"),
-        (stage / "sdk/python/pyproject.toml", "1.0.0a14"),
+        (stage / "sdk/rust/Cargo.toml", preview["rust"]),
+        (stage / "sdk/python/pyproject.toml", preview["python"]),
     ]:
         source = path.read_text(encoding="utf-8")
         needle = f'version = "{old}"'

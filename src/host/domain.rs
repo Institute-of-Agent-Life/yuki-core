@@ -30,6 +30,7 @@ pub(super) async fn close(conn: &mut SqliteConnection, id: &str, generation: &st
     sqlx::query("UPDATE operations SET state='unknown',result='null' WHERE (namespace,operation_id) IN(SELECT execution,operation FROM host_calls WHERE plugin=? AND generation=? AND state='unknown') AND state='dispatched'").bind(id).bind(generation).execute(&mut *conn).await?;
     sqlx::query("UPDATE model_attempts SET state='unknown',ever_unknown=1 WHERE state='dispatched' AND logical IN(SELECT logical FROM host_aux_requests WHERE plugin=? AND dispatched_generation=?)")
         .bind(id).bind(generation).execute(&mut *conn).await?;
+    super::external_search::disconnected(conn, id, generation).await?;
     sqlx::query("UPDATE host_command_events SET state=CASE WHEN EXISTS(SELECT 1 FROM host_calls c WHERE c.execution=host_command_events.execution AND c.method='command.invoke' AND c.state='unknown') THEN 'unknown' ELSE 'unavailable' END WHERE plugin=? AND generation=? AND state='queued'").bind(id).bind(generation).execute(conn).await?;
     Ok(())
 }
@@ -310,7 +311,11 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             gate.check(conn, plugin, generation).await?;
             Ok(Value::Null)
         }
-        Change::Configure(installs) => configure(conn, installs).await,
+        Change::Configure(installs, external_search) => {
+            crate::operator::domain::put(conn, "external-search-enabled", &json!(external_search))
+                .await?;
+            configure(conn, installs).await
+        }
         Change::Start(id, cleanup, declaration) => {
             let install = crate::operator::domain::get(conn, &format!("plugin-install:{id}"))
                 .await?
@@ -410,6 +415,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                         method,
                     )
                     .await
+                }
+                "search.begin" | "search.finish" | "search.status" => {
+                    super::external_search::callback(conn, id, instance, method, params).await
                 }
                 "terminal.scope" | "terminal.bind" => {
                     super::terminal_work::callback(conn, id, instance, method, params).await

@@ -101,6 +101,7 @@ pub fn accounting_only(raw: &str) -> String {
         "reasoning",
         "total",
         "billed_microusd",
+        "credits",
         "uncached_input",
         "cache_creation",
         "cache_creation_5m",

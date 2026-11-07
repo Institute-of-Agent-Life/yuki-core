@@ -17,9 +17,9 @@ pub async fn operator(conn: &mut SqliteConnection, config: &Config, cmd: &Action
     {
         return Err("scheduled occurrence belongs to its original admission".into());
     }
-    if matches!(cmd,Action::Register{id,..}|Action::Trigger{id,..}|Action::Revoke{id} if id.starts_with("native-search:"))
+    if matches!(cmd,Action::Register{id,..}|Action::Trigger{id,..}|Action::Revoke{id} if id.starts_with("native-search:") || id.starts_with("external-search:"))
     {
-        return Err("reserved native search origin".into());
+        return Err("reserved search origin".into());
     }
     match cmd {
         Action::Register {
