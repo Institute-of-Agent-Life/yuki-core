@@ -102,6 +102,8 @@ def gateway_delivery(ctx, sdk, paper):
     )
     with Recorder() as model:
         installed(ctx, owner, folders, sdk, model, False, gateway=bot["assignment"])
+        config = owner.svc.data / "yuki.toml"
+        config.write_text(config.read_text().replace("root_slots=8", "root_slots=16"))
         env = {**os.environ, "YUKI_BROKER_QQ": "synthetic-media-receiver"}
         with owner.svc.running(environment=env):
             ready(owner, folders)
@@ -157,6 +159,7 @@ def gateway_delivery(ctx, sdk, paper):
                 ({"emoji": {"goal": "greet"}}, "gateway_media_unsupported"),
                 ({**args, "artifact_id": "unread-version"}, "gateway_artifact_unavailable"),
                 ({**args, "attachment_kind": "image"}, "gateway_attachment_kind_mismatch"),
+                ({"text":"outside reply", "reply_to_event_id":-1}, "gateway_reply_unavailable"),
             ]:
                 q = refused_media_send(ctx, owner, model, q, execution, arguments, reason)
             (peer / "tamper-plan").touch()
@@ -199,6 +202,21 @@ def gateway_delivery(ctx, sdk, paper):
                     "room-42",
                 ),
             )
+            (peer / "tamper-reply").touch()
+            reply(q, calls=[call("changed-reply", "send", {"text":"original reply", "reply_to_event_id":event})])
+            wire, q = owner.wire(model)
+            rejected = json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == "changed-reply"))
+            ctx.check("changed quoted native ID stops before physical dispatch",
+                      rejected["state"] == "failed" and not (peer / "reply-dispatched.json").exists())
+            (peer / "tamper-reply").unlink()
+            reply(q, calls=[call("original-reply", "send", {"text":"original reply", "reply_to_event_id":event})])
+            wire, q = owner.wire(model)
+            quoted = json.loads((peer / "reply-dispatched.json").read_bytes())
+            ctx.equal("the original receiver resolves the original event to its own native ID",
+                      quoted["reply"], {"event_id":event, "native_id":"99"})
+            ctx.equal("quoted dispatch preserves the plan's first immutable part", quoted["part"]["reply"], quoted["reply"])
+            ctx.equal("quoted send succeeds on its original operation",
+                      json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == "original-reply"))["state"], "confirmed")
             reply(q, "done")
             owner.finished(event)
             ctx.equal(
@@ -209,6 +227,36 @@ def gateway_delivery(ctx, sdk, paper):
                 ),
                 [(1,)],
             )
+            def submit_source(source, accept, **fields):
+                (peer / "probed.json").unlink()
+                cmd.write_text(json.dumps({"method":"gateway.inbound", "params":{
+                    "source":source, "native_id":source, "sender":"room-42", "occurred":20,
+                    "kind":"message", "segments":[{"type":"text","text":source}], "accept":accept, **fields}}))
+                cmd.rename(peer / "probe.json")
+                owner.until(lambda: (peer / "probed.json").exists())
+                return json.loads((peer / "probed.json").read_bytes())["result"]["event"]
+
+            quoted_event = submit_source("erasable-reply", False)
+            foreign_event = submit_source("other-topic", False, space="separate-room", topic="other")
+            trigger = submit_source("reply-race", True)
+            _, q = owner.wire(model)
+            race_execution = owner.rows("SELECT id FROM executions WHERE source=?", trigger)[0][0]
+            q = refused_media_send(ctx, owner, model, q, race_execution,
+                                   {"text":"cross-entry reply", "reply_to_event_id":foreign_event},
+                                   "gateway_reply_unavailable")
+            (peer / "pause-reply-plan").touch()
+            before = owner.rows("SELECT count(*) FROM host_calls WHERE method='gateway.dispatch_part'")
+            reply(q, calls=[call("reply-then-forget", "send", {"text":"original source", "reply_to_event_id":quoted_event})])
+            owner.until(lambda: (peer / "reply-plan-waiting.json").exists())
+            owner.op("privacy", "erase", "forget-quoted-source", owner.actor, json.dumps([quoted_event]))
+            (peer / "pause-reply-plan").unlink()
+            owner.until(lambda: owner.rows("SELECT id FROM executions WHERE source=? AND state='held'", trigger))
+            ctx.equal("source erased during planning never opens a physical dispatch",
+                      owner.rows("SELECT count(*) FROM host_calls WHERE method='gateway.dispatch_part'"), before)
+            ctx.equal("erased quote cannot replace the previous native receipt",
+                      json.loads((peer / "reply-dispatched.json").read_bytes()), quoted)
+            routed["reply_race"] = {"source":quoted_event, "trigger":trigger, "physical_dispatches":0,
+                                    "execution_state":"held"}
             return routed
 
 

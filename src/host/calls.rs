@@ -83,6 +83,7 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
         if !own {
             return Err("gateway delivery requires original gateway source and route".into());
         }
+        super::send::check_reply(conn, id, &r.args).await?;
     }
     Ok(())
 }
@@ -213,7 +214,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             plugin,
             generation,
         } => {
-            let row=sqlx::query("SELECT c.execution,c.operation,c.method FROM host_calls c JOIN host_installations i ON i.plugin=c.plugin AND i.revision=c.revision WHERE c.handle=? AND c.plugin=? AND c.generation=? AND c.state='queued'").bind(handle).bind(plugin).bind(generation).fetch_one(&mut *conn).await?;
+            let row=sqlx::query("SELECT c.execution,c.operation,c.method,c.args FROM host_calls c JOIN host_installations i ON i.plugin=c.plugin AND i.revision=c.revision WHERE c.handle=? AND c.plugin=? AND c.generation=? AND c.state='queued'").bind(handle).bind(plugin).bind(generation).fetch_one(&mut *conn).await?;
             let method: String = row.try_get("method")?;
             let exec: String = row.try_get("execution")?;
             let who = actor(conn, &exec).await?;
@@ -226,6 +227,10 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .ok_or("unknown grant")?,
             )
             .await?;
+            if method.starts_with("gateway.") {
+                let args: Value = serde_json::from_str(row.try_get("args")?)?;
+                super::send::check_reply(conn, plugin, &args).await?;
+            }
             if method == "tool.call" {
                 super::external_search::before_dispatch(conn, handle, plugin, generation).await?;
             }

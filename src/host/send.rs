@@ -1,7 +1,52 @@
 use super::{Hub, calls};
 use crate::{Result, runtime::effects, social::destination::Refused, store::Store};
 use serde_json::{Value, json};
-use sqlx::Row;
+use sqlx::{Row, SqliteConnection};
+
+pub(super) async fn original_reply(
+    conn: &mut SqliteConnection,
+    entry: &str,
+    stage: &str,
+    event: i64,
+) -> Result<Value> {
+    let native: String = sqlx::query_scalar(
+        "SELECT l.native_id FROM event_locators l JOIN events e ON e.id=l.event_id
+         JOIN entries d ON d.id=e.entry_id AND d.closed_at IS NULL
+         JOIN assignments s ON s.id=l.receiver AND s.status='active' AND s.kind='self'
+         WHERE e.id=? AND e.entry_id=? AND l.receiver=?
+         AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)",
+    )
+    .bind(event)
+    .bind(entry)
+    .bind(stage)
+    .fetch_optional(conn)
+    .await?
+    .ok_or(Refused("gateway_reply_unavailable"))?;
+    Ok(json!({"event_id":event,"native_id":native}))
+}
+
+pub(super) async fn check_reply(
+    conn: &mut SqliteConnection,
+    plugin: &str,
+    args: &Value,
+) -> Result<()> {
+    let Some(reply) = args.get("reply") else {
+        return Ok(());
+    };
+    let event = reply["event_id"].as_i64().ok_or("invalid reply source")?;
+    let entry = args["route"]["entry"]
+        .as_str()
+        .ok_or("missing reply entry")?;
+    let stage: String =
+        sqlx::query_scalar("SELECT bot_stage FROM host_installations WHERE plugin=?")
+            .bind(plugin)
+            .fetch_one(&mut *conn)
+            .await?;
+    if *reply != original_reply(conn, entry, &stage, event).await? {
+        return Err("original gateway reply changed".into());
+    }
+    Ok(())
+}
 
 impl Hub {
     pub async fn deliver(
@@ -51,6 +96,18 @@ impl Hub {
             return Err(Refused("gateway_send_not_granted").into());
         }
         let message: Value = serde_json::from_str(row.try_get("payload")?)?;
+        let reply = match message.get("reply_to_event_id").filter(|v| !v.is_null()) {
+            Some(event) => Some(
+                original_reply(
+                    &mut tx,
+                    row.get("entry_id"),
+                    row.get("bot_stage"),
+                    event.as_i64().ok_or(Refused("gateway_reply_unavailable"))?,
+                )
+                .await?,
+            ),
+            None => None,
+        };
         let group: Option<String> = row.try_get("space")?;
         let native_group = group
             .as_deref()
@@ -130,6 +187,9 @@ impl Hub {
         if let Some(media) = &selected {
             planner.args["media"] = media.clone();
         }
+        if let Some(reply) = &reply {
+            planner.args["reply"] = reply.clone();
+        }
         let planned = self.execute(store, planner.clone()).await?;
         let (state, result) = if planned["state"] == "confirmed" {
             let stored = effects::invoke(
@@ -146,13 +206,17 @@ impl Hub {
                 .filter(|items| !items.is_empty() && items.len() <= 64)
                 .ok_or("invalid original send plan")?;
             let media_parts: Vec<_> = parts.iter().filter_map(|part| part.get("media")).collect();
-            if media_parts.len() != usize::from(selected.is_some())
+            let reply_matches = parts.first().and_then(|p| p.get("reply")) == reply.as_ref()
+                && parts.iter().skip(1).all(|p| p.get("reply").is_none());
+            if !reply_matches
+                || media_parts.len() != usize::from(selected.is_some())
                 || media_parts
                     .first()
                     .is_some_and(|p| Some(*p) != selected.as_ref())
             {
-                let failure =
-                    json!({"state":"failed","error":"gateway_plan_media_mismatch","receipts":[]});
+                let failure = json!({"state":"failed","error":if reply_matches {
+                    "gateway_plan_media_mismatch"
+                } else { "gateway_plan_reply_mismatch" },"receipts":[]});
                 return Ok(Some(
                     effects::invoke(
                         store,
@@ -178,6 +242,9 @@ impl Hub {
                 if let Some(media) = part.get("media") {
                     child.args["media"] = media.clone();
                     child.args["purpose"] = json!("deliver");
+                }
+                if let Some(reply) = part.get("reply") {
+                    child.args["reply"] = reply.clone();
                 }
                 let outcome = self.execute(store, child.clone()).await?;
                 if !matches!(
