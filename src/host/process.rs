@@ -23,6 +23,7 @@ struct Message {
 }
 struct Pending {
     handle: Option<String>,
+    mentions_sha256: Option<String>,
     reply: oneshot::Sender<Result<Value>>,
 }
 #[derive(Clone)]
@@ -147,6 +148,10 @@ impl Session {
                 id.clone(),
                 Pending {
                     handle: handle.clone(),
+                    mentions_sha256: params["arguments"]["mentions_source"]["sha256"]
+                        .as_str()
+                        .filter(|_| matches!(method, "gateway.plan_send" | "gateway.dispatch_part"))
+                        .map(str::to_owned),
                     reply: tx,
                 },
             );
@@ -439,7 +444,19 @@ pub async fn launch(
                             super::participation::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else if super::composition::handles(&method) {
                             super::composition::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
-                        } else {write(&s,Change::Callback(l.plugin.clone(),l.generation.clone(),method,msg["params"].clone())).await};
+                        } else {
+                            // Reuse the digest from the admitted outbound frame. The current
+                            // database scope and original identities are still checked per page.
+                            let digest = if method == "gateway.read_mentions" {
+                                let handle = msg["params"]["handle"].as_str();
+                                l.pending.lock().await.values()
+                                    .find(|pending| handle.is_some() && pending.handle.as_deref() == handle)
+                                    .and_then(|pending| pending.mentions_sha256.clone())
+                            } else {
+                                None
+                            };
+                            write(&s,Change::Callback(l.plugin.clone(),l.generation.clone(),method,msg["params"].clone(),digest)).await
+                        };
                         let out=match r{Ok(v)=>json!({"result":v}),Err(_)=>json!({"error":{"code":-32003,"message":"method, grant or original scope denied"}})};
                         let mut frame=out;frame["id"]=msg["id"].clone();frame["jsonrpc"]=json!("2.0");
                         if !l.notify(frame){l.stop();}
