@@ -100,6 +100,13 @@ def serve(frame):
                 "watermark": params["watermark"],
                 "proof": "volatile-text-cleared",
             }
+        elif mode.startswith("mention-") and method in {
+            "gateway.plan_send",
+            "gateway.dispatch_part",
+        }:
+            from mentions import serve as original_mentions
+
+            result = original_mentions(call, note, folder, mode, method, params)
         elif method == "gateway.plan_send":
             source = args.get("text_source")
             if source:

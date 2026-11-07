@@ -1,6 +1,6 @@
 # Host candidate
 
-The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.20` and Python SDK `1.0.0a20`.
+The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.21` and Python SDK `1.0.0a21`.
 
 Install an executable through a `[[plugins]]` entry in the owner's private `yuki.toml`. Specify `id`, `namespace`, an absolute `program` and `args`. A gateway also needs its `platform` and the installed SELF assignment's `bot_stage`. Configure `grants` individually. `commands` lists full command paths. `[[plugins.tools]]` records the name, description, JSON Schema and visibility that the host freezes for the next activation. The `env` list selects which environment variables reach this executable.
 
@@ -51,3 +51,19 @@ on UTF-8 boundaries. A range part carries no inline text or media selection.
 Only the first visible part keeps the original quote. A dispatch handle can
 read only its own confirmed plan's range, using offsets relative to that range.
 Each physical native send retains its own operation and locator. Each protocol frame is bounded at 64 KiB.
+
+SDK alpha.21 adds `gateway.read_mentions` with the same byte-page envelope as
+`gateway.read_text`. The selected bytes encode a JSON array of original account
+annotations. Each annotation contains UTF-8 byte `start`/`end`, core `account`,
+original `native`, observed `label`, nullable original `assignment`, and source
+event `source`. `mentions_source` provides the byte length and SHA-256 of this
+array. It belongs to the current dispatched call handle.
+
+A plan with annotations must use contiguous `text_range` parts covering the
+complete rendered text. A range boundary must preserve whole mentions. The Host
+selects and rebases each part's annotations. Plugins cannot supply replacements.
+Page and dispatch authorization recheck the original account, stage, source and
+installation. Cold terminal operations retain their original receipts.
+
+`gateway.inbound` optionally records `sender_profile.nickname` and `.card` in
+the immutable source envelope. Missing profiles remain unknown.

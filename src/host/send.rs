@@ -64,13 +64,13 @@ impl Hub {
         };
         let self_entry = self_scene.as_ref().map(|(_, entry, _)| entry.as_str());
         let self_stage = self_scene.as_ref().map(|(_, _, stage)| stage.as_str());
-        let route=sqlx::query("SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,e.entry_id,e.bot_stage,d.scope,d.space,d.topic,a.native AS sender,b.native AS bot,o.payload,e.raw_actor AS recipient
+        let route=sqlx::query("SELECT i.platform,i.plugin,i.revision,i.enabled,i.online,i.grants,e.entry_id,e.bot_stage,d.scope,d.space,d.topic,a.native AS sender,b.native AS bot,o.payload,e.raw_actor AS recipient
             FROM executions x JOIN events e ON e.id=x.source JOIN entries d ON d.id=e.entry_id JOIN accounts a ON a.id=e.account_id
             JOIN assignments s ON s.id=e.bot_stage JOIN accounts b ON b.id=s.account_id
             JOIN host_installations i ON i.platform=b.platform AND i.namespace=b.namespace AND i.bot_stage=e.bot_stage
             JOIN operations o ON o.namespace=x.id AND o.operation_id=? AND o.target='send' WHERE x.id=?2
             UNION ALL
-            SELECT i.plugin,i.revision,i.enabled,i.online,i.grants,d.id,s.id,d.scope,d.space,d.topic,coalesce(person_account.native,'') AS sender,b.native AS bot,o.payload,person.original_person AS recipient
+            SELECT i.platform,i.plugin,i.revision,i.enabled,i.online,i.grants,d.id,s.id,d.scope,d.space,d.topic,coalesce(person_account.native,'') AS sender,b.native AS bot,o.payload,person.original_person AS recipient
             FROM entries d JOIN assignments s ON s.id=?4 JOIN accounts b ON b.id=s.account_id
             JOIN host_installations i ON i.platform=b.platform AND i.namespace=b.namespace AND i.bot_stage=s.id
             JOIN operations o ON o.namespace=?2 AND o.operation_id=?1 AND o.target='send'
@@ -164,6 +164,25 @@ impl Hub {
         {
             address["topic_root"] = root;
         }
+        let (rendered, mentions) =
+            if matches!(row.try_get::<&str, _>("platform")?, "feishu" | "lark") {
+                crate::social::native_content::prepare(
+                    &mut tx,
+                    &plugin,
+                    row.get("entry_id"),
+                    exec,
+                    message["text"].as_str().unwrap_or_default(),
+                )
+                .await?
+            } else {
+                (
+                    message["text"].as_str().unwrap_or_default().to_owned(),
+                    Vec::new(),
+                )
+            };
+        if message.get("text").is_some() {
+            message["text"] = json!(rendered);
+        }
         let revision: String = row.try_get("revision")?;
         drop(tx);
         let request = |ordinal: i64, method: &str, name: &str, args: Value| calls::Request {
@@ -193,6 +212,9 @@ impl Hub {
             "gateway.plan_send",
             json!({"route":address,"message":message}),
         );
+        if !mentions.is_empty() {
+            planner.args["mentions"] = serde_json::to_value(&mentions)?;
+        }
         if let Some(media) = &selected {
             planner.args["media"] = media.clone();
         }
@@ -219,8 +241,9 @@ impl Hub {
             let reply_matches = visible.next().and_then(|p| p.get("reply")) == reply.as_ref()
                 && visible.all(|p| p.get("reply").is_none());
             let preparations_match = super::preparation::validate(parts);
-            let text_matches =
-                super::gateway_text::validate(parts, message["text"].as_str()).is_ok();
+            let text_matches = super::gateway_text::validate(parts, message["text"].as_str())
+                .is_ok()
+                && super::gateway_mentions::validate(parts, &mentions).is_ok();
             if !text_matches
                 || !preparations_match
                 || !reply_matches
@@ -263,6 +286,7 @@ impl Hub {
                     method,
                     json!({"route":address,"part":part,"part_ordinal":i}),
                 );
+                super::gateway_mentions::attach(&mut child.args, &mentions)?;
                 if let Some(media) = part.get("media") {
                     child.args["media"] = media.clone();
                     child.args["purpose"] = json!("deliver");

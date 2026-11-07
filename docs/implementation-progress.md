@@ -1,3 +1,9 @@
+**CORE-025／CORE-038 原帳號提及準備完成。** 分支 `codex/core-025-native-mentions`，Rust／Python SDK alpha.21／a21，reader 56。同 app／namespace 的原 account、原事件名稱與 UTF-8 範圍交給 Host；`gateway.read_mentions` 以原 call handle 分頁。計畫完整覆蓋原文字且保留整個提及，派發前重核原階段與來源，來源持有同時登記 execution dependency，遺忘後清除 Host 材料。
+
+Mac 正常 `CORE-032` 入口已通過 837 項斷言，回條 `artifacts/CORE-032/native-mentions-preflight-02/manifest.json`，SHA-256 `58e82e6e5eea44db16554c88566b41e76c456c248b751451af61b7794e2f32fe`。其後補私聊僅解析原參與者，連同同名、明確 account、未知文字、大段分頁、unknown、錯區間、偽 native、換階段與遺忘共 12 情境已在 `artifacts/CORE-032/native-mentions-focused-06/` 重驗。固定舊版文字 oracle 位於 `fixtures/social/v4-native-mentions.json`。較早的群來源篩選與測試命令／參數故障均保留原失敗回條。
+
+下一步跑此提交的本地 Mac、Linux、HJW 完整矩陣與原生分發檢查，通過後普通合併並交三端未發布候選給飛書消費者。正式總數維持核心 51／58，擴展真消費及穩定合同發布仍待後續驗收。
+
 **CORE-038 原檔名補齊進行中。** 分支 `codex/core-038-original-filename`。飛書附件上傳會消費原版本的檔名，Main 未指定名稱時由核心依原讀取權補齊，明確改名保留。Mac 的 CORE-032 預驗通過 693 項斷言，涵蓋缺欄位、原 payload 保留及原附件故障時序。回條 `artifacts/CORE-038/original-filename-02/manifest.json`，SHA-256 `0627653aa4fb7266513c47fd4f39d4fb0149d01a7e4a85a79030876b9df52fad`。下一步執行本地三端全量 CI 及候選包驗證。
 
 **CORE-038 長文字已合併。** #115 head `3fa3e30116fe`，main `f9e027fcbb8e`。受測來源 `942a534763ba`，三端各 52 張檢查及 42 項原生協議斷言通過。完整回條位於本倉根目錄 `artifacts/ci/local-pr/115/receipt.json`，SHA-256 `21ef7352c3656945b32bd222aba1ca8e2f5ab72b014207ca06027efb4c0ba9f3`。未發布的 SDK alpha.20／reader 56 三端候選位於 `artifacts/CORE-039/pr115-bounded-text/verified-candidates.json`。

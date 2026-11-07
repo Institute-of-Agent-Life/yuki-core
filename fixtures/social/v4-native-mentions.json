@@ -1,0 +1,127 @@
+{
+  "baseline": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_sha256": "80d4da9f5f4acc776a187947714c8149a859bd903ba022110301f47dfb530a28",
+  "cases": [
+    {
+      "input": "你好 @小雪，@小雪子",
+      "text": "你好 @小雪，@小雪子",
+      "mentions": [
+        {
+          "start": 7,
+          "end": 14,
+          "account": "00000000-0000-4000-8000-000000000001",
+          "native": "ou_original",
+          "label": "小雪",
+          "assignment": "stage-original",
+          "source": 1
+        },
+        {
+          "start": 17,
+          "end": 27,
+          "account": "00000000-0000-4000-8000-000000000002",
+          "native": "ou_second",
+          "label": "小雪子",
+          "assignment": "stage-second",
+          "source": 2
+        }
+      ]
+    },
+    {
+      "input": "跳脫 \\@小雪，https://example.test/@小雪 alice@example.test @　小雪",
+      "text": "跳脫 @小雪，https://example.test/@小雪 alice@example.test @　小雪",
+      "mentions": [
+        {
+          "start": 65,
+          "end": 75,
+          "account": "00000000-0000-4000-8000-000000000001",
+          "native": "ou_original",
+          "label": "小雪",
+          "assignment": "stage-original",
+          "source": 1
+        }
+      ]
+    },
+    {
+      "input": "@{account:00000000-0000-4000-8000-000000000001} / @{account:00000000000040008000000000000001}",
+      "text": "@小雪 / @小雪",
+      "mentions": [
+        {
+          "start": 0,
+          "end": 7,
+          "account": "00000000-0000-4000-8000-000000000001",
+          "native": "ou_original",
+          "label": "小雪",
+          "assignment": "stage-original",
+          "source": 1
+        },
+        {
+          "start": 10,
+          "end": 17,
+          "account": "00000000-0000-4000-8000-000000000001",
+          "native": "ou_original",
+          "label": "小雪",
+          "assignment": "stage-original",
+          "source": 1
+        }
+      ]
+    },
+    {
+      "input": "@未知 / @{account:00000000-0000-4000-8000-000000000009}",
+      "text": "@未知 / @{account:00000000-0000-4000-8000-000000000009}",
+      "mentions": []
+    },
+    {
+      "input": "@\n小雪 @\t小雪",
+      "text": "@\n小雪 @\t小雪",
+      "mentions": [
+        {
+          "start": 9,
+          "end": 17,
+          "account": "00000000-0000-4000-8000-000000000001",
+          "native": "ou_original",
+          "label": "小雪",
+          "assignment": "stage-original",
+          "source": 1
+        }
+      ]
+    },
+    {
+      "input": "名 @小雪子 @小雪",
+      "text": "名 @小雪子 @小雪",
+      "mentions": [
+        {
+          "start": 4,
+          "end": 14,
+          "account": "00000000-0000-4000-8000-000000000002",
+          "native": "ou_second",
+          "label": "小雪子",
+          "assignment": "stage-second",
+          "source": 2
+        },
+        {
+          "start": 15,
+          "end": 22,
+          "account": "00000000-0000-4000-8000-000000000001",
+          "native": "ou_original",
+          "label": "小雪",
+          "assignment": "stage-original",
+          "source": 1
+        }
+      ]
+    }
+  ],
+  "sanitized_names": [
+    {
+      "input": "  小​雪  \t人\n",
+      "result": "小雪 人"
+    },
+    {
+      "input": "雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪",
+      "result": "雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪雪"
+    },
+    {
+      "input": "a b",
+      "result": "a b"
+    }
+  ]
+}
