@@ -4,7 +4,9 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import platform
 import re
+import shutil
 import tempfile
 import tomllib
 from urllib.parse import urlsplit
@@ -27,6 +29,24 @@ def load(root):
     if lock["format"] != 1 or lock["minimum_protocol_version"] != "1.0":
         raise ValueError("unsupported compatibility lock")
     return lock
+
+
+def check_runtime(lock):
+    target = "-".join(native_target())
+    if not target.startswith("linux-"):
+        return {"target": target}
+    name, version = platform.libc_ver()
+    required = lock["linux_runtime"]["minimum_glibc"]
+    if name != "glibc" or tuple(map(int, version.split("."))) < tuple(
+        map(int, required.split("."))
+    ):
+        raise ValueError(
+            f"original Telegram Linux packages require glibc {required}; found {name} {version}"
+        )
+    curl = shutil.which("curl")
+    if curl is None:
+        raise ValueError("original Telegram Linux packages require curl on PATH")
+    return {"target": target, "glibc": version, "curl": curl}
 
 
 def asset_path(root, asset):
@@ -85,6 +105,7 @@ def prepare_asset(root, asset):
 
 def prepare(root=ROOT):
     lock = load(root)
+    check_runtime(lock)
     platform = "-".join(native_target())
     selected = lock["platforms"][platform]
     assets = [
@@ -98,6 +119,7 @@ def prepare(root=ROOT):
 
 def original_assets(root, work):
     lock = load(root)
+    check_runtime(lock)
     platform = "-".join(native_target())
     selected = lock["platforms"][platform]
     key = verify_asset(asset_path(root, lock["signer"]), lock["signer"])

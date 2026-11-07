@@ -15,10 +15,11 @@ def main():
     environment = dict(os.environ)
     if fault in {"unsupported-version", "missing-required-field"}:
         environment["YUKI_TELEGRAM_TOKEN"] = "101:" + fault
-    child = subprocess.Popen(
-        [program], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=workspace,
-        env=environment,
-    )
+    with log.with_suffix(".stderr.log").open("ab") as errors:
+        child = subprocess.Popen(
+            [program], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=workspace,
+            env=environment, stderr=errors,
+        )
     lock = threading.Lock()
     killed_for_test = threading.Event()
 

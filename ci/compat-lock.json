@@ -1,6 +1,11 @@
 {
   "format": 1,
   "minimum_protocol_version": "1.0",
+  "linux_runtime": {
+    "minimum_glibc": "2.39",
+    "required_commands": ["curl"],
+    "qualified_local_image": "sha256:3668e80e411d173fd09120481df76baa4c50e2c2e3620f192cffdc49a0623e96"
+  },
   "base_commit": "c6bd0c75e38717abc71373201d31a77982428d5b",
   "base_version": "1.0.0",
   "stable_commit": "e9e012d761da06548ecdd7ae2f39deeaf2b4b33d",

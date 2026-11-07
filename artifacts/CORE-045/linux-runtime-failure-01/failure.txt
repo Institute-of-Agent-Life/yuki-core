@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/native/local-ci-110-562f0966a3cb-60703e/tests/harness/worker.py", line 34, in main
+    artifact = module.run(ctx)
+               ^^^^^^^^^^^^^^^
+  File "/native/local-ci-110-562f0966a3cb-60703e/tests/cases/CORE-045.py", line 37, in run
+    result = replay(
+             ^^^^^^^
+  File "/native/local-ci-110-562f0966a3cb-60703e/tests/peers/base/consumer_matrix.py", line 268, in replay
+    assert finished.wait(35), "Main never received its original receipt"
+           ^^^^^^^^^^^^^^^^^
+AssertionError: Main never received its original receipt

@@ -10,7 +10,13 @@ from tests.peers.base.consumer_matrix import replay
 
 def run(ctx):
     sys.path.insert(0, str(ctx.root / "ci"))
-    from compat_matrix import asset_path, original_assets, sha, verify_asset
+    from compat_matrix import (
+        asset_path,
+        check_runtime,
+        original_assets,
+        sha,
+        verify_asset,
+    )
     from source import source_identity
 
     lock, selected, stable_host, consumers = original_assets(ctx.root, ctx.working)
@@ -84,6 +90,7 @@ def run(ctx):
         "cells": cells,
         "minimum_protocol_version": lock["minimum_protocol_version"],
         "lock_sha256": sha(ctx.root / "ci/compat-lock.json"),
+        "runtime": check_runtime(lock),
         "published_stable_consumer": lock["stable_commit"],
         "candidate_published": False,
         "paid_calls": 0,

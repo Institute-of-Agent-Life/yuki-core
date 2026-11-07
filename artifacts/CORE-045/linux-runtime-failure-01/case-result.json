@@ -1,0 +1,9 @@
+{
+  "assertions": [
+    {
+      "name": "changed published bytes are rejected",
+      "passed": true
+    }
+  ],
+  "failure": "Main never received its original receipt"
+}

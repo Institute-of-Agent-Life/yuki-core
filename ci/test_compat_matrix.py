@@ -7,10 +7,27 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from compat_matrix import asset_path, prepare_asset
+from compat_matrix import asset_path, check_runtime, prepare_asset
 
 
 class ConsumerInputs(unittest.TestCase):
+    def test_original_linux_runtime_is_checked_before_replay(self):
+        lock = {"linux_runtime": {"minimum_glibc": "2.39"}}
+        with patch("compat_matrix.native_target", return_value=("linux", "arm64")):
+            with patch(
+                "compat_matrix.platform.libc_ver", return_value=("glibc", "2.36")
+            ):
+                with self.assertRaisesRegex(ValueError, "require glibc 2.39"):
+                    check_runtime(lock)
+            with patch(
+                "compat_matrix.platform.libc_ver", return_value=("glibc", "2.41")
+            ):
+                with patch("compat_matrix.shutil.which", return_value=None):
+                    with self.assertRaisesRegex(ValueError, "require curl"):
+                        check_runtime(lock)
+                with patch("compat_matrix.shutil.which", return_value="/usr/bin/curl"):
+                    self.assertEqual(check_runtime(lock)["glibc"], "2.41")
+
     def test_verified_cache_and_partial_download(self):
         data = b"fixed original package"
         asset = {

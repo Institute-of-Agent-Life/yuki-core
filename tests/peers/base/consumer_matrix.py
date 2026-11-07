@@ -179,6 +179,10 @@ def replay(host, plugin, output, work, scenario):
             yield
         finally:
             if proc.poll() is None:
+                write(
+                    output / "host-status.json",
+                    cli("operator", "host", "status", check=False),
+                )
                 cli("operator", "shutdown", check=False)
                 try:
                     proc.wait(timeout=10)

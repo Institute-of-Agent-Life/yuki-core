@@ -92,7 +92,7 @@ GitHub 已正式發布 `plugin-base-v1.0.0`。九個附件均已重新下載，�
 | 待辦 | 下一步與交接物 |
 |---|---|
 | CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；A／B／C 的搜尋設定還需在同一安裝對齊。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
-| CORE-045 → 053 | 核心基底 1.0.0 已可供 EXT-043 下載。擴展倉已交 `artifacts/EXT-043/01/extension-release-lock.json`，其中 `extension_published=false`。取得對應的正式 Telegram 包與發布回執後，執行 CORE-045 版本組合驗收。 |
+| CORE-045 → 053 | Telegram 0.1.0 已正式發布並逐檔回取驗 SHA。#110 的 Mac 51 卡通過，Linux 首輪因原插件要求 glibc 2.39 而失敗。符合要求的本地 Linux 鏡像已通過四格八次原包重放，三端全量重跑後才完成 CORE-045，再接 CORE-053。 |
 | CORE-043 → 046 → 047 | 待 EXT-041 的 `extension-import-diff.json`、EXT-044 的 `desktop-package-matrix.json`、EXT-045 的 `install-restore-matrix.json` 及 EXT-042 的實物逐字稿。 |
 
 本輪 Mac 清理回執見 `artifacts/ci/cleanup-20261106/`。先前五個閒置 incremental 目錄合計回收 17.61 GiB，Telegram 建置後另清理約 130 MiB 的中間檔案。#98 的獨立 Mac 預驗再回收 4.39 GiB，保留核心、測試執行檔和回條並重驗 SHA-256（`pr98-mac-preflight-intermediates-verified.json`）。 #99 的專用編譯中間檔另回收 Mac 8.32 GiB、HJW 1.75 GiB；執行檔與保留記錄均已重驗（`core044-mac-build-verified.json` 和 `core044-windows-owned-build-verified.json`）。 #101 完成後另回收 0.57 GiB 已被替代的本機編譯快取，保留包及回條雜湊均相符（`core101-mac-superseded-verified.json`）。
