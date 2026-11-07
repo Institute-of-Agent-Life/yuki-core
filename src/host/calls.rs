@@ -93,6 +93,7 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
             return Err("gateway delivery requires original gateway source and route".into());
         }
         super::send::check_reply(conn, id, &r.args).await?;
+        super::gateway_mentions::check(conn, id, &r.args).await?;
         super::native_route::check(conn, id, &r.execution, &r.args).await?;
         super::preparation::check(
             conn,
@@ -225,6 +226,14 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .await?;
             }
             let mut params = json!({"handle":handle,"operation":r.operation,"parent":r.parent,"ordinal":r.ordinal,"revision":revision,"name":r.name,"arguments":r.args});
+            if matches!(
+                r.method.as_str(),
+                "gateway.plan_send" | "gateway.dispatch_part"
+            ) {
+                super::gateway_mentions::hold(conn, &r.plugin, &handle, &r.execution, &r.args)
+                    .await?;
+                super::gateway_mentions::project(&mut params)?;
+            }
             super::gateway_text::project(&r.method, &mut params)?;
             grants::schema(&r.method, "host_to_plugin", &params)?;
             if r.method=="media.process" || (matches!(r.method.as_str(),"gateway.dispatch_part" | "gateway.prepare_part") && r.args.get("media").is_some()) || (r.method=="tool.call" && r.args.get("media").is_some() && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i,json_each(i.grants) g WHERE i.plugin=? AND g.value='media.open')").bind(&r.plugin).fetch_one(&mut *conn).await?) {
@@ -271,6 +280,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             } else if method.starts_with("gateway.") {
                 let args: Value = serde_json::from_str(row.try_get("args")?)?;
                 super::send::check_reply(conn, plugin, &args).await?;
+                super::gateway_mentions::check(conn, plugin, &args).await?;
                 super::native_route::check(conn, plugin, &exec, &args).await?;
                 let parent: Option<String> = sqlx::query_scalar(
                     "SELECT parent FROM operations WHERE namespace=? AND operation_id=?",

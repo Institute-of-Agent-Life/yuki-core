@@ -1,0 +1,610 @@
+[
+  {
+    "name": "command migrate succeeds",
+    "passed": true
+  },
+  {
+    "name": "additive migration to stored public fragments",
+    "passed": true
+  },
+  {
+    "name": "owner listening",
+    "passed": true
+  },
+  {
+    "name": "command operator database-info succeeds",
+    "passed": true
+  },
+  {
+    "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+    "passed": true
+  },
+  {
+    "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+    "passed": true
+  },
+  {
+    "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+    "passed": true
+  },
+  {
+    "name": "command operator shutdown succeeds",
+    "passed": true
+  },
+  {
+    "name": "owner shutdown",
+    "passed": true
+  },
+  {
+    "name": "owner listening",
+    "passed": true
+  },
+  {
+    "name": "command operator account open feishu native-preparation cli_original 1 --start 1 succeeds",
+    "passed": true
+  },
+  {
+    "name": "command operator account open feishu native-preparation ou_original 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+    "passed": true
+  },
+  {
+    "name": "command operator shutdown succeeds",
+    "passed": true
+  },
+  {
+    "name": "owner shutdown",
+    "passed": true
+  },
+  {
+    "name": "owner listening",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "normal retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "normal plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "normal has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "normal publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "normal reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "normal keeps the confirmed upload",
+    "passed": true
+  },
+  {
+    "name": "visible child uses the exact original resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "original-name retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "original-name plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "original-name preserves the admitted send payload",
+    "passed": true
+  },
+  {
+    "name": "original-name preserves missing versus null name",
+    "passed": true
+  },
+  {
+    "name": "original-name has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "original-name publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "original-name reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "original-name keeps the confirmed upload",
+    "passed": true
+  },
+  {
+    "name": "visible child uses the exact original resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "quoted retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "quoted plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "quoted has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "quoted publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "quoted reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "quoted keeps the confirmed upload",
+    "passed": true
+  },
+  {
+    "name": "visible child uses the exact original resource",
+    "passed": true
+  },
+  {
+    "name": "upload preparation carries no reply quote",
+    "passed": true
+  },
+  {
+    "name": "first visible child retains original quote",
+    "passed": true
+  },
+  {
+    "name": "caption omits the quote",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "file-failed retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "file-failed plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "file-failed has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "file-failed publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "file-failed reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "file-failed keeps the confirmed upload",
+    "passed": true
+  },
+  {
+    "name": "visible child uses the exact original resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "caption-failed retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "caption-failed plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "caption-failed has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "caption-failed publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "caption-failed reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "caption-failed keeps the confirmed upload",
+    "passed": true
+  },
+  {
+    "name": "visible child uses the exact original resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "prepare-unknown retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "prepare-unknown plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "prepare-unknown has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "prepare-unknown publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "prepare-unknown reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "missing-resource retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "missing-resource plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "missing-resource has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "missing-resource publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "missing-resource reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "file-unknown retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "file-unknown plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "file-unknown has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "file-unknown publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "file-unknown reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "file-unknown keeps the confirmed upload",
+    "passed": true
+  },
+  {
+    "name": "visible child uses the exact original resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "forward-reference retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "forward-reference plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "forward-reference has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "forward-reference publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "forward-reference reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "reused-resource retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "reused-resource plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "reused-resource has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "reused-resource publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "reused-resource reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "prepare-lost retains the original send outcome",
+    "passed": true
+  },
+  {
+    "name": "prepare-lost plans the selected original or explicit filename",
+    "passed": true
+  },
+  {
+    "name": "prepare-lost has separately counted physical steps",
+    "passed": true
+  },
+  {
+    "name": "prepare-lost publishes only confirmed visible messages",
+    "passed": true
+  },
+  {
+    "name": "preparation route retains the canonical private scope",
+    "passed": true
+  },
+  {
+    "name": "prepare-lost reads only original bytes",
+    "passed": true
+  },
+  {
+    "name": "command operator shutdown succeeds",
+    "passed": true
+  },
+  {
+    "name": "owner shutdown",
+    "passed": true
+  },
+  {
+    "name": "owner listening",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "changed-deployment receives no prepared native resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "revoked-media receives no prepared native resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "erased-version receives no prepared native resource",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "unbound original source performs no upload",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "new identity on redelivery returns the original source",
+    "passed": true
+  },
+  {
+    "name": "redelivery cannot backfill original application authority",
+    "passed": true
+  },
+  {
+    "name": "command operator shutdown succeeds",
+    "passed": true
+  },
+  {
+    "name": "owner shutdown",
+    "passed": true
+  },
+  {
+    "name": "owner listening",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "native preparation source is admitted",
+    "passed": true
+  },
+  {
+    "name": "cold replay returns the original logical source",
+    "passed": true
+  },
+  {
+    "name": "cold replay performs no native upload or delivery",
+    "passed": true
+  },
+  {
+    "name": "cold replay creates no new model request",
+    "passed": true
+  },
+  {
+    "name": "command operator shutdown succeeds",
+    "passed": true
+  },
+  {
+    "name": "owner shutdown",
+    "passed": true
+  }
+]

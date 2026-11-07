@@ -6,6 +6,8 @@ from pathlib import Path
 folder = Path(sys.argv[1])
 folder.mkdir(exist_ok=True, parents=True)
 sys.path.insert(0, sys.argv[2])
+sys.path.insert(1, str(Path(__file__).resolve().parents[3]))
+from tests.harness.json_file import take_command
 from yuki_plugin_sdk.connection import Binding, Peer, encode, read_frame
 from yuki_plugin_sdk.host import Calls
 
@@ -308,9 +310,8 @@ def serve(frame):
 def commands():
     while True:
         p = folder / "probe.json"
-        if p.is_file():
-            raw = json.loads(p.read_bytes())
-            p.unlink()
+        raw = take_command(p)
+        if raw is not None:
             result = call(raw["method"], raw["params"])
             note(
                 "probed", {"denied": "error" in result, "result": result.get("result")}

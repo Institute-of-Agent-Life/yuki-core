@@ -1,0 +1,16 @@
+Exception in thread Thread-1 (commands):
+Traceback (most recent call last):
+  File "C:\Users\Hilbert\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1052, in _bootstrap_inner
+    self.run()
+  File "C:\Users\Hilbert\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 989, in run
+    self._target(*self._args, **self._kwargs)
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\peers\host-media\peer.py", line 312, in commands
+    raw = json.loads(p.read_bytes())
+                     ^^^^^^^^^^^^^^
+  File "C:\Users\Hilbert\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1020, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hilbert\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1014, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'D:\\yuki-core-validation-20261104\\CI-SUITE-ae104da0664d-5933172d\\artifacts\\preparation-diagnostic-01\\0\\work\\preparation-peer\\probe.json'

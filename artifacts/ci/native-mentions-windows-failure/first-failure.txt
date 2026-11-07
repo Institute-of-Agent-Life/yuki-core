@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\harness\worker.py", line 34, in main
+    artifact = module.run(ctx)
+               ^^^^^^^^^^^^^^^
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\cases\CORE-039.py", line 29, in run
+    host_receipt = case.run(ctx, "release")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\cases\CORE-032.py", line 738, in run
+    "native_preparation": native_preparation(ctx, sdkdir, profile),
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\harness\native_preparation.py", line 422, in run
+    submit({**params, "media_identity": identity})["event"],
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\harness\native_preparation.py", line 87, in submit
+    owner.until(lambda: (peer / "probed.json").exists())
+  File "D:\yuki-core-validation-20261104\CI-SUITE-ae104da0664d-5933172d\tests\harness\compact.py", line 133, in until
+    raise AssertionError(
+AssertionError: [('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('completed', None), ('held', 'runner_failed'), ('held', 'runner_failed'), ('held', 'runner_failed'), ('held', 'runner_failed')]
