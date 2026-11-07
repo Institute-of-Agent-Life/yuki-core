@@ -131,6 +131,34 @@ def serve(frame):
                     deadline = time.monotonic() + 10
                     while (folder / "pause-reply-plan").exists() and time.monotonic() < deadline:
                         time.sleep(.01)
+            if (folder / "native-preparation").exists() and chosen:
+                result = {"parts":[{"preparation":True,"kind":"file","media":chosen},
+                                   {"prepared_part":0,"kind":"file"},{"text":"caption"}]}
+                mode = (folder / "preparation-case").read_text()
+                if mode == "forward-reference": result["parts"][1]["prepared_part"] = 2
+                if mode == "reused-resource": result["parts"].append(dict(result["parts"][1]))
+                if original_reply := p["arguments"].get("reply"):
+                    result["parts"][1]["reply"] = original_reply
+        elif method == "gateway.prepare_part":
+            args = p["arguments"]
+            mode = (folder / "preparation-case").read_text()
+            offset = 0
+            chunks = []
+            while True:
+                page = call("media.open", {"handle":p["handle"],"offset":offset,"length":16384})["result"]
+                chunk = base64.b64decode(page["bytes"],validate=True)
+                chunks.append(chunk)
+                offset += len(chunk)
+                if page["done"]: break
+            note("prepare-"+p["handle"],{"arguments":args,"sha256":hashlib.sha256(b"".join(chunks)).hexdigest(),"mode":mode})
+            if mode == "prepare-lost": os._exit(7)
+            result = {"state":"confirmed","resource":{"kind":"file","key":"file-"+p["operation"]}}
+            if mode == "prepare-unknown": result = {"state":"unknown"}
+            if mode == "missing-resource": result = {"state":"confirmed"}
+            if (folder / "pause-preparation").exists():
+                note("preparation-waiting",p)
+                deadline = time.monotonic()+10
+                while (folder / "pause-preparation").exists() and time.monotonic()<deadline: time.sleep(.01)
         elif method == "gateway.dispatch_part":
             if (folder / "record-route").exists():
                 note("route-dispatch-" + p["handle"], p["arguments"])
@@ -139,7 +167,7 @@ def serve(frame):
                 note("reply-dispatched", args)
             offset = 0
             chunks = []
-            if args.get("media"):
+            if args.get("media") and not args.get("prepared"):
                 while True:
                     r = call(
                         "media.open",
@@ -162,6 +190,15 @@ def serve(frame):
                 "state": "confirmed",
                 "locator": "original-native-" + p["operation"],
             }
+            if (folder / "native-preparation").exists():
+                mode = (folder / "preparation-case").read_text()
+                note("visible-"+p["handle"],{"arguments":args,"mode":mode})
+                if mode == "file-failed" and args.get("prepared"):
+                    result = {"state":"failed"}
+                if mode == "caption-failed" and not args.get("prepared"):
+                    result = {"state":"failed"}
+                if mode == "file-unknown" and args.get("prepared"):
+                    result = {"state":"unknown"}
         elif method == "gateway.recall":
             with lock, (folder / "recalls.ndjson").open("a", encoding="utf-8") as calls:
                 calls.write(json.dumps(p["arguments"]) + "\n")

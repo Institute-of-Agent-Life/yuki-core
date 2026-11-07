@@ -153,7 +153,7 @@ impl Hub {
         } else {
             None
         };
-        let mut address = json!({"entry":row.try_get::<String,_>("entry_id")?,"bot":row.try_get::<String,_>("bot")?,"chat":native_group.as_deref().unwrap_or(row.try_get("sender")?),"topic":row.try_get::<Option<String>,_>("topic")?});
+        let mut address = json!({"scope":row.try_get::<String,_>("scope")?,"entry":row.try_get::<String,_>("entry_id")?,"bot":row.try_get::<String,_>("bot")?,"chat":native_group.as_deref().unwrap_or(row.try_get("sender")?),"topic":row.try_get::<Option<String>,_>("topic")?});
         let plugin: String = row.try_get("plugin")?;
         if let Some(root) =
             super::native_route::original(&mut tx, &plugin, exec, row.get("entry_id")).await?
@@ -211,15 +211,20 @@ impl Hub {
                 .filter(|items| !items.is_empty() && items.len() <= 64)
                 .ok_or("invalid original send plan")?;
             let media_parts: Vec<_> = parts.iter().filter_map(|part| part.get("media")).collect();
-            let reply_matches = parts.first().and_then(|p| p.get("reply")) == reply.as_ref()
-                && parts.iter().skip(1).all(|p| p.get("reply").is_none());
-            if !reply_matches
+            let mut visible = parts.iter().filter(|p| p["preparation"] != true);
+            let reply_matches = visible.next().and_then(|p| p.get("reply")) == reply.as_ref()
+                && visible.all(|p| p.get("reply").is_none());
+            let preparations_match = super::preparation::validate(parts);
+            if !preparations_match
+                || !reply_matches
                 || media_parts.len() != usize::from(selected.is_some())
                 || media_parts
                     .first()
                     .is_some_and(|p| Some(*p) != selected.as_ref())
             {
-                let failure = json!({"state":"failed","error":if reply_matches {
+                let failure = json!({"state":"failed","error":if !preparations_match {
+                    "gateway_plan_preparation_mismatch"
+                } else if reply_matches {
                     "gateway_plan_media_mismatch"
                 } else { "gateway_plan_reply_mismatch" },"receipts":[]});
                 return Ok(Some(
@@ -238,10 +243,15 @@ impl Hub {
             let mut receipts = Vec::new();
             let mut state = "confirmed";
             for (i, part) in parts.iter().enumerate() {
+                let method = if part["preparation"] == true {
+                    "gateway.prepare_part"
+                } else {
+                    "gateway.dispatch_part"
+                };
                 let mut child = request(
                     i as i64 + 1,
-                    "gateway.dispatch_part",
-                    "gateway.dispatch_part",
+                    method,
+                    method,
                     json!({"route":address,"part":part,"part_ordinal":i}),
                 );
                 if let Some(media) = part.get("media") {
@@ -250,6 +260,10 @@ impl Hub {
                 }
                 if let Some(reply) = part.get("reply") {
                     child.args["reply"] = reply.clone();
+                }
+                {
+                    let mut reader = store.readers().begin().await?;
+                    super::preparation::attach(&mut reader, &mut child).await?;
                 }
                 let outcome = self.execute(store, child.clone()).await?;
                 if !matches!(

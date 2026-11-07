@@ -94,6 +94,16 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
         }
         super::send::check_reply(conn, id, &r.args).await?;
         super::native_route::check(conn, id, &r.execution, &r.args).await?;
+        super::preparation::check(
+            conn,
+            id,
+            generation,
+            &r.execution,
+            &r.method,
+            r.parent.as_deref(),
+            &r.args,
+        )
+        .await?;
     }
     Ok(())
 }
@@ -111,7 +121,11 @@ pub async fn status(
     let kind: String = row.try_get("method")?;
     if !matches!(
         (method, kind.as_str()),
-        ("tool.status", "tool.call") | ("gateway.part_status", "gateway.dispatch_part")
+        ("tool.status", "tool.call")
+            | (
+                "gateway.part_status",
+                "gateway.dispatch_part" | "gateway.prepare_part"
+            )
     ) || row.try_get::<String, _>("revision")? != row.try_get::<String, _>("current_revision")?
     {
         return Err("handle outside method or original manifest".into());
@@ -212,7 +226,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             }
             let params = json!({"handle":handle,"operation":r.operation,"parent":r.parent,"ordinal":r.ordinal,"revision":revision,"name":r.name,"arguments":r.args});
             grants::schema(&r.method, "host_to_plugin", &params)?;
-            if r.method=="media.process" || (r.method=="gateway.dispatch_part" && r.args.get("media").is_some()) || (r.method=="tool.call" && r.args.get("media").is_some() && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i,json_each(i.grants) g WHERE i.plugin=? AND g.value='media.open')").bind(&r.plugin).fetch_one(&mut *conn).await?) {
+            if r.method=="media.process" || (matches!(r.method.as_str(),"gateway.dispatch_part" | "gateway.prepare_part") && r.args.get("media").is_some()) || (r.method=="tool.call" && r.args.get("media").is_some() && sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM host_installations i,json_each(i.grants) g WHERE i.plugin=? AND g.value='media.open')").bind(&r.plugin).fetch_one(&mut *conn).await?) {
                 super::media::select(conn,r,&handle,&who).await?;
             }
             Ok(
@@ -257,6 +271,23 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 let args: Value = serde_json::from_str(row.try_get("args")?)?;
                 super::send::check_reply(conn, plugin, &args).await?;
                 super::native_route::check(conn, plugin, &exec, &args).await?;
+                let parent: Option<String> = sqlx::query_scalar(
+                    "SELECT parent FROM operations WHERE namespace=? AND operation_id=?",
+                )
+                .bind(&exec)
+                .bind(row.get::<&str, _>("operation"))
+                .fetch_one(&mut *conn)
+                .await?;
+                super::preparation::check(
+                    conn,
+                    plugin,
+                    generation,
+                    &exec,
+                    &method,
+                    parent.as_deref(),
+                    &args,
+                )
+                .await?;
             }
             if method == "tool.call" {
                 super::external_search::before_dispatch(conn, handle, plugin, generation).await?;
@@ -322,7 +353,10 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .is_valid(body);
             let state = if *error || !valid {
                 "unknown"
-            } else if matches!(method.as_str(), "gateway.dispatch_part" | "gateway.recall") {
+            } else if matches!(
+                method.as_str(),
+                "gateway.dispatch_part" | "gateway.prepare_part" | "gateway.recall"
+            ) {
                 body["state"].as_str().unwrap_or("unknown")
             } else if body["ok"] == false {
                 "failed"

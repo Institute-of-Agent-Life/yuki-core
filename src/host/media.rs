@@ -43,7 +43,11 @@ pub(super) async fn select(
         .as_str()
         .ok_or("selected media purpose required")?;
     if !(matches!(purpose, "inspect" | "transcript" | "frames")
-        || purpose == "deliver" && req.method == "gateway.dispatch_part")
+        || purpose == "deliver"
+            && matches!(
+                req.method.as_str(),
+                "gateway.dispatch_part" | "gateway.prepare_part"
+            ))
     {
         return Err("unknown media purpose".into());
     }

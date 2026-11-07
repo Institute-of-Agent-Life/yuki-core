@@ -17,6 +17,7 @@ pub(crate) mod notification;
 pub(crate) mod participation;
 pub(crate) mod personal;
 pub(crate) mod plugin_sessions;
+mod preparation;
 mod process;
 mod recall;
 pub(crate) mod selected_processor;

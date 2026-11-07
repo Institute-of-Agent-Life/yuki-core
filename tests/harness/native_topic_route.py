@@ -207,13 +207,14 @@ def run(ctx, sdk, profile="debug"):
                 )
                 for args in planned + delivered:
                     ctx.equal(
-                        "both phases retain original topic route",
+                        "both phases retain original topic route and group scope",
                         (
                             args["route"]["topic"],
                             args["route"]["topic_root"],
                             args["route"]["bot"],
+                            args["route"]["scope"],
                         ),
-                        ("omt_thread", "om_root", "native-bot"),
+                        ("omt_thread", "om_root", "native-bot", "group"),
                     )
                 reply(queue)
                 owner.finished(event)
