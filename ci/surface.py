@@ -8,6 +8,8 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shutil
+import subprocess
 import tarfile
 import tempfile
 import tomllib
@@ -500,3 +502,119 @@ def promote(registry, planned, folder, idl, idl_files):
             require(not destination.exists(), "minor is already occupied")
             stage.rename(destination)
         return manifest
+
+
+def build_native(root, registry, planned, output, target):
+    from contract import rust_env
+    from source import source_identity
+
+    idl, files = canonical(root)
+    validate_plan(registry, planned, idl, files)
+    source = source_identity(root)
+    synthetic = read(registry / "registry.json")["synthetic"]
+    require(
+        synthetic
+        or (not source["dirty"] and source["commit"] == planned["candidate_source"]),
+        "build the Host from the exact clean candidate source",
+    )
+    output.mkdir(parents=True, exist_ok=False)
+    selected = output / "plan.json"
+    selected.write_bytes(encoded(planned))
+    environment = rust_env()
+    environment.update(
+        YUKI_PLUGIN_SURFACE_PLAN=str(selected.resolve()),
+        YUKI_PLUGIN_SURFACE_SHA256=sha(selected.read_bytes()),
+    )
+    if os.name == "nt" and environment.get("YUKI_MINGW_BIN"):
+        native = Path(environment["YUKI_MINGW_BIN"])
+        environment.update(
+            CC=str(native / "gcc.exe"),
+            CXX=str(native / "g++.exe"),
+            AR=str(native / "ar.exe"),
+        )
+    command = [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "--bin",
+        "yuki-core",
+        "--target-dir",
+        str(target.resolve()),
+    ]
+    with (output / "build.log").open("wb") as log:
+        result = subprocess.run(
+            command,
+            cwd=root,
+            env=environment,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            timeout=1200,
+        )
+    require(result.returncode == 0, "selected Host build failed; see build.log")
+    require(
+        source_identity(root) == source,
+        "candidate source changed during Host compilation",
+    )
+    name = "yuki-core.exe" if os.name == "nt" else "yuki-core"
+    executable = output / name
+    shutil.copyfile(target / "release" / name, executable)
+    executable.chmod(0o755)
+    descriptor = json.loads(
+        subprocess.check_output(
+            [str(executable.resolve()), "plugin-surface"], timeout=15
+        )
+    )
+    expected = {
+        key: planned[key]
+        for key in [
+            "version",
+            "min_reader",
+            "candidate_source",
+            "surface_sha256",
+            "handshake_sha256",
+        ]
+    }
+    expected.update(
+        methods=sorted(["initialize", *planned["surface"]["methods"]]),
+        activation_argument="--plugin-base-1",
+        selected_by_default=True,
+    )
+    require(descriptor == expected, "compiled Host differs from the selected surface")
+    with tempfile.TemporaryDirectory(prefix="yuki-surface-storage-") as temporary:
+        data = Path(temporary) / "owner"
+        initialized = json.loads(
+            subprocess.check_output(
+                [
+                    str(executable.resolve()),
+                    "--data",
+                    str(data),
+                    "init",
+                    "--memory-mode",
+                    "lexical-only",
+                ],
+                timeout=30,
+            )
+        )
+        require(
+            (data / "plugin-base-1.0").read_text().strip() == "1.0.0",
+            "selected Host must initialize its restricted wire by default",
+        )
+    schema = max(
+        int(p.name.split("_", 1)[0]) for p in (root / "migrations").glob("[0-9]*_*.sql")
+    )
+    require(initialized["schema_version"] == schema, "compiled storage schema differs")
+    manifest = {
+        "source": source,
+        "profile": descriptor,
+        "synthetic": synthetic,
+        "published": False,
+        "binary": {"path": name, "sha256": sha(executable.read_bytes())},
+        "command": command,
+        "exit_code": result.returncode,
+        "plan_sha256": sha(selected.read_bytes()),
+        "storage": {"schema_version": schema, "minimum_reader": schema},
+    }
+    (output / "host-build.json").write_bytes(encoded(manifest))
+    return manifest

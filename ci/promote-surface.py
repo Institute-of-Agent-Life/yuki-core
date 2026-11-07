@@ -4,7 +4,16 @@ import argparse
 from pathlib import Path
 import tempfile
 
-from surface import canonical, encoded, initialize, plan, promote, read, validate_plan
+from surface import (
+    build_native,
+    canonical,
+    encoded,
+    initialize,
+    plan,
+    promote,
+    read,
+    validate_plan,
+)
 
 
 def main():
@@ -27,6 +36,11 @@ def main():
     sdk.add_argument("--registry", type=Path, required=True)
     sdk.add_argument("--plan", type=Path, required=True)
     sdk.add_argument("--out", type=Path, required=True)
+    host = commands.add_parser("build-host")
+    host.add_argument("--registry", type=Path, required=True)
+    host.add_argument("--plan", type=Path, required=True)
+    host.add_argument("--out", type=Path, required=True)
+    host.add_argument("--target-dir", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "init":
         initialize(args.registry, args.base, args.sha256, synthetic=args.synthetic)
@@ -37,6 +51,14 @@ def main():
         result = plan(args.registry, read(args.request), idl, files)
         with args.out.open("xb") as target:
             target.write(encoded(result))
+    elif args.command == "build-host":
+        result = build_native(
+            root,
+            args.registry,
+            read(args.plan),
+            args.out.resolve(),
+            args.target_dir.resolve(),
+        )
     elif args.command == "build-sdks":
         from compat import projected_kit
         from source import source_identity

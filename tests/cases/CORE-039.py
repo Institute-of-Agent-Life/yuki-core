@@ -7,7 +7,6 @@ import subprocess
 import sys
 import urllib.request
 import zipfile
-from pathlib import Path
 
 from tests.harness.native_only_search import exercise as native_search
 
@@ -18,6 +17,7 @@ def run(ctx):
     from source import digest, source_identity
     from verify_dist import verify, native_target
     from tests.harness.portable_cleanup import check_workspace
+
     check_workspace(ctx)
 
     spec = importlib.util.spec_from_file_location(
@@ -59,6 +59,29 @@ def run(ctx):
     )
     exe = install / "bin" / ("yuki-core.exe" if os.name == "nt" else "yuki-core")
     data = ctx.working / "first-launch"
+    descriptor = json.loads(
+        subprocess.check_output([exe, "plugin-surface"], timeout=15)
+    )
+    profile = json.loads(
+        (ctx.root / "protocol/plugin/stable/1.0/profile.json").read_bytes()
+    )
+    ctx.equal(
+        "default release describes the original witnessed base",
+        descriptor["surface_sha256"],
+        profile["surface_sha256"],
+    )
+    ctx.equal(
+        "default release method inventory remains exact",
+        descriptor["methods"],
+        sorted(["initialize", *profile["surface"]["methods"]]),
+    )
+    ctx.equal(
+        "ordinary development executable retains explicit base selection",
+        descriptor["selected_by_default"],
+        False,
+    )
+    ctx.check("surface reflection does not initialize an owner", not data.exists())
+    ctx.write("plugin-surface.json", descriptor)
     env = (
         {
             "PATH": os.path.join(os.environ["SystemRoot"], "System32"),
@@ -144,9 +167,11 @@ def run(ctx):
             contents = z.read(info)
             out.writestr(
                 info,
-                b"substituted"
-                if info.filename == "fixtures/host-boundaries.json"
-                else contents,
+                (
+                    b"substituted"
+                    if info.filename == "fixtures/host-boundaries.json"
+                    else contents
+                ),
             )
     reject(
         "reject changed member under valid signed manifest",

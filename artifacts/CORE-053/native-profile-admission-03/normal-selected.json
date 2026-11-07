@@ -1,0 +1,54 @@
+{
+  "initialize": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "extension_points": [],
+      "features": [
+        "initialize"
+      ],
+      "grants": [
+        "gateway.activity",
+        "gateway.inbound"
+      ],
+      "host_schema_revision": 2,
+      "manifest_revision": "a9fb9678960564d2016729285dd5ca225d35f170d6f102cf3ca8553e3557011f",
+      "method_revisions": [
+        {
+          "name": "initialize",
+          "revision": 1
+        },
+        {
+          "name": "gateway.activity",
+          "revision": 1
+        },
+        {
+          "name": "gateway.inbound",
+          "revision": 1
+        }
+      ],
+      "namespace": "selected",
+      "schema_revision": 1,
+      "version": {
+        "major": 1,
+        "minor": 0
+      }
+    }
+  },
+  "preview": {
+    "error": {
+      "code": -32601,
+      "message": "method not supported by this base"
+    },
+    "id": 2,
+    "jsonrpc": "2.0"
+  },
+  "inbound": {
+    "id": 3,
+    "jsonrpc": "2.0",
+    "result": {
+      "accepted": false,
+      "event": 1
+    }
+  }
+}

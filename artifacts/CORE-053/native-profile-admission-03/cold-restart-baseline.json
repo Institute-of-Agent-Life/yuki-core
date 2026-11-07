@@ -1,0 +1,45 @@
+{
+  "initialize": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "extension_points": [],
+      "features": [
+        "initialize"
+      ],
+      "grants": [
+        "tool.call"
+      ],
+      "host_schema_revision": 2,
+      "manifest_revision": "25acd59891b8265c702e1171d3323c421d4ba61afbe2d6654022e88177af5c64",
+      "method_revisions": [
+        {
+          "name": "initialize",
+          "revision": 1
+        },
+        {
+          "name": "tool.call",
+          "revision": 1
+        },
+        {
+          "name": "tool.status",
+          "revision": 1
+        }
+      ],
+      "namespace": "baseline",
+      "schema_revision": 1,
+      "version": {
+        "major": 1,
+        "minor": 0
+      }
+    }
+  },
+  "preview": {
+    "error": {
+      "code": -32601,
+      "message": "method not supported by this base"
+    },
+    "id": 2,
+    "jsonrpc": "2.0"
+  }
+}

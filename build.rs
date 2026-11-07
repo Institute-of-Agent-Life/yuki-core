@@ -2,7 +2,10 @@ use std::{collections::BTreeMap, env, fs, path::PathBuf};
 
 #[path = "build/opencc.rs"]
 mod opencc;
+#[path = "build/plugin_surface.rs"]
+mod plugin_surface;
 fn main() {
+    plugin_surface::compile(&PathBuf::from(env::var_os("OUT_DIR").unwrap()));
     println!("cargo:rerun-if-changed=native/vec1");
     cc::Build::new()
         .file("native/vec1/vec1.c")

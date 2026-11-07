@@ -1,10 +1,12 @@
 # 核心實作進度
 
-**CORE-053 正在驗證。** 分支 `codex/core-053-surface-promotion`。新增本地 `ci/promote-surface.py`，從唯一 IDL 明選增量、重用原 SDK 生成器，核同一候選的三端 Host／雙 SDK／真 consumer 回條，再原子建立不可覆寫的 minor。Mac／Linux 的正常入口各 42 項斷言通過，涵蓋競爭、進程中斷、重新取最新聯集、漏證拒絕及兩套實際安裝的 SDK。Mac 另重跑原 CORE-044，原生執行檔的 329 個 Rust／協議輸入逐檔核對後通過原基底對拍。測試新增能力全部明列 synthetic，尚未晉級任何真能力。前置 CORE-045 的 #110 修正版 Mac／Linux 各 51 卡通過，HJW 正在跑最新合併樹。三端全量及 #110 合併完成後才標記本卡完成。操作與證據格式見 `release/surface-evidence/README.md`。具名回條在 `artifacts/CORE-053/preflight-07/`、`linux-preflight-07/` 及 `base-kit-regression-01/`。
+**CORE-053 受限構建入口正在驗證。** 分支 `codex/core-053-native-surface`，接續 #111 的本地發版器。原 B0 schema 隨來源保存，候選 Host 明確編入 plan digest 與所選方法聯集，普通啟動自動使用受限線路。Mac 真程序的正常、拒權、冷啟及兩套 SDK 內含面核對已過 42 項斷言，原 CORE-039 正常入口與 Rust 檢查共 367 項斷言通過，CORE-053 卡入口另過 42 項。後續本地三端會在全量 suite 完成後，獨佔同一端編譯快取，再執行 `ci/native_surface_check.py`。資料 reader 55 與 wire min_reader 1.0.0 分列。三份完整 preflight、原生執行檔、SDK 與逐檔 SHA-256 的可交接包在 `artifacts/CORE-053/native-builder-preflight/index.json`。追加驗收 `artifacts/CORE-053/native-profile-admission-03/` 以同一 Bot／namespace 真正接納原事件，冷啟重投回同一事件鍵，原生構建的 331 個輸入逐檔相符。當前選面為合成 activity 控制，真能力發布繼續需要原 consumer 證據。
+
+**CORE-053 發版器 #111 正在三端全量驗收。** head `060f9d0c1fcb`，Mac／Linux 各 52 卡通過，HJW 仍在執行。正常卡入口的 Mac／Linux 各 42 項斷言已涵蓋並行競爭、中斷、重算、漏證拒絕和兩套安裝後 SDK。當前完成數未計入本卡。
 
 2026-11-06。固定 v4 行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；任務書工作副本的 CORE-011 已採用 K05 的邏輯請求預留規則。下列證據路徑相對於 yuki-core 工作目錄。
 
-**CORE-045 進行中。** 分支 `codex/core-045-published-consumer`。擴展正式發布 `plugin/telegram/v0.1.0`，來源 `e9e012d761da`、SDK 1.0.0。五個附件下載後逐檔 SHA-256 相符，發布回條在 `fixtures/compat/telegram-0.1.0/published-receipt.json`。固定 B0、此 stable 插件與擴展 #58 alpha.9，Mac 四格正常／失回應重放已過，兩種不相容實例均被單獨拒絕。正常卡入口 `artifacts/CORE-045/preflight-04/manifest.json` 已通過 25 項斷言與 Rust 檢查。前輪缺少 SQLite 建置回條已補取真 Host 資訊並重驗。本地三端完整 CI 接續執行，未計入完成數。
+**CORE-045 已完成。** #110 head `b7f2fadcaaad`，合併 `19e60c86ef8a`。Mac／Linux／HJW Windows 各 51 卡通過，原 B0／候選 Host × 已發布 Telegram 0.1.0／alpha.9 四格正常與失回應重放全部通過，兩種不相容實例被獨立拒絕。完整回條 `artifacts/ci/local-pr/110/receipt.json`，SHA-256 `6a774e46c39392f39f938c5bd4adba99ba1e095aaa9f5eaac3130bcd0b7e6678`。Linux 原包要求 glibc 2.39 以上及 curl，已在本地 glibc 2.41 鏡像驗收。擴展正式發布回條已由 #59 合併 `69b6311d7277`。
 
 **CORE-032 activity 與 CORE-025 撤回已合併。** #108 head `78df98498670` 合併 `427ffdf8a937`，#109 head `f5a488f46c16` 合併 `dc698f5a88dd`。兩個 PR 在 Mac／Linux／HJW 各通過 50 卡。三端簽署候選與完整 SHA-256 分別在 `artifacts/CORE-039/pr108-original-recall/verified-candidates.json`、`artifacts/CORE-039/pr109-original-activity/verified-candidates.json`。後者來源 `78394082d8ea`、SDK alpha.17。全部仍為未發布候選。
 
@@ -12,7 +14,7 @@
 
 **CORE-038 原事件引用已合併。** #107 head `a01fdc14cb2a`，main `ddd42728b760`，本地 Mac／Linux／HJW Windows 各 50 卡通過。候選來源 `7965392bd7de`，reader 55、握手 1、Host 2、SDK alpha.15，三端簽署原包及 SHA-256 在 `artifacts/CORE-039/pr107-original-reply/verified-candidates.json`，狀態為本地未發布。擴展 #56 head `372484a836a8`、main `5ba070ca10f8`，以同平台原包各重放 10 種情境，原 Bot、群話題和首段引用皆有見證。具名回條及逐檔雜湊在擴展倉 `artifacts/EXT-004/original-reply-13/telegram-delivery.json`。核心保留交接索引 `artifacts/CORE-038/ext004-original-reply-pr56/witness.json`。
 
-**核心任務已完成 49／58 張。** CORE-001–039、044、048–052、055–058 已完成。CORE-040 已取得部分驗收證據，剩餘 9 張的交接條件見下表。[逐卡分支與原產物](https://github.com/Institute-of-Agent-Life/yuki-core/blob/8555755a439b0e67bdda6f00673eaed2ab7502a0/docs/implementation-progress.md)，[先前候選、回放與清理明細](https://github.com/Institute-of-Agent-Life/yuki-core/blob/e680fc23847c8460639294eef7448d27d465b79c/docs/implementation-progress.md)。
+**核心任務已完成 50／58 張。** CORE-001–039、044–045、048–052、055–058 已完成。CORE-040 已取得部分驗收證據，剩餘 8 張的交接條件見下表。[逐卡分支與原產物](https://github.com/Institute-of-Agent-Life/yuki-core/blob/8555755a439b0e67bdda6f00673eaed2ab7502a0/docs/implementation-progress.md)，[先前候選、回放與清理明細](https://github.com/Institute-of-Agent-Life/yuki-core/blob/e680fc23847c8460639294eef7448d27d465b79c/docs/implementation-progress.md)。
 
 | 已合併 PR | head | main 合併提交 | 本地 Mac／Linux／HJW Windows |
 |---|---|---|---|

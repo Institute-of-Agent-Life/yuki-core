@@ -22,6 +22,8 @@ CORE-053 提供本地組包與資格檢查。實際 GitHub 發布沿已核准的
 python ci/promote-surface.py init --registry /path/registry --base /path/base.json --sha256 <原基底摘要>
 python ci/promote-surface.py plan --registry /path/registry --request /path/request.json --out /path/plan.json
 python ci/promote-surface.py build-sdks --registry /path/registry --plan /path/plan.json --out /path/sdk-candidate
+python ci/promote-surface.py build-host --registry /path/registry --plan /path/plan.json --out /path/native-host --target-dir /path/idle-native-target
+python tests/peers/base/profile_check.py --host /path/native-host/yuki-core --kit /path/sdk-candidate --plan /path/plan.json --out /path/native-admission
 python ci/promote-surface.py promote --registry /path/registry --plan /path/plan.json --evidence /path/qualification
 ```
 
@@ -38,3 +40,15 @@ python ci/promote-surface.py promote --registry /path/registry --plan /path/plan
 原功能的場景覆蓋仍依矩陣該列的真 consumer 驗收。組包器檢查這些回條的來源與完整性，現場執行器負責產生真實的功能斷言。Host 必須實際限制到選定方法，較大的開發候選需要先生成對應的受限 Host 並重放，才能交給此入口。
 
 `init --synthetic` 只建立獨立測試 registry，產物永久標記 `synthetic-control`。其回條不能交給實際發行 registry。`python ci/check.py CORE-053 --out <新目錄>` 使用真 B0 見證作基底，兩個合成欄位測競爭、重算、漏證拒絕及原包保留，另從正常 CLI 生成一組標記合成的 SDK。這些測試的 `real_capabilities_promoted` 為空。
+
+## 受限原生 Host
+
+`build-host` 從原 plan 與 SHA-256 編入所選聯集，使用本機已鎖定的 Rust 與離線 Cargo cache。正式 registry 要求來源乾淨且 commit 精確匹配。編譯前後逐檔核對來源，輸出二進位與 `host-build.json`。目標編譯目錄須處於閒置狀態，避免與使用該執行檔的驗收並行。
+
+受限二進位的普通 `init` 與 `run` 自動選用編入的聯集。冷啟沿資料卷標記選同一條穩定線路。`plugin-surface` 在開啟資料目錄前輸出原 profile digest、來源及方法清單。一般開發版的 `--plugin-base-1` 使用隨來源保存的原 B0 schema 投影，因此後續 IDL 的可選欄位仍需明選並取得新見證。
+
+正常時序先編譯，再用兩套安裝後的 SDK 交換握手，讓既有 tool grant 與新增 activity grant 在真 Host 上線。故障時序讓未選的 forget grant 無法啟動，讓已握手程序的未選 callback 被拒，然後冷啟重跑同一組檢查。`profile_check.py` 驗證指定 `gateway.activity` 的隔離控制，完整能力發布仍使用前述真 consumer 回條。
+
+`plan.min_reader` 是插件 wire 版本。原生 `host-build.json` 另列實際初始化觀察到的 `storage.schema_version` 與 `storage.minimum_reader`。本來源的資料 reader 為 55，原 B0 發行物為 54。切換資料卷時使用資料 reader 限制與 K14 的驗收回條。所有受限候選仍標 `published=false`。
+
+本地全量 suite 完成、編譯快取取得獨佔使用後，再執行 `python ci/native_surface_check.py --out <新目錄> --target-dir <閒置 target>`。它從原 B0 自動建立 activity 合成 profile，調用正常 SDK／Host 構建入口並重跑上述真程序隔離控制，輸出帶來源與逐檔 SHA-256 的 `validation.json`。三個本地平台各執行一次。

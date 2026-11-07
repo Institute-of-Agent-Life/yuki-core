@@ -58,6 +58,40 @@ fn is_enabled(value: &bool) -> bool {
     *value
 }
 static BASE_1: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+mod compiled_surface {
+    include!(concat!(env!("OUT_DIR"), "/plugin_surface.rs"));
+}
+
+pub(crate) fn selected_build() -> bool {
+    compiled_surface::SELECTED.is_some()
+}
+
+pub(crate) fn compiled_profile() -> &'static Value {
+    static PROFILE: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+    PROFILE.get_or_init(|| {
+        serde_json::from_str(compiled_surface::SELECTED.unwrap_or(include_str!(
+            "../../protocol/plugin/stable/1.0/profile.json"
+        )))
+        .expect("compiled plugin surface profile")
+    })
+}
+
+pub(crate) fn profile_description() -> Value {
+    let profile = compiled_profile();
+    let mut methods = vec!["initialize"];
+    methods.extend(
+        profile["surface"]["methods"]
+            .as_object()
+            .expect("compiled plugin methods")
+            .keys()
+            .map(String::as_str),
+    );
+    methods.sort_unstable();
+    json!({"version":profile["version"],"min_reader":profile["min_reader"],
+        "candidate_source":profile["candidate_source"],"surface_sha256":profile["surface_sha256"],
+        "handshake_sha256":profile["handshake_sha256"],"methods":methods,
+        "activation_argument":"--plugin-base-1", "selected_by_default":selected_build()})
+}
 
 pub(crate) fn select_base(stable: bool) -> Result<()> {
     if *BASE_1.get_or_init(|| stable) != stable {
@@ -100,13 +134,7 @@ pub fn methods() -> &'static Value {
             }
         }
         if stable_base() {
-            let freeze: Value =
-                serde_json::from_str(include_str!("../../protocol/plugin/stable/1.0/freeze.json"))
-                    .expect("witnessed base freeze");
-            base["methods"]
-                .as_object_mut()
-                .unwrap()
-                .retain(|name, _| freeze["methods"].get(name).is_some());
+            base = compiled_profile()["surface"].clone();
         }
         base
     })

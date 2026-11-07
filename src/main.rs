@@ -38,6 +38,8 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Action {
+    /// Describe the compiled stable plugin surface without opening a data directory.
+    PluginSurface,
     Init {
         #[arg(long, value_enum, default_value = "hybrid")]
         memory_mode: memory::embedding::Mode,
@@ -92,15 +94,21 @@ async fn close_writer(store: &store::Store) {
 }
 
 async fn execute(args: Args) -> Result<()> {
+    if matches!(args.command, Action::PluginSurface) {
+        println!("{}", host::grants::profile_description());
+        return Ok(());
+    }
     let data = args.data.ok_or("--data is required")?;
     let marked = data.join("plugin-base-1.0").try_exists()?;
-    let stable = args.plugin_base_1
+    let stable = host::grants::selected_build()
+        || args.plugin_base_1
         || std::env::current_exe()?.file_stem() == Some(std::ffi::OsStr::new("yuki-base"));
     if stable && !marked && !matches!(args.command, Action::Init { .. }) {
         return Err("stable plugin base requires its own initialized data directory".into());
     }
     host::grants::select_base(stable || marked)?;
     match args.command {
+        Action::PluginSurface => unreachable!("handled before acquiring data"),
         Action::Init { memory_mode } => {
             let owner = config::init(&data, memory_mode)?;
             let version = store::bootstrap(&owner.data).await?;
