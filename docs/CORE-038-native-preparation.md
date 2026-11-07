@@ -17,3 +17,7 @@ EXT-006 的飛書／Lark 先上傳 image/file 得到原應用資源鍵，再用�
 `python ci/check.py CORE-032 --out <new-directory>` 會執行 `tests/harness/native_preparation.py`。CORE-039 對同一入口使用發行構建。案例涵蓋純上傳回條、首個可見步的原引用、失回應、附言失敗、非法順序與重複消費，以及上傳後換部署、撤讀權、原媒體版本失效。缺原 app 證據的歷史事件不能靠重投補寫。Mac 最新預驗共 120 項斷言。
 
 原路由同時交付 canonical entry 的 `scope`，插件依 private／group 選擇原生收件 ID 類型。SDK alpha.19 的新派發預驗已驗私聊與兩個租戶的群話題，發布構建通過 583 項斷言。
+
+## 原檔名補齊
+
+Main 未指定 `name` 時，規劃回呼從同一獲授權的不可變媒體版本取回 `filename`。明確指定的名稱沿原請求傳送。原 operation 的 payload 保留首次接納內容，補齊值只進原 plan 的已綁定參數。驗收同時核對缺欄位、明確改名，以及既有撤權、換版本和未知準備結果的停止時序。

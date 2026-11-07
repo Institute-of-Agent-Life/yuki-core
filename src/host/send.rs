@@ -95,7 +95,7 @@ impl Hub {
         if !grants.iter().any(|g| g == "gateway.send") {
             return Err(Refused("gateway_send_not_granted").into());
         }
-        let message: Value = serde_json::from_str(row.try_get("payload")?)?;
+        let mut message: Value = serde_json::from_str(row.try_get("payload")?)?;
         let reply = match message.get("reply_to_event_id").filter(|v| !v.is_null()) {
             Some(event) => Some(
                 original_reply(
@@ -138,8 +138,8 @@ impl Hub {
             if !grants.iter().any(|g| g == "media.open") {
                 return Err(Refused("gateway_media_read_not_granted").into());
             }
-            let (digest, kind): (String, String) = sqlx::query_as(
-                "SELECT v.digest,v.kind FROM media_versions v JOIN media_version_readers r ON r.version=v.id WHERE v.id=? AND r.reader=?",
+            let (digest, kind, filename): (String, String, String) = sqlx::query_as(
+                "SELECT v.digest,v.kind,v.filename FROM media_versions v JOIN media_version_readers r ON r.version=v.id WHERE v.id=? AND r.reader=?",
             )
             .bind(id)
             .bind(exec)
@@ -149,7 +149,11 @@ impl Hub {
             if message["attachment_kind"] != kind {
                 return Err(Refused("gateway_attachment_kind_mismatch").into());
             }
-            Some(json!({"artifact_id":id,"version":digest}))
+            let selected = json!({"artifact_id":id,"version":digest});
+            if message["name"].is_null() {
+                message["name"] = json!(filename);
+            }
+            Some(selected)
         } else {
             None
         };

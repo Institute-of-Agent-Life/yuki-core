@@ -98,6 +98,7 @@ def run(ctx, sdk, profile="debug"):
     sources = []
     cases = [
         ("normal", "confirmed", 1, 2, 2),
+        ("original-name", "confirmed", 1, 2, 2),
         ("quoted", "confirmed", 1, 2, 2),
         ("file-failed", "failed", 1, 1, 0),
         ("caption-failed", "failed", 1, 2, 1),
@@ -142,7 +143,11 @@ def run(ctx, sdk, profile="debug"):
                             {
                                 "artifact_id": created["artifact_id"],
                                 "attachment_kind": "file",
-                                "name": "original.bin",
+                                **(
+                                    {}
+                                    if mode == "original-name"
+                                    else {"name": "original.bin"}
+                                ),
                                 "text": "caption",
                                 **(
                                     {"reply_to_event_id": event}
@@ -163,6 +168,32 @@ def run(ctx, sdk, profile="debug"):
                 execution = owner.rows(
                     "SELECT id FROM executions WHERE source=?", event
                 )[0][0]
+                planned_name = owner.rows(
+                    "SELECT json_extract(args,'$.message.name') FROM host_calls WHERE execution=? AND method='gateway.plan_send'",
+                    execution,
+                )[0][0]
+                ctx.equal(
+                    mode + " plans the selected original or explicit filename",
+                    planned_name,
+                    "paper.bin" if mode == "original-name" else "original.bin",
+                )
+                if mode == "original-name":
+                    original_payload = json.loads(
+                        owner.rows(
+                            "SELECT payload FROM operations WHERE namespace=? AND target='send' AND parent IS NULL",
+                            execution,
+                        )[0][0]
+                    )
+                    ctx.equal(
+                        mode + " preserves the admitted send payload",
+                        original_payload.get("name"),
+                        None,
+                    )
+                    ctx.equal(
+                        mode + " preserves missing versus null name",
+                        "name" in original_payload,
+                        False,
+                    )
                 children = owner.rows(
                     "SELECT c.method,c.state,c.result,o.ordinal FROM host_calls c JOIN operations o ON o.namespace=c.execution AND o.operation_id=c.operation WHERE c.execution=? AND c.method IN('gateway.prepare_part','gateway.dispatch_part') ORDER BY o.ordinal",
                     execution,

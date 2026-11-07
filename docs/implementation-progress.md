@@ -1,4 +1,8 @@
-**CORE-038 原長文字傳輸進行中。** 分支 `codex/core-038-bounded-text`，SDK Rust alpha.20／Python a20。`gateway.read_text` 按原 plan／dispatch handle 分頁供應文字，每頁最多 12 KiB，單幀保持 64 KiB。完整文字與每段摘要綁定原不可變請求，物理回條沿用原 send 流程。Mac 定向對拍通過 164 項，涵蓋 inline、三段原文、引用、未知／失回應停止、五種錯 range、撤銷 send／forget 權限、變更 revision／generation 及來源刪除。CORE-039 發行入口通過 747 項，兩套實際安裝 SDK、Rust 格式／Clippy／writer tests 均通過。具名記錄位於本任務工作樹 `artifacts/CORE-038/bounded-text-*`。下一步是三端核心驗收、飛書真 SDK 消費與候選交接。
+**CORE-038 原檔名補齊進行中。** 分支 `codex/core-038-original-filename`。飛書附件上傳會消費原版本的檔名，Main 未指定名稱時由核心依原讀取權補齊，明確改名保留。Mac 的 CORE-032 預驗通過 693 項斷言，涵蓋缺欄位、原 payload 保留及原附件故障時序。回條 `artifacts/CORE-038/original-filename-02/manifest.json`，SHA-256 `0627653aa4fb7266513c47fd4f39d4fb0149d01a7e4a85a79030876b9df52fad`。下一步執行本地三端全量 CI 及候選包驗證。
+
+**CORE-038 長文字已合併。** #115 head `3fa3e30116fe`，main `f9e027fcbb8e`。受測來源 `942a534763ba`，三端各 52 張檢查及 42 項原生協議斷言通過。完整回條位於本倉根目錄 `artifacts/ci/local-pr/115/receipt.json`，SHA-256 `21ef7352c3656945b32bd222aba1ca8e2f5ab72b014207ca06027efb4c0ba9f3`。未發布的 SDK alpha.20／reader 56 三端候選位於 `artifacts/CORE-039/pr115-bounded-text/verified-candidates.json`。
+
+**空間清理已核對。** Mac 內置盤回收閒置 Docker build layers 和四輪合成 benchmark SQLite，Windows 回收 384 個已核同雜湊的重複 ZIP 及七個舊編譯 target。來源、原包及驗收記錄的保留校驗通過。根目錄回條 `artifacts/ci/cleanup-20261107/cleanup-index.json`，SHA-256 `552dde586f7994e795d600ed4474a80e302e8ffb18ad16e09a962e72bc498457`。
 
 **CORE-038 原生附件準備已合併。** #114 head `d61567831216`，main `23d260e12559`。受測合併來源 `423a320beb33`，Mac／Linux／HJW Windows 各 52 張檢查與 42 項選面原生重放通過。驗收回條 `artifacts/ci/local-pr/114/receipt.json` 的 SHA-256 為 `7cffde61c7e92cea05e12ab42402d12b5450a84ecb435c0f5b8a05368aca05dd`。SDK alpha.19、reader 56 的三端原包已驗簽，未發布候選及完整雜湊位於 `artifacts/CORE-039/pr114-native-preparation/verified-candidates.json`。飛書已鎖定三端原包，真附件上傳消費仍在進行。
 
