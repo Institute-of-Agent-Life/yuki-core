@@ -137,7 +137,7 @@ fn recall_state(reply: Option<&Value>) -> &'static str {
         _ => "unknown",
     }
 }
-async fn record_recall(
+pub(crate) async fn record_recall(
     conn: &mut SqliteConnection,
     exec: &str,
     child: &str,
@@ -171,7 +171,7 @@ async fn record_recall(
     recall::settle(conn, exec, child, state).await?;
     Ok(json!({"state":state,"child":child}))
 }
-async fn write(store: &Store, c: Change) -> Result<Value> {
+pub(crate) async fn write(store: &Store, c: Change) -> Result<Value> {
     store.write(Mutation::Social(Box::new(c))).await
 }
 pub async fn deliver(store: &Store, hub: &Hub, exec: &str, id: &str, actor: &str) -> Result<Value> {

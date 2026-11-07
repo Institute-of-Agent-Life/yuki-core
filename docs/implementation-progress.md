@@ -2,7 +2,9 @@
 
 2026-11-06。固定 v4 行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；任務書工作副本的 CORE-011 已採用 K05 的邏輯請求預留規則。下列證據路徑相對於 yuki-core 工作目錄。
 
-**CORE-038 原事件引用補齊進行中。** 分支 `codex/core-038-gateway-original-reply`。Host 以原 entry 和接收 SELF 解析 `reply_to_event_id`，只允許第一段攜帶原 native locator，並在 writer 的派發邊界再次檢查。跨 entry、被刪來源與插件改寫定位均停止。Mac 預驗 `artifacts/CORE-038/original-reply-preflight-04/manifest.json` 已通過，包含規劃期間刪除來源後零物理派發。此時原執行保留 held，原操作可診斷。三端完整 CI、簽署候選及 Telegram 真插件引用重放接續執行。
+**CORE-025／038 原消息撤回補齊進行中。** 分支 `codex/core-025-host-recall`。新增明選 `gateway.recall` 權限與 SDK alpha.16，沿原發送事件、SELF、entry 和 native locator 派發。相同原消息共享一筆物理撤回，回應遺失保留 unknown，冷啟及新邏輯請求讀回原回條。Mac `artifacts/CORE-038/gateway-recall-preflight-05/manifest.json` 已通過 376 項，涵蓋撤權後拒絕新派發及原回執續讀。三端完整 CI 與 Telegram 真插件重放接續執行。
+
+**CORE-038 原事件引用已合併。** #107 head `a01fdc14cb2a`，main `ddd42728b760`，本地 Mac／Linux／HJW Windows 各 50 卡通過。候選來源 `7965392bd7de`，reader 55、握手 1、Host 2、SDK alpha.15，三端簽署原包及 SHA-256 在 `artifacts/CORE-039/pr107-original-reply/verified-candidates.json`，狀態為本地未發布。擴展 #56 head `372484a836a8`、main `5ba070ca10f8`，以同平台原包各重放 10 種情境，原 Bot、群話題和首段引用皆有見證。具名回條及逐檔雜湊在擴展倉 `artifacts/EXT-004/original-reply-13/telegram-delivery.json`。核心保留交接索引 `artifacts/CORE-038/ext004-original-reply-pr56/witness.json`。
 
 **核心任務已完成 49／58 張。** CORE-001–039、044、048–052、055–058 已完成。CORE-040 已取得部分驗收證據，剩餘 9 張的交接條件見下表。[逐卡分支與原產物](https://github.com/Institute-of-Agent-Life/yuki-core/blob/8555755a439b0e67bdda6f00673eaed2ab7502a0/docs/implementation-progress.md)，[先前候選、回放與清理明細](https://github.com/Institute-of-Agent-Life/yuki-core/blob/e680fc23847c8460639294eef7448d27d465b79c/docs/implementation-progress.md)。
 
@@ -22,6 +24,8 @@
 | #103 | `44f0a9c60785` | `d90190c5976e` | 各 50 卡 |
 | #104 | `29d5225ce545` | `3fb011eb6337` | 各 50 卡 |
 | #105 | `c94b97fa376c` | `0dab3504ee39` | 各 50 卡 |
+| #106 | `952bbffec228` | `6ed7f10c62d1` | 各 50 卡 |
+| #107 | `a01fdc14cb2a` | `ddd42728b760` | 各 50 卡 |
 
 各 PR 的受測合併提交、三端逐卡雜湊在 `artifacts/ci/local-pr/<PR>/receipt.json`。#99 的回執 SHA-256 為 `5abbfe3d54fe3aea254dd96a9a9bc3ed2e61a108078d2c9ca204aea97a811969`。#100 的回執 SHA-256 為 `3da2d2ed7b847f79f437bf8aece3602dec77fd891dbf48140a9100c529a6feeb`。#101 的回執 SHA-256 為 `c40e5f62f60902adaf3d73b875bee00ae410644b9bfc1d1b608ba9f2452858ca`。#102 的回執 SHA-256 為 `71aadf32e4ba5e60c7faa1ac1f1b32d7f3be1d37e746bc53f7c033f3025a22da`。41 個已整合的堆疊 PR 均逐一核對 head 已進入 main，並核驗 147 份清單；見 `artifacts/ci/pr-reconciliation-20261106/closed-41-confirmed.json`。
 

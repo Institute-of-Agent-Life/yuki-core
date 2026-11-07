@@ -1,6 +1,6 @@
 # Host candidate
 
-The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.2` and Python SDK `1.0.0a2`.
+The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.16` and Python SDK `1.0.0a16`.
 
 Install an executable through a `[[plugins]]` entry in the owner's private `yuki.toml`. Specify `id`, `namespace`, an absolute `program` and `args`. A gateway also needs its `platform` and the installed SELF assignment's `bot_stage`. Configure `grants` individually. `commands` lists full command paths. `[[plugins.tools]]` records the name, description, JSON Schema and visibility that the host freezes for the next activation. The `env` list selects which environment variables reach this executable.
 
@@ -10,7 +10,9 @@ A gateway submits platform-native identifiers and segments. Its configured names
 
 For an explicit `message.reply_to_event_id`, the development Host resolves the original event under the selected route's entry and receiving SELF assignment. It supplies `arguments.reply` with `event_id` and `native_id`. The planner must copy this object into the first part's `reply`, and subsequent parts omit it. The Host validates the complete plan before sending any part and passes the same object in the first dispatch's `arguments.reply`. Missing, changed, cross-entry or invalidated sources stop delivery. The writer rechecks the source immediately before each quoted callback crosses the dispatch boundary. A source invalidated after planning can leave the original execution held with no physical dispatch, and its original operation records remain available for diagnosis.
 
-This addition uses the existing SDK's argument object. The witnessed six-method 1.0.0 release remains tied to its published source and consumer transcripts. New quoted-delivery candidates require their own real gateway consumption evidence.
+The development `gateway.recall` method requires its explicit grant together with `gateway.inbound` and `gateway.send`. A model selects its own public sent event. The Host resolves the original confirmed part, installed receiver and recorded route, claims that part's single recall attempt, then sends the original native ID. A successful reply hides the original delivery. A platform refusal preserves the original delivery and the failed receipt. Response loss preserves unknown. Repeated logical requests and cold restarts read the same physical recall result. Authorization and the complete original reference are checked again at the writer's dispatch boundary. The retained native receipt is settled together with the model result.
+
+Quoted delivery uses the existing argument object. Native recall adds its own negotiated method and SDK alpha.16. Real gateway transcripts bind each development candidate to its exercised capabilities. The six-method stable base is documented with its original release evidence.
 
 Metadata observation is instance-bound and may drop under backpressure. Forget uses the durable owner, watermark and key. Cleanup acknowledges the original obligation even when its first acknowledgement was lost. The first candidate contains no approved third-party QQ native action. A maintainer must supply the actual action and scope before that method can be included.
 
