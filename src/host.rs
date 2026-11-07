@@ -8,6 +8,7 @@ mod control;
 pub(crate) mod domain;
 mod external_search;
 pub(crate) mod gateway_media;
+mod gateway_text;
 pub(crate) mod grants;
 pub(crate) mod lifecycle;
 pub(crate) mod maintenance;

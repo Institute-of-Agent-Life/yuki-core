@@ -215,14 +215,19 @@ impl Hub {
             let reply_matches = visible.next().and_then(|p| p.get("reply")) == reply.as_ref()
                 && visible.all(|p| p.get("reply").is_none());
             let preparations_match = super::preparation::validate(parts);
-            if !preparations_match
+            let text_matches =
+                super::gateway_text::validate(parts, message["text"].as_str()).is_ok();
+            if !text_matches
+                || !preparations_match
                 || !reply_matches
                 || media_parts.len() != usize::from(selected.is_some())
                 || media_parts
                     .first()
                     .is_some_and(|p| Some(*p) != selected.as_ref())
             {
-                let failure = json!({"state":"failed","error":if !preparations_match {
+                let failure = json!({"state":"failed","error":if !text_matches {
+                    "gateway_plan_text_mismatch"
+                } else if !preparations_match {
                     "gateway_plan_preparation_mismatch"
                 } else if reply_matches {
                     "gateway_plan_media_mismatch"
