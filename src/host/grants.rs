@@ -120,6 +120,9 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if self.grants.contains("gateway.activity") && !self.grants.contains("gateway.inbound") {
+            return Err("gateway.activity requires its original inbound grant".into());
+        }
         if self.grants.contains("gateway.recall")
             && !["gateway.inbound", "gateway.send"]
                 .iter()

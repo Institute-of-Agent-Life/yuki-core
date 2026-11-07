@@ -303,6 +303,9 @@ async fn inbound(
 }
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
     match change {
+        Change::ActivityDispatch(gate, plugin, generation) => {
+            super::activity::authorize(conn, plugin, generation, gate).await
+        }
         Change::Reported(event, state) => {
             sqlx::query("UPDATE host_command_events SET reply_state=? WHERE event=? AND state='unavailable' AND reply_state IS NULL").bind(state).bind(event).execute(conn).await?;
             Ok(Value::Null)

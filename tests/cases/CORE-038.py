@@ -2,7 +2,7 @@
 
 import base64
 from concurrent.futures import ThreadPoolExecutor
-import hashlib, json, os, struct, subprocess, sys, uuid, zlib
+import hashlib, json, os, struct, subprocess, sys, time, uuid, zlib
 from pathlib import Path
 from tests.harness.compact import Owner, call, reply
 from tests.harness.gateway_media import refused_media_send, run as gateway_inbound
@@ -59,7 +59,7 @@ def installed(ctx, o, folders, sdk, model=None, visual=False, gateway=None, proc
         if gateway is not None and plugin == "codec-b":
             text = (
                 text.rsplit("grants=", 1)[0]
-                + 'grants=["media.open","media.publish","media.process","tool.call","forget.owner","gateway.inbound","gateway.send","gateway.recall"]\n'
+                + 'grants=["media.open","media.publish","media.process","tool.call","forget.owner","gateway.inbound","gateway.send","gateway.recall","gateway.activity"]\n'
             )
             text += f'platform="telegram"\nbot_stage="{gateway}"\n'
         if plugin == "codec-a":
@@ -140,6 +140,14 @@ def gateway_delivery(ctx, sdk, paper):
             )
             event = observed["result"]["event"]
             _, q = owner.wire(model)
+            def activities():
+                path = peer / "activity.ndjson"
+                return [json.loads(line) for line in path.read_bytes().splitlines()] if path.exists() else []
+            owner.until(lambda: len(activities()) >= 2)
+            activity = activities()
+            ctx.check("live original turn renews its bounded gateway activity lease",
+                      all(v["enabled"] and v["ttl_ms"] == 5000 for v in activity))
+            ctx.equal("activity belongs to the original gateway chat", activity[0]["route"]["chat"], "room-42")
             reply(q, calls=[call("make", "make_images", {})])
             wire, q = owner.wire(model)
             created = json.loads(
@@ -303,11 +311,17 @@ def gateway_delivery(ctx, sdk, paper):
                       len((peer / "recalls.ndjson").read_bytes().splitlines()), 3)
             reply(q, "done")
             owner.finished(replay_event)
+            replay_execution = owner.rows("SELECT id FROM executions WHERE source=?", replay_event)[0][0]
+            owner.until(lambda: any(v["lease_id"] == replay_execution and not v["enabled"] for v in activities()))
+            ctx.check("completed turn closes its own activity lease",
+                      any(v["lease_id"] == replay_execution and not v["enabled"] for v in activities()))
+            routed["activity"] = activities()
             quoted_event = submit_source("erasable-reply", False)
             foreign_event = submit_source("other-topic", False, space="separate-room", topic="other")
             trigger = submit_source("reply-race", True)
             _, q = owner.wire(model)
             race_execution = owner.rows("SELECT id FROM executions WHERE source=?", trigger)[0][0]
+            owner.until(lambda: any(v["lease_id"] == race_execution and v["enabled"] for v in activities()))
             q = refused_media_send(ctx, owner, model, q, race_execution,
                                    {"text":"cross-entry reply", "reply_to_event_id":foreign_event},
                                    "gateway_reply_unavailable")
@@ -322,6 +336,12 @@ def gateway_delivery(ctx, sdk, paper):
                       owner.rows("SELECT count(*) FROM host_calls WHERE method='gateway.dispatch_part'"), before)
             ctx.equal("erased quote cannot replace the previous native receipt",
                       json.loads((peer / "reply-dispatched.json").read_bytes()), quoted)
+            owner.until(lambda: any(v["lease_id"] == race_execution and not v["enabled"] for v in activities()))
+            renewals = [v for v in activities() if v["lease_id"] == race_execution and v["enabled"]]
+            time.sleep(2.2)
+            ctx.equal("source erasure stops future activity renewal",
+                      [v for v in activities() if v["lease_id"] == race_execution and v["enabled"]], renewals)
+            routed["activity"] = activities()
             routed["reply_race"] = {"source":quoted_event, "trigger":trigger, "physical_dispatches":0,
                                     "execution_state":"held"}
             return routed

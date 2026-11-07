@@ -1616,6 +1616,63 @@
         ],
         "additionalProperties": false
       }
+    },
+    "gateway.activity": {
+      "revision": 1,
+      "direction": "host_notification",
+      "grant": "gateway.activity",
+      "params": {
+        "type": "object",
+        "properties": {
+          "lease_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "route": {
+            "type": "object",
+            "properties": {
+              "entry": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bot": {
+                "type": "string",
+                "minLength": 1
+              },
+              "chat": {
+                "type": "string",
+                "minLength": 1
+              },
+              "topic": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "entry",
+              "bot",
+              "chat",
+              "topic"
+            ],
+            "additionalProperties": false
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "ttl_ms": {
+            "const": 5000
+          }
+        },
+        "required": [
+          "lease_id",
+          "route",
+          "enabled",
+          "ttl_ms"
+        ],
+        "additionalProperties": false
+      }
     }
   }
 }

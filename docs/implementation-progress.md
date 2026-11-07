@@ -2,7 +2,10 @@
 
 2026-11-06。固定 v4 行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；任務書工作副本的 CORE-011 已採用 K05 的邏輯請求預留規則。下列證據路徑相對於 yuki-core 工作目錄。
 
-**CORE-025／038 原消息撤回補齊進行中。** 分支 `codex/core-025-host-recall`。新增明選 `gateway.recall` 權限與 SDK alpha.16，沿原發送事件、SELF、entry 和 native locator 派發。相同原消息共享一筆物理撤回，回應遺失保留 unknown，冷啟及新邏輯請求讀回原回條。Mac `artifacts/CORE-038/gateway-recall-preflight-05/manifest.json` 已通過 376 項，涵蓋撤權後拒絕新派發及原回執續讀。三端完整 CI 與 Telegram 真插件重放接續執行。
+**CORE-032 Gateway activity 進行中。** 分支 `codex/core-032-gateway-activity`。SDK alpha.17 新增明選的 `gateway.activity` 通知。Main 的原執行存活時每兩秒續期，通知有五秒期限，結束時關閉該 lease。派發前重新檢查原 source、Bot／chat／topic、授權與 Main 存活狀態。有限佇列中的 UI 通知獨立於業務效果。Mac 預驗 `artifacts/CORE-038/gateway-activity-preflight-03/manifest.json` 已通過 380 項，包含原 chat 續期、結束、來源刪除後停止續期及原消息投遞。三端完整 CI 和 Telegram UI 故障重放接續執行。
+
+**CORE-025／038 原消息撤回。** #108 head `78df98498670`，分支 `codex/core-025-host-recall`。SDK alpha.16、明選 `gateway.recall` 權限。原消息共享一筆物理撤回，回應遺失保留 unknown，冷啟讀原回條。Mac 預驗通過 376 項，隨後 Mac／Linux 各 50 卡通過，HJW 正在建置 release。Linux 首次輸出路徑撞到已追蹤的收據目錄，改用 `artifacts/run` 後同來源全套通過。具體結果見 `artifacts/ci/local-pr/108/108-120db2d663af-bfbde1/`。Mac／Linux 簽署候選在 `artifacts/CORE-039/pr108-original-recall/`，均未發布。Telegram Rust alpha.8 在 Mac 原包已通過十五組實際 Host 重放，擴展倉三端驗收待完成。
+
 
 **CORE-038 原事件引用已合併。** #107 head `a01fdc14cb2a`，main `ddd42728b760`，本地 Mac／Linux／HJW Windows 各 50 卡通過。候選來源 `7965392bd7de`，reader 55、握手 1、Host 2、SDK alpha.15，三端簽署原包及 SHA-256 在 `artifacts/CORE-039/pr107-original-reply/verified-candidates.json`，狀態為本地未發布。擴展 #56 head `372484a836a8`、main `5ba070ca10f8`，以同平台原包各重放 10 種情境，原 Bot、群話題和首段引用皆有見證。具名回條及逐檔雜湊在擴展倉 `artifacts/EXT-004/original-reply-13/telegram-delivery.json`。核心保留交接索引 `artifacts/CORE-038/ext004-original-reply-pr56/witness.json`。
 
