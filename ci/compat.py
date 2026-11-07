@@ -136,15 +136,34 @@ def audit(root=ROOT):
         "different witnessed host",
     )
     handshake = load(root / "protocol/plugin/handshake.schema.json")
-    handshake["x-yuki"]["sdk_versions"] = {"rust": "1.0.0-alpha.14", "python": "1.0.0a14"}
-    witnessed_handshake = (json.dumps(handshake, ensure_ascii=False, indent=2) + "\n").encode()
+    handshake["x-yuki"]["sdk_versions"] = {
+        "rust": "1.0.0-alpha.14",
+        "python": "1.0.0a14",
+    }
+    witnessed_handshake = (
+        json.dumps(handshake, ensure_ascii=False, indent=2) + "\n"
+    ).encode()
     require(
-        digest(witnessed_handshake)
-        == freeze["handshake_sha256"],
+        digest(witnessed_handshake) == freeze["handshake_sha256"],
         "candidate handshake changed",
     )
-    gateway = load(root / "protocol/plugin/gateway/host-preview.json")
+    from surface import additive, encoded, sha
+
+    profile = load(root / "protocol/plugin/stable/1.0/profile.json")
+    require(
+        profile["version"] == freeze["version"]
+        and profile["witness_sha256"] == freeze["witness_sha256"]
+        and sha(encoded(profile["surface"])) == profile["surface_sha256"],
+        "base projection differs from its original witness",
+    )
+    gateway = profile["surface"]
     projected = methods_from_witness(witness, gateway, freeze)
+    require(
+        projected == gateway, "base profile includes unwitnessed methods or metadata"
+    )
+    current = load(root / "protocol/plugin/gateway/host-preview.json")
+    for name, spec in projected["methods"].items():
+        additive(spec, current["methods"][name])
     actual = defaultdict(Counter)
     for case, entry in witness["cases"].items():
         require(
@@ -229,8 +248,16 @@ def support_kit(out, work, root=ROOT):
     }
 
 
-def projected_kit(out, work, host, version, root=ROOT, *,
-                  status="witnessed-base", description="Yuki witnessed base protocol SDK"):
+def projected_kit(
+    out,
+    work,
+    host,
+    version,
+    root=ROOT,
+    *,
+    status="witnessed-base",
+    description="Yuki witnessed base protocol SDK",
+):
     """Build both SDKs from one selected projection using the existing packagers."""
     stage = work / "source"
     stage.mkdir(parents=True)
@@ -242,7 +269,9 @@ def projected_kit(out, work, host, version, root=ROOT, *,
         )
     for name in ("LICENSE", "NOTICE"):
         shutil.copy2(root / name, stage / name)
-    preview = load(root / "protocol/plugin/handshake.schema.json")["x-yuki"]["sdk_versions"]
+    preview = load(root / "protocol/plugin/handshake.schema.json")["x-yuki"][
+        "sdk_versions"
+    ]
     for path, old in [
         (stage / "sdk/rust/Cargo.toml", preview["rust"]),
         (stage / "sdk/python/pyproject.toml", preview["python"]),
@@ -276,9 +305,7 @@ def projected_kit(out, work, host, version, root=ROOT, *,
     schema_dir.mkdir(parents=True)
     handshake = load(root / "protocol/plugin/handshake.schema.json")
     meta = handshake["x-yuki"]
-    meta.update(
-        status=status, sdk_versions={"rust": version, "python": version}
-    )
+    meta.update(status=status, sdk_versions={"rust": version, "python": version})
     # The generated Python SDK exposes positional constructors. Preserve the
     # canonical declaration and field order when changing release metadata.
     (schema_dir / "handshake.schema.json").write_bytes(

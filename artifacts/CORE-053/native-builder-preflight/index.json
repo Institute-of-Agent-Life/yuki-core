@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "platform": "macos-arm64",
+  "scope": "uncommitted-native-builder-preflight",
+  "synthetic": true,
+  "real_capabilities_promoted": [],
+  "published": false,
+  "artifacts": {
+    "selected-host": {
+      "path": "selected-host.zip",
+      "sha256": "ed278f1d2efd07875d640aaa2d9642232e7190f9031b72e368c5b12e1920b3fe",
+      "bytes": 12886700,
+      "receipt": "validation.json",
+      "receipt_sha256": "e10824d7768adaa40275598404cc41e35c21c3b7dcfabbed9e23c46685731576",
+      "assertions": 39,
+      "source_tree_sha256": "af65c9a1618b222f8e9b3012f38bd4e57f122fc1ed55116a1e9db42552f51acd"
+    },
+    "default-release": {
+      "path": "default-release.zip",
+      "sha256": "279a3a85e6c8049a21cbb143a4a1c886f5103e5e836fa8b36714d492e0020f34",
+      "bytes": 270997,
+      "receipt": "manifest.json",
+      "receipt_sha256": "2447d80fa2f43974e429c3148c7fc4666ff431e84bbfb3a3c4af48dde3c9ef28",
+      "assertions": 367,
+      "source_tree_sha256": "8878ed01a5552c54e87540d93dbb793308eb20097122ccd84472467e8d50231f"
+    },
+    "promotion-card": {
+      "path": "promotion-card.zip",
+      "sha256": "552f070f41b3944b161bdfc01e4b9c252d859797b47cfbaa528b0fa6b07d419d",
+      "bytes": 213353,
+      "receipt": "manifest.json",
+      "receipt_sha256": "bf325d1630483f6b897a2e4dca8eb7a94c924ed3312e21ecaee4d92bf317bac2",
+      "assertions": 42,
+      "source_tree_sha256": "af65c9a1618b222f8e9b3012f38bd4e57f122fc1ed55116a1e9db42552f51acd"
+    }
+  }
+}
