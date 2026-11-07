@@ -17,18 +17,23 @@
 | #100 | `681c22435609` | `f948f2b1cc7a` | 各 50 卡 |
 | #101 | `80de38b9183a` | `4c4ac2348e4d` | 各 50 卡 |
 | #102 | `5cfff6988eb4` | `459f845146c0` | 各 50 卡 |
+| #103 | `44f0a9c60785` | `d90190c5976e` | 各 50 卡 |
+| #104 | `29d5225ce545` | `3fb011eb6337` | 各 50 卡 |
+| #105 | `c94b97fa376c` | `0dab3504ee39` | 各 50 卡 |
 
 各 PR 的受測合併提交、三端逐卡雜湊在 `artifacts/ci/local-pr/<PR>/receipt.json`。#99 的回執 SHA-256 為 `5abbfe3d54fe3aea254dd96a9a9bc3ed2e61a108078d2c9ca204aea97a811969`。#100 的回執 SHA-256 為 `3da2d2ed7b847f79f437bf8aece3602dec77fd891dbf48140a9100c529a6feeb`。#101 的回執 SHA-256 為 `c40e5f62f60902adaf3d73b875bee00ae410644b9bfc1d1b608ba9f2452858ca`。#102 的回執 SHA-256 為 `71aadf32e4ba5e60c7faa1ac1f1b32d7f3be1d37e746bc53f7c033f3025a22da`。41 個已整合的堆疊 PR 均逐一核對 head 已進入 main，並核驗 147 份清單；見 `artifacts/ci/pr-reconciliation-20261106/closed-41-confirmed.json`。
 
-**目前搜尋驗收走模型原生路徑。** 依部署者補正，EXT-029 本輪以 Main 所選的 DeepSeek Responses `deepseek-v4-pro` 執行服務端 `web_search`，供應商失敗不轉 Tavily。`codex/core-024-native-web-search` 在固定原生策略下同步驗證服務端搜尋及讀頁、未用搜尋的普通回答、429 與回應中斷。Mac 的 CORE-024 通過 434 項斷言，回執見 `artifacts/CORE-024/native-profile-preflight-02/manifest.json`。原物理請求保留 `tool_search`、`tool_fetch` 和原生事件；未報費用維持未知。見 [部署設定](native-web-search.md)。本輪簽署候選和各平台的實測回執由 `artifacts/CORE-024/native-search-handoff/index.json` 交接。#104 的 Tavily 介面保留為歷史可選開發產物，擴展倉毋須安裝它以驗證本輪配置。
+**模型原生搜尋。** [核心 #105](https://github.com/Institute-of-Agent-Life/yuki-core/pull/105) 的 `codex/core-024-native-web-search`（`c94b97fa376c`）讓 Main 在自己的模型連線上啟用 DeepSeek Responses 的 `web_search`。成功的查詢和讀頁次數隨原物理請求記帳；429 或回應中斷後沒有自動重送。三端回放均使用本機模型端點。另以部署憑據查詢官方模型清單，確認列有 `deepseek-v4-pro`。[部署設定](native-web-search.md)
 
-**三端開發候選（本地未發布）。** #102 原生 Host 來源 `c942da9d39e0e237908cf3a5b9345c6fb1239a2c`，實際合併樹相同。資料庫 reader 54、握手 schema 1、Host schema 2、Rust SDK 1.0.0-alpha.14、Python SDK 1.0.0a14。共 14 個實作方法，完整包路徑與驗簽結果見 `artifacts/CORE-039/pr102/verified-candidates.json`（SHA-256 `2a8a60fe14110e14d83693fc1e2a60721568fa282da86c89be724021ac4a9f93`）。
+[擴展 #54](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/54) 使用已發布 1.0.0 Host 的**獨立模型搜尋連線**。已核對 HJW 原始回環請求、根帳本及 Windows Host 的執行檔雜湊，見 `artifacts/CORE-024/ext029-upstream-native-pr54-01/witness.json`。兩種配置都無需安裝 Tavily。#105 的 Main 直連候選已在核心三端驗收，Mac 簽署原包冷啟後另由公開命令讀回四筆原帳，見 `artifacts/CORE-024/installed-native-only-pr105-02/installed-ledger.json`。
 
-| 平台 | 本地未發布 ZIP 的 SHA-256 |
+**三端開發候選（本地未發布）。** 受測來源 `19cbc9bf21f9825545e587f0738144e4db1e23b4`，合入 main `0dab3504ee39`。資料庫 reader 55、握手 schema 1、Host schema 2，Rust／Python SDK 版本及逐檔雜湊隨索引提供。`artifacts/CORE-024/native-search-handoff/index.json` 的 SHA-256 為 `07e4d8d25cc3f946488c6a57c92467de6a092a4f6a0a244b7971a88a53cd11e8`。每個 ZIP 包含部署範例、原生搜尋回執及簽署清單。
+
+| 平台 | ZIP 的 SHA-256 |
 |---|---|
-| darwin / arm64 | `f198650d0a4ed3f48c8f63c209f1983e8917e9a9c430b689b2c2b7e69cee3fe6` |
-| linux / arm64 | `e1b1a828c8f15ad71bf792581f362998a740e934cb7c7d09c5556a7b184a6299` |
-| windows / x86_64 | `8b5d0fd40602296cb16c5a0a2b8b0166355b1cfcb96a2d8f51d92ac2f415c745` |
+| darwin / arm64 | `7b803b0e6d0d15b16faef9a6574201b337c2ba419061467497bf2976e48bcc75` |
+| linux / arm64 | `9f0ecdf4993e6869a66c804a8001cebbc31061941e5dd8acf143225208f41d2d` |
+| windows / x86_64 | `17a001c95122a8ad889e61732f1ebcd4943fd27a46044f6903ff18048898361b` |
 
 公開的[握手預發布](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/handshake-preview-dd694a0db605)提供 `initialize`。
 
@@ -76,8 +81,8 @@ GitHub 已正式發布 `plugin-base-v1.0.0`。九個附件均已重新下載，�
 
 | 待辦 | 下一步與交接物 |
 |---|---|
-| CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；另需共同部署的搜尋設定。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
-| CORE-045 → 053 | 核心基底 1.0.0 已可供 EXT-043 下載。擴展倉 main `16f92e1f9af3` 已交 `artifacts/EXT-043/01/extension-release-lock.json`，其中 `extension_published=false`。取得對應的正式 Telegram 包與發布回執後，執行 CORE-045 版本組合驗收。 |
+| CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；A／B／C 的搜尋設定還需在同一安裝對齊。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
+| CORE-045 → 053 | 核心基底 1.0.0 已可供 EXT-043 下載。擴展倉已交 `artifacts/EXT-043/01/extension-release-lock.json`，其中 `extension_published=false`。取得對應的正式 Telegram 包與發布回執後，執行 CORE-045 版本組合驗收。 |
 | CORE-043 → 046 → 047 | 待 EXT-041 的 `extension-import-diff.json`、EXT-044 的 `desktop-package-matrix.json`、EXT-045 的 `install-restore-matrix.json` 及 EXT-042 的實物逐字稿。 |
 
 本輪 Mac 清理回執見 `artifacts/ci/cleanup-20261106/`。先前五個閒置 incremental 目錄合計回收 17.61 GiB，Telegram 建置後另清理約 130 MiB 的中間檔案。#98 的獨立 Mac 預驗再回收 4.39 GiB，保留核心、測試執行檔和回條並重驗 SHA-256（`pr98-mac-preflight-intermediates-verified.json`）。 #99 的專用編譯中間檔另回收 Mac 8.32 GiB、HJW 1.75 GiB；執行檔與保留記錄均已重驗（`core044-mac-build-verified.json` 和 `core044-windows-owned-build-verified.json`）。 #101 完成後另回收 0.57 GiB 已被替代的本機編譯快取，保留包及回條雜湊均相符（`core101-mac-superseded-verified.json`）。
