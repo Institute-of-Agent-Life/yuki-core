@@ -107,6 +107,8 @@ pub fn accounting_only(raw: &str) -> String {
         "cache_creation_5m",
         "cache_creation_1h",
         "server_web_search_requests",
+        "tool_search",
+        "tool_fetch",
     ] {
         if let Some(count) = usage[field].as_i64().filter(|n| *n >= 0) {
             safe.insert(field.into(), json!(count));

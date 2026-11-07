@@ -1,4 +1,6 @@
-# EXT-029 external search (development preview)
+# Optional Tavily plugin (archived development path)
+
+The current EXT-029 acceptance route uses the selected model’s server-side web search. [Native search configuration](native-web-search.md).
 
 A deployment selects Tavily explicitly. Native search and the external tool have separate names. A failed native search never requests an external permit. The extension owns the credentials, provider request and result translation. The Host owns the original operation, authority and root ledger.
 

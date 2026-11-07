@@ -1,0 +1,24 @@
+schema_version = 3
+
+[profiles.primary]
+provider = "deepseek"
+protocol = "responses"
+base_url = "https://api.deepseek.com"
+api_key_env = "DEEPSEEK_API_KEY"
+model = "deepseek-v4-pro"
+timeout_seconds = 120.0
+max_retries = 0
+default_temperature = 0.7
+default_max_output_tokens = 8192
+thinking_mode = "configurable"
+structured_output_mode = "function_tool"
+search_mode = "native"
+capabilities = ["tools", "native_web_search"]
+
+[routes]
+chat_agent = "primary"
+memory_extraction = "primary"
+memory_self_reflection = "primary"
+memory_dream = "primary"
+plugin_agent_session = "primary"
+utility_structured = "primary"

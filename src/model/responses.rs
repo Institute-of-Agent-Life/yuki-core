@@ -216,6 +216,8 @@ pub fn usage(raw: &str) -> Value {
         ("total", &u["total_tokens"]),
         ("cache", &u["input_tokens_details"]["cached_tokens"]),
         ("reasoning", &u["output_tokens_details"]["reasoning_tokens"]),
+        ("tool_search", &u["server_tool_use"]["tool_search"]),
+        ("tool_fetch", &u["server_tool_use"]["tool_fetch"]),
     ] {
         if let Some(n) = n.as_i64().filter(|n| *n >= 0) {
             known.insert(k.into(), json!(n));

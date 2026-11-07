@@ -263,10 +263,16 @@ pub(super) fn compile_connection(
         .as_str()
         .ok_or("validation_error")?
         .to_ascii_lowercase();
+    let native = service.allow_native.unwrap_or(true)
+        && matches!(profile["search_mode"].as_str(), Some("native" | "both"));
     cfg.protocol = match profile["protocol"].as_str().unwrap_or("chat_completions") {
         "chat_completions" => Protocol::Chat,
-        // The fixed v4 DeepSeek adapter omits tool_choice. Other Responses
-        // providers use the original standard store/include policy.
+        "responses"
+            if provider == "deepseek" && native && profile["model"] == "deepseek-v4-pro" =>
+        {
+            Protocol::DeepseekResponses
+        }
+        // Existing profiles without native search retain the fixed v4 wire.
         "responses" if provider == "deepseek" => Protocol::DeepseekResponsesLegacy,
         "responses" => Protocol::OpenaiResponses,
         "anthropic_messages" => Protocol::AnthropicMessages,
@@ -323,9 +329,14 @@ pub(super) fn compile_connection(
     cfg.vision_input = profile["capabilities"]
         .as_array()
         .is_some_and(|caps| caps.iter().any(|cap| cap == "image_input"));
-    let native = service.allow_native.unwrap_or(true)
-        && matches!(profile["search_mode"].as_str(), Some("native" | "both"));
-    if native && (cfg.protocol.is_chat() || provider == "deepseek" && !cfg.protocol.is_messages()) {
+    if native
+        && (cfg.protocol.is_chat()
+            || provider == "deepseek"
+                && !matches!(
+                    cfg.protocol,
+                    Protocol::DeepseekResponses | Protocol::AnthropicMessages
+                ))
+    {
         return Err("unsupported_profile_feature".into());
     }
     cfg.native_web_search = native;
