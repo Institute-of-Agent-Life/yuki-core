@@ -1,0 +1,77 @@
+{
+  "assertions": [
+    {
+      "name": "missing dispatch witness prevents projection",
+      "passed": true
+    },
+    {
+      "name": "changed original dispatch semantics prevent projection",
+      "passed": true
+    },
+    {
+      "name": "rust installed peer follows the 1.0 golden",
+      "passed": true
+    },
+    {
+      "name": "python installed peer follows the 1.0 golden",
+      "passed": true
+    },
+    {
+      "name": "command init --memory-mode lexical-only succeeds",
+      "passed": true
+    },
+    {
+      "name": "command migrate rejects",
+      "passed": true
+    },
+    {
+      "name": "command init --memory-mode lexical-only succeeds",
+      "passed": true
+    },
+    {
+      "name": "named distribution selects stable on first launch",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator host status succeeds",
+      "passed": true
+    },
+    {
+      "name": "only compatible plugin serves",
+      "passed": true
+    },
+    {
+      "name": "healthy offer exposes only its granted base",
+      "passed": true
+    },
+    {
+      "name": "unnegotiated callback refused",
+      "passed": true
+    },
+    {
+      "name": "unsupported feature rejected at handshake",
+      "passed": true
+    },
+    {
+      "name": "unwitnessed grant never launched",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    }
+  ],
+  "failure": null
+}

@@ -221,7 +221,17 @@ def audit(root=ROOT):
 
 def support_kit(out, work, root=ROOT):
     freeze, host, counts = audit(root)
-    version = freeze["version"]
+    return {
+        **projected_kit(out, work, host, freeze["version"], root),
+        "profile_argument": "--plugin-base-1",
+        "method_counts": counts,
+        "witness_sha256": freeze["witness_sha256"],
+    }
+
+
+def projected_kit(out, work, host, version, root=ROOT, *,
+                  status="witnessed-base", description="Yuki witnessed base protocol SDK"):
+    """Build both SDKs from one selected projection using the existing packagers."""
     stage = work / "source"
     stage.mkdir(parents=True)
     for name in ("rust", "python"):
@@ -243,7 +253,7 @@ def support_kit(out, work, root=ROOT):
         path.write_text(
             source.replace(needle, f'version = "{version}"').replace(
                 "Unpublished Yuki plugin stdio handshake preview",
-                "Yuki witnessed base protocol SDK",
+                description,
             ),
             encoding="utf-8",
             newline="\n",
@@ -267,7 +277,7 @@ def support_kit(out, work, root=ROOT):
     handshake = load(root / "protocol/plugin/handshake.schema.json")
     meta = handshake["x-yuki"]
     meta.update(
-        status="witnessed-base", sdk_versions={"rust": version, "python": version}
+        status=status, sdk_versions={"rust": version, "python": version}
     )
     # The generated Python SDK exposes positional constructors. Preserve the
     # canonical declaration and field order when changing release metadata.
@@ -283,7 +293,7 @@ def support_kit(out, work, root=ROOT):
         path.write_bytes(data)
     out.mkdir(parents=True, exist_ok=False)
     identity = source_identity(root)
-    wheel = contract.wheel(out, meta, stage, "Yuki witnessed base protocol SDK")
+    wheel = contract.wheel(out, meta, stage, description)
     rust = contract.crate(out, work, meta, identity, stage)
     for name in ("handshake.schema.json", "handshake.ndjson", "method-index.json"):
         shutil.copy2(schema_dir / name, out / name)
@@ -299,10 +309,7 @@ def support_kit(out, work, root=ROOT):
         "source_tree_sha256": identity["tree_sha256"],
         "source_dirty": identity["dirty"],
         "published": False,
-        "profile_argument": "--plugin-base-1",
         "methods": ["initialize", *host["methods"]],
-        "method_counts": counts,
-        "witness_sha256": freeze["witness_sha256"],
         "files": {
             f.name: digest(f.read_bytes())
             for f in sorted(out.iterdir())

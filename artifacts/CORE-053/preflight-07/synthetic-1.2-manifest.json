@@ -1,0 +1,630 @@
+{
+  "format": 1,
+  "version": "1.2.0",
+  "parent_stable_digest": "5121b3caf83ee4dde68567bf08f0697f8babe3ffd05d5b1d0d8a2791541d1f58",
+  "requested_parent_digest": "4a7233c3ddf247c34dc27ab380859edfd777ee6e73fc1860988e088ad3c046c9",
+  "rebased": true,
+  "candidate_source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "selection": {
+    "gateway.inbound": {
+      "fields": [
+        [
+          "params",
+          "properties",
+          "synthetic_a"
+        ]
+      ]
+    }
+  },
+  "surface": {
+    "format": 1,
+    "handshake_schema_revision": 1,
+    "methods": {
+      "gateway.dispatch_part": {
+        "direction": "host_to_plugin",
+        "grant": "gateway.send",
+        "params": {
+          "additionalProperties": false,
+          "properties": {
+            "arguments": {
+              "type": "object"
+            },
+            "handle": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "ordinal": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "parent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "revision": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "handle",
+            "operation",
+            "parent",
+            "ordinal",
+            "revision",
+            "name",
+            "arguments"
+          ],
+          "type": "object"
+        },
+        "result": {
+          "additionalProperties": false,
+          "properties": {
+            "locator": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "state": {
+              "enum": [
+                "confirmed",
+                "failed",
+                "unknown"
+              ]
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        "revision": 1
+      },
+      "gateway.inbound": {
+        "direction": "plugin_to_host",
+        "grant": "gateway.inbound",
+        "params": {
+          "additionalProperties": false,
+          "properties": {
+            "accept": {
+              "type": "boolean"
+            },
+            "kind": {
+              "enum": [
+                "message",
+                "edit",
+                "recall",
+                "data",
+                "echo"
+              ]
+            },
+            "media_identity": {
+              "additionalProperties": false,
+              "properties": {
+                "application": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "tenant": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "application"
+              ],
+              "type": "object"
+            },
+            "native_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "native_version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "occurred": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "segments": {
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "sender": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "source": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "space": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "synthetic_b": {
+              "type": "string"
+            },
+            "topic": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "synthetic_a": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "source",
+            "sender",
+            "kind",
+            "segments",
+            "accept"
+          ],
+          "type": "object"
+        },
+        "result": {
+          "additionalProperties": false,
+          "properties": {
+            "accepted": {
+              "type": "boolean"
+            },
+            "command": {
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "state": {
+                  "enum": [
+                    "queued",
+                    "unavailable",
+                    "complete",
+                    "unknown"
+                  ]
+                }
+              },
+              "required": [
+                "path",
+                "state"
+              ],
+              "type": "object"
+            },
+            "erased": {
+              "type": "boolean"
+            },
+            "event": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "event",
+            "accepted"
+          ],
+          "type": "object"
+        },
+        "revision": 1
+      },
+      "gateway.plan_send": {
+        "direction": "host_to_plugin",
+        "grant": "gateway.send",
+        "params": {
+          "additionalProperties": false,
+          "properties": {
+            "arguments": {
+              "type": "object"
+            },
+            "handle": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "ordinal": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "parent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "revision": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "handle",
+            "operation",
+            "parent",
+            "ordinal",
+            "revision",
+            "name",
+            "arguments"
+          ],
+          "type": "object"
+        },
+        "result": {
+          "additionalProperties": false,
+          "properties": {
+            "parts": {
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "parts"
+          ],
+          "type": "object"
+        },
+        "revision": 1
+      },
+      "tool.call": {
+        "direction": "host_to_plugin",
+        "grant": "tool.call",
+        "params": {
+          "additionalProperties": false,
+          "properties": {
+            "arguments": {
+              "type": "object"
+            },
+            "handle": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "ordinal": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "parent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "revision": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "handle",
+            "operation",
+            "parent",
+            "ordinal",
+            "revision",
+            "name",
+            "arguments"
+          ],
+          "type": "object"
+        },
+        "result": {
+          "additionalProperties": false,
+          "properties": {
+            "data": {},
+            "error": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ok": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "type": "object"
+        },
+        "revision": 1
+      },
+      "tool.status": {
+        "direction": "plugin_to_host",
+        "grant": "tool.call",
+        "params": {
+          "additionalProperties": false,
+          "properties": {
+            "handle": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "handle"
+          ],
+          "type": "object"
+        },
+        "result": {
+          "additionalProperties": false,
+          "properties": {
+            "handle": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "result": {},
+            "state": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "handle",
+            "state"
+          ],
+          "type": "object"
+        },
+        "revision": 1
+      }
+    },
+    "schema_revision": 2,
+    "status": "witnessed-base",
+    "wire": "stdio-jsonrpc-2.0"
+  },
+  "surface_sha256": "91e269f169649b4a050f368e2ab30da5bf3122ad2dad11c1dea00696b1187c53",
+  "handshake_sha256": "8a4a1d2cd3619fcdc75ed0af3c71629320ac7c4924ccbdb01ae5ba772fe8648d",
+  "idl_files": {
+    "protocol/plugin/gateway/host-preview.json": "9451a4e0e64a625f680675ca5a3d1bde5d475e8c70b83a1dde43a90931354182",
+    "protocol/plugin/aux-model/methods.json": "0c8a29152940f5ea290e42c99c5f38baf379e5281e8877caffd9f236db427776",
+    "protocol/plugin/composition/methods.json": "e001485289af1561f9a6dfd9136fb8e15bb6fd6b47f03c6fcd152e1ece6dcd7d",
+    "protocol/plugin/control/methods.json": "ff3efce8020cbc6aff324c2aebfb6a90c863f3c60ea27b54df4af17d59a9c213",
+    "protocol/plugin/maintenance/methods.json": "d82f8da58ac0e190aa206a401c2e1f7c892eb2285235d266bc5834fc13d23d39",
+    "protocol/plugin/media/methods.json": "d7af4bc4b1ea38decb0654af563410cc731fb2f27bb02568211d519a1c96a45f",
+    "protocol/plugin/notifications/methods.json": "ab4f3a9684597f3b57b77eb638daf8538c54bacc484e3609f3ad36bfed817fb8",
+    "protocol/plugin/participation/methods.json": "7b6d68a47d0afbb53e32ecc9d68e76dca41a51231f964bf024770d5049d86e23",
+    "protocol/plugin/personal/methods.json": "a7196947dee6be5563f359e0e30c1d1da40c9478133d8ae36b1e4db5314c021c",
+    "protocol/plugin/sessions/methods.json": "4e4cc2cd6255ccb203a9b2447be51c479c7058ff5f78d90f90db2ebd0bf20e1d",
+    "protocol/plugin/handshake.schema.json": "7d3401a3147c6ef7e8b1890e46f1c4c198b5ed04fabd3a44fdf19c5454871f79"
+  },
+  "consumers": [
+    "consumer-a",
+    "consumer-b",
+    "telegram",
+    "web-fetch"
+  ],
+  "new_consumers": [
+    "consumer-a"
+  ],
+  "min_reader": "1.0.0",
+  "published": false,
+  "package_sha256": "e561d7392efd398f10de717b6eb48a5351b2de8cc37aa00fd9eb0136459fa3de",
+  "evidence_sha256": "be1a07c84983da5abdcdbe29264672225788e38a21f35037d4fea097a02a34ae",
+  "qualification": "synthetic-control",
+  "assets": {
+    "host-linux": {
+      "path": "evidence/host-linux",
+      "sha256": "0f5ba7db0bcf4e09fde5fbd5c06134668a53361b36e6d72cc802c1b1a9040989"
+    },
+    "host-macos": {
+      "path": "evidence/host-macos",
+      "sha256": "7f0e780700457c37705cff27e81101ec7098eebb7953a340fd8eb80fa116f787"
+    },
+    "host-windows": {
+      "path": "evidence/host-windows",
+      "sha256": "08f3035b6840b335834f1de13d05a930c4fffe0f33976528aa3a3f4310db451e"
+    },
+    "python-sdk": {
+      "path": "evidence/sdk.whl",
+      "sha256": "3edca4cc9f2e5724e52c3c233d53706b2c242e0d2f6eb98280a70b7e8ec354ef"
+    },
+    "rust-sdk": {
+      "path": "evidence/sdk.crate",
+      "sha256": "a500ace99b718d5ac4ada5936a1cd4f5a05ba990ac6c563d95771bd696161239"
+    }
+  },
+  "evidence_directory": "evidence",
+  "compatibility_matrix": {
+    "linux": {
+      "consumer-a": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "0f5ba7db0bcf4e09fde5fbd5c06134668a53361b36e6d72cc802c1b1a9040989",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "1c9694ba4a3a38b32e02728360af8a68a93d277f1b2534a24172b02cbbdbed56",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "consumer-b": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "0f5ba7db0bcf4e09fde5fbd5c06134668a53361b36e6d72cc802c1b1a9040989",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "d351ecf530de20b0b43758d9deea7b8ee463cc9881bc3b0ef8ef9398a8887d55",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "telegram": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "0f5ba7db0bcf4e09fde5fbd5c06134668a53361b36e6d72cc802c1b1a9040989",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "bb2223792111ca41eda1c9349707d1a35746b2037771644401abab137f295a47",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "web-fetch": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "0f5ba7db0bcf4e09fde5fbd5c06134668a53361b36e6d72cc802c1b1a9040989",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "fde4ddacbec318e7284cb4d47eb47ff60eaf1bc2fc0235ee19400313d80d8d7c",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      }
+    },
+    "macos": {
+      "consumer-a": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "7f0e780700457c37705cff27e81101ec7098eebb7953a340fd8eb80fa116f787",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "1c9694ba4a3a38b32e02728360af8a68a93d277f1b2534a24172b02cbbdbed56",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "consumer-b": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "7f0e780700457c37705cff27e81101ec7098eebb7953a340fd8eb80fa116f787",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "d351ecf530de20b0b43758d9deea7b8ee463cc9881bc3b0ef8ef9398a8887d55",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "telegram": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "7f0e780700457c37705cff27e81101ec7098eebb7953a340fd8eb80fa116f787",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "bb2223792111ca41eda1c9349707d1a35746b2037771644401abab137f295a47",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "web-fetch": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "7f0e780700457c37705cff27e81101ec7098eebb7953a340fd8eb80fa116f787",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "fde4ddacbec318e7284cb4d47eb47ff60eaf1bc2fc0235ee19400313d80d8d7c",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      }
+    },
+    "windows": {
+      "consumer-a": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "08f3035b6840b335834f1de13d05a930c4fffe0f33976528aa3a3f4310db451e",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "1c9694ba4a3a38b32e02728360af8a68a93d277f1b2534a24172b02cbbdbed56",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "consumer-b": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "08f3035b6840b335834f1de13d05a930c4fffe0f33976528aa3a3f4310db451e",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "d351ecf530de20b0b43758d9deea7b8ee463cc9881bc3b0ef8ef9398a8887d55",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "telegram": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "08f3035b6840b335834f1de13d05a930c4fffe0f33976528aa3a3f4310db451e",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "bb2223792111ca41eda1c9349707d1a35746b2037771644401abab137f295a47",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      },
+      "web-fetch": {
+        "status": "verified",
+        "host_version": "1.2.0",
+        "host_sha256": "08f3035b6840b335834f1de13d05a930c4fffe0f33976528aa3a3f4310db451e",
+        "sdk_version": "1.2.0",
+        "consumer_source": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "consumer_sha256": "fde4ddacbec318e7284cb4d47eb47ff60eaf1bc2fc0235ee19400313d80d8d7c",
+        "cases": [
+          "denied",
+          "normal",
+          "restart"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "files": {
+    "handshake.ndjson": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+    "handshake.schema.json": "d5df14d83fab311d0a8f1c12c7f4a78467c4745f6eb82c2b8700f5ad221f81ba",
+    "host-schema.json": "e161a6d601cbcf9ed7f1556095f7683b9d40ea640f1809b230b8e7c5044fe687",
+    "method-index.json": "859744c627a58417b982ac42c406b7fc765107dd409b1ad0461c00c0ae0297a8",
+    "yuki-conformance-peer.pyz": "856bd16738934384cef50b1875364229d678ac590669154c5b1bee864638b23b",
+    "yuki-plugin-sdk-1.1.0.crate": "8fc02fba9ef8c3e14cdde1a0a8c158f222551dc40f12c6b979ce2d28c5050fd8",
+    "yuki_plugin_sdk-1.1.0-py3-none-any.whl": "9716deff46b0722b362f8393193a3e2fe5cb3d1f2814bc5bdb8ae96a19dd7bd7"
+  },
+  "methods": [
+    "initialize",
+    "gateway.activity",
+    "gateway.dispatch_part",
+    "gateway.inbound",
+    "gateway.plan_send",
+    "tool.call",
+    "tool.status"
+  ],
+  "published": false,
+  "python_sdk": "yuki_plugin_sdk-1.1.0-py3-none-any.whl",
+  "rust_sdk": "yuki-plugin-sdk-1.1.0.crate",
+  "source_commit": "b7f2fadcaaad53344c3a0534c5dc64883b927482",
+  "source_dirty": true,
+  "source_tree_sha256": "4c84ab3c8c2812422aedbc79cac04e5cbeae60da0496c463a583a76433a02e17",
+  "version": "1.1.0"
+}

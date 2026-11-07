@@ -1,0 +1,195 @@
+{
+  "version": "1.0.0",
+  "witness_sha256": "d735e535b30c41c32fc62ade3b5ae3863c9cbf39404856f3401640b7544034e1",
+  "source_commit": "b7f2fadcaaad53344c3a0534c5dc64883b927482",
+  "source_tree_sha256": "4c84ab3c8c2812422aedbc79cac04e5cbeae60da0496c463a583a76433a02e17",
+  "published": false,
+  "wire_methods": [
+    "initialize",
+    "gateway.dispatch_part",
+    "gateway.inbound",
+    "gateway.plan_send",
+    "tool.call",
+    "tool.status"
+  ],
+  "host_sha256": "dac5fe9bca8320b62e97bca300fb060b9ec0a844ded955a1df39e0a15534433d",
+  "consumer_method_counts": {
+    "telegram": {
+      "initialize": 14,
+      "gateway.inbound": 9,
+      "gateway.plan_send": 3,
+      "gateway.dispatch_part": 5
+    },
+    "web-fetch": {
+      "initialize": 14,
+      "tool.call": 7,
+      "tool.status": 14
+    }
+  },
+  "schema_sha256": "131754fbc818d26557eb31958782624eb38bbe19d1f4e3c6f42e2e62f8d9001e",
+  "support_files": {
+    "handshake.ndjson": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+    "handshake.schema.json": "2273ff1a724a5ca6e15ba3f7265b05da27af8d5699edfde5446f0ee3b10a80ad",
+    "host-schema.json": "131754fbc818d26557eb31958782624eb38bbe19d1f4e3c6f42e2e62f8d9001e",
+    "method-index.json": "5a3d4e1e286c0b8eecfc87b53525a2d805c91f5e7a3d1b96c8247758a9f0fc50",
+    "yuki-conformance-peer.pyz": "642016e68a418557af2ef39d524655d1ebda8ce0bcf1039de6b59f9c862efc5e",
+    "yuki-plugin-sdk-1.0.0.crate": "3f49315b89b2775da8da6d290f44f4ab3c79cd615ebebafeb701b72f8bc9fa53",
+    "yuki_plugin_sdk-1.0.0-py3-none-any.whl": "07a4df9083c7e043716227fb050d27cd15438e648595d159ece81b0ed2c28092"
+  },
+  "installed_handshake": {
+    "rust": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "params": {
+          "declarations": [],
+          "manifest_revision": "fixture-r1",
+          "optional_features": [],
+          "required_features": [
+            "initialize"
+          ],
+          "versions": {
+            "max": {
+              "major": 1,
+              "minor": 0
+            },
+            "min": {
+              "major": 1,
+              "minor": 0
+            }
+          }
+        }
+      },
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "extension_points": [],
+          "features": [
+            "initialize"
+          ],
+          "grants": [],
+          "manifest_revision": "fixture-r1",
+          "method_revisions": [
+            {
+              "name": "initialize",
+              "revision": 1
+            }
+          ],
+          "namespace": "fixture.plugin",
+          "schema_revision": 1,
+          "version": {
+            "major": 1,
+            "minor": 0
+          }
+        }
+      }
+    ],
+    "python": [
+      {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "versions": {
+            "min": {
+              "major": 1,
+              "minor": 0
+            },
+            "max": {
+              "major": 1,
+              "minor": 0
+            }
+          },
+          "required_features": [
+            "initialize"
+          ],
+          "manifest_revision": "fixture-r1",
+          "declarations": [],
+          "optional_features": []
+        }
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+          "version": {
+            "major": 1,
+            "minor": 0
+          },
+          "features": [
+            "initialize"
+          ],
+          "extension_points": [],
+          "method_revisions": [
+            {
+              "name": "initialize",
+              "revision": 1
+            }
+          ],
+          "schema_revision": 1,
+          "namespace": "fixture.plugin",
+          "grants": [],
+          "manifest_revision": "fixture-r1"
+        }
+      }
+    ]
+  },
+  "healthy": {
+    "initialize": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "extension_points": [],
+        "features": [
+          "initialize"
+        ],
+        "grants": [
+          "tool.call"
+        ],
+        "host_schema_revision": 2,
+        "manifest_revision": "1e802f18404cbc395b871df1934843ff3be1c9f705ed1503a6ecd27e19fdac55",
+        "method_revisions": [
+          {
+            "name": "initialize",
+            "revision": 1
+          },
+          {
+            "name": "tool.call",
+            "revision": 1
+          },
+          {
+            "name": "tool.status",
+            "revision": 1
+          }
+        ],
+        "namespace": "good",
+        "schema_revision": 1,
+        "version": {
+          "major": 1,
+          "minor": 0
+        }
+      }
+    },
+    "preview": {
+      "error": {
+        "code": -32601,
+        "message": "method not supported by this base"
+      },
+      "id": 2,
+      "jsonrpc": "2.0"
+    }
+  },
+  "unavailable": {
+    "initialize": {
+      "error": {
+        "code": -32011,
+        "message": "missing_feature"
+      },
+      "id": 1,
+      "jsonrpc": "2.0"
+    }
+  },
+  "privacy": "new installation; transient plugin payloads; persistent-source owner RPC excluded"
+}
