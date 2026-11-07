@@ -262,7 +262,9 @@ impl Driver for SqliteDriver {
                 return crate::identity::entry::apply(self.connection(), action).await;
             }
             Mutation::Ingress(request) => {
-                return crate::ingress::admit::apply(self.connection(), request).await;
+                return crate::ingress::admit::apply(self.connection(), request)
+                    .await
+                    .map(|(receipt, _)| receipt);
             }
             Mutation::Claim(event) => {
                 return crate::ingress::admit::claim(self.connection(), *event).await;

@@ -93,6 +93,7 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
             return Err("gateway delivery requires original gateway source and route".into());
         }
         super::send::check_reply(conn, id, &r.args).await?;
+        super::native_route::check(conn, id, &r.execution, &r.args).await?;
     }
     Ok(())
 }
@@ -255,6 +256,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             } else if method.starts_with("gateway.") {
                 let args: Value = serde_json::from_str(row.try_get("args")?)?;
                 super::send::check_reply(conn, plugin, &args).await?;
+                super::native_route::check(conn, plugin, &exec, &args).await?;
             }
             if method == "tool.call" {
                 super::external_search::before_dispatch(conn, handle, plugin, generation).await?;

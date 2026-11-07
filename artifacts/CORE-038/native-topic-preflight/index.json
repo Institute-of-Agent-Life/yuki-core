@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "platform": "macos-arm64",
+  "scope": "working-tree-preflight",
+  "published": false,
+  "sdk": {
+    "rust": "1.0.0-alpha.18",
+    "python": "1.0.0a18"
+  },
+  "storage_reader": 56,
+  "checks": {
+    "CORE-032": {
+      "archive": "CORE-032.zip",
+      "sha256": "c37155256d4984d181e4a19d42104e4df4fa0ecb04372c282e52fad33e08466c",
+      "bytes": 267724,
+      "manifest_sha256": "8d1f8d2475202ae376647653496ca0ce89c2d6c30c42ec4e7090bf8a77c06c71",
+      "source_commit": "76272a48fb77d9e41212e0e45ee08623755c39aa",
+      "source_tree_sha256": "7e08999feaa276aba4c75fd271bbbfea320a99c01aa2aba383f35434a5a355ea",
+      "assertions": 377,
+      "duration_seconds": 67.422947
+    },
+    "CORE-039": {
+      "archive": "CORE-039.zip",
+      "sha256": "f09c8ad087bcd5c9ae454a2417d6b42c3cbada35cf28fcafd0b3fdc9d25359bc",
+      "bytes": 273952,
+      "manifest_sha256": "152fdaaf97368cc1cee9caa2f524e55026a601f30bb075f4dda37c7adc5d51ce",
+      "source_commit": "76272a48fb77d9e41212e0e45ee08623755c39aa",
+      "source_tree_sha256": "7e08999feaa276aba4c75fd271bbbfea320a99c01aa2aba383f35434a5a355ea",
+      "assertions": 454,
+      "duration_seconds": 149.785448
+    }
+  }
+}

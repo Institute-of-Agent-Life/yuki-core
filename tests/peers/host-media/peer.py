@@ -107,6 +107,13 @@ def serve(frame):
             if p["reference"]=="wrong-digest": result["sha256"]="f"*64
             if p["reference"]=="wrong-offset": result["offset"]+=1
         elif method == "gateway.plan_send":
+            if (folder / "record-route").exists():
+                note("route-plan-" + p["handle"], p["arguments"])
+            if (folder / "pause-route-plan").exists():
+                note("route-plan-waiting", p)
+                deadline = time.monotonic() + 10
+                while (folder / "pause-route-plan").exists() and time.monotonic() < deadline:
+                    time.sleep(.01)
             chosen = p["arguments"].get("media")
             if (folder / "tamper-plan").exists() and chosen:
                 chosen = dict(chosen, version="0" * 64)
@@ -125,6 +132,8 @@ def serve(frame):
                     while (folder / "pause-reply-plan").exists() and time.monotonic() < deadline:
                         time.sleep(.01)
         elif method == "gateway.dispatch_part":
+            if (folder / "record-route").exists():
+                note("route-dispatch-" + p["handle"], p["arguments"])
             args = p["arguments"]
             if args.get("reply"):
                 note("reply-dispatched", args)

@@ -23,3 +23,5 @@ Run `python ci/check.py CORE-032 --out <new-directory>` to exercise the host and
 The opt-in `gateway.activity` notification carries an execution lease, original route, enabled flag and 5-second expiry. A live Main turn opens the lease and the Host refreshes it every 2 seconds. The gateway sends typing only to that original Bot, chat and topic. Finishing the turn closes its lease. An expired lease stops renewal.
 
 Notifications use the bounded process queue and have no business receipt. The writer checks the current grant, original source and active turn before flushing a renewal. Disable, forget, disconnect, queue pressure and native chat-action failure must leave message delivery and its receipt independent. Telegram closes the local lease and allows the platform status to expire.
+
+`gateway.inbound.topic_root` 是原生話題的原根訊息 ID，獨立於既有 `topic` 與防重鍵。需要同一接納的已驗 app／tenant。舊事件缺原證據時不由重投補寫。原 send 的 `route.topic_root` 只來自原 source，派發前重驗 deployment 與來源。SDK alpha.18 為本地未發布合同。

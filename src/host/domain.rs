@@ -285,9 +285,19 @@ async fn inbound(
         reply_bot: None,
         text: None,
     };
-    let result = admit::from_gateway(conn, frame, p["accept"].as_bool().unwrap_or(false)).await?;
+    let (result, created) =
+        admit::from_gateway(conn, frame, p["accept"].as_bool().unwrap_or(false)).await?;
     sqlx::query("INSERT INTO host_ingress VALUES(?,?,?,?) ON CONFLICT(plugin,source) DO UPDATE SET accepted=excluded.accepted WHERE host_ingress.event=excluded.event")
        .bind(id).bind(key).bind(result["event"].as_i64()).bind(result["accepted"]==true).execute(&mut *conn).await?;
+    super::native_route::record(
+        conn,
+        id,
+        p,
+        media.as_ref(),
+        result["event"].as_i64().ok_or("missing gateway event")?,
+        created,
+    )
+    .await?;
     if let Some(identity) = media {
         super::gateway_media::record(
             conn,
