@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "kind": "release-workflow-synthetic-control",
+  "real_base_witness": "d735e535b30c41c32fc62ade3b5ae3863c9cbf39404856f3401640b7544034e1",
+  "concurrent_outcomes": [
+    {
+      "exit_code": 3,
+      "stdout": "stable advanced; rebase, rebuild and replay required\n",
+      "stderr": ""
+    },
+    {
+      "exit_code": 0,
+      "stdout": "1.1.0\n",
+      "stderr": ""
+    }
+  ],
+  "qualified_synthetic_versions": [
+    "1.1.0",
+    "1.2.0"
+  ],
+  "real_capabilities_promoted": [],
+  "published": false,
+  "paid_calls": 0,
+  "package_sha256": "41bd48d64205d17631e84eccd9d292db6e2808b5fcdd09c4b07a84fc3ad3ca0c",
+  "min_reader": "1.0.0"
+}

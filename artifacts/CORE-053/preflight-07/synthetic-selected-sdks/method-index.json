@@ -1,0 +1,16 @@
+{
+  "methods": {
+    "initialize": {
+      "params": "Initialize",
+      "result": "Initialized",
+      "revision": 1
+    }
+  },
+  "schema_revision": 1,
+  "schema_sha256": "d09571ad98f6fd5181aaecd60b398ebe4abcd7940158a9f4c1cbaf7795e7adca",
+  "sdk_versions": {
+    "python": "1.1.0",
+    "rust": "1.1.0"
+  },
+  "status": "synthetic-release-workflow-control"
+}

@@ -1,0 +1,16 @@
+{
+  "methods": {
+    "initialize": {
+      "params": "Initialize",
+      "result": "Initialized",
+      "revision": 1
+    }
+  },
+  "schema_revision": 1,
+  "schema_sha256": "2273ff1a724a5ca6e15ba3f7265b05da27af8d5699edfde5446f0ee3b10a80ad",
+  "sdk_versions": {
+    "python": "1.0.0",
+    "rust": "1.0.0"
+  },
+  "status": "witnessed-base"
+}

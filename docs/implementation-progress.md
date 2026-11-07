@@ -1,5 +1,7 @@
 # 核心實作進度
 
+**CORE-053 正在驗證。** 分支 `codex/core-053-surface-promotion`。新增本地 `ci/promote-surface.py`，從唯一 IDL 明選增量、重用原 SDK 生成器，核同一候選的三端 Host／雙 SDK／真 consumer 回條，再原子建立不可覆寫的 minor。Mac／Linux 的正常入口各 42 項斷言通過，涵蓋競爭、進程中斷、重新取最新聯集、漏證拒絕及兩套實際安裝的 SDK。Mac 另重跑原 CORE-044，原生執行檔的 329 個 Rust／協議輸入逐檔核對後通過原基底對拍。測試新增能力全部明列 synthetic，尚未晉級任何真能力。前置 CORE-045 的 #110 修正版 Mac／Linux 各 51 卡通過，HJW 正在跑最新合併樹。三端全量及 #110 合併完成後才標記本卡完成。操作與證據格式見 `release/surface-evidence/README.md`。具名回條在 `artifacts/CORE-053/preflight-07/`、`linux-preflight-07/` 及 `base-kit-regression-01/`。
+
 2026-11-06。固定 v4 行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；任務書工作副本的 CORE-011 已採用 K05 的邏輯請求預留規則。下列證據路徑相對於 yuki-core 工作目錄。
 
 **CORE-045 進行中。** 分支 `codex/core-045-published-consumer`。擴展正式發布 `plugin/telegram/v0.1.0`，來源 `e9e012d761da`、SDK 1.0.0。五個附件下載後逐檔 SHA-256 相符，發布回條在 `fixtures/compat/telegram-0.1.0/published-receipt.json`。固定 B0、此 stable 插件與擴展 #58 alpha.9，Mac 四格正常／失回應重放已過，兩種不相容實例均被單獨拒絕。正常卡入口 `artifacts/CORE-045/preflight-04/manifest.json` 已通過 25 項斷言與 Rust 檢查。前輪缺少 SQLite 建置回條已補取真 Host 資訊並重驗。本地三端完整 CI 接續執行，未計入完成數。

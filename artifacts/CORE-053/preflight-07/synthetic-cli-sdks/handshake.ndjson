@@ -1,0 +1,2 @@
+{"id":1,"jsonrpc":"2.0","method":"initialize","params":{"declarations":[],"manifest_revision":"fixture-r1","optional_features":[],"required_features":["initialize"],"versions":{"max":{"major":1,"minor":0},"min":{"major":1,"minor":0}}}}
+{"id":1,"jsonrpc":"2.0","result":{"extension_points":[],"features":["initialize"],"grants":[],"manifest_revision":"fixture-r1","method_revisions":[{"name":"initialize","revision":1}],"namespace":"fixture.plugin","schema_revision":1,"version":{"major":1,"minor":0}}}

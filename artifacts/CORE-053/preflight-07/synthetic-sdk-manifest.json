@@ -1,0 +1,28 @@
+{
+  "version": "1.1.0",
+  "source_commit": "b7f2fadcaaad53344c3a0534c5dc64883b927482",
+  "source_tree_sha256": "4c84ab3c8c2812422aedbc79cac04e5cbeae60da0496c463a583a76433a02e17",
+  "source_dirty": true,
+  "published": false,
+  "methods": [
+    "initialize",
+    "gateway.dispatch_part",
+    "gateway.inbound",
+    "gateway.plan_send",
+    "tool.call",
+    "tool.status"
+  ],
+  "files": {
+    "handshake.ndjson": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+    "handshake.schema.json": "d09571ad98f6fd5181aaecd60b398ebe4abcd7940158a9f4c1cbaf7795e7adca",
+    "host-schema.json": "dc6a44aa5d87528e555e236b8573a947e17c18907695deaf1d7278ea928b55d4",
+    "method-index.json": "3a915f4091d5988073a49f1d4e16ccf69e76f2cc20dcbc60adc671b11696d970",
+    "yuki-conformance-peer.pyz": "4aafa46a21b89a3c62f78e5d260380f895d16fa2e3cf1c339c520799406aa0f6",
+    "yuki-plugin-sdk-1.1.0.crate": "aeb6523bac9738a5237f7a22e7e59a45c3852d4b0011a16e6ccf7af12d67cfce",
+    "yuki_plugin_sdk-1.1.0-py3-none-any.whl": "e26ed3e47b461739dad3aa1c38d1a0fbc41ae78c0f6eef5ec471cc4a90545f5a"
+  },
+  "python_sdk": "yuki_plugin_sdk-1.1.0-py3-none-any.whl",
+  "rust_sdk": "yuki-plugin-sdk-1.1.0.crate",
+  "synthetic": true,
+  "real_capabilities_promoted": []
+}

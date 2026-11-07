@@ -1,0 +1,41 @@
+{
+  "files": {
+    "handshake.ndjson": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+    "handshake.schema.json": "2273ff1a724a5ca6e15ba3f7265b05da27af8d5699edfde5446f0ee3b10a80ad",
+    "host-schema.json": "131754fbc818d26557eb31958782624eb38bbe19d1f4e3c6f42e2e62f8d9001e",
+    "method-index.json": "5a3d4e1e286c0b8eecfc87b53525a2d805c91f5e7a3d1b96c8247758a9f0fc50",
+    "yuki-conformance-peer.pyz": "642016e68a418557af2ef39d524655d1ebda8ce0bcf1039de6b59f9c862efc5e",
+    "yuki-plugin-sdk-1.0.0.crate": "3f49315b89b2775da8da6d290f44f4ab3c79cd615ebebafeb701b72f8bc9fa53",
+    "yuki_plugin_sdk-1.0.0-py3-none-any.whl": "07a4df9083c7e043716227fb050d27cd15438e648595d159ece81b0ed2c28092"
+  },
+  "method_counts": {
+    "telegram": {
+      "gateway.dispatch_part": 5,
+      "gateway.inbound": 9,
+      "gateway.plan_send": 3,
+      "initialize": 14
+    },
+    "web-fetch": {
+      "initialize": 14,
+      "tool.call": 7,
+      "tool.status": 14
+    }
+  },
+  "methods": [
+    "initialize",
+    "gateway.dispatch_part",
+    "gateway.inbound",
+    "gateway.plan_send",
+    "tool.call",
+    "tool.status"
+  ],
+  "profile_argument": "--plugin-base-1",
+  "published": false,
+  "python_sdk": "yuki_plugin_sdk-1.0.0-py3-none-any.whl",
+  "rust_sdk": "yuki-plugin-sdk-1.0.0.crate",
+  "source_commit": "b7f2fadcaaad53344c3a0534c5dc64883b927482",
+  "source_dirty": true,
+  "source_tree_sha256": "4c84ab3c8c2812422aedbc79cac04e5cbeae60da0496c463a583a76433a02e17",
+  "version": "1.0.0",
+  "witness_sha256": "d735e535b30c41c32fc62ade3b5ae3863c9cbf39404856f3401640b7544034e1"
+}

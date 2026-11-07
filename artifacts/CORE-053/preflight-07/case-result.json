@@ -1,0 +1,173 @@
+{
+  "assertions": [
+    {
+      "name": "base originates in the real B0 consumer witnesses",
+      "passed": true
+    },
+    {
+      "name": "initialize semantics stay on the original stable contract",
+      "passed": true
+    },
+    {
+      "name": "both independent proposals initially claim the same minor",
+      "passed": true
+    },
+    {
+      "name": "unselected additions are excluded",
+      "passed": true
+    },
+    {
+      "name": "existing methods stay in the union",
+      "passed": true
+    },
+    {
+      "name": "rust-sdk is generated from exactly the selected union",
+      "passed": true
+    },
+    {
+      "name": "python-sdk is generated from exactly the selected union",
+      "passed": true
+    },
+    {
+      "name": "changed grant",
+      "passed": true
+    },
+    {
+      "name": "new required field",
+      "passed": true
+    },
+    {
+      "name": "changed old value meaning",
+      "passed": true
+    },
+    {
+      "name": "new optional defaults cannot silently add behavior",
+      "passed": true
+    },
+    {
+      "name": "synthetic control cannot create a release-ready package",
+      "passed": true
+    },
+    {
+      "name": "formal registry remains empty",
+      "passed": true
+    },
+    {
+      "name": "reject missing or mismatched consumer",
+      "passed": true
+    },
+    {
+      "name": "reject missing or mismatched business",
+      "passed": true
+    },
+    {
+      "name": "reject missing or mismatched host",
+      "passed": true
+    },
+    {
+      "name": "reject missing or mismatched wire",
+      "passed": true
+    },
+    {
+      "name": "reject missing or mismatched plan",
+      "passed": true
+    },
+    {
+      "name": "missing-field-wire",
+      "passed": true
+    },
+    {
+      "name": "extra-advertised-method",
+      "passed": true
+    },
+    {
+      "name": "failed-business-assertion",
+      "passed": true
+    },
+    {
+      "name": "process exits at the complete ZIP before publication",
+      "passed": true
+    },
+    {
+      "name": "interrupted staging never becomes a stable version",
+      "passed": true
+    },
+    {
+      "name": "retry after interrupted staging qualifies the original minor",
+      "passed": true
+    },
+    {
+      "name": "one competing minor succeeds and the stale one must requalify",
+      "passed": true
+    },
+    {
+      "name": "latest stable forces a new version and visible rebase",
+      "passed": true
+    },
+    {
+      "name": "rebased parent binds the winning immutable manifest",
+      "passed": true
+    },
+    {
+      "name": "earlier replay cannot be reused after rebase",
+      "passed": true
+    },
+    {
+      "name": "the first minor remains byte-identical",
+      "passed": true
+    },
+    {
+      "name": "rebase retains both independent qualified fields",
+      "passed": true
+    },
+    {
+      "name": "unwitnessed canonical field remains excluded",
+      "passed": true
+    },
+    {
+      "name": "all old and new consumer obligations survive",
+      "passed": true
+    },
+    {
+      "name": "unrelated files never enter a release",
+      "passed": true
+    },
+    {
+      "name": "original wire and business receipts are packaged",
+      "passed": true
+    },
+    {
+      "name": "local registry has no partial staging directory",
+      "passed": true
+    },
+    {
+      "name": "CLI init succeeds",
+      "passed": true
+    },
+    {
+      "name": "CLI plan succeeds",
+      "passed": true
+    },
+    {
+      "name": "CLI build-sdks succeeds",
+      "passed": true
+    },
+    {
+      "name": "rust installed selected SDK follows the generated handshake",
+      "passed": true
+    },
+    {
+      "name": "python installed selected SDK follows the generated handshake",
+      "passed": true
+    },
+    {
+      "name": "CLI promote succeeds",
+      "passed": true
+    },
+    {
+      "name": "public CLI keeps synthetic controls labelled",
+      "passed": true
+    }
+  ],
+  "failure": null
+}
