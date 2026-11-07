@@ -414,7 +414,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 .await?;
             Ok(json!({"enabled":enabled}))
         }
-        Change::Callback(id, instance, method, params) => {
+        Change::Callback(id, instance, method, params, admitted_digest) => {
             let def = grants::schema(method, "plugin_to_host", params)?;
             active(conn, id, instance, def["grant"].as_str().unwrap()).await?;
             let result = match method.as_str() {
@@ -450,6 +450,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                         instance,
                         params,
                         method == "gateway.read_mentions",
+                        admitted_digest.as_deref(),
                     )
                     .await
                 }
