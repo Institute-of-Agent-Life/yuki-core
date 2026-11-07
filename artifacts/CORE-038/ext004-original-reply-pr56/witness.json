@@ -1,0 +1,112 @@
+{
+  "status": "verified-local-consumption",
+  "extension_commit": "372484a836a8ea1a52e8576099cdf9550f94ae07",
+  "extension_main_merge": "5ba070ca10f8705b7de286b1995999d40c1dbf90",
+  "extension_receipt_sha256": "5e8f2316a2c4a0297b4d10e85bb0e9c3cc99fd5f1aa0688044eaa39f17263d8e",
+  "extension_receipt_path": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-extensions/.ci-transfer/work-tg-reply/artifacts/EXT-004/original-reply-13/telegram-delivery.json",
+  "core_main_merge": "ddd42728b760c03ab9c5af16c76326f5f95eeeb3",
+  "receipt": {
+    "status": "PASS",
+    "card": "EXT-004",
+    "card_status": "PARTIAL_ATTACHMENT_AND_ORIGINAL_REPLY_VERIFIED",
+    "published": false,
+    "source_base_commit": "22f33fcfb6ddf887aef02a8c03a17e9a6b1ddc10",
+    "source_branch": "codex/ext-004-original-reply",
+    "source_files": "source-files.json",
+    "source_files_sha256": "dae13d2fb327b42da2827aca052003b6cc4aecfc259d3089316c16111f14c333",
+    "source_snapshot_sha256": "cf689efa04b9326e3a422c3ec130ad31f102b2dd6e9e5af00a284e2221e7c479",
+    "core_source_commit": "7965392bd7de70f3b98baa01941c79a6864076d6",
+    "core_source_pr": 107,
+    "core_host_schema_sha256": "d8202a4e581e8d1d7f76c29d92930e2ba21603b0ce0d2d06b1efefc04641226f",
+    "plugin_sdk": {
+      "rust": "1.0.0-alpha.14",
+      "python": "1.0.0a14"
+    },
+    "sdk_crate_sha256": "e41a2375efb2f8f479fa86b022168f02d3b098d3366c1f8f9a6ed9dc22ff4c40",
+    "platforms": {
+      "macos": {
+        "status": "PASS",
+        "archive": "macos.zip",
+        "sha256": "1768f261ab0e33d9321747db0e23285964772d081bd7ed3454c7dc1699e9f13c",
+        "scenarios": [
+          "confirmed",
+          "denied",
+          "rejected",
+          "lost",
+          "caption",
+          "caption-lost",
+          "forget",
+          "reply",
+          "reply-text",
+          "reply-rejected"
+        ],
+        "package_version": "0.1.0-alpha.7",
+        "artifacts": {
+          "Cargo.lock": "4595518ee3447a7984001cfbe9f81870eaf9c3979288988055f0587aebe93e01",
+          "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+          "plugin.toml": "0f62a99ace76aa7c8aba4f8bd69ebace3ee471ec69d782ad9575291e4b4d4022",
+          "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+          "yuki-telegram": "103bcc603bb0110d597500451200a0ff1ece2cc087e951603756a7b66e438bb7"
+        }
+      },
+      "linux": {
+        "status": "PASS",
+        "archive": "linux.zip",
+        "sha256": "91100d2bc2ec0f74404b32fdd914c0a30c0cfc8175b50b950cf5f20f43094264",
+        "scenarios": [
+          "confirmed",
+          "denied",
+          "rejected",
+          "lost",
+          "caption",
+          "caption-lost",
+          "forget",
+          "reply",
+          "reply-text",
+          "reply-rejected"
+        ],
+        "package_version": "0.1.0-alpha.7",
+        "artifacts": {
+          "Cargo.lock": "4595518ee3447a7984001cfbe9f81870eaf9c3979288988055f0587aebe93e01",
+          "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+          "plugin.toml": "0f62a99ace76aa7c8aba4f8bd69ebace3ee471ec69d782ad9575291e4b4d4022",
+          "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+          "yuki-telegram": "fb802ac118d7dc6fcbe9c34ff162fd2ce00e38ae66bc972c6f0f8e953fc945e7"
+        }
+      },
+      "windows": {
+        "status": "PASS",
+        "archive": "windows.zip",
+        "sha256": "1a2d7d69497a16778dfb035ecf482eb3d3463465462829f9ccd2c5fd2471bd19",
+        "scenarios": [
+          "confirmed",
+          "denied",
+          "rejected",
+          "lost",
+          "caption",
+          "caption-lost",
+          "forget",
+          "reply",
+          "reply-text",
+          "reply-rejected"
+        ],
+        "package_version": "0.1.0-alpha.7",
+        "artifacts": {
+          "Cargo.lock": "4595518ee3447a7984001cfbe9f81870eaf9c3979288988055f0587aebe93e01",
+          "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+          "plugin.toml": "0f62a99ace76aa7c8aba4f8bd69ebace3ee471ec69d782ad9575291e4b4d4022",
+          "rust-toolchain.toml": "75cd8d73777ba32f23fcf6d5a7f49019b4a7c8ebe34a06ceb5a40d1c21ab8ffc",
+          "yuki-telegram.exe": "bd6171649eb1d9746b426343e85538ce1e7a5677f8efdc46912a954d96978ebc"
+        }
+      }
+    },
+    "paid_calls": 0,
+    "platform_service": "loopback Telegram Bot API and model endpoints",
+    "pending": [
+      "recall",
+      "typing-lifecycle"
+    ],
+    "baseline_receipt": "artifacts/EXT-004/outbound-attachment-12/telegram-delivery.json",
+    "baseline_receipt_sha256": "e1b405fd408a571b66ff2ef0b2e442207e947df082df69b854597a1f18acfaaa"
+  }
+}

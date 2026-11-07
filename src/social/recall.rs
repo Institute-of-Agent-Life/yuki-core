@@ -29,16 +29,18 @@ pub(crate) fn declaration() -> Tool {
 struct Request {
     event_id: i64,
 }
-struct Original {
-    execution: String,
-    child: String,
-    stage: String,
-    locator: i64,
+pub(crate) struct Original {
+    pub execution: String,
+    pub child: String,
+    pub stage: String,
+    pub locator: String,
+    pub platform: String,
+    pub entry: String,
     kind: String,
     target: String,
-    event: i64,
+    pub event: i64,
 }
-async fn original(
+pub(crate) async fn original(
     db: &mut SqliteConnection,
     exec: &str,
     actor: &str,
@@ -64,21 +66,19 @@ async fn original(
     if crate::privacy::source::execution_erased(db, &execution, None).await? {
         return Err("execution source erased".into());
     }
-    if row.get::<&str, _>("platform") != "qq"
-        || row.get::<&str, _>("kind") != "self"
-        || row.get::<&str, _>("status") != "active"
-    {
+    if row.get::<&str, _>("kind") != "self" || row.get::<&str, _>("status") != "active" {
         return Err("original_presence_unavailable".into());
     }
     let locator = row
         .get::<Option<String>, _>("locator")
-        .ok_or("message_recall_unavailable")?
-        .parse()?;
+        .ok_or("message_recall_unavailable")?;
     Ok(Original {
         execution,
         child: row.get("child"),
         stage: row.get("stage"),
         locator,
+        platform: row.get("platform"),
+        entry: row.get("entry"),
         kind: if row.get::<&str, _>("scope") == "group" {
             "space"
         } else {
@@ -148,8 +148,13 @@ pub(crate) async fn claim(
         )
         .await?;
     }
+    let message = if r.platform == "qq" {
+        json!(r.locator.parse::<i64>()?)
+    } else {
+        json!(r.locator)
+    };
     Ok(
-        json!({"dispatch":granted,"original_execution":r.execution,"child":r.child,"stage":r.stage,"session":session,"message_id":r.locator}),
+        json!({"dispatch":granted,"original_execution":r.execution,"child":r.child,"stage":r.stage,"session":session,"message_id":message}),
     )
 }
 
@@ -194,6 +199,9 @@ pub(crate) async fn perform(
     let prepared = async {
         let mut tx = store.readers().begin().await?;
         let r = original(&mut tx, exec, actor, op).await?;
+        if r.platform != "qq" {
+            return Err("original_presence_unavailable".into());
+        }
         let prior: Option<String> =
             sqlx::query_scalar("SELECT state FROM social_recalls WHERE namespace=? AND child=?")
                 .bind(&r.execution)

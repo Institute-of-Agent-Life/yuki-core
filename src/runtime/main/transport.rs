@@ -211,6 +211,11 @@ impl Dispatch {
                 crate::tools::perform(&store, &exec, &actor, &id, &t.target, &t.payload).await?;
             }
             "recall_own_message" => {
+                if let Some(host) = &store.host
+                    && host.recall(&store, &exec, &actor, &id).await?
+                {
+                    return Ok(());
+                }
                 crate::social::recall::perform(&store, &hub, &exec, &actor, &id).await?;
             }
             "send" if cfg.binding_endpoint.is_none() => {

@@ -1550,6 +1550,73 @@
         "additionalProperties": false
       }
     },
+    "gateway.recall": {
+      "revision": 1,
+      "direction": "host_to_plugin",
+      "grant": "gateway.recall",
+      "params": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ordinal": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "handle",
+          "operation",
+          "parent",
+          "ordinal",
+          "revision",
+          "name",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "enum": [
+              "confirmed",
+              "failed",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "additionalProperties": false
+      }
+    },
     "device.auth": {
       "direction": "plugin_to_host",
       "revision": 1,

@@ -120,6 +120,13 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if self.grants.contains("gateway.recall")
+            && !["gateway.inbound", "gateway.send"]
+                .iter()
+                .all(|g| self.grants.contains(*g))
+        {
+            return Err("gateway.recall requires the original inbound and send grants".into());
+        }
         if self.grants.contains("search.external") != self.external_search.is_some() {
             return Err("search.external requires an explicit external search policy".into());
         }

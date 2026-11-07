@@ -70,7 +70,16 @@ async fn gate(conn: &mut SqliteConnection, r: &Request, id: &str, generation: &s
             return Err("plugin call outside original execution manifest".into());
         }
     }
-    if r.method.starts_with("gateway.") {
+    if r.method == "gateway.recall" {
+        super::recall::check(
+            conn,
+            id,
+            &r.execution,
+            r.parent.as_deref().ok_or("missing recall parent")?,
+            &r.args,
+        )
+        .await?;
+    } else if r.method.starts_with("gateway.") {
         let mut own:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM host_installations i JOIN executions x ON x.id=? JOIN events e ON e.id=x.source AND e.bot_stage=i.bot_stage WHERE i.plugin=? AND x.original_actor=e.raw_actor)").bind(&r.execution).bind(id).fetch_one(&mut *conn).await?;
         let scene = match super::participation::self_binding(conn, &r.execution).await? {
             Some(scene) => Some(scene),
@@ -227,7 +236,23 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .ok_or("unknown grant")?,
             )
             .await?;
-            if method.starts_with("gateway.") {
+            if method == "gateway.recall" {
+                let parent: String = sqlx::query_scalar(
+                    "SELECT parent FROM operations WHERE namespace=? AND operation_id=?",
+                )
+                .bind(&exec)
+                .bind(row.get::<String, _>("operation"))
+                .fetch_one(&mut *conn)
+                .await?;
+                super::recall::check(
+                    conn,
+                    plugin,
+                    &exec,
+                    &parent,
+                    &serde_json::from_str(row.try_get("args")?)?,
+                )
+                .await?;
+            } else if method.starts_with("gateway.") {
                 let args: Value = serde_json::from_str(row.try_get("args")?)?;
                 super::send::check_reply(conn, plugin, &args).await?;
             }
@@ -295,7 +320,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .is_valid(body);
             let state = if *error || !valid {
                 "unknown"
-            } else if method == "gateway.dispatch_part" {
+            } else if matches!(method.as_str(), "gateway.dispatch_part" | "gateway.recall") {
                 body["state"].as_str().unwrap_or("unknown")
             } else if body["ok"] == false {
                 "failed"
@@ -362,6 +387,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 },
             )
             .await?;
+            if method == "gateway.recall" {
+                super::recall::settled(conn, &exec, row.try_get("operation")?, state).await?;
+            }
             if publish && state == "confirmed" && method == "gateway.dispatch_part" {
                 let args: Value = serde_json::from_str(row.try_get("args")?)?;
                 let entry = args["route"]["entry"]

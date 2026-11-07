@@ -149,6 +149,12 @@ def serve(frame):
                 "state": "confirmed",
                 "locator": "original-native-" + p["operation"],
             }
+        elif method == "gateway.recall":
+            with lock, (folder / "recalls.ndjson").open("a", encoding="utf-8") as calls:
+                calls.write(json.dumps(p["arguments"]) + "\n")
+            if (folder / "recall-lost").exists():
+                os._exit(7)
+            result = {"state":"failed" if (folder / "recall-failed").exists() else "confirmed"}
         elif method == "media.process":
             handle = p["handle"]
             name = p["operation"]

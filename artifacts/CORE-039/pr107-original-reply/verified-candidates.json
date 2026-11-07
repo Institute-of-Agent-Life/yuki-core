@@ -1,0 +1,134 @@
+{
+  "status": "unpublished-development-candidate",
+  "candidates": [
+    {
+      "platform": [
+        "darwin",
+        "arm64"
+      ],
+      "source_commit": "7965392bd7de70f3b98baa01941c79a6864076d6",
+      "source_tree_sha256": "f74614ae9763465cc2cb79d57805491293b4e45eb918eabd92ca910bda4cf390",
+      "verified_card": "CORE-039",
+      "sha256": "efb4779b154dc9e81d33b0f52b126254e9bb0e5e0e83dfa45bbebe2e1f07ce79",
+      "zip": "yuki-core-7965392bd7de-darwin-arm64.zip",
+      "binary_sha256": "cf491fd122262f6c47de42a917b3f55d34d761c82fe84b57891c387371074c61",
+      "signer": "ephemeral development key",
+      "published": false,
+      "manifest_sha256": "7a6610d5708a1699d9cc5980d482a43baa76084069332528b80963d531de82cd",
+      "assertions": 363,
+      "sdk_versions": {
+        "python": "1.0.0a15",
+        "rust": "1.0.0-alpha.15"
+      },
+      "database_reader": 55,
+      "handshake_schema": 1,
+      "host_schema": 2,
+      "implemented_methods": [
+        "command.invoke",
+        "forget.ack",
+        "forget.request",
+        "gateway.dispatch_part",
+        "gateway.inbound",
+        "gateway.media",
+        "gateway.part_status",
+        "gateway.plan_send",
+        "gateway.status",
+        "observer.event",
+        "search.begin",
+        "search.finish",
+        "search.status",
+        "terminal.bind",
+        "terminal.scope",
+        "tool.call",
+        "tool.status"
+      ],
+      "path": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/artifacts/CORE-039/pr107-original-reply/macos/yuki-core-7965392bd7de-darwin-arm64.zip"
+    },
+    {
+      "platform": [
+        "linux",
+        "arm64"
+      ],
+      "source_commit": "7965392bd7de70f3b98baa01941c79a6864076d6",
+      "source_tree_sha256": "f74614ae9763465cc2cb79d57805491293b4e45eb918eabd92ca910bda4cf390",
+      "verified_card": "CORE-039",
+      "sha256": "12720dcae9e68aba2b73d0cc7846c4f598cc9dd183b89b9147bb7718275eba22",
+      "zip": "yuki-core-7965392bd7de-linux-arm64.zip",
+      "binary_sha256": "c34435e50f249e50e278899cb098e61014fad35eb893ef5e12eacdf775d2ac28",
+      "signer": "ephemeral development key",
+      "published": false,
+      "manifest_sha256": "202fed1f8a9baa37475382d2568ce1dde784f9921b061ff3efee018a215efa0b",
+      "assertions": 363,
+      "sdk_versions": {
+        "python": "1.0.0a15",
+        "rust": "1.0.0-alpha.15"
+      },
+      "database_reader": 55,
+      "handshake_schema": 1,
+      "host_schema": 2,
+      "implemented_methods": [
+        "command.invoke",
+        "forget.ack",
+        "forget.request",
+        "gateway.dispatch_part",
+        "gateway.inbound",
+        "gateway.media",
+        "gateway.part_status",
+        "gateway.plan_send",
+        "gateway.status",
+        "observer.event",
+        "search.begin",
+        "search.finish",
+        "search.status",
+        "terminal.bind",
+        "terminal.scope",
+        "tool.call",
+        "tool.status"
+      ],
+      "path": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/artifacts/CORE-039/pr107-original-reply/linux/yuki-core-7965392bd7de-linux-arm64.zip"
+    },
+    {
+      "platform": [
+        "windows",
+        "x86_64"
+      ],
+      "source_commit": "7965392bd7de70f3b98baa01941c79a6864076d6",
+      "source_tree_sha256": "f74614ae9763465cc2cb79d57805491293b4e45eb918eabd92ca910bda4cf390",
+      "verified_card": "CORE-039",
+      "sha256": "50615cc7382e482f4ad3143e308a91e7df5f332793b984deff9faf2bc6f939fa",
+      "zip": "yuki-core-7965392bd7de-windows-x86_64.zip",
+      "binary_sha256": "d8ea9a0afbcfc556b56cf2cd93a3ffa830a8d6b375cadab5bdcaea166fc34dea",
+      "signer": "ephemeral development key",
+      "published": false,
+      "manifest_sha256": "406dae42f70de973ab05756162d291084b2acf65f7701032aaec308cb9dba3eb",
+      "assertions": 365,
+      "sdk_versions": {
+        "python": "1.0.0a15",
+        "rust": "1.0.0-alpha.15"
+      },
+      "database_reader": 55,
+      "handshake_schema": 1,
+      "host_schema": 2,
+      "implemented_methods": [
+        "command.invoke",
+        "forget.ack",
+        "forget.request",
+        "gateway.dispatch_part",
+        "gateway.inbound",
+        "gateway.media",
+        "gateway.part_status",
+        "gateway.plan_send",
+        "gateway.status",
+        "observer.event",
+        "search.begin",
+        "search.finish",
+        "search.status",
+        "terminal.bind",
+        "terminal.scope",
+        "tool.call",
+        "tool.status"
+      ],
+      "path": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/artifacts/CORE-039/pr107-original-reply/windows/yuki-core-7965392bd7de-windows-x86_64.zip"
+    }
+  ]
+}

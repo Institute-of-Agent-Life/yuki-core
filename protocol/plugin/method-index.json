@@ -7,10 +7,10 @@
     }
   },
   "schema_revision": 1,
-  "schema_sha256": "4aa718c6b89da7549b2adf959e8e1cf49250260fe0901e03755c47bfc0d8e1ca",
+  "schema_sha256": "d4c1a79f5ef4cc6925259e0c931e898d3b491dfe08fa6d38680c97aff2f3609b",
   "sdk_versions": {
-    "python": "1.0.0a15",
-    "rust": "1.0.0-alpha.15"
+    "python": "1.0.0a16",
+    "rust": "1.0.0-alpha.16"
   },
   "status": "unpublished-handshake-preview"
 }

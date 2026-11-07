@@ -1,0 +1,2432 @@
+{
+  "format_version": 1,
+  "card": "CORE-038",
+  "status": "verified",
+  "exit_code": 0,
+  "command": [
+    "python",
+    "ci/check.py",
+    "CORE-038",
+    "--out",
+    "/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/gateway-recall-preflight-05"
+  ],
+  "worker_command": [
+    "/opt/anaconda3/bin/python3.12",
+    "/Volumes/huawei/項目實戰/yuki-core/.cache/worktrees/gateway-recall/tests/harness/worker.py",
+    "CORE-038",
+    "/Volumes/huawei/項目實戰/yuki-core/artifacts/CORE-038/gateway-recall-preflight-05"
+  ],
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "tools": {
+    "python": "3.12.7",
+    "sqlite": "3.45.3",
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "rust_sqlite": "3.46.0"
+  },
+  "dependency_lock": "ci/checks.json",
+  "network": "python-loopback-only",
+  "cost": {
+    "physical_provider_calls": 0,
+    "paid_calls": 0,
+    "source": "offline harness"
+  },
+  "failure": null,
+  "assertions": [
+    {
+      "name": "media schemas embedded in both actual SDK archives",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"original-100\", \"account\": \"253d24e7-7693-41cc-8b22-261801a6ff66\", \"bot_stage\": \"f86d5d90-34a0-45c2-987a-47ab44998638\", \"kind\": \"message\", \"reply_bot\": \"100\", \"occurred\": 100, \"observed\": 100, \"segments\": [{\"type\": \"text\", \"text\": \"inspect actual bytes\"}, {\"type\": \"media\", \"kind\": \"record\", \"reference\": \"voice-native-100\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress claim 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file d11a9b99-e82e-42cf-9fe8-ed43f54c47d1 00000000-0000-4000-8000-000000000022 1 0 f86d5d90-34a0-45c2-987a-47ab44998638 voice-native-100 voice.amr succeeds",
+      "passed": true
+    },
+    {
+      "name": "core loaded exact descriptor bytes",
+      "passed": true
+    },
+    {
+      "name": "two bounded reads carry only original bytes and version",
+      "passed": true
+    },
+    {
+      "name": "other real instance cannot read a live call handle",
+      "passed": true
+    },
+    {
+      "name": "command operator host process codec-a d11a9b99-e82e-42cf-9fe8-ed43f54c47d1 00000000-0000-4000-8000-000000000022 audio {\"event\": 1, \"slot\": 0} transcript succeeds",
+      "passed": true
+    },
+    {
+      "name": "original processor result confirmed",
+      "passed": true
+    },
+    {
+      "name": "typed provenance records transcript without command promotion",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"original-102\", \"account\": \"253d24e7-7693-41cc-8b22-261801a6ff66\", \"bot_stage\": \"f86d5d90-34a0-45c2-987a-47ab44998638\", \"kind\": \"message\", \"reply_bot\": \"100\", \"occurred\": 102, \"observed\": 102, \"segments\": [{\"type\": \"text\", \"text\": \"inspect actual bytes\"}, {\"type\": \"media\", \"kind\": \"record\", \"reference\": \"voice-native-102\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress claim 2 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file 2f175a6f-ece2-497f-a654-4abcda6b34e4 00000000-0000-4000-8000-000000000022 2 0 f86d5d90-34a0-45c2-987a-47ab44998638 voice-native-102 voice.amr succeeds",
+      "passed": true
+    },
+    {
+      "name": "core loaded exact descriptor bytes",
+      "passed": true
+    },
+    {
+      "name": "selected media automatically registers its original holder",
+      "passed": true
+    },
+    {
+      "name": "command operator privacy erase erase-late-codec 00000000-0000-4000-8000-000000000022 [2] succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator host process codec-a 2f175a6f-ece2-497f-a654-4abcda6b34e4 00000000-0000-4000-8000-000000000022 late {\"event\": 2, \"slot\": 0} transcript succeeds",
+      "passed": true
+    },
+    {
+      "name": "erasure before returned ASR prevents late publication",
+      "passed": true
+    },
+    {
+      "name": "automatic media holder receives original forget source",
+      "passed": true
+    },
+    {
+      "name": "command operator privacy pending codec-a succeeds",
+      "passed": true
+    },
+    {
+      "name": "automatic media obligation is acknowledged",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"original-104\", \"account\": \"253d24e7-7693-41cc-8b22-261801a6ff66\", \"bot_stage\": \"f86d5d90-34a0-45c2-987a-47ab44998638\", \"kind\": \"message\", \"reply_bot\": \"100\", \"occurred\": 104, \"observed\": 104, \"segments\": [{\"type\": \"text\", \"text\": \"inspect actual bytes\"}, {\"type\": \"media\", \"kind\": \"record\", \"reference\": \"voice-native-104\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress claim 3 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file 4516d3df-10ae-41d2-8aa9-56085c29525e 00000000-0000-4000-8000-000000000022 3 0 f86d5d90-34a0-45c2-987a-47ab44998638 voice-native-104 escape/voice.amr rejects",
+      "passed": true
+    },
+    {
+      "name": "command operator host process codec-a 4516d3df-10ae-41d2-8aa9-56085c29525e 00000000-0000-4000-8000-000000000022 not-pinned {\"event\": 3, \"slot\": 0} transcript rejects",
+      "passed": true
+    },
+    {
+      "name": "symlink source never turns into a delegated handle or reader payload",
+      "passed": true
+    },
+    {
+      "name": "unselected second processor received no media-process request",
+      "passed": true
+    },
+    {
+      "name": "no model purchase for local selected processing",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator host process codec-a d11a9b99-e82e-42cf-9fe8-ed43f54c47d1 00000000-0000-4000-8000-000000000022 audio {\"event\": 1, \"slot\": 0} transcript succeeds",
+      "passed": true
+    },
+    {
+      "name": "cold original operation returns a retained receipt",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"P-1\", \"account\": \"c072677e-8e33-430f-a26e-8b3d2b70202b\", \"bot_stage\": \"0165b030-d3c8-4d71-9afe-15a4226cb5ec\", \"reply_bot\": \"100\", \"occurred\": 100, \"observed\": 100, \"kind\": \"message\", \"sender\": {\"nickname\": \"Alice\"}, \"segments\": [{\"type\": \"text\", \"text\": \"show two selected images\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "normal paid Main declares actual installed publishing tool",
+      "passed": true
+    },
+    {
+      "name": "two local images and foreign handle have independent presentation outcomes",
+      "passed": true
+    },
+    {
+      "name": "handler effect remains confirmed",
+      "passed": true
+    },
+    {
+      "name": "native images require the selected original profile",
+      "passed": true
+    },
+    {
+      "name": "published document digest comes from the open original file",
+      "passed": true
+    },
+    {
+      "name": "original QQ destination receives selected immutable bytes",
+      "passed": true
+    },
+    {
+      "name": "presentation and actual Social part keep separate receipts",
+      "passed": true
+    },
+    {
+      "name": "only three original Main wires with the selected delivery",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "cold owner retains exactly one external effect",
+      "passed": true
+    },
+    {
+      "name": "committed effect stays readable from its original record",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"P-1\", \"account\": \"5ac5aaab-31cd-4d03-858e-da8f5059c985\", \"bot_stage\": \"f6948ec8-b4ac-4a93-afc6-0866c49ed706\", \"reply_bot\": \"100\", \"occurred\": 100, \"observed\": 100, \"kind\": \"message\", \"sender\": {\"nickname\": \"Alice\"}, \"segments\": [{\"type\": \"text\", \"text\": \"show two selected images\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "normal paid Main declares actual installed publishing tool",
+      "passed": true
+    },
+    {
+      "name": "two local images and foreign handle have independent presentation outcomes",
+      "passed": true
+    },
+    {
+      "name": "handler effect remains confirmed",
+      "passed": true
+    },
+    {
+      "name": "native images require the selected original profile",
+      "passed": true
+    },
+    {
+      "name": "published document digest comes from the open original file",
+      "passed": true
+    },
+    {
+      "name": "original QQ destination receives selected immutable bytes",
+      "passed": true
+    },
+    {
+      "name": "presentation and actual Social part keep separate receipts",
+      "passed": true
+    },
+    {
+      "name": "only three original Main wires with the selected delivery",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "cold owner retains exactly one external effect",
+      "passed": true
+    },
+    {
+      "name": "committed effect stays readable from its original record",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator account open telegram codec-b bot-41 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open telegram codec-b room-42 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "authenticated gateway accepted original entry",
+      "passed": true
+    },
+    {
+      "name": "gateway_media_unsupported returns to the requesting Main",
+      "passed": true
+    },
+    {
+      "name": "gateway_media_unsupported does not plan or dispatch any part",
+      "passed": true
+    },
+    {
+      "name": "command operator effect read 95b3614b-9bfb-4593-a6e6-b3f2a71a0eca 15146850-9e84-40f5-870c-3abee2040474 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "gateway_media_unsupported can be read by original operation",
+      "passed": true
+    },
+    {
+      "name": "gateway_artifact_unavailable returns to the requesting Main",
+      "passed": true
+    },
+    {
+      "name": "gateway_artifact_unavailable does not plan or dispatch any part",
+      "passed": true
+    },
+    {
+      "name": "command operator effect read 95b3614b-9bfb-4593-a6e6-b3f2a71a0eca 781d86eb-2074-49ab-aff9-56308392a721 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "gateway_artifact_unavailable can be read by original operation",
+      "passed": true
+    },
+    {
+      "name": "gateway_attachment_kind_mismatch returns to the requesting Main",
+      "passed": true
+    },
+    {
+      "name": "gateway_attachment_kind_mismatch does not plan or dispatch any part",
+      "passed": true
+    },
+    {
+      "name": "command operator effect read 95b3614b-9bfb-4593-a6e6-b3f2a71a0eca ec64feaa-0123-45b3-a5ff-9054ff3fa058 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "gateway_attachment_kind_mismatch can be read by original operation",
+      "passed": true
+    },
+    {
+      "name": "gateway_reply_unavailable returns to the requesting Main",
+      "passed": true
+    },
+    {
+      "name": "gateway_reply_unavailable does not plan or dispatch any part",
+      "passed": true
+    },
+    {
+      "name": "command operator effect read 95b3614b-9bfb-4593-a6e6-b3f2a71a0eca 62e92bdc-22a8-4015-82df-6217ba3c5ef4 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "gateway_reply_unavailable can be read by original operation",
+      "passed": true
+    },
+    {
+      "name": "tampered gateway plan rejected before any physical part",
+      "passed": true
+    },
+    {
+      "name": "original remote receiver reads bounded bytes for its own frozen route",
+      "passed": true
+    },
+    {
+      "name": "changed quoted native ID stops before physical dispatch",
+      "passed": true
+    },
+    {
+      "name": "the original receiver resolves the original event to its own native ID",
+      "passed": true
+    },
+    {
+      "name": "quoted dispatch preserves the plan's first immutable part",
+      "passed": true
+    },
+    {
+      "name": "quoted send succeeds on its original operation",
+      "passed": true
+    },
+    {
+      "name": "two original gateway deliveries have public event identities",
+      "passed": true
+    },
+    {
+      "name": "recall-original retains the original terminal state",
+      "passed": true
+    },
+    {
+      "name": "recall-again retains the original terminal state",
+      "passed": true
+    },
+    {
+      "name": "recall-refused retains the original terminal state",
+      "passed": true
+    },
+    {
+      "name": "two logical recalls share one physical original recall",
+      "passed": true
+    },
+    {
+      "name": "recall uses the sent part's original native locator",
+      "passed": true
+    },
+    {
+      "name": "recall preserves the original route",
+      "passed": true
+    },
+    {
+      "name": "only the confirmed recall hides its own original part",
+      "passed": true
+    },
+    {
+      "name": "lost native recall retains unknown on the original operation",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator control read plugin.get {\"plugin_id\":\"codec-b\"} succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator control write plugin.approve {\"plugin_id\": \"codec-b\", \"request_id\": \"4f08ff59-22ac-40ed-aadf-b33ef1d752ab\", \"expected_revision\": 3024730794190642, \"permissions\": [\"forget.owner\", \"gateway.inbound\", \"gateway.send\", \"media.open\", \"media.process\", \"media.publish\", \"tool.call\"]} succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator host enable codec-b true succeeds",
+      "passed": true
+    },
+    {
+      "name": "cold owner retains all original recall receipts",
+      "passed": true
+    },
+    {
+      "name": "cold owner never redispatches a retained native recall",
+      "passed": true
+    },
+    {
+      "name": "only successful native child binds outbound artifact",
+      "passed": true
+    },
+    {
+      "name": "cold-confirmed reads the original receipt",
+      "passed": true
+    },
+    {
+      "name": "cold-failed reads the original receipt",
+      "passed": true
+    },
+    {
+      "name": "cold-unknown reads the original receipt",
+      "passed": true
+    },
+    {
+      "name": "ungranted-recall fails before a native request",
+      "passed": true
+    },
+    {
+      "name": "foreign-recall fails before a native request",
+      "passed": true
+    },
+    {
+      "name": "new logical requests after cold start produce zero physical recalls",
+      "passed": true
+    },
+    {
+      "name": "gateway_reply_unavailable returns to the requesting Main",
+      "passed": true
+    },
+    {
+      "name": "gateway_reply_unavailable does not plan or dispatch any part",
+      "passed": true
+    },
+    {
+      "name": "command operator effect read a3e64b98-f13b-438a-a860-d970c2152ae6 1a5062a3-2070-4e59-be35-f02aaa25f64b 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "gateway_reply_unavailable can be read by original operation",
+      "passed": true
+    },
+    {
+      "name": "command operator privacy erase forget-quoted-source 00000000-0000-4000-8000-000000000022 [7] succeeds",
+      "passed": true
+    },
+    {
+      "name": "source erased during planning never opens a physical dispatch",
+      "passed": true
+    },
+    {
+      "name": "erased quote cannot replace the previous native receipt",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator account open telegram gw-media-0 physical-bot 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open telegram gw-media-0 sender 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open lark gw-media-1 physical-bot 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open lark gw-media-1 sender 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "installed SDK negotiated gateway.media",
+      "passed": true
+    },
+    {
+      "name": "installed SDK negotiated gateway.media",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "wrong native identity starts no download or business event",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "inbound redelivery reuses the same event",
+      "passed": true
+    },
+    {
+      "name": "committed original stage, tenant and native message",
+      "passed": true
+    },
+    {
+      "name": "an ingress-only installation returns a final refusal to Main",
+      "passed": true
+    },
+    {
+      "name": "a denied send creates no plan or physical dispatch handles",
+      "passed": true
+    },
+    {
+      "name": "command operator effect read 67207c46-1fe7-40ba-8f3f-4c090cb8595e 1edff501-1fd5-43af-bf2d-837d65f3f389 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "reading the original denied operation returns its immutable receipt",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 0 pin-good native.bin file succeeds",
+      "passed": true
+    },
+    {
+      "name": "original bound gateway returned selected bytes only",
+      "passed": true
+    },
+    {
+      "name": "callback pinned physical receiver and original segment across both chunks",
+      "passed": true
+    },
+    {
+      "name": "the other installation never receives the first native key",
+      "passed": true
+    },
+    {
+      "name": "one physical callback per requested block",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "retry cannot attach a new identity to unbound ingress",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 2 0 old-no-binding native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "unbound event makes no callback",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 0 pin-saved native.bin file succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 99 bad-index native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 4 expired native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "cached or expired source and wrong slot start no native fetch",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 1 bad-digest native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 2 bad-offset native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "invalid bytes and offsets cannot commit a cached object",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 5 replacement native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 0 replacement-cached native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "changed deployment cannot use fresh or cached original",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 5 revoked-fetch native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "removed method grant issues zero native reads",
+      "passed": true
+    },
+    {
+      "name": "command operator account enabled d3c645d7-f661-4dbc-8022-055edc0a94d7 false 2000 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 67207c46-1fe7-40ba-8f3f-4c090cb8595e 00000000-0000-4000-8000-000000000022 1 5 wrong-stage native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "paused original Bot issues no native reads",
+      "passed": true
+    },
+    {
+      "name": "command operator account enabled d3c645d7-f661-4dbc-8022-055edc0a94d7 true 2001 succeeds",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "wrong native identity starts no download or business event",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "inbound redelivery reuses the same event",
+      "passed": true
+    },
+    {
+      "name": "committed original stage, tenant and native message",
+      "passed": true
+    },
+    {
+      "name": "gateway_media_read_not_granted returns to the requesting Main",
+      "passed": true
+    },
+    {
+      "name": "gateway_media_read_not_granted does not plan or dispatch any part",
+      "passed": true
+    },
+    {
+      "name": "command operator effect read 271eea35-fbce-419a-ad9e-75fe5ee84c03 6a5d5c45-932d-4f0c-aa74-7e36b41e1f26 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "gateway_media_read_not_granted can be read by original operation",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 0 pin-good native.bin file succeeds",
+      "passed": true
+    },
+    {
+      "name": "original bound gateway returned selected bytes only",
+      "passed": true
+    },
+    {
+      "name": "callback pinned physical receiver and original segment across both chunks",
+      "passed": true
+    },
+    {
+      "name": "one physical callback per requested block",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "inbound original identity accepted or rejected as specified",
+      "passed": true
+    },
+    {
+      "name": "retry cannot attach a new identity to unbound ingress",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 4 0 old-no-binding native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "unbound event makes no callback",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 0 pin-saved native.bin file succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 99 bad-index native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 4 expired native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "cached or expired source and wrong slot start no native fetch",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 1 bad-digest native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 2 bad-offset native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "invalid bytes and offsets cannot commit a cached object",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 5 replacement native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 0 replacement-cached native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "changed deployment cannot use fresh or cached original",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 5 revoked-fetch native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "removed method grant issues zero native reads",
+      "passed": true
+    },
+    {
+      "name": "command operator account enabled b52b0d05-c919-4217-97db-c188f1d54ee7 false 2000 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 5 wrong-stage native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "paused original Bot issues no native reads",
+      "passed": true
+    },
+    {
+      "name": "command operator account enabled b52b0d05-c919-4217-97db-c188f1d54ee7 true 2001 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator privacy erase erase-during-fetch 00000000-0000-4000-8000-000000000022 [3] succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator media pin 271eea35-fbce-419a-ad9e-75fe5ee84c03 00000000-0000-4000-8000-000000000022 3 3 late native.bin file rejects",
+      "passed": true
+    },
+    {
+      "name": "late final page cannot resurrect forgotten original",
+      "passed": true
+    },
+    {
+      "name": "forget removes bound private native locator",
+      "passed": true
+    },
+    {
+      "name": "same native key selects distinct bytes in two origins",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"video\", \"account\": \"7a80dc66-cf8e-4213-88f3-a7897b235915\", \"bot_stage\": \"9278cb83-2897-482e-87ad-fd78abb22ad8\", \"reply_bot\": \"100\", \"observed\": 1, \"occurred\": 1, \"kind\": \"message\", \"segments\": [{\"type\": \"text\", \"text\": \"inspect selected attachment\"}, {\"type\": \"media\", \"kind\": \"video\", \"reference\": \"original-key\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "paid original selected dispatch freezes configured installation",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file 96229c8c-80df-438c-b323-84ad5a40ab59 00000000-0000-4000-8000-000000000022 1 0 9278cb83-2897-482e-87ad-fd78abb22ad8 original-key media.bin succeeds",
+      "passed": true
+    },
+    {
+      "name": "selected input is actual original file",
+      "passed": true
+    },
+    {
+      "name": "initial Main has no frame or decoded PDF",
+      "passed": true
+    },
+    {
+      "name": "same Main receives only authorized ordered original frames video",
+      "passed": true
+    },
+    {
+      "name": "physical decoder ran only for selected eligible source video",
+      "passed": true
+    },
+    {
+      "name": "unselected installed peer has zero decoder calls",
+      "passed": true
+    },
+    {
+      "name": "foreign image remains unavailable",
+      "passed": true
+    },
+    {
+      "name": "same original logical tool operation and source",
+      "passed": true
+    },
+    {
+      "name": "one initial model call and one normal continuation, no extra vision request",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"pdf\", \"account\": \"690305eb-dc0b-4050-99c9-d358b6dd07a9\", \"bot_stage\": \"d2393f43-8ca2-4850-bd82-36a374191ca6\", \"reply_bot\": \"100\", \"observed\": 1, \"occurred\": 1, \"kind\": \"message\", \"segments\": [{\"type\": \"text\", \"text\": \"inspect selected attachment\"}, {\"type\": \"media\", \"kind\": \"file\", \"reference\": \"original-key\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "paid original selected dispatch freezes configured installation",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file 8a024cea-e69a-4e3e-91f5-ec0303e0daf2 00000000-0000-4000-8000-000000000022 1 0 d2393f43-8ca2-4850-bd82-36a374191ca6 original-key media.bin succeeds",
+      "passed": true
+    },
+    {
+      "name": "selected input is actual original file",
+      "passed": true
+    },
+    {
+      "name": "initial Main has no frame or decoded PDF",
+      "passed": true
+    },
+    {
+      "name": "same Main receives only authorized ordered original frames pdf",
+      "passed": true
+    },
+    {
+      "name": "physical decoder ran only for selected eligible source pdf",
+      "passed": true
+    },
+    {
+      "name": "unselected installed peer has zero decoder calls",
+      "passed": true
+    },
+    {
+      "name": "original PDF text reaches same model",
+      "passed": true
+    },
+    {
+      "name": "same original logical tool operation and source",
+      "passed": true
+    },
+    {
+      "name": "one initial model call and one normal continuation, no extra vision request",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"text\", \"account\": \"d2793d26-1362-4ca4-b16f-06efb4566410\", \"bot_stage\": \"b227cdb3-1bb1-4a91-b8f1-1f799209b704\", \"reply_bot\": \"100\", \"observed\": 1, \"occurred\": 1, \"kind\": \"message\", \"segments\": [{\"type\": \"text\", \"text\": \"inspect selected attachment\"}, {\"type\": \"media\", \"kind\": \"video\", \"reference\": \"original-key\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "paid original selected dispatch freezes configured installation",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file c4fb9848-b8a1-4091-a828-a105d6a41bbb 00000000-0000-4000-8000-000000000022 1 0 b227cdb3-1bb1-4a91-b8f1-1f799209b704 original-key media.bin succeeds",
+      "passed": true
+    },
+    {
+      "name": "selected input is actual original file",
+      "passed": true
+    },
+    {
+      "name": "initial Main has no frame or decoded PDF",
+      "passed": true
+    },
+    {
+      "name": "same Main receives only authorized ordered original frames text",
+      "passed": true
+    },
+    {
+      "name": "physical decoder ran only for selected eligible source text",
+      "passed": true
+    },
+    {
+      "name": "unselected installed peer has zero decoder calls",
+      "passed": true
+    },
+    {
+      "name": "one initial model call and one normal continuation, no extra vision request",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"late\", \"account\": \"e4d3d440-eef6-4b27-9a30-5cdb98059ad8\", \"bot_stage\": \"c1666cd5-df19-43da-be09-5e3a5eb8db33\", \"reply_bot\": \"100\", \"observed\": 1, \"occurred\": 1, \"kind\": \"message\", \"segments\": [{\"type\": \"text\", \"text\": \"inspect selected attachment\"}, {\"type\": \"media\", \"kind\": \"video\", \"reference\": \"original-key\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "paid original selected dispatch freezes configured installation",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file 82416a30-ebbc-4f73-99a0-928a7a504e79 00000000-0000-4000-8000-000000000022 1 0 c1666cd5-df19-43da-be09-5e3a5eb8db33 original-key media.bin succeeds",
+      "passed": true
+    },
+    {
+      "name": "selected input is actual original file",
+      "passed": true
+    },
+    {
+      "name": "initial Main has no frame or decoded PDF",
+      "passed": true
+    },
+    {
+      "name": "same Main receives only authorized ordered original frames late",
+      "passed": true
+    },
+    {
+      "name": "physical decoder ran only for selected eligible source late",
+      "passed": true
+    },
+    {
+      "name": "unselected installed peer has zero decoder calls",
+      "passed": true
+    },
+    {
+      "name": "expired selected handle hides returned private text",
+      "passed": true
+    },
+    {
+      "name": "same original logical tool operation and source",
+      "passed": true
+    },
+    {
+      "name": "one initial model call and one normal continuation, no extra vision request",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "command migrate succeeds",
+      "passed": true
+    },
+    {
+      "name": "additive migration to stored public fragments",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator database-info succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator person create 00000000-0000-4000-8000-000000000022 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 200 1 --person 00000000-0000-4000-8000-000000000022 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator account open qq compact 100 1 --start 1 succeeds",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    },
+    {
+      "name": "owner listening",
+      "passed": true
+    },
+    {
+      "name": "command operator ingress record {\"source\": \"switch\", \"account\": \"26c9273f-8c2f-47e2-a89b-6dee832b7061\", \"bot_stage\": \"d77873e4-d404-481b-b9be-2d97f758d9b3\", \"reply_bot\": \"100\", \"observed\": 1, \"occurred\": 1, \"kind\": \"message\", \"segments\": [{\"type\": \"text\", \"text\": \"inspect selected attachment\"}, {\"type\": \"media\", \"kind\": \"video\", \"reference\": \"original-key\"}]} --accept succeeds",
+      "passed": true
+    },
+    {
+      "name": "paid original selected dispatch freezes configured installation",
+      "passed": true
+    },
+    {
+      "name": "command operator media cache-file caa8c32e-55ea-43e5-93dc-b316ebcbf421 00000000-0000-4000-8000-000000000022 1 0 d77873e4-d404-481b-b9be-2d97f758d9b3 original-key media.bin succeeds",
+      "passed": true
+    },
+    {
+      "name": "selected input is actual original file",
+      "passed": true
+    },
+    {
+      "name": "initial Main has no frame or decoded PDF",
+      "passed": true
+    },
+    {
+      "name": "same Main receives only authorized ordered original frames switch",
+      "passed": true
+    },
+    {
+      "name": "physical decoder ran only for selected eligible source switch",
+      "passed": true
+    },
+    {
+      "name": "unselected installed peer has zero decoder calls",
+      "passed": true
+    },
+    {
+      "name": "one initial model call and one normal continuation, no extra vision request",
+      "passed": true
+    },
+    {
+      "name": "command operator shutdown succeeds",
+      "passed": true
+    },
+    {
+      "name": "owner shutdown",
+      "passed": true
+    }
+  ],
+  "artifacts": {
+    "case-result.json": "96a084bacc199bae9738c505f103f7d6771b73cd7cfc298e101eb36be6e1e877",
+    "gateway-inbound-media.json": "7a9432927f7d733c1182a82c8915958987448f639c2ef70197d5535ded16d9c4",
+    "main-selected-media.json": "2771b350b44d015da911083ff0168ad66638b0ed29de9063484c629a61e24ff6",
+    "media-handle-bridge.json": "26dc7b2531fe39aa8f8a1a535fe0a51a50456ddd98792c57cb24b981df22d2fe",
+    "rust-build.txt": "1f0b4f3c7d25c9f3d266c34c2b0057f26ccef97b024df21fd8b8f9847357bf81",
+    "rust-clippy.txt": "de1872391c18f770b6423923c64e9ec71dd753330d868905a5fa2320c04cddd1",
+    "rust-format.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust-test-executable.txt": "7023502a7d5ab1892f83dbe64b65e774f68acbbe184a2cff63b320c38ae1f48d",
+    "rust-writer-tests.txt": "2843be6319753ee0fbb4496d9ea04a3d3d9b3280b2f6b150f4fe881228c63613",
+    "sdk-distributions/candidate.json": "8b8809c0b9a1e7203e4b4347ce07646a6e88919c604c4b5663a0ca74a00aef0e",
+    "sdk-distributions/handshake.ndjson": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+    "sdk-distributions/handshake.schema.json": "d4c1a79f5ef4cc6925259e0c931e898d3b491dfe08fa6d38680c97aff2f3609b",
+    "sdk-distributions/method-index.json": "dfb4069b88f39a925498efde52548d900511e4fd48f90f43f7514f88cb266e2a",
+    "sdk-distributions/sdk-verification.json": "f591c746dfcf13d5a6acccff7b7b0cf3cc5da6f52ffde9cf2de4c6ffd8cd858c",
+    "sdk-distributions/yuki-conformance-peer.pyz": "243808f5e7c4054fe137c2e833fbfaca0b5b3287ed7d957bc0eb482edf30dae0",
+    "sdk-distributions/yuki-handshake-preview.zip": "81be98a42e3c6366c1e34a161c273928f2156a2e49ddd4d56f15cb0e8827249b",
+    "sdk-distributions/yuki-plugin-sdk-1.0.0-alpha.16.crate": "193c220dba9da28aa8d7d678b25eaab3c489117002c81a09bd314e933ee90e00",
+    "sdk-distributions/yuki_plugin_sdk-1.0.0a16-py3-none-any.whl": "2a550d2e0f5b77c43f6b0126c54d41d556f7f42f4bcfab01dd050ee46181e747",
+    "sqlite-build.json": "4d04254cf8c87e43469fca4e10031a0bb05b79f343afce4cbbfedb2dea307ce1",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "lock_sha256": "30f81898d30a26a922ab6cba793a481a3e6eb4dd2f61a7aa8f28d5930e2a1954",
+  "seed": 329,
+  "clock": "2026-11-04T00:00:00Z",
+  "source": {
+    "commit": "ddd42728b760c03ab9c5af16c76326f5f95eeeb3",
+    "branch": "codex/core-025-host-recall",
+    "dirty": true,
+    "tree_sha256": "7c63ff4b992247f5b2608cd9aa4aaf9704b4dd6a65a655807aa6a61cbd282646",
+    "files": {
+      ".dockerignore": "de5a007bcf2302acc1edc1052a17f05a3491fcc26f0b0906a1680ce79dc7a4fa",
+      ".gitattributes": "57ec167b94b43d44c7fb18613a6d330b0b826dad0a307e5f76cb778062563e6b",
+      ".github/workflows/candidate.yml": "21200043344b4c63e12b7cbc2554a73211b2e4b93f2f5f65edaf9a01d9236e08",
+      ".github/workflows/check.yml": "ca3298a8d3f45932c521b7687a1418ee18369f25d46afd780c162fc9391f2676",
+      ".gitignore": "8a4db0f04636fbb93f15963d2fc21a16104bbfca9b1608f53c7f2801a7f04ea4",
+      "Cargo.lock": "02e527a0e710173689134165007b111217d3c612022882328bc53b695d5fed59",
+      "Cargo.toml": "bb3f0659e44ee89da4e06de2878c4d3081c4da668af2b97692b963568e342166",
+      "LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+      "NOTICE": "92eec243bb25b89d47a7fa29ce6c863a14487a9c9e1078d0538775e6ec8f5a34",
+      "README.md": "07db647505929d9fe344be7fae66cd67e4cbd9519981fd36e03f2a2577cc5355",
+      "baseline/inventory.py": "fafced73715422128d73c6c7fd51ae9552181a3697c06a03ce6b7108a9b54f6f",
+      "baseline/lock.json": "8f71b7a513c5064055546892dfa67342e42b7b31b6347049a679c004a35fe21a",
+      "baseline/profile-evidence/capture.py": "bfc38ea6cff3f7f9976aec124b1677e9d50b203ba4d51d26fc0277aab8a36796",
+      "baseline/profile-evidence/sources.json": "66c6640271bb5c833102aba955098a8b6bf08aacae54aabb289a1e56775f22fb",
+      "baseline/profile-evidence/wire.json": "d8806bc66671cc77be2ec60d6c0f6c6f93826b5c9ec585c431d47e4cb9d6f67d",
+      "baseline/qq-key/README.md": "d6da36d4041e4d0635a537c0ab0dd0c79713a716598e59583c41d90b8286bd7d",
+      "baseline/qq-key/decision.py": "255f42edb165644f5bc8c0a1ff69d8aa1973e4afd942d267c75facb8c5890d23",
+      "baseline/replay/README.md": "c0444326344db0cb2d7beaf27aae5a885bce605ece585db44d3ad035ba793088",
+      "baseline/replay/artifact_pages.py": "fd3117c0519a78f25b86483124f6bbca5a150b84d6da06f66177ab7aa56e60d2",
+      "baseline/replay/call_isolation.py": "9ee49048aaec21d1e30c59136e9109625c1fc7755eb6abb8d7e0c5a9613f11c5",
+      "baseline/replay/client_entry_selection.py": "b68f94b3f959db613e5e0b246ca302cc8efcd8a4f9593fe955450b2eaf46d433",
+      "baseline/replay/compare.py": "087969f26620de3b3a99b796ff418d162cc618af4a4b782adca91011483318f7",
+      "baseline/replay/connector_identity.py": "0ead194c656f6dfea55d5429f260ac363b8c0455feb09d34f9c6386a8741eaaf",
+      "baseline/replay/freeze.py": "6779c8de9cfe1bf09bab351243093e00a7bf29db571c936b8dfe0a5c75c523cb",
+      "baseline/replay/group_attribution.py": "c3368dec8fd99389bfbe878a0ffbd29337b0348eda89ca79908c10e1e4926293",
+      "baseline/replay/load.py": "9319e26d682480327f6ee566bc216f776ed639dd423f6dfde5d11874a678fb12",
+      "baseline/replay/load_cases.py": "9410de43cac17e126a85706490c54fee09cbe20c2b8d5b465300d09e466e33e9",
+      "baseline/replay/memory_contest.py": "fa5e08b9cef0df09dcd2e07c82c3bc8c503fe4358fa5cf3e8946b79ce3d388b2",
+      "baseline/replay/memory_metadata.py": "c3fe21f83ca02a9d7c36c8cc0bd8611065586e5fb5128646afdc8dc5a10eb3e7",
+      "baseline/replay/memory_restore.py": "54c87b2dd7d9f3684980ce2546782ac79666a69c592f8ed9c14a6d2701163e2e",
+      "baseline/replay/memory_selectors.py": "695e0405d8e15bb1bd91586cfe69b69aca4a4c9cc0ee3c40618a80104c0cae30",
+      "baseline/replay/memory_temporal.py": "4b9e851685019b7009487307ddab238c4b5e304410726564aed1e65e3a3f5f61",
+      "baseline/replay/observed_members.py": "db67e6a8c0dfd337990f3ec84c17c4575fcc47586ab57451b4129ec10ffd8ec1",
+      "baseline/replay/package.py": "831d94a2e155e6d40ab82ebe6a791f550aeba7097cabefe530b4a6f6fa4bdbf7",
+      "baseline/replay/permissions.py": "f6edb707c6f76b02895ae4d57250b5c7358cb1d5706ec7219d59777e1ce5823f",
+      "baseline/replay/recall.py": "39dbbc9da962033d0a3c38db4863c2e1a443d46b01c026ed62b43001feb750e6",
+      "baseline/replay/record.py": "a8d27aec31eadfb262974c79b7e6f63a4dc474674a028299d4583f8713a29f1b",
+      "baseline/replay/scenarios.json": "3e8b6236e740120229ba71befc4752ae1691d3a35ea2047608a53d9139a7aea1",
+      "baseline/replay/tool_views.py": "38377d47598e6ee29409c8d9b90274057312220003c9b01a81d8fcc9f155144c",
+      "bench/automatic_trace.py": "a8862612524cab4794d2d353fffa846011c0b24f2bedc9e05d1165f9667256a8",
+      "bench/compact_trace.py": "65612deee9bbb0d70c35975c28280dbe97739e0c34a74e2bbd2da4e8136dc23f",
+      "bench/compare.py": "a99a1b1b10489eb798af9ee1e1dda2891e3c9261931de0176b5c2e32893f4cbe",
+      "bench/controls/automatic_compact_case.py": "dcc2a94f7b76a280249130ccbeb3410b551dd9dbea657949415f854e4a6285df",
+      "bench/controls/b.patch.gz": "1bcdc8b3f707c160d9f10786393ff8da8f772087ead49f574af7690b35dde953",
+      "bench/controls/chat.py": "e391aa2b48bf08209231b727228cdb0c8c6247290f73a792db7df9e6bd86dd5d",
+      "bench/controls/compact_case.py": "9d7541be74a5ae75e6dd4ee338432b7ccb384654a95dfdeb60ffb4cd70c640b1",
+      "bench/controls/legacy_case.py": "29cdba4dddbe0ef27921a805fa6de48d7454000cb636d00f713f73cd645b9d76",
+      "bench/controls/long_work_case.py": "a0d839eeb0ce263e73fe40ccb3d952f65ab049f4e1ce867c56cfe05ac7eee4bd",
+      "bench/controls/sqlite.py": "3ee002ddd66f211569f0ac867924124ddaf105a7b8387b36c7891ad2e95a4875",
+      "bench/core_automatic.py": "f9d9b0115840ef7cf9688125a2cc2180f9b9b2d4206105d0b839be8ec1dd149e",
+      "bench/core_compact.py": "d38c469d9a57faee3da7ec2ce37427ac8bb70cf6fed276bb30d225733423ddf6",
+      "bench/core_long.py": "503250451d0a89a9cb6457843bca4b103c173cd302ef4e98e62c2140d26beb66",
+      "bench/file_receipt.py": "1cc256bc0a3806ba5665eee41fdef47afa85a6e628737be5ea1489f7ec30f8ad",
+      "bench/legacy.py": "45ae6a43d1f7cb2646ba4bdbfdf27c23a4b6133eab096bde29762a27c3d5f240",
+      "bench/long_work_matrix.py": "ba38646179191e88e7695c3226601ca2dff2b397638900736a3ad064e0c13559",
+      "bench/native_arrivals.py": "ad17c666daac102f65e0632b99b8370b3e8de73b57317da2f49d8d0d5b4b258d",
+      "bench/native_contract.py": "584bf829ff2d9528c23c4bddb881ce66dc669567ed4de8659c68106bfd434bd9",
+      "bench/retrieval/core_matrix.json.gz": "4b743cbf5267da896eccae7212ac36701860928afe23932e885fdca85eb50431",
+      "bench/retrieval/core_matrix.py": "6b49ce21db276066e76df9c5460b1ddd596a8608a173e1becddf518c87347a57",
+      "bench/retrieval/decision.json": "a946328ed5884f1d08678929f2b0e545a21e37f45f0649907e58b9fff72963f4",
+      "bench/retrieval/reference_matrix.json.gz": "c81acca496711ce81c4cbd33d67e662728623659a21ac25881c4d7ad3a526728",
+      "bench/retrieval/vec1_matrix.py": "66c550661770d85b30425a8ef5311a135e3de17ac148cea80358d0c2135bc6f6",
+      "bench/rust_slice.py": "60ea70a5203d37282a820f68a182712426c0e6188ef18830f551fdf9a212ebef",
+      "bench/trial_evidence.py": "b382f98fbf31a6740755276c671a25ae038d4727af7ecb1dda24068666583c30",
+      "bench/trial_report.py": "8c9ffe3dc1ffde993ece77cccb59a76229391678a648d79defa728a4f5aaf90e",
+      "bench/trials.py": "da6a9e014c48ad86a25812e2586fb8e3560ab79c194b5885a41e29b347e3d586",
+      "bench/work_trace.py": "cf9d0d995f75097b92e86bde006f0fdf167b5f4bc0df21dc1bc7611cb0813340",
+      "build.rs": "1d8db8c9884b84782f1e7812ba17f1b6809df4448cfe63e94cd7643fbe6500d4",
+      "build/opencc.rs": "69ffba631ad1d3c95876c53afaadd4c664ce114394eeb997405ddc2224cf139c",
+      "character/SOUL.md": "bc1068015afa9a3ac864a102e7706b17e2e7140181b1ba81784e9abe6b8773cc",
+      "ci/base_dist.py": "a5dae9ae39ce5fb47f3e55752d2864f3d1101110f9f656a51233f69e5c6468dc",
+      "ci/candidate_job.py": "7bede5b4f547fe277ef87dfc40e8798a1739be2bff36a13b98e989ea55a67182",
+      "ci/check.py": "ba00e0ce0f5e3bba37faec5723241919be2f76fc993579e2140e1536dd22ddcd",
+      "ci/checks.json": "30f81898d30a26a922ab6cba793a481a3e6eb4dd2f61a7aa8f28d5930e2a1954",
+      "ci/compat.py": "329a34233834236f89eea418fcafcd314e6dac6990e7f700c84fa5662b9957f2",
+      "ci/consume-ext015.py": "748244e9468baac85b19cd0701705238d9d00170925dd18cd49a78c99e7ad11e",
+      "ci/consume-ext031.py": "51e4c3cea9d7cf2ce50b9144a28e83999c012d023cab235761b8adec515c8509",
+      "ci/container-smoke.py": "e2d195547e2a66d62bd45c7c681d46a091c4a0c172c639ce356846c3113ee561",
+      "ci/contract.py": "6d55c7bc6ee03d1b946654f649d487bae18b83f9984660f7c958af786115eeb1",
+      "ci/dist.py": "4f322d31226a532f48734943497d59447915596dc1ea68cab3f8956af59d5c75",
+      "ci/docker-build.py": "77f9608f29199be207d8875bc9a76d1aced9b44ce1e02cb27ad3229b59a3f8a9",
+      "ci/host_candidate.py": "fa0f63be2e3870b865fa8909ee0cf6f300614e1d2014a4962476f69065cb2cdd",
+      "ci/local_matrix.py": "9dd5187060983c3acdad052e4427db8948a4590098b8a590d05212550986cb33",
+      "ci/oci_candidate.py": "6d47e08001588cb47921d4a8b96f0a65f270cc2a08a28a4c9f40008d36370432",
+      "ci/probe-profile.py": "32a390ac93ad9182ab2ad0cdca6f4eed7afc4978c5065f159d651106653592a5",
+      "ci/publish-contract.py": "2cf62d47e271a8bb1db52793b9205b35b3f5ebdbc17cfa1fad399e939d076c1b",
+      "ci/source.py": "fd929a8a8b855d77858b1f181f534a81d672fc5f86bda4df357bc34521fb393c",
+      "ci/suite.py": "47d5be260c837f6791b62c9c07e3e0b26ce4db82a7cd8825781e4d2d090f3321",
+      "ci/test_dist_signature.py": "130572fd9efb7e8d36cfe131ed590b5a74310d652b290f0d6c19d1fb8c7760c1",
+      "ci/test_local_matrix.py": "8808a039f338daf7dfed35ebb4ab992560f21c33eeb2571703755afa20e526aa",
+      "ci/test_personal_rpc.py": "6336ba8b07ecb636706d0533588b512780f53d88e0497aef0b2f272b03863202",
+      "ci/test_suite.py": "f9eac658572e5aebc34eb5016d7faf9b33ee3a7e09af33db3d59c560d5b083ec",
+      "ci/test_terminal_mailbox.py": "9cc6a0c8493590e587ac49db6786be9900b67f483983a30a914aa45901a230fd",
+      "ci/test_trial_report.py": "8ee0f78105adee7ddd90a925de0f829ce2d1883553af0cefbc65379a4aa35153",
+      "ci/verify_base.py": "ae90ec1b1101f3aeb7b47727933ba46fb5403de4e032fb8ae2880f196c6e38d9",
+      "ci/verify_dist.py": "79dcde55f58e3c25f8cb682e5e71722a6cd1deaa764d96eb209a685c56525886",
+      "ci/verify_oci.py": "381baff5676e44845f55b3d5e076298d780a6117ed7dba999a78d6b227829b4f",
+      "ci/windows.py": "1839707308f673ead06f29630c259aa10b9cf1374487e9b7c3fd54c47595756a",
+      "config/model_profiles.deepseek-native.example.toml": "7680f3d3de4402d1d8918086e733f2534b72bb511c52f2dc6a8be21f81ce06a7",
+      "config/model_profiles.example.toml": "9e88391a6dc554669a3ae6467be3ac9546e127da401cace248a56a4163439224",
+      "config/qq_face_map.json": "dad0d73577b919401ca35e1ff38af8d98be22107653d78b317d9838bc8106c51",
+      "deploy/core.Dockerfile": "f4a1a891d3650285ea26cc29ee07e04c7063de17d18cef2363e733a1c9f82142",
+      "docs/CORE-005-sequences.md": "160ab4a75b12caafa760da9dbe02c59daa20d6c89f1d4809c8a4982cb4b978bd",
+      "docs/benchmarks/automatic-compact.md": "53ad54960fe1de6840472ad1968b9a6627e1ad6fd4232796bf2c2e1f52cccb07",
+      "docs/benchmarks/compact-replay.md": "b586c6c116d3f231fe0dfb9c3d11cd0a14d27a7cdd9c09888ec38abb419c2f78",
+      "docs/benchmarks/long-work-matrix.md": "f0abdbbbef2e73bfa4f9adc7c55ba73ba4bb993d1ca684df1098bcdefcc457b3",
+      "docs/benchmarks/native-arrivals.md": "ec2a9d770043764ccc93f4391e7ed35c329cec3bf5564716cd1235de405bea0c",
+      "docs/benchmarks/retrieval.md": "41c24c823f31eff7f61bb9c51282b4be310d64aa0ccab581da8b53e7dfab41fe",
+      "docs/benchmarks/slice.md": "7734d4b21af572589aa03f64ee91c74bcd5d8448c8b6f1b87516113a4e6c1bad",
+      "docs/benchmarks/work-replay.md": "cb7740d38c5ecd0bf2051eead2e3db8710e01d3a1de7dfb0f60a1cf2c207c5ba",
+      "docs/client-entry-selection.md": "7322bea742997b99386e2258faa4352ff0061bc52209d1d2da58069f4a0e60ff",
+      "docs/client-stream.md": "7cf56352606cbba521b2cdd03de3ae9cc856173bcf09a3303e24ef2965f69b8c",
+      "docs/client-upload-receipts.md": "9341f76579a049471dad55210aad91283ac0af38874a44acc73a64d3d6d400de",
+      "docs/compact-capacity-fixture.md": "d009ca5c17bcfdea3cc0fb3735c8b2a1906a7b976721e6b9990419634b0ebea0",
+      "docs/connector-authentication.md": "d2847e2798ead65b4b8e423f3245b76a30d7514c2682d26a580a98d33fbf61f3",
+      "docs/control-fixture-timing.md": "508796fc80780800b8ce8b15059ad0de47bba5728c079d869aa69e8797b7fa8e",
+      "docs/evidence.md": "4f5e215792cadfc7387d9b891d68768b1f91d06db99ffab0c9871ec8ea9e45a0",
+      "docs/external-search.md": "5d83778b1e9a6f8539bc713b49fa8b19c628cbf39ac8d6f9e60ee0e5f5d9e18c",
+      "docs/file-send-receipt.md": "b00bf6064c1e4fd0079bd46196ce34aa6ed9cbf19d0aed6111bf69006b21d403",
+      "docs/gateway-inbound-media.md": "0de6d3f4c6706ceffa1e46557cc3b6483b0858734bc90cf3cf7a23b261589f7b",
+      "docs/group-attribution.md": "91e3c9b90e74afad4fa87ae225627d2db08c6a441a1b5985dfcccf0373ad7840",
+      "docs/implementation-evidence.md": "97f4d07b67e55f5f3f07ba76992bf0388b73bf4f465f631e636329b56d21e3be",
+      "docs/implementation-progress.md": "3bfd264c10ee772ec2c9d7158127fda59fda48b08d4128c78057415372070db8",
+      "docs/import-inventory.md": "08820ac95a40da9dd44dad4d08b2594ff93151b6131cd8a671072a6a431047f9",
+      "docs/install.md": "3da385bd6ff62d8982589b5d2cf283e545b7707eeec05061132423d6eb84ec0c",
+      "docs/main-selected-media.md": "ea7108283b6226e84d99a696c9d9bda1a7a52af47e441782bab750c4e6e63619",
+      "docs/memory-contest.md": "72e3f9d033f2c969392ca0c3f17a930cb6aa64c1c81b6e66aa8dce0b05378180",
+      "docs/memory-group-reports.md": "bcf716603466011430ef8eb2e94bb7f3fbf4c9be4f1e88581cb5279cd764d2ff",
+      "docs/memory-merge.md": "f77d4145840df449f978dec8d499f8fefb52788d2ce61ecce6c8285521d21db9",
+      "docs/memory-metadata.md": "4766ad690ac28a1a8f49e678c1974e33cb0d091e2b74270417e6b0c11326a001",
+      "docs/memory-restore.md": "106959010c56582f83e8282c838fca37b90b02f11c70a44422863402f92e36e6",
+      "docs/memory-selectors.md": "9af0fc73df41d0d174380cb0f126df5f6a8b2a26c5e7adff5507108f70d0527e",
+      "docs/memory-temporal.md": "69d4b0256e692c7adf7aea09cb45f933554640b1b7cc30660d4f623bce894081",
+      "docs/model-config-import.md": "e00b1130c63c78603d37f4718331d48a3b400d9d497ef42b91c77e2ac320dae7",
+      "docs/model-profiles.md": "b4783bffa8e62bd2e7d8e519f557195ae65940ad98712710caf73f372fb9082c",
+      "docs/model-send-receipt.md": "cb515bdc06e3ab2ec7580fe2bcf85d2e92571dedcbc43c4bb76c17f1cbfc1c84",
+      "docs/native-web-search.md": "dd352007c360cc6d788e9a0d311e5deca7a9f6ddd218a95da838973e1fdf3355",
+      "docs/observed-members-compat.md": "235c20085c669c58c2e005cbdd194e834b83211675e7edbc3f1764e72a8d571e",
+      "docs/original-tool-views.md": "bfdca127e7982a56042eb60381f6bbf649fcfb8cc74aaea49793841ddaf416b1",
+      "docs/owner-erasure.md": "f4fb92a648e86468b795b9ac1e12ebe71e3b91d9dfd747e207e334a39ffd28e5",
+      "docs/permission-directory.md": "57ebeb69f483e9a5116aef353f16053a76e5b1e282fb68b48c22a9e59293c46a",
+      "docs/profile-evidence.md": "528e8f797547f703ed6e77d2301941cbe8a08e587b4fdbc64bf9861f30849dfe",
+      "docs/protocol-v1.md": "72af3e1b92d8c5bc702ce825874d3bc59fdac864e8d2c64b15db19710213b588",
+      "docs/qq-ingress.md": "247c307c724f3b23f8c47a5cd651efc1bac0ac5fbd26e206c82250809397a730",
+      "docs/recall-compat.md": "fc621b4f41f7537863be5471396e64f70db597509d8409754f070f37e36b72e4",
+      "docs/social-send-entry.md": "a63c4b92049bd35ee91703aebda87d62f530d5557843a06958a2971d8bc04003",
+      "docs/taskbook/v3.2/Yuki-Rust重寫總任務書-v3.2.md": "3599085dd5d9719273c06374fe211afb2122fa4a62a0fcee0dc924327de738d7",
+      "docs/taskbook/v3.2/audit/README.md": "541432522dc9c83eb71b24786e02547ad40c0a4b23fb780919c01266790d09fe",
+      "docs/taskbook/v3.2/audit/check_snapshot.py": "4ed346f5624517a90065f7695bc880bb74274a66dc0b2cf1e4d8e96f40e10233",
+      "docs/taskbook/v3.2/audit/evidence/upstream-connector.zip": "979a2d14fb1886ead0e4db57b405b077f653b5aeb3c23f5cf8fa1d1bb7ab8ef9",
+      "docs/taskbook/v3.2/audit/evidence/upstream-headed.zip": "c8f8c924f43fb32629fe00feb5a3824344dd7ec38f793641b32c55bb5f95ae69",
+      "docs/taskbook/v3.2/audit/evidence/upstream-integration.zip": "44ee180125e155fb7de2e2d06c4d59c4be3b62e514b11d71e9a4aebc23cb1189",
+      "docs/taskbook/v3.2/audit/evidence/upstream-native.zip": "c1fcaf4bcefa4b26d4f5245110d42f8bc2e7c6ac37bce69e8c2e83c50acb6cf6",
+      "docs/taskbook/v3.2/audit/evidence/upstream-unit.zip": "a62edfcca7c2e8bbcbbcd1886b90d9f2207c8f83575c86d448923c8888473a17",
+      "docs/taskbook/v3.2/audit/evidence/upstream-wheel.zip": "f8938d72c16806b9475cecdda727bc43965900a8df85d67ba1a05fb8e358dae6",
+      "docs/taskbook/v3.2/audit/inventory.py": "42b3ba375c2566387149e38109e6fc6b3f17bc6b21c9b4e677ee4f823ba8f9fe",
+      "docs/taskbook/v3.2/audit/reconcile_coverage.py": "093348eaddcfb0bfe92c983de8c1fce7a82f61b89f1d8a1974df5485e15bf5f3",
+      "docs/taskbook/v3.2/audit/results/adversarial.json": "145bcec9b4ad3ce71a9cb5ccb5a76b56263f15a785d3c55a1b4cb9188c8fcbc5",
+      "docs/taskbook/v3.2/audit/results/ci-members.tsv": "04da650fcbfcfe7df78d638118bb5528dd5a3d445062b5f737c9c68508b422c2",
+      "docs/taskbook/v3.2/audit/results/ci-source-proof.json": "16153e3dd761238d19fcac436d4022bbf4dec4c606b65acc637e42fb9664c465",
+      "docs/taskbook/v3.2/audit/results/core-doc-crosswalk.json": "ec6b354c279185efc1c1672266df36fb34c5d6325058fbcf3b071a02c9ca425c",
+      "docs/taskbook/v3.2/audit/results/core-review-check.json": "d4ceb20622837feebc80eddef6b793e6e1aae512034880deb3201ec8b41050aa",
+      "docs/taskbook/v3.2/audit/results/coverage-summary.json": "4ba125d32dfd9feb3849b59ed7b6c68f5c2eef30b8f3bab32399cf5f82118a53",
+      "docs/taskbook/v3.2/audit/results/coverage.tsv": "81e88257705a31e64f5934c413a68290ca005dbf53ca5cec5b7adf952f5126aa",
+      "docs/taskbook/v3.2/audit/results/delivery-sha256.tsv": "8cba666799356a6553251a151fe6f7bbe28697596763bcf7b2030f941927b3fa",
+      "docs/taskbook/v3.2/audit/results/docs-top-level.tsv": "9a32d8ab61ec979747cf3c84e604a090eaa61db4ef7e3dd4ed8717029c193f67",
+      "docs/taskbook/v3.2/audit/results/package-loc.tsv": "7ca1368ba91425913b1887eff46784f4c45c659c1e5b003a6a8d5943d216d065",
+      "docs/taskbook/v3.2/audit/results/plan-check.json": "8b60075dadf64e893f93a7858b37f1a82b4e6e48121d12198bd57e3e8c763875",
+      "docs/taskbook/v3.2/audit/results/r2-ci-members.tsv": "ea88daa466bcd8081357de62d89487ed0430aade3c9d938a856bd5216edcbcb7",
+      "docs/taskbook/v3.2/audit/results/r2-source-proof.json": "70799b448dcde569076c855e187e0468902de41d855ef3f97d7dbe0e35f0b4be",
+      "docs/taskbook/v3.2/audit/results/snapshot-selftest.json": "f1db4842fa99ddcf004eea68ca971259c22fef4a6051e3937184b66f9a023427",
+      "docs/taskbook/v3.2/audit/results/stable-ids-coverage.json": "fd1f8685faa5a5c12758a4ce3494c155bc04b5ca1f6411279ee30de7e8af1efc",
+      "docs/taskbook/v3.2/audit/test_snapshot.py": "af836c3fe55d2c94106af4fc24326a1f3408f62d9091085a39a51bdfc36515c0",
+      "docs/taskbook/v3.2/audit/test_verifier.py": "52df60dd732338aa41301299e8b185b4995fc523c95ac46e95e286cf570b8880",
+      "docs/taskbook/v3.2/audit/verify_core_review.py": "cb46ceedae3e11ea466711b34350e2b54e4b6f7b79e7ed081e25a8532035a32f",
+      "docs/taskbook/v3.2/audit/verify_evidence.py": "baed255ee595694a68303195f529323da19c0bca3cf175fb338d5c18ac478acc",
+      "docs/taskbook/v3.2/audit/verify_package.py": "ace1e1f8d70bc62b7f8ad45c8c60e334905a3993e72408a2d76fa8340c164d76",
+      "docs/taskbook/v3.2/audit/verify_plan.py": "c0df8f13e1b29502b8189526d67aac6a92c74dd55aea101002accbd47f353de6",
+      "docs/taskbook/v3.2/audit/verify_supplement.py": "d470dcd040f76edbe636c7e9d93ac99a844a87fb28877314f56609db0ac9a789",
+      "docs/taskbook/v3.2/全量文檔覆蓋與裁決表.md": "e78b7880dab6d38eab2023e4b80f7b72c891826a17d332dac180f354ec04bfe8",
+      "docs/taskbook/v3.2/擴展倉庫-提交級任務書.md": "853458026422dd21edcf3bc4907cd23a2ac993d48d4dd8e91e6be26e86d4d6c5",
+      "docs/taskbook/v3.2/核心倉庫-提交級任務書.md": "fef0099cc2d284e4bb108001b7af88454b6da7121476f9344df4240a9083cca2",
+      "docs/taskbook/v3.2/跨倉庫依賴與驗收矩陣.md": "fadb19740c323356edb2365744675bc85ca322da7949393324321156d12553fc",
+      "docs/terminal-work-scope.md": "f295e2eff60c1a4fbcbf7ba2206e8e0b7fff3e0c4fc334f211df2d855429772f",
+      "docs/tool-artifact-compat.md": "77b8e5fc8982460e8f0bc9fb933d9411dc7207625d654ffdf724a18405cc41c9",
+      "docs/tool-call-isolation.md": "ab4825a757cc04938d98b502d7c7223bde07f81f5862b38ada73d78153ddd194",
+      "docs/work-segments.md": "4afbc77fa6f828da8f95dacb4e1c0a6e7948995c18c8ec0bab89f8ad342d5d7e",
+      "fixtures/compact-exec/capture_v4.py": "fc9f1f761bf4704db8ec4a2710683bd85da1933ad896a1f0c50ea882cfe5ff06",
+      "fixtures/compact-exec/cases.json": "836a9d644d0e097ac67bbd5b7385676289c24ba9ac9c8f14cd137508238e1f56",
+      "fixtures/compact-exec/v4-rounds.json": "05d85fbadd8fdbce04e09740265ce9a6868dd75424643c330089736bc78dd658",
+      "fixtures/compact/capture_v4.py": "b10fb400c8f16a6dad6f2c9feff226bbefeeb8c7487895af72158b14e71ff816",
+      "fixtures/compact/cases.json": "4972e7377eb8c38c85cc65cd6745cf82c8014aea0849bfcd6e6ace9fe6adb8a8",
+      "fixtures/compact/v4-automatic-delivery.json.gz": "b0d5e4ccdd2814289fa06e4d65cfd4e48bab718d9c8be72508a4d13e07681638",
+      "fixtures/compact/v4-public-plan.json": "a76c31c2455db0e3a70c3fcd84009dddd46ec2730c0507f504ee98129227344f",
+      "fixtures/compat/ext-067/base-consumer-witness.json": "d735e535b30c41c32fc62ade3b5ae3863c9cbf39404856f3401640b7544034e1",
+      "fixtures/compat/ext-067/confirmed.zip": "7b1dc7545f6086777e4c11682ee0a0b745e5c2b9d4ded507fedb466e538c63ba",
+      "fixtures/compat/ext-067/erased-readback.zip": "ea57bd8b31bc669828e797aeeeedc2d20ed9f157c03908a53986f5886eed1da5",
+      "fixtures/compat/ext-067/lost-second.zip": "7f0f6f6455dc3c753f5f8084afaf625364ccbf8091a35835e03688dd68f1bc6b",
+      "fixtures/compat/ext-067/manifest.json": "95559de9ff5564121122455bc190e481bf4c276db8aac35b24555770d77d600a",
+      "fixtures/compat/ext-067/missing-method.zip": "3505f8705024ef33a02f67460a2df87d6b6db6b1a1844ad73135bfce10e72f08",
+      "fixtures/compat/ext-067/revoked.zip": "c0dc3323fed5df8f2bfef8e34edfccdaeeed737dd90036df86cbf40f8166db65",
+      "fixtures/compat/ext-067/swapped.zip": "487db4470d4fdfc272505626fd03a285110734c77706706c0c6aaa64bac5221d",
+      "fixtures/compat/ext-067/wrong-handle.zip": "aa0cfb30da4a7db56bbc342c61f308de8703216d83abd66a8fa20d7e49e2be3a",
+      "fixtures/contacts/v4-declarations.json": "cd4c0c7a5b04ef181994ba657a3ca21bb719ec5f6e5dd5dbfb17d83d2a1348c5",
+      "fixtures/control/v4-permissions.json": "3057c159928be581855b3f1068ef3e7b8d55ed070c24d8ce580bf9f4652d892b",
+      "fixtures/dist/acceptance.json": "35f554224f5697ea5d4426baca496959b425d2ec097061df24c88bd60e4e480b",
+      "fixtures/embedding/capture_v4.py": "44e060f1455e4ae601f2ba68af0d8fc7b5c040719811e689007d44081a06e762",
+      "fixtures/embedding/cases.json": "95940b172fe2b7edefc86d674af639df8f225c6156b3dbdba536ddeb69e22743",
+      "fixtures/embedding/v4-wire.json": "c1048e28c346111b0848856879d06e1c69f51dd87a3e448da1bda8229fde7a32",
+      "fixtures/extract/capture_v4.py": "32b27323b2da3736c46528cc3f2ef40e9efc39880b106a3ca9635b7f8a9c2da8",
+      "fixtures/extract/cases.json": "456414fba7f93ade4a6eb5c4fda0b2fa39427eaa20b9ec9243f84cbcc19edded",
+      "fixtures/extract/v4-batch.json": "660a70d48606b1eb3429f3ce285b329daf634de1af45fcb559f2ec51b1777cb5",
+      "fixtures/forget/cases.json": "e34f5b30e4f24755daf37273f177ba935a9bd3f2b2749f1bed064ff98f684f6a",
+      "fixtures/history/capture_original.py": "88de9a04ff5e70fec723d07b1e97b6567c232ca725653edf8463899b9fa46214",
+      "fixtures/history/v4-literals.json": "d424d8fbd101e1911c3e4809a48d398e6f01893547e01116bd7c7d14de121c1d",
+      "fixtures/history/v4-original-query.json": "75c6e389ddb5bfebab6ace552a14f882f7f612c69cf712b626cf936d8aaea6d0",
+      "fixtures/history/v4-query-declaration.json": "0bc2964f526711016cde92d51abb71a753884450341b40388b2fc6c666aaa940",
+      "fixtures/host-media/cases.json": "1dfa63320ade2a8fecbec1fe5a66a318aa7cd589136b99b7201a26ca29d49b53",
+      "fixtures/host/boundaries.json": "2d986f7c2bf30d597fbf667f346d189a8aad9bf6194d1341fc13620e4907316e",
+      "fixtures/host/terminal-work-v4.json": "bdd3a300f9b6e7e57f7dea191e07010b856ba7e11b5ba37e5be67dfc99fb51c1",
+      "fixtures/media/capture_v4.py": "4f86b52b3b393b09f3b7a10c9648b2b573b9e8639de720a9fad41ca0a956e86b",
+      "fixtures/media/cases.json": "6c7e9118bd725307726dbd7957dcc7f96d1a376112434224b4521b23ec560883",
+      "fixtures/media/ext031-windows-main.json": "7cd4bd04b64965c9435abcbbaed6ce69b6acc0c6e5127d6cab4eec37db9b25d0",
+      "fixtures/media/gateway-media-v4.json": "87db5d65ba799394d4f8c4aedd3a39003663e2b97d447f71ef0f744eee7b5826",
+      "fixtures/media/main-selected-v4.json": "51b8f8f8c153ad69d44a6ecdfe7c1dcfbd40f2abde857da6d63e8afa8f878cee",
+      "fixtures/media/v4-index.json": "103d4ff5a30b30ddd31c19b0d17a68edc48f9faa5728be651ba74db589cc9cd8",
+      "fixtures/memory/fact-cases.json": "6fa962806a14c86fa8074773bab987f2d3b327170c33d714c2ca7f2b786ccce2",
+      "fixtures/memory/reader43-metadata.json": "269c3d67d7191fed48b4a2bf663c33ab8173c9a7409b8a76e5f075f3f736aa4f",
+      "fixtures/memory/reader44-temporal.json": "b5557bf867df0223ca4ae65a5ecce8c4c75b34dfe49804ae2993c3c10fbea4b1",
+      "fixtures/memory/v4-contest.json": "110c12011e5af7ab2c059f4857fc3b5316d792d6da2207d649516404cf4d69a5",
+      "fixtures/memory/v4-create-arguments.json": "52f4d2657d902f34a7d03d2a92dbcfd817e926b43fc844146357350bfa65921f",
+      "fixtures/memory/v4-current-group-report.json": "84e73464d7e1837c9cc85a3d8badd2c8c375265883a968b502b8a1fe3b905367",
+      "fixtures/memory/v4-grounding.json": "755319925d093c2c14173f5380231160d0fedaeadc0964e08296d5ea990a09f0",
+      "fixtures/memory/v4-group-attribution.json": "4bc27d5d3f81135f9d502bba300b3080b515b11120c6fbbd844f8ad16dd80664",
+      "fixtures/memory/v4-merge.json": "fd2f1a4933fff25aae3d036a3b426ca335af041671f26a02cc5e54708c01d4f1",
+      "fixtures/memory/v4-metadata.json": "9a01b0048bc0560663e3eba7f5f6cc154ac38d3e5281e197a62a62ed82f16bfe",
+      "fixtures/memory/v4-restore.json": "655974385d0d840b5c1fdf30a77e5233db4511a24063467175900b02217097d6",
+      "fixtures/memory/v4-selected-member.json": "bed95744cb84570ce4ee18cd07377c4babbe7d2664ac7b0c8e133ee7b921601d",
+      "fixtures/memory/v4-selectors.json": "4d79864b61c8b1f55433b55355585397b04755389058aea2cb4853a2d9fd2e38",
+      "fixtures/memory/v4-temporal.json": "5a40c442fd5c483ed58ac7cf7761728d774629e299324f9bd2edd8f31be5f480",
+      "fixtures/oracle/v4/arrivals.jsonl.gz": "b0f779f667572ea13d84a99b2c1bc12c2222d9a994a1bef9b8a5b9635ce2a860",
+      "fixtures/oracle/v4/file-caption-receipt.json": "9e7b35311f568e86e32598fc17761143ec0f97e07826dbf0d05d186981e8f710",
+      "fixtures/oracle/v4/first/run.json": "20698484bc89b1ab35fef6bfa1601caede7e789126895f4d5af473ec60fea22e",
+      "fixtures/oracle/v4/first/transcript.json.gz": "5c66f844f31c1523d537cd8f11409493fe47d827477d551da6d39e8cfa51cb36",
+      "fixtures/oracle/v4/load.json": "d12853830c45fdf0b39ba2496e82a16d3580d66ebabe10818f5d1931a415ebd1",
+      "fixtures/oracle/v4/long-works.jsonl.gz": "f47d2d5f3fa8e6369017d3391d3aa4b0a7c28a97cdd7f442059d55e2f701f6e3",
+      "fixtures/oracle/v4/material/config/SOUL.md": "bc1068015afa9a3ac864a102e7706b17e2e7140181b1ba81784e9abe6b8773cc",
+      "fixtures/oracle/v4/material/examples/plugins/com.example.echo/plugin.toml": "11ada43d31c668924058f71f15fc717188bc0bf398730bf3f03ebf68c2cebfd0",
+      "fixtures/oracle/v4/material/plugins/subscription-monitor/plugin.toml": "7ad11867df00c9023f62a327f186c00b3c6279a21ced86e487b111d7e82c54d9",
+      "fixtures/oracle/v4/native-group-contract.json": "c23f7b12d4f8ea4af8ff966fdc6909d681f1e77f8a7de6bd6e5c8531ed9f0dac",
+      "fixtures/oracle/v4/second/run.json": "f1532e5fd8960d1ffdd0532a2f2973bca3b2b9e77de12aa9da2f01549ee60699",
+      "fixtures/oracle/v4/second/transcript.json.gz": "5c66f844f31c1523d537cd8f11409493fe47d827477d551da6d39e8cfa51cb36",
+      "fixtures/oracle/v4/two-public-checkpoints.json": "4de74c3fb04db0bdeba36015637ec2fbf18ef833bacf1cd92184750c8add3b76",
+      "fixtures/oracle/v4/work-answered-question.json": "bf4219b4b52668bba5680d01aa0ce6caabd9a7cfb7a6d37bcc7d84327529b9c8",
+      "fixtures/personal/cases.json": "6ffcb5675793afde47ecd2ffdc2b50730543345b90b1f675ac73a5aa46a34565",
+      "fixtures/personal/client-stream-v4.json": "f3b0de197674c942cf6fb6e43a97fe06fa1278a208febdd98786509ba19e425f",
+      "fixtures/personal/client-uploads-v4.json": "d154c8c38567a313374b626c3a2abf29d68b2edb6e5cf2ad04dbcff072f517ef",
+      "fixtures/personal/connector-identity.json": "121958f63b11851e6afe2dc530db76a9b25be0dfb03321ce3942c4a7e0968a4f",
+      "fixtures/personal/entry-selection.json": "7f6b533a233a4ab1885f3134b13b3807aa1564211da76985cc12a8961e0d94fa",
+      "fixtures/providers/generate-content/capture_v4.py": "e64bccc7c392b0bd64f83dd322c45c674151256fb242d63ddadd4af1e29f08fb",
+      "fixtures/providers/generate-content/cases.json": "0df2b431aac05a414cd2cce454830cc5c2fd9e508ae2acd404048983e1343eef",
+      "fixtures/providers/generate-content/v4-original.json": "94898cc1d63293b003cefa1fa29e450412d1367a57c0e6a1764b71f986d93224",
+      "fixtures/providers/messages/capture_v4.py": "a185c8fe0cb6d0cdf055d23e9011014ab01214839b53ad80ac20e37b89f2119b",
+      "fixtures/providers/messages/cases.json": "2adc6175574013e6bb67d980462837445ea73dbbebda7cd5d45779c770d37a78",
+      "fixtures/providers/messages/v4-original.json": "41f16badf2b5c25eed307f2a291c33b828bbab4911bb1d2d7b365928444ba203",
+      "fixtures/providers/responses/capture_v4.py": "b66ea4a86846698e943f9dbec7afe9e1c0dd9943442b717722a3a5fd57aefb03",
+      "fixtures/providers/responses/dialects.json": "1b265be5f82b35f13b5cea95d575888b1276266eb2443aa5f32eb7145ac8c918",
+      "fixtures/providers/responses/v4-original.json": "9413c2cd3780eb0c463d6e7921269cecea672bbf661a0c579833528223a88df3",
+      "fixtures/qq-dual/deployment.json": "d0ed0e3e9469f5bf1a75f28825953ac5b8e327af19fb6d33c17524ef74fdd75e",
+      "fixtures/qq-dual/rehearsal.json": "dca76898991164ecbf3667cdcacb84bc06862ef0faa60b8198f2f075aefabd29",
+      "fixtures/retrieval/capture_v4.py": "e4dd8274245cef7c8534f1480e37843cbc6b12a23eadafc4ee750a4f22ded83f",
+      "fixtures/retrieval/cases.json": "8bbc41fefda35186f8e02222d92f52bfc99ffb880d2c01d7eb6232ecb50abb78",
+      "fixtures/retrieval/v4-gold.json": "07ddd860a1b80f5693793613daab3d6141057ed02a3be5653eb1e5b54f61d304",
+      "fixtures/schedule/capture_v4.py": "38ab0589846732298ff6fce43aab14b5bc582ed5d0d27d43c64ecc7e66ab9130",
+      "fixtures/schedule/cases.json": "922e9e0a6da8a4812c0c21856e63cfe17e20246e84cea2d5b9217fd45c389b38",
+      "fixtures/schedule/v4-clock-tools.json": "5a1bbf6e7539b735ccfde14aafec3aff35f68f360463221bbec5a4e3f12fbaf5",
+      "fixtures/search/capture_v4.py": "1f1ad7d1eabdb016d3508f1ab0f69fbf0036f560b5aa0a6c018f5e8fa5355f30",
+      "fixtures/search/cases.json": "30cb2457280bafb239fd1eb23045eabbf536df6b5aaf0933b764b5321084070a",
+      "fixtures/search/v4-bridge.json": "9d2ec19c7fc4eeb2176b7341058fa1370c5368b4d86143b65fd82e40dd98172d",
+      "fixtures/social/split-gold.json": "e9de54bbdfe5b1897d0f169eff6bedf0d2ce1ea3e8c1634a248a9c9cbd454781",
+      "fixtures/social/v4-members.json": "72a7d9c67f7e26a7c09897dc04d103d13eee45f68d6142508aece6c5c32a37a5",
+      "fixtures/social/v4-model-send-receipt.json": "a2a9f84246a77d977170ce0fe94a3f2e51ad43a3293be854044399e51cdd36bb",
+      "fixtures/social/v4-recall.json": "77880e4b37f841c77ae4205e0c7924e8bf36c4949c3fc1a3fb4f9842f01008e0",
+      "fixtures/social/v4-send-target.json": "1b5dfc6b3a147df50e521a07b8419ea5152afdf9df7657f29e040ef58db76bb8",
+      "fixtures/tool-results/v4-call-rejections.json": "dc9b00a7819018564def4ebe37235d621bcd85033d9de74467fcdc89a3cd7113",
+      "fixtures/tool-results/v4-original-declaration.json": "e605c7db6dc51d813b031fb932302b9e6f5c0c384cb3ec83bb282efaaeddc6fa",
+      "fixtures/tool-results/v4-original-pages.json": "dcb699b0bf7e99b2fbbe9503f7e5d90576da7171778410e8c8429c88ed928732",
+      "fixtures/tool-results/v4-tool-views.json": "9f1b51a22e9b7e1925224d4394aad506e81ca6cf1b9c9bc9b6eb4cd3a6dd547b",
+      "fixtures/tools/contracts.json": "cd6ac6fff96b8db9db6779e54d2a52bf62eae916b28f2c317507fe47a5bbdd5b",
+      "fixtures/v4-0156/create.py": "5039913dc413a021db57fa46aa052dbc68d356d2404a48c8d30a738e324e036b",
+      "fixtures/wait/cases.json": "192a86280bb5b7b6347bdc38ce9979186f9b94dd582ceb1b0398f525a69530d5",
+      "fixtures/work/settlement-cases.json": "2704c1e75beadb84893877cce8a8fffe0c1619e7ad680bb040e1eedfb95acb8d",
+      "migrations/0001_meta.sql": "d41fd010b2cf926e74f7939eed842170e8be9d994c7ef9ef83551242d95905c4",
+      "migrations/0002_person.sql": "ae2099829ece7c717630fc50549e5b01d7a5e25da519485a83e806e8b98766d9",
+      "migrations/0003_entries.sql": "aef88e196d636b63848f82bf43551adc1c298094cfd9a399956c5d4999b8f9a0",
+      "migrations/0004_ingress.sql": "9d4d13403cb3d612a01bb9956a71d3526d86ebad5e1892c234ee645c70f0b6a1",
+      "migrations/0005_effects.sql": "9759a99cce855fca2f103cfa9aa5610a0c486265324dde4232ef8004c1b2cd75",
+      "migrations/0006_runs.sql": "939d95a153f81b15c4d37f94e16ba20f54fbcdea449dd135b0592cdc17ec5829",
+      "migrations/0007_privacy_source.sql": "e046a14fa391498a2b2af71472fa8f09813c95da6768a8ec489c496fe507a8ae",
+      "migrations/0008_group_recovery.sql": "505c467d6590e988237dd0216d7a09598f8276acef765445ba2428199d561581",
+      "migrations/0009_main.sql": "bf2ce7c45b46b82f1adc68bc43d0ea3997c57070f08bc10597aeabe772c8f762",
+      "migrations/0010_delivery.sql": "3e98f2a1372113a33332b55bb6b77180cf1317b6ff75bfd834990f0a28ddcbfa",
+      "migrations/0011_history.sql": "762011091cb82fbc4901cd6f26648f0756b0eece0ea5af8b48ed8aaffafd9463",
+      "migrations/0012_tools.sql": "f68295272bcd72cd63594653908d42511bda882c3816f01b72586a1f1cc24e15",
+      "migrations/0013_host.sql": "febf1874d569ac38880a75018d1bdca2edbde4f096fafcbe7bcd0b081ef344e8",
+      "migrations/0014_work.sql": "55015cf4de75e0f660c23017a18bbf15a4235199c5ea32654f1f9f25664b5b53",
+      "migrations/0015_facts.sql": "81bdb7c03889303de1a2d59393f65c4d4922e272bec4bf21736384ac9e2699d0",
+      "migrations/0016_wait.sql": "d96d8557577f62ad6ed85f340a5faeecdd44222ec399b8ae7e75df212b515f38",
+      "migrations/0017_fragments.sql": "e56523216ec7e6a24c82b3b6b14ff5703bbb428a42e46c0faa4f56b475b0a113",
+      "migrations/0018_schedule.sql": "de3157395840b8f1274a2ccd8ce8f711d27c99b93f1b197fe173b99e9f93d7cc",
+      "migrations/0019_execution_compact.sql": "964b68da7117e5ea11b0feadaf245515534e62d204c3f77191cab1df5dd19a0b",
+      "migrations/0020_extract.sql": "35d056ac33273dfa9a9ba280fb1584c0686d5210f76311dc3c7c9563d23a4b92",
+      "migrations/0021_media.sql": "5c4c72af7fcba95938ac95e38031bb9394983240115a6e8e9070f60a455f2886",
+      "migrations/0022_vectors.sql": "10705a747184b40fc6bedefb1e53ea79d2c91bc4b58ad973475e24bd2faccefc",
+      "migrations/0023_devices.sql": "39e645460937f89a72198d5da6f2b558a18af700ba28621890bada7c6b426c7a",
+      "migrations/0024_retrieval.sql": "d7be0ce96846a064d94f2e889ba8681ea72ca5b4cee2ea2204170ec60bd790f0",
+      "migrations/0025_personal_delivery.sql": "948cc33c62e781148732c570737b6bf3baa2098b19d4db56b6f0c34597c4a610",
+      "migrations/0026_person_forget.sql": "e25e108e21df6a4ff2ae97dc00c201639114018fb1dd730785325b07227bd02c",
+      "migrations/0027_host_media.sql": "fbdf3e0ba9df82e61d6fcfd6d935ddf6f0d6dcfae843b37f9e7998c046016079",
+      "migrations/0028_contact_directory.sql": "27f4a4a20cffb9a962ac8097f321123f43133e2f470e968d95ed97b7a04cd0e9",
+      "migrations/0029_work_segments.sql": "6bdca4162860c23aa207acd86f13f861765bc6e14cf03f5d2411e9557d83aa5a",
+      "migrations/0030_code_composition.sql": "060bdff1011fa7e112228e648d8aa27d766db34bad31a2956653c91d29c2f27b",
+      "migrations/0031_aux_model.sql": "24c8c806f5a558884048b8b9eda4f5636e85ebe184dc52f98e5bfb26813b5318",
+      "migrations/0032_participation.sql": "bd23809d16a86ac27503e357efe8b5b766ca78bf99a8413c7424286f77ffc983",
+      "migrations/0033_maintenance.sql": "c2325635d637d4c2e4bdf175f98b2973483bdd3e78ac2925173da336a6d5143d",
+      "migrations/0034_plugin_sessions.sql": "34c6756043f6166c4638c519f54769bf97eb78a02d95a5e0fdcfc16df34d2030",
+      "migrations/0035_notifications.sql": "3a6b88100650fb31058ab837a6b3a4a2785446bcf34fe702f12abae18a7d6c2a",
+      "migrations/0036_control_trace.sql": "691c86ef481bf47f7e3e133abc8fb583d9302ea6f161b2508c5059e2d05c7c69",
+      "migrations/0037_control_identity.sql": "cb732da7d2ac2603cac75d0d8340771d481bd0700b5b494a897304ef8186c1b8",
+      "migrations/0038_model_usage_dimensions.sql": "3da4c258f7c38a62977f3fe79b4d2b553121bd6d3311d692ad6041060899dafc",
+      "migrations/0039_presence_ingest.sql": "3197dc040b41ca2dcbd3593290c94145a0fd8fb8dc0eed59d95349158edd0347",
+      "migrations/0040_work_management.sql": "fb628be8b6d8e510e718a9f7044ac541b75ad2815fb53ea1ef7c295ae7196ecb",
+      "migrations/0041_notification_retry.sql": "c5974563162dede6950078531c66345243cb738703fd00c843dce0fb3d7af3af",
+      "migrations/0042_public_history.sql": "37846258ebd27fbacaee95d47cccb5e08abbff8c0501303bf5842312d67554bb",
+      "migrations/0043_model_recalls.sql": "a0ca9ed3448835eff6db69cc0f8389d60944752b82af431660ad85485a7d143c",
+      "migrations/0044_fact_metadata.sql": "174a7d459c10327973ec0e18adc5c8ed8707c0915384da9935b082a2ccf7c7f3",
+      "migrations/0045_fact_detail_erasure.sql": "66adccc0b08988af5780b02b60a021a864de46e56b81de73fe600d1b93b2b4c4",
+      "migrations/0046_connector_authorization.sql": "cadb197166427ef26fbd0d1cbd62dc23d0e45b8fba8a529fd2412625313fc04e",
+      "migrations/0047_personal_entry_scope.sql": "8f9a4ce509db20ae36a5b8741dc8253ff4576d18017095c1275c83f1b1ac5756",
+      "migrations/0048_client_uploads.sql": "0b03f3adb25d2112519f28c29d7ba663f6e8528a0fd5452b26c98ed87f5cbc8d",
+      "migrations/0049_gateway_media_origin.sql": "12456d022db784b1fd2279e6d395935f92eee0c45a5d386ab673313703bee79c",
+      "migrations/0050_main_processor_bindings.sql": "eacdcf9574261a19f342616fd5ce7a305856fce8a8d842fe61f9b1f12938f940",
+      "migrations/0051_terminal_work.sql": "005a0f194b170c7c2c50955f0d62467a13c56496327d5a22d36a3316df350ec2",
+      "migrations/0052_memory_equivalences.sql": "babb18144fa7504976549cd31ca4d6e8d44d9cd7251dfdf000fa5348f1d12272",
+      "migrations/0053_memory_conflicts.sql": "d8c87ccc477f853367edbcc15f9fd18282b3d0d1b59d13edeb814f5f24a43390",
+      "migrations/0054_group_fact_attribution.sql": "65cdc7f74f011398e50d62ad4e731aa5deb65b8617fee07f6c2c74106f993029",
+      "migrations/0055_group_statement.sql": "b7873d90e137122faa67f9755dabf90c248420e7fbd4be7b42d25bd87a621a7f",
+      "native/opencc/LICENSES.txt": "913605727253219eecf1f5ef2bd5ac7b0a524a9893d1c8de04304f0edd59756d",
+      "native/opencc/archive.sha256": "0851bfb2216341fc171a37b5ea956cf8e6794ade692cb62620ab4ae4bca80f39",
+      "native/opencc/bridge.cpp": "4acc4cbc30c78b5566ede0ea2dbf6b990b5f9df2b05017570bad921fbfa004fd",
+      "native/opencc/casefold.py": "a1fc5482f8ac3926853b5df9ecba1f869851a28c165c4f40bc0107338fef664c",
+      "native/opencc/opencc-1.4.2-t2s.tar.gz": "e5784d3f7aaea837b8be9e9f654e3385c8d6082cb4dd1d1f9e2027e1de90c64d",
+      "native/opencc/provenance.json": "08e08e8bf0a5b76596cdbac2514492fd6a4fd4238d3a9757dced8be956522134",
+      "native/opencc/vendor.py": "705a477f8c2b8f73b74e2d7e56ca6948c18a7af15a9d6e5fba8446675e0618ed",
+      "native/vec1/NOTICE": "f19ceac9154f61607007a294703456609c4ff3e64573e3673e1e8af1b4e95e97",
+      "native/vec1/sqlite3.h": "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+      "native/vec1/vec1.c": "f6db10600b653cca8c541a34a890fa66b34523c43241c89d6604ddb61ad1958c",
+      "native/windows-runtime/COPYING.RUNTIME": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+      "native/windows-runtime/COPYING3": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "native/windows-runtime/provenance.json": "3922fe567874ca1cb7943d33d3576da0f4b0c02051817b97b0aabfcaa2d686c9",
+      "protocol/admin/capabilities.json": "20b8f6a62f7acc0cb1e53b1c5296022be6a883b509bb0e8d0dd8c1515211574e",
+      "protocol/admin/model-metadata.json": "efe84dd08fbfc9e1ec738354ab64ef28be846032dbd354abb8957c12f29ccf63",
+      "protocol/admin/person-capabilities.json": "a65fff32af8ba516c5874228495609fc8f127ba5849b78013d06819d50503f50",
+      "protocol/baseline-v4/admin-openapi.json": "6caf8f1a6da0c09a9f033b06eb5f6b27b179e60c740d437a393907f04c5aa51c",
+      "protocol/baseline-v4/client-openapi.json": "2ac0ee897f207d181a703ad25bf15571a66e77f390c20d6177ddee4d325ea7f6",
+      "protocol/baseline-v4/wire4-frames.json": "6a8c4a9feb1d4db803e86fe629d935636ee9507338804432799b760df0f78531",
+      "protocol/connector/4/source.json": "3b787da30670ea0a2797fdd49713d42f49ab943b681b34d671faa90b99dc713b",
+      "protocol/control/README.md": "42b09a1998b14f1aea41e584b2210469bc7a0a3d01ec0b9f19c4af6040a97cd9",
+      "protocol/control/usage.json": "e9f18936b623f256b2e69fe49a939d9f15320f9522f5b20386b804d67c2e38a3",
+      "protocol/personal/source.json": "4da3ede7ac707f003f76950d70adb5098145f1e4d20273463c46271ac7e75b98",
+      "protocol/plugin/README.md": "dc16ffb77a9ff9ff906728c50f622cc5b5eea7a6cdfb8729405a125ead511ba2",
+      "protocol/plugin/aux-model/README.md": "ef0556d09f4bb76df6aaf0e9b195bd46a85228f35597d607ead1bc6621f79a07",
+      "protocol/plugin/aux-model/methods.json": "0c8a29152940f5ea290e42c99c5f38baf379e5281e8877caffd9f236db427776",
+      "protocol/plugin/composition/README.md": "5b8c8606a8ee29b0f8cf8c5d0b66879b8096d7c49e2099ab6bcf94c460ec0a96",
+      "protocol/plugin/composition/methods.json": "e001485289af1561f9a6dfd9136fb8e15bb6fd6b47f03c6fcd152e1ece6dcd7d",
+      "protocol/plugin/control/README.md": "a0e2a5f0ed883c4332da3bcc44da7ff8db99ab6b54616338bb9852fb074372e3",
+      "protocol/plugin/control/methods.json": "ff3efce8020cbc6aff324c2aebfb6a90c863f3c60ea27b54df4af17d59a9c213",
+      "protocol/plugin/gateway/README.md": "e6be473872105f1d717ccaad9a58b96da197e797b1d1b845dbf4cb3b34b6587d",
+      "protocol/plugin/gateway/host-preview.json": "8f1ac190d6f8471aac1f1f09d806015a8e2941a6d7e6d10f7d44c486762b086a",
+      "protocol/plugin/generate.py": "3741abf8201923cf9da9cd0e9dbf071037c5c254b42839b2f79439aab986f906",
+      "protocol/plugin/handshake.ndjson": "5275ee7b90b6af4221693f92ea9c1b4fb1d1b306c2b6ebb85947273dba0bcfa3",
+      "protocol/plugin/handshake.schema.json": "d4c1a79f5ef4cc6925259e0c931e898d3b491dfe08fa6d38680c97aff2f3609b",
+      "protocol/plugin/maintenance/README.md": "4f9bf73365c8e9e2cff09c4fac66386da4f1750c192cb8ea634215c3043f292a",
+      "protocol/plugin/maintenance/methods.json": "d82f8da58ac0e190aa206a401c2e1f7c892eb2285235d266bc5834fc13d23d39",
+      "protocol/plugin/media/README.md": "affc3d6705ce9164d504df2b1e688a5b756ba8d89d98995005082dd6c662d674",
+      "protocol/plugin/media/methods.json": "d7af4bc4b1ea38decb0654af563410cc731fb2f27bb02568211d519a1c96a45f",
+      "protocol/plugin/method-index.json": "dfb4069b88f39a925498efde52548d900511e4fd48f90f43f7514f88cb266e2a",
+      "protocol/plugin/notifications/README.md": "2c1d68e9bd1a680c3bf191a381c6123a0ffc9ea6627e77dffea68672da508a72",
+      "protocol/plugin/notifications/methods.json": "ab4f3a9684597f3b57b77eb638daf8538c54bacc484e3609f3ad36bfed817fb8",
+      "protocol/plugin/participation/README.md": "d001dcc2e752996087ed03c6e85d565a5cc317e86eed9b3ab8d74146e977239a",
+      "protocol/plugin/participation/methods.json": "7b6d68a47d0afbb53e32ecc9d68e76dca41a51231f964bf024770d5049d86e23",
+      "protocol/plugin/personal/methods.json": "a7196947dee6be5563f359e0e30c1d1da40c9478133d8ae36b1e4db5314c021c",
+      "protocol/plugin/sessions/README.md": "835f2b56ea56311a178de0d690f9ea0bb943b235d80d397b4c08fd2576ab244a",
+      "protocol/plugin/sessions/methods.json": "4e4cc2cd6255ccb203a9b2447be51c479c7058ff5f78d90f90db2ebd0bf20e1d",
+      "protocol/plugin/stable/1.0/freeze.json": "a3ec1b3cc00ddb1a599a3721e505583703feaf722ab2c9ee8d184cd67cb57c81",
+      "rust-toolchain.toml": "2c388180d0d5476ed0d69975b382feaf709bb072d51a342add3030cfb3d1bdb2",
+      "sdk/python/pyproject.toml": "d3e590f08003957f92ff98cbef9db3987cfbe94ef99b7438d104eac7abe8e127",
+      "sdk/python/yuki_plugin_sdk/__init__.py": "93ec3f0e28a2e394f6781d2f4c98d143a93f81e4d8e82f08d5f5949778283b3e",
+      "sdk/python/yuki_plugin_sdk/connection.py": "fab58996fbbeceeeb8b328c0083969eed4a9be709d581c3865b50e1e0df2acf9",
+      "sdk/python/yuki_plugin_sdk/generated.py": "05741a27089b71053d69457c5e65e71dfba3d843e53e3cbeac6944f6c4adf958",
+      "sdk/python/yuki_plugin_sdk/handshake.schema.json": "d4c1a79f5ef4cc6925259e0c931e898d3b491dfe08fa6d38680c97aff2f3609b",
+      "sdk/python/yuki_plugin_sdk/host-preview.json": "38041d7b668872d855752d29dfbc508e4a55294a466d3a99145c9f4d8c5a7959",
+      "sdk/python/yuki_plugin_sdk/host.py": "9aff776d5aaa6962b15225f87afa2fae519a258669edb45d74454236f0c56ae1",
+      "sdk/python/yuki_plugin_sdk/peer.py": "1d5a48b260be9877fd8421e1b2078248aaa4de0f52866dcd59b8569e00d47940",
+      "sdk/rust/Cargo.lock": "e713492376267d64220781909fa429e0c5de08ce9fe0549c8f15696ff6026d01",
+      "sdk/rust/Cargo.toml": "b67f9f02ac040da23923aea7fdd8e48d536c95f4ae370c0de1925feb65a11a82",
+      "sdk/rust/LICENSE": "e89cfb6162750cdd87952a48c302e1fc9271a487f283c53e4fceab0b30f25a99",
+      "sdk/rust/NOTICE": "92eec243bb25b89d47a7fa29ce6c863a14487a9c9e1078d0538775e6ec8f5a34",
+      "sdk/rust/src/bin/yuki-plugin-peer.rs": "2b32853006ee25a15eb8f01a4f4909384486c92f4bc4038abb03b9f5b7b1d360",
+      "sdk/rust/src/generated.rs": "f472b0248431d484a315a5afd7db947f2fb8c2561058259c65e3a8ae17efcee7",
+      "sdk/rust/src/host-preview.json": "38041d7b668872d855752d29dfbc508e4a55294a466d3a99145c9f4d8c5a7959",
+      "sdk/rust/src/host.rs": "ac4fd470e1b8c37b00fbb6e9c5a0a3104f95d6393719913a6ac45e30fa8d52a3",
+      "sdk/rust/src/lib.rs": "7ac24b56626cfd8b308da859ace101e5b60a1ff605d51a824d6c2ebd9d37688d",
+      "src/config.rs": "8f78567caf3021ca7e7961e28a1ec99f8c234ba94772ac334ec2594c72010119",
+      "src/context.rs": "cd646edd64d8e126d4583a53e64f514de327132a73ea50ad43b8d910d61e1edf",
+      "src/context/assemble.rs": "3687baad2f629655cc8ba63c1365bfb7d901f96c4e08f9cbb412a8606a1c21c1",
+      "src/context/compact_exec.rs": "bd34b47109403f8c68c33078a06cc3e9d5775f06266df27bda8a2d0a32cf49c2",
+      "src/context/compact_exec/plan.rs": "480940412fd3b671a5c3c60ab7249102c2ebc1ed93ac99ec65335b66e9ddf81a",
+      "src/context/compact_public.rs": "391ad7d4ceed1c91619f122972e3e6568774d7fcfad315f2ff10e3fbb94f7b1c",
+      "src/context/compact_public/history.rs": "149e3720206c3dd9df7c5b5949b025fe50482e9766004d960384c2dee38690e0",
+      "src/context/compact_public/job.rs": "0e46fd7e4a03a3b18a8bd3da13e8982b389a5012708f6e4fac6117d6c673257b",
+      "src/context/compact_public/wire.rs": "16dd0492acbf57da6daa445c852b74bd1cf8eb14862cf19d841f10f5c7264242",
+      "src/context/event.rs": "f5e7271128bcfa408a26fc28f8bd451aa2bb233b52ec3b9fb5e501e87fbf45f8",
+      "src/context/main-program.txt": "2ecfe161cfab6898970af02f44cebf0b3958e1a669fc54e4c35b332c8222316b",
+      "src/context/memory-program.txt": "1263a7d38c7797bf1e468396cf2f33d2809e3dce1d677b8961c0aed81d73cee4",
+      "src/context/protocol_objects.rs": "8a94caaf919c0b1b8910cd9dc3294bd11454a24061f85c82d6f24489d5e48c0e",
+      "src/gateway.rs": "4e3e0ef73c724db488fda1598ed30240b3eb7b6afc5000000f4c989c93919caa",
+      "src/gateway/qq.rs": "0fce070b006c13ec51573127b461ab9b7fa2b4a0b1f3f7c08e77ba3ec99efd21",
+      "src/gateway/qq/actions.rs": "0c6ab01f97cbee32836a9a42aec52fb6cae5bd4a36614d3fcbca4d50adb8fca4",
+      "src/gateway/qq/activity.rs": "fc72c8f9205596fa329bead458d7b2bc59e9664636aad460f4dd89f8ad0f7ebd",
+      "src/gateway/qq/frame.rs": "aa8f55fd50eb60307a1c6d912a1d73eacb304f5930e0bbd225b5356fbaaf187f",
+      "src/gateway/qq/projection.rs": "54b01c85a82e40926f65f48c5f46117e40774612caf08e4df88c4ba8850be6b2",
+      "src/gateway/qq/recovery.rs": "5eb65f67102166b7c7e13b0fd423188ad313ed313ced342e62319d4f11a3e4a1",
+      "src/history.rs": "2c5232445dcf30ea040a10200ae709d6eb481445a6f0970dbbcc29c6366c231d",
+      "src/history/casefold.txt": "77c8db36e951b4eda9bd08647416627502bf42cdf4487755e8aaad3f32ac6ac6",
+      "src/history/index.rs": "bf9b1e18b0d7b97281182df076bd48ddca682ca0d9c42cbae7d533b5173d86e0",
+      "src/history/normalize.rs": "e49d765169db747eea8e8f3e4ddc92ce80ebb4a0772bd91b28eda97163be408b",
+      "src/history/opencc.rs": "f37e8967fd35027f79f59c92cda06362df73de1ee7afad5e8ecd7abfc50efc54",
+      "src/history/query.rs": "bc78e7676cf40f5b0e8f412e1639956efd73c209634c0aebbae7327a65eae07b",
+      "src/history/query/contacts.rs": "b804b177fa5f4ed5c567995fdb49cc4a768e86eef800f0bb82bba2dbcbf9f341",
+      "src/history/query/members.rs": "0039addc43bbe0a4019cb8732551a0617c155a403cf9da720aeb4e57ab739610",
+      "src/history/query/original.rs": "85bc53571e81c65115d832663e9a32ddad34fc8ad37189cbe22ceed34e3ec0b4",
+      "src/history/query/original/receipts.rs": "5b466351285267b362bb0579435e8664f66b09c4ea1244268510e1e63001d588",
+      "src/history/query/original/rows.rs": "1f0118f84c744bbc4770a6cac830aedbe29034bdb0126ba34a4bab29993ed9c7",
+      "src/host.rs": "3e2ccd56d0a97e2fd28a16f2e8e9bdc2dc94c6c066af841a011742c6b625d9a4",
+      "src/host/aux_model.rs": "87a0049ff6d1e6cf2c355e5813792501097df1d65ec46fa84915a9db57798f6a",
+      "src/host/aux_model/scope.rs": "9433141dd14bf26d34223c04f6016204d507e66b843b9b33ec79d2f8c4d61c75",
+      "src/host/aux_model/transport.rs": "abd534663c025a962c13282baced1bdd85808f1316b75d00dc972ef0fb2c1323",
+      "src/host/aux_model/writer.rs": "f4140041daf55afc2cccab083ea2b1dfef2ccc84bd51e4ea36ae9775dcf241f1",
+      "src/host/calls.rs": "800afde8671841841ff73d4d3e73ca29768f4c4783f111f4ac78e6ee110362b1",
+      "src/host/commands.rs": "cd4f45b191875d16867660548ec2ebe521bef9187df9ec7fbe4e32940547931e",
+      "src/host/composition.rs": "f333acd862c2216039ba60afbbaf79d857bea63a0316f6b19efafd8b0c08e724",
+      "src/host/composition/child.rs": "82e312214b33029f7ce3f50a8ff8735ef7861bcd5a65f234efaa818fc5cf2638",
+      "src/host/composition/snapshot.rs": "285e324a16a32958ff341e567314c825510bec3af1956761edc9adcb08a933fc",
+      "src/host/configuration.rs": "0fa8016659e07924e543cfa1f8a5998051c16dcd84f10ba32f5399734316af8f",
+      "src/host/control.rs": "3b266072ae966897fce8e07dc9bc12e7e03ecade7829033e448f8419e9012aba",
+      "src/host/domain.rs": "d9f2319ef45318850ff4202298c90702f5b1a9e8fe40b7094a4c849da7813388",
+      "src/host/external_search.rs": "f6906a7db8d1b14999f2cf1051732d5a81e9da8d5a68e9785240d0feece8ae92",
+      "src/host/gateway_media.rs": "32b3fade75b2b325e090c6e5ff0894c3541355eb0724c9fc39f8b4636487a5f4",
+      "src/host/grants.rs": "cf9915c0d2d4ad2d3c81b6cb36a182b598a9c6f45a33b0adc3e64583acd5b9d1",
+      "src/host/lifecycle.rs": "40d662b58e6364efb5874012cab39568d7e2a90002a0be5a54fd905c78ca6c5f",
+      "src/host/maintenance.rs": "602fd30286343d880165a24c172bde63cc4a6f9b9715a6f4c4f7c77ed7e40aa2",
+      "src/host/maintenance/background.rs": "cef8289072d29268463092f0dc87f051ef54ace7ee6094dfe30a887c041c92ce",
+      "src/host/maintenance/content.rs": "6af3caec459c83f09624d064a686d92d0a8268d633527442468661728f36f906",
+      "src/host/maintenance/fact_sources.rs": "ad29458e9613af23c45127f6e4ff2efb8eaa2947475fa9622e35570d452d1df5",
+      "src/host/maintenance/preview.rs": "24d9180a309fe769739be02437f813c24d7c4acafc7b3556c9283cde44cf4634",
+      "src/host/maintenance/reads.rs": "7cb74ca6947c0e6a66ee553d9e5a15eb905125f0a1aca43ae7d54b0913a9429a",
+      "src/host/maintenance/reembed.rs": "47eeede342f1d7e8af304fe2c402ba088b9c379efeb7011582550da055b05143",
+      "src/host/maintenance/scope.rs": "89b0a240536022b853a2c2c95ba00d8cff6a6e9349e66d15123aa2de049a4cc0",
+      "src/host/maintenance/tools.rs": "a096e779f3f5c3e20575ae1f3f07363b87e84a1f580d7a6fc1c3c6ffcbcfc284",
+      "src/host/media.rs": "87cae1cf5fad3ec830f9a50dd70a40df0891ce3f6610b9f2fb91f8da7c5ae1fb",
+      "src/host/notification.rs": "c59f5d4db3d30fbcae80af25a20754ef0f34f0f859559afa11fe69f3b7325b3d",
+      "src/host/notification/grants.rs": "36795ac2efd7821155f5a88be5bbadfa58baaa84439ae5db0a25692534199090",
+      "src/host/notification/retry.rs": "78799634260a94ec8977bb95636bfbf44fcafd839992d4b74292a85c92e2ddd2",
+      "src/host/notification/scope.rs": "ecb0f3af303ec89623090c958fedc3f5b961684843005081a885c11c635e4439",
+      "src/host/notification/transport.rs": "b12b7bd913a28a521b58e0b352380f85c92a68b6e89d0dd6b8fbee8f834a80cf",
+      "src/host/notification/writer.rs": "f4e16ab3a8e0917f7623c98181175bcf6f202c3d3648571b880756023f520468",
+      "src/host/participation.rs": "d5238ffa2a7b55d9f7817179ac8baa8b2c07d259ed2893d9e65fa64286c4e82b",
+      "src/host/participation/feedback.rs": "d431281495d1188fb862b513d69721af9e48c6058c034e7fcea836f02adadf60",
+      "src/host/participation/proposals.rs": "1f1b1ef6c0e3b53d6157e3347c703a340c63cd2ccb209f56a0850ef80e3e01e3",
+      "src/host/participation/sources.rs": "b61dd7ea0b383ba1a32fb80be6cc01960c29891ef92228a7f47895518d01c063",
+      "src/host/personal.rs": "d7e1ebadb46a7d0487581b82833fa2c3e40f2c2cf4ba04e143f2b51e389f09e8",
+      "src/host/personal/artifacts.rs": "9ca12b736dd51d620171b339bde77601c2b087f271f7edaf03398de157c5f7f1",
+      "src/host/personal/connector.rs": "f273effeeae378b79a451b7a2ba51329e9cbe56783d8f606c0d93855966159ff",
+      "src/host/personal/credentials.rs": "a65c57f5f7f44119fdc4e94a20aec860edaa897fc489f04b63bac6cd591c35da",
+      "src/host/personal/domains.rs": "dd6ef178a73b450c29cd8825ad683de3ba9323e0df9d5ef0733bb22212257803",
+      "src/host/personal/http.rs": "1b1ed4f4986252cfd60b6388d50772c3fd225977826b676ec3abfbbdbd4f7367",
+      "src/host/personal/native.rs": "a695460810bd6d8672d2099c3cd95c7f7a14d565f7d9687873d5935d4a75c84a",
+      "src/host/personal/receipts.rs": "806015fa8942fb94989a1486fd3ad23c8bca5d36f15ad3866084719b9341c936",
+      "src/host/personal/selection.rs": "aac3b94d4273eb568845da3a51a7cbf3a4a2dfbdd1a9e73f3bae2da97b3be760",
+      "src/host/personal/stream.rs": "230ac41bba2c11ab60ecae6eea5a697835a4b406762d2b78fe055b394a09d2d4",
+      "src/host/personal/upload_body.rs": "8edc7fe72f7bc4477a8400b046b01f7cb6a159c898d2b32a1837cf82cba2c006",
+      "src/host/personal/uploads.rs": "f256b83dfc5a724f65f815f2dc81503e9c2bb9a7f25d458983a749f8ea1ec957",
+      "src/host/personal/views.rs": "09857271ef757c6fdcf86dae26c3992eb6b022da8bf2b2a0c1e4e396357dcfb9",
+      "src/host/personal/work.rs": "cf93c754b1e9ce63ea5702a58d5dbcc3bb85b8233aecbbe65232abffc3c4736a",
+      "src/host/plugin_sessions.rs": "49c0587a3e8dc008f2e1bd5699ac25e949144d2e50a9566ae95ad3f4998a5314",
+      "src/host/plugin_sessions/content.rs": "6c3efba882f6278e9f7ab2b9a651b91e7a54a109d68d33ab0142ccaa9efb8270",
+      "src/host/plugin_sessions/model.rs": "c0aa91700e731b56f90d9297a4ea401154c9c1fe48620c13beaaaadc48760c03",
+      "src/host/plugin_sessions/scope.rs": "796bb5b779a252b704b090e06437e78ad52533edc6002f9da2d0a089c5e1557b",
+      "src/host/plugin_sessions/writer.rs": "5fbeea8c2a6c34f50e6aba7f705a98043eed88385ff6cf5634d018a328c0b374",
+      "src/host/process.rs": "5a056208afd723f23680c63e91da3868cda46ac23ba4ce5b5fe4a490c60732cd",
+      "src/host/recall.rs": "04f5e5feb670ecfe0c37d32b1d781e5e1ca5f97d94bd1c5b5e526068155c4026",
+      "src/host/selected_processor.rs": "7a52ebd24a40cc822790846d6f4a2bab21b7ac8206b88ab1ff404171aad0cf52",
+      "src/host/send.rs": "cd70a164361eaa74e228d0f8d77aec2bf60761b94abf0fcfbc680ebdbbc4000e",
+      "src/host/terminal_work.rs": "318e970ba7877effa6e8dde218a631bd7141cd405775404269ca7ddf5a8a64be",
+      "src/identity.rs": "7a58d1a501935960819ed6b4522b1dc9474f3edb0a64f22f9f8528453a4b2644",
+      "src/identity/assignment.rs": "985a6b5fedf9463dc747d62c9d0dfd9eb5d17fc264327bac5d332dbabc4782f1",
+      "src/identity/entry.rs": "665e21bdbe675ddbab7af870327b17254534d0a3febb6377e18975372ba95669",
+      "src/identity/person.rs": "69ef3b7c79f6ff8ac7e738eee1b7e8db48e32790e0d9037eccf3846da2bf2e59",
+      "src/ingress.rs": "c238316d39b5bd4e165b73458e49d867bff0fc98b544362b3f547a49f4a90dc8",
+      "src/ingress/admit.rs": "87c98d237779d94b6851430379c43e29c230633f6c773fe4b9f202eb167728a8",
+      "src/ingress/group_recovery.rs": "1cdbc5e48d50f0826e830fa037e81059bb003b58447028c095ea9cc14a9a535c",
+      "src/main.rs": "845735d8f0d46e0408b88d12a02ab7a946739fd072736fdd6a006bafbd42ac97",
+      "src/media.rs": "9e5bc773b3a60cf21cb60785181942d18e444b49e1b1be760954883551a969ae",
+      "src/media/blob.rs": "aa2b078118c9975aef61b2822fd13898f3cf7fe353e1edefd6120598ab5d3c35",
+      "src/media/handles.rs": "18de884244c155df2ca2128e4d8de2c11cd723dba062d8acfdfd3ee7b63008ec",
+      "src/media/tools.rs": "2bb6e48bd4530113a2569a873f070d8b3ee51dffabe28fa4984ec3530523d233",
+      "src/memory.rs": "7bcdfea119b10f088fea0b748644a53dadab37163c639ccb95ea5bdf36c6980d",
+      "src/memory/attribution.rs": "fec44d92da08419234b16384a001a17355cb40a65af553a336d5ef40d6b25e38",
+      "src/memory/commands.rs": "095bda915c2032b1ce9457f4d53d2904e96c17eee96cdb79d313c1dfe689a2ae",
+      "src/memory/contest.rs": "470a2e6ba1a988fecd5fa29ea1579e782b95b6a623f060abbea2fccbac6d1fac",
+      "src/memory/embedding.rs": "dd5df4ef00ff6858da3a73617cd6e2625c22113b3f301ef2b986144df7f2afab",
+      "src/memory/embedding/profile.rs": "869b58afbe185c9bdcf3cc1549c8e6192b866769ff311927459a4c7552c6702c",
+      "src/memory/embedding/writer.rs": "d4d5832013c11964a1561ab5ddba702d6da0e45a29d480fdf1159f5512edbc50",
+      "src/memory/evidence.rs": "103de161061a0ac9d5c73086cfa1dda5c18e3c8719f41858a749de9063b3951f",
+      "src/memory/extract.rs": "483f4e17aaba6f6cfb27f2292eb19d8c7cb9bbfec9c73f34f468be7af44e0542",
+      "src/memory/extract/source.rs": "16c5fc15bbffdf30ff37d6844792d8f17371a66cc351a871d72ba66d9e9a1bbc",
+      "src/memory/extract/writer.rs": "c6a0e646b11b59dd5979035aad123e45acd928dfc659870cfd9d0d5e8faf208d",
+      "src/memory/facts.rs": "7c61b7b1980c57822442914efcb870929e788df41b28607bfea70317543c3391",
+      "src/memory/index.rs": "cb438795f237a5e85f237c12f04b2acafddd2795e8d53b82bfaeb8df4fa46448",
+      "src/memory/merge.rs": "34171a648b460c7717904f1e95e24dd1fc728069cb427bab7f937c3c3dcd4bad",
+      "src/memory/metadata.rs": "56b1e04abdd3d0493e03b27d1fe30753b0af125f321eee563c839919c68b16c1",
+      "src/memory/rank.rs": "414d8436e0091cf93b08d522483eade808e7f2ae446fb39e3339c54579cc6d90",
+      "src/memory/retrieve.rs": "547d85843d7c612aa442d66c8b79d1bb38dfb51ae6a259782655296f3050f427",
+      "src/memory/scope.rs": "03933aa7102aba105c83a08ff8c46c1b45235afaf2dd9de4dfac27a07065a000",
+      "src/memory/search_tool.rs": "34f5a68684b9c0402021d4bd5f1c3602e8d6e5dae84e19ed87808a4c02c42c8a",
+      "src/memory/selectors.rs": "d15bafb46ea82ead714f93324d5a03445a7c3cf41dd909e92a49d2cdbeede1eb",
+      "src/memory/temporal.rs": "f50b1232bd4ed861505d465bac157e1f8a0d6b3afdc62e5dd362673a94a86871",
+      "src/memory/tools.rs": "fae18513418c93015adffcf4b05ec27b6697e96f74dd31af27c36dd2250d21f4",
+      "src/memory/v4-declarations.json": "0c1cde68d70801b61cbcd8a2cc707ae386a65d360219b80e2b67634cc658468b",
+      "src/model.rs": "6b060d27cf11b8538da96d252296aab4b924125bf36011374f55a3f27f1dab33",
+      "src/model/attempt.rs": "76c5f3e028a74c33eea0a4906af7d6a4ffbe8575d403dee3dd2e75cdc5c48c8c",
+      "src/model/chat.rs": "652a201e30ec280652e6d2d7756f6811f83aef8b73696c0d15ab80fa763fb3c9",
+      "src/model/gemini.rs": "93dbc6024c5226852ee311128ff1a343f3487e12a524911533525d60f90602e4",
+      "src/model/messages.rs": "695181b04647e048f412a5b70a1b5341501f8948d121827d18303dbeb15dc149",
+      "src/model/profile_store.rs": "d56cf2fcf482ec69fe774259d976ff2593ffcccc70a888bcb6ee64472e636a85",
+      "src/model/profile_store/boot.rs": "40a16cfeb4a1dcdc9b3e22135603be7495514f69425b76896c7f0dd808410cea",
+      "src/model/profile_store/catalog.rs": "11e196622a75aa03d178fddb755e40f6c50890ed88d22a60594b7f672e20dc62",
+      "src/model/profile_store/files.rs": "509e3f3ac0dcb0beac03c6288c866ce08c868843ce7c1cd673cebd9eec872af9",
+      "src/model/profile_store/http.rs": "533609789c028818a1c1193da041c1e5e369f69ba3c6f754f83807c620093b63",
+      "src/model/profile_store/legacy.rs": "f1f53b9b60ce2ffd8c0da2332e2fb71a2a29a75f3323811d1ac543c2c516719d",
+      "src/model/profile_store/legacy/transform.rs": "ca9bddb5d0e1715e259cc21e5e42dbf396fc710e91a474e906339d1c84da7c3b",
+      "src/model/profile_store/probe.rs": "54770202c45c5bea31d6db569328873881dd45ee7493230087afe2bf8b0a7934",
+      "src/model/profile_store/runtime.rs": "eff2925e36a26b77efdfb2cf41b6f5bcd9ededd3d3409de6b0820409c4e4fe77",
+      "src/model/profile_store/wire.rs": "284f5c6ba538899e72969e8d14de4262ef89c49e6cc8cb849f80b591efe8eac8",
+      "src/model/responses.rs": "4643ccf1c838302044b3c6d355f0b20f99fd99385263e791f44637c26fa948f6",
+      "src/model/search.rs": "f8de51f1d325077f1cf3d92721b9cbaf588c96a98a51c05fd096709d9e4adfdc",
+      "src/model/search/source.rs": "be121761b5dddb0083210937eb497966780cfcd0689b54872d3c43f8cbe7251e",
+      "src/model/search/v4-declaration.json": "25c940a2032798278b08d034ee3933696f59d265408552edfc628293520f967f",
+      "src/model/search/worker.rs": "56da8aca9fc0b90a83dd6203b03c13276e852da1ff42585a49fc3ae00bc3214b",
+      "src/model/tool_rejection.rs": "2c1266259a56e9d6d423f3bc28853c5539084377843be8d0ff87a4e4ff1f21f6",
+      "src/model/wire.rs": "d592b5f5d215c58b4a8917ac561dad30fc02eb873bb5c8d151b503f0b3e02746",
+      "src/operator.rs": "2b59f6124a6a3b1f64ddb06c84be0fb563816f74169b75f8b832f8a7ebde9e47",
+      "src/operator/config.rs": "5a80e262cd45384412273af48f61b18c3f6db5a676c0a29749efd96481b3aef5",
+      "src/operator/domain.rs": "a2cea8844f04e8373856ffa3e748b668f51e53247910a7a70d1eb21615f8480f",
+      "src/operator/domain/bindings.rs": "3fadec5867bf36a7c18c91ca1e2378c655397393eab894f3f62a8887c1f165ae",
+      "src/operator/domain/character.rs": "fb3543dfaf5efdbd9ad125bf7f2e94a1519236bcba2f3ed499464ecb229b9dd1",
+      "src/operator/domain/health.rs": "77a6456a665cdf82c31438d0f811c55727e5e0abf547c63a5f073468505ae932",
+      "src/operator/domain/http.rs": "24e365ebfe555fee44b549c32c972ca86cc1a7b6881e4dbb4312bda501c56084",
+      "src/operator/domain/identity.rs": "2e1af83cc02b99d5ffa46690f1c86281e1b2dd2434b81c48c0369063600b7b33",
+      "src/operator/domain/plugins.rs": "920be4d2b70d4e238fc83edef1da971d5ed19241565d4d035d92f231f3ef5051",
+      "src/operator/domain/presences.rs": "62c6977a1b4f811f423c06ab108c4a34f23904f502eb2d22319b690a7d3b4b06",
+      "src/operator/domain/receipts.rs": "e8f1e194baab57bc7d3de57d3d06a983bab0186805c104bef8bbbe1d15a28ca1",
+      "src/operator/domain/soul.rs": "1aa91d74e0d7465e6046b84ef23b6b42677453946a15b720ef98f4996d09c742",
+      "src/operator/domain/trace.rs": "26bd9c94dea332dd07b736ca6f4c50ca4bf87668ac862541f6068aedcd17e218",
+      "src/operator/domain/usage.rs": "ffaf428fc8cb0dd8e51e578a5cd0ac8b83d5c9314dbdea0b0ce2ca248e69f061",
+      "src/operator/windows_acl.rs": "7e5705fee479fda2e2f2fbf9614ac613e1cc8a60e5caf88db5d7bec3a2682305",
+      "src/privacy.rs": "4b1a22401b68d3022d861bfd5c2e0d7948ff298cc1245a29d0b55a4f7c95dd21",
+      "src/privacy/forget.rs": "49cf0538dd76615eec13d0956a833886998021e45a63171d818f3ba99f873057",
+      "src/privacy/owner_erasure.rs": "bb245648debce383be3645a83ba807ae7ef87418c13b324edcb209a48d2daad4",
+      "src/privacy/source.rs": "fb654b61924aa72deadb78332f79c250a062508b0bcd7a343f46022cf101d653",
+      "src/runtime.rs": "f233cd27a38f7aa763803361ba2bc021881f2fd5dcd3ef712a9c2067f1875807",
+      "src/runtime/effects.rs": "7f7ae87ff5b2be017d9b73ec2c0a13ca216db5a284951a0b1f8554ae58765605",
+      "src/runtime/execution.rs": "8c3d7a93c67a0f394c4b21e4fe445205d0f9716e8b013fc376ebe9b5dd950bcc",
+      "src/runtime/main.rs": "34dff988d3e2651a3f41389c5c6868c051dc6f596cfbad245fcda20085a76d89",
+      "src/runtime/main/activity.rs": "5f26d44268b9da8b456a84b193dbd2e09ae8423850e7084c083d98ea0ce05e81",
+      "src/runtime/main/domain.rs": "ba234db1894f84bac28a088fe745e079c254219dc4880c6119fb5289c0ba9c39",
+      "src/runtime/main/segment.rs": "24142ff2f8999726a8b00b42564d42785da43bc2866a275e79f07958daebe5d5",
+      "src/runtime/main/step.rs": "de35c8ea47fc353938faa7d21d3ebf20fef0dd7c8a8ac22e34753b8bdb1fada5",
+      "src/runtime/main/transport.rs": "e07cf8d6aa111feb052ca2e80514e6a2a6a7a6abb321b6afdaf4a3ac21108333",
+      "src/social.rs": "778267a67dd72cbc8d2f3c9e1ea9074c4a13e1bd4ffd25b62d00eb053183d11b",
+      "src/social/content.rs": "0d98c0f52a28c048b4bdbfb4c22c0b5c8cef293fc2e285b11563acc7ee938e9c",
+      "src/social/destination.rs": "48c51bef416c6c14b24d76e255af32733b92206b6ad429020ac64f24bf911d11",
+      "src/social/model_receipt.rs": "4a43f5ac5fdd0dc131e06aec2c64123cbcac10ad30a533063239a4def6fbce1d",
+      "src/social/recall.rs": "bc04509cb78f0c931d6f189e84973dc4668e6a60bfe85edb02c8e04c6bfd469d",
+      "src/social/send.rs": "71b4fd4387cf0a995f5cb4f97cb91bba74a98bda2dd2c54f2e24f2fdd8e0ef98",
+      "src/social/split.rs": "2a9bde335ab21ebbfa9c8679d74b2944798ec913259e8e53c5b58967251c9fda",
+      "src/store.rs": "36ee0988446e97d36849e5c128578d9804de7a7200dcd70a99ab3609175b948c",
+      "src/store/tests.rs": "2ff7f219ebafa3088ab35ea8ad291a9e65bbb36300f1c2cf170ba50f89fe55dd",
+      "src/tools.rs": "76b954532a1a4ca8f03cb5011641221d626fecfbb8846a0691f2f4bf53ded200",
+      "src/tools/batch.rs": "be6a9e731b8368b3fa283c0ba109fb6868383a7f1ac061ffc87efc10d12c6f81",
+      "src/tools/budget.rs": "1e7c0fda6b6a7b39ae1cc6fce674dd4a4ce5c9aee936b2bdacf82218d8a96369",
+      "src/tools/original_views.rs": "6e5b0c292ee406732b93493cb7edefea923b78f8e1e80c9de675164ef77c1f72",
+      "src/tools/permissions.rs": "7d42bafe804f1e076a79001d0305fbbe3e40c81481cfe4fc2a2ede3891f86cb4",
+      "src/tools/registry.rs": "936d2c9b5b8399457fbaa829122cee247fc4445429bf6679a22f05c7a2f46084",
+      "src/tools/results.rs": "d77f41eed50865e95ba60d55f93cf16b492cec3f051780b88665a09afb399790",
+      "src/tools/results/legacy.rs": "6b248fcceb3eff0b39041a022b6d937941e25446643eb4bf7d6fca2e0bf00374",
+      "src/tools/results/ordered.rs": "30902ad30ae9879dc9610cc8101bd4bfd43348c1282a30cc926a90a7ff2b02c7",
+      "src/tools/transient.rs": "056eb0e71301aa803623ac177e825cdfc8dd80f367ee2c1a4b90dd1d0533d61e",
+      "src/work.rs": "33a7fc6a6f6088840a05bd543a6734aead141ff225aad2f290ed552bfb7e6786",
+      "src/work/control.rs": "53935056419f10ba0d373c96a846c578f0b760adeb95363d5a8f2e94a1bed6cc",
+      "src/work/mailbox.rs": "44c63a5978d63abbaf58139e9c7d1aef55484ceed716b9758edc4ebc49a9b072",
+      "src/work/management.rs": "bb97f67c9f6363c2a5a8a15dd698ba9de83b4caa376b0164c85059001d21cc45",
+      "src/work/note.rs": "359b9c8fb93eb626b425bc441304537e15d753c7cef71fb04dbffc77b4eee238",
+      "src/work/personal.rs": "a4bd60814a3ffcbe6980b97132223cc8c30867890d85ee6293b2758b53cf3e16",
+      "src/work/questions.rs": "862ccf94c742d9193dbea27867c30fe0c5debbd973714d36ebaab2ce52f460bf",
+      "src/work/schedule.rs": "d8cee0d6aeaca17f88e2175af8c02b2e23b323b5bb2697b3844f8a3fefcb1c00",
+      "src/work/schedule/clock.rs": "20374455f154ce1259199c6cbe70c3eb04f1fd2cc7d8ccbf0f04a526ba10ef16",
+      "src/work/schedule/due.rs": "b5bb433016aea6943ae4996060ef80d8e08d065a82e14b7731519bf1b081c04a",
+      "src/work/schedule/tools.rs": "2ad0ccc27586489e5bf490db76865a3ccc06c05ab2138636fe8d7df73ac035df",
+      "src/work/signal.rs": "e28b744aff79648e4be500fbb9adff62cb6192cf460279e114aac3a7aaf03570",
+      "src/work/tree.rs": "c6ebcb9f29c8abced82472f86b4d39ff340c102581d93c853f89d1100217376c",
+      "src/work/v4-declarations.json": "4333e83b5c4524c1255afa9573895b8683ad101c05641adac2641748bfa346de",
+      "src/work/wait.rs": "584ca93f596cb1b76f7fdcb4619e0ef2bc0cf6ce7cb73584cb076356bb68a50b",
+      "tests/__init__.py": "8b2476f654cb9f5e58fdb779af0abefb696a0e89312965fc4d3599d7bf6eec04",
+      "tests/cases/CORE-001.py": "3de1bd77fc1c40b365bdf3d3979948302ab1debbd3a23fcf5297f734792830a3",
+      "tests/cases/CORE-002.py": "3a093735530e965b085af341fa6c0dabfd2b1d0a1dbe20f054c123e20706f95b",
+      "tests/cases/CORE-003.py": "3127d5e60a7b92dd8ff8a05f2923db00d9f45427fd874cf574cfa5e76800767c",
+      "tests/cases/CORE-004.py": "670c1a07567824fe3dd6c016ea68094ccd9ab8d18f174fdba2dbb048d5b0435c",
+      "tests/cases/CORE-005.py": "7069d48cd24efef31b4f45f068dd5fbe2802680c52267655df51b19c816ee57d",
+      "tests/cases/CORE-006.py": "2877e76f2868097fd45c3110386ef38e959ec086a0637ed55ee45524ce232a8b",
+      "tests/cases/CORE-007.py": "0f1bfee7ac9bad7579edec1c2baaf19b2c9ec595db3b2e18b59f800e58f308d7",
+      "tests/cases/CORE-008.py": "c24f358435e35a7eff9da254c17e9a9fa9bbc13fc63e29360835d8b9014fce9a",
+      "tests/cases/CORE-009.py": "6959303d2d17440ca66b7a865960b33636daa8f4b3d9d8012c31d6a2fa1c8b26",
+      "tests/cases/CORE-010.py": "b069b53534dbe190a52dc3c964eba2ac2e37ef815ad97d820976f7ab74e7e60e",
+      "tests/cases/CORE-011.py": "22b1afe1a1a08974df4e446d715dd790917471d6bfb5c2168afd6a9915b67874",
+      "tests/cases/CORE-012.py": "fa4035d90be1ad487ab42b8be440aacd151c7a7f5649bb0c48e2bb3f2044158f",
+      "tests/cases/CORE-013.py": "2d57b22381efa3d43ebc0f11668a0d249464be1d122ea9d5cd0f56c9d5b5709d",
+      "tests/cases/CORE-014.py": "0b2755c56f3a307408d3f9a63450c683ba5dd7935a0e927a386e8ea6c0099bec",
+      "tests/cases/CORE-015.py": "d5f521e9d8b64f4d07e2db3a75504cebde2be9ca1176784dc758d8e8214940ad",
+      "tests/cases/CORE-016.py": "41b12be3a1c6147c03353a3aa7a2dbe16836a01ddd80925c97a8797cbb347e13",
+      "tests/cases/CORE-017.py": "39c788e635ddc244ac93818d8bbffbf4e50438ce1dc7ed107eefbb9c1693c190",
+      "tests/cases/CORE-018.py": "5a728516c5a9d61877539996261abb0477fd25ed41361707c9ec0263011b1063",
+      "tests/cases/CORE-019.py": "1c13acf5fed70733005243f2aee3cee2a6f3aafacf567493e9e20ae46d9750a1",
+      "tests/cases/CORE-020.py": "0b52d1cc8640ac4d71ca6161c5bbf5337a87d61daa34557a60df77b9d59bb667",
+      "tests/cases/CORE-021.py": "7de57c46307584aa8779b1b44abeb72ed075659eec78f5b9100f4e1933c4564a",
+      "tests/cases/CORE-022.py": "ecba6e9a1acb248711ad03df231d8142c5bd65ec4e211a2578fed892d0d25be4",
+      "tests/cases/CORE-023.py": "62c0286c39628544e0c6661291223692ac0230607b054ac558722f038267b848",
+      "tests/cases/CORE-024.py": "8a6e4e1fb073e70a3acc3de8db41a56109aca826e5add5238f77b0af846683e6",
+      "tests/cases/CORE-025.py": "0230410352cec6e40f6bdae197a65f8139ee81e3ba8b3ea6fa3038460ff926cb",
+      "tests/cases/CORE-026.py": "9f0ad2783d86142c225c1d186e3d4e3b82a9779ffe2d7fed2656d3ca71a29aa9",
+      "tests/cases/CORE-027.py": "0f67fa783baa5b03b46f4e5d90c648adaa0fd432ea2edae4879dde64db72a0c7",
+      "tests/cases/CORE-028.py": "0962cb62bd27363de79155ac7742ee3d00c02acccb437dbb61e8a32e0bc33c5b",
+      "tests/cases/CORE-029.py": "98dc40911e324b39c6ea7d7af192fa6f59b22fe23539176d947c8d9d4a54c974",
+      "tests/cases/CORE-030.py": "b2943d6463bcf54a3c4a94edd088f71a1426faa9d35c9e20035c77a636f26ac2",
+      "tests/cases/CORE-031.py": "9e969ccfb60f18746eae2cec4036caf8210aea525a61856fdd2a1c6584307663",
+      "tests/cases/CORE-032.py": "ac40a726f05c6856d3d98f59f02a3516062bdf32913c1372c421d222059a8d94",
+      "tests/cases/CORE-033.py": "7cac7062f18b743165e36d049d139cacef79c3f660d98ed3450110ddd3ec264e",
+      "tests/cases/CORE-034.py": "284c8e75d25dede02b59a9ed214883954e278f4c753034bd86d86a2dd6e27c4a",
+      "tests/cases/CORE-035.py": "6c49d792c1b6aa14960e9935c3c5abdbf586de54f29ac2dc1da5b3977e5f4713",
+      "tests/cases/CORE-036.py": "1ea0947292d189f25ccc06ae9bd27f2925510b3de5386013b11db32f16970738",
+      "tests/cases/CORE-037.py": "ea84375bfb3f5b76f0be2d004a0ad87af61d064fbed1b5884471e04e6652f2ce",
+      "tests/cases/CORE-038.py": "8f6667481b5edadab2259cc67ebc74209da8808448e0f26a8b0481e1a227aed2",
+      "tests/cases/CORE-039.py": "708740e89ffb26fe9c8cac1a6deaf6f5c52f922ee4e577d96f88d213e0baa49f",
+      "tests/cases/CORE-040.py": "102e94ee62c0431169719bf21a40ae79caa4cc3448a51e6a014c8a7aecaeab76",
+      "tests/cases/CORE-044.py": "bf678e952f22d04424bd60f38dab23579ef22ae9a6b0b9dc9a4edd469740c4e5",
+      "tests/cases/CORE-048.py": "3064e4aaa67bec2010f469bbb3d667969503c080d3652da5280174d0c66f40a1",
+      "tests/cases/CORE-049.py": "ea6a35d4c14979a23c65e589f0207ba7ed0e54ecd8468248da1cb16db400751b",
+      "tests/cases/CORE-050.py": "2af828609705372e71fe1824092ccea6df96fd010c7bf208118ec4dad4ed2867",
+      "tests/cases/CORE-051.py": "9750420d795f9953905b16e71243377d547e09f2f7264e2d1b0bfffaac369874",
+      "tests/cases/CORE-052.py": "f6166f8303bc0419fdd7caaa137cefd6f54898138b3f0802445823a0454c5dcb",
+      "tests/cases/CORE-055.py": "092d1d8e84b05ec102b19e34aa93ba23eb6c31c45ad88a5e29676eb620ca7f73",
+      "tests/cases/CORE-056.py": "6173b7a97e49e55ad96e30c7cde79ec512a274431d28e0b9b27d517783389f1d",
+      "tests/cases/CORE-057.py": "14e48cc5b1cac9dbbc456e7361da665e59fea4bf841b5f41d0354d6c3a57c610",
+      "tests/cases/CORE-058.py": "5949261ced10755fd566f96e62f66d63f567b671f8468c759f3bcf355c2bf1a2",
+      "tests/fixtures/CORE-001.json": "63fe7c176f222d10a9d666273d22a38f5d05009fb6e17ba6d37a82f11ddc1832",
+      "tests/fixtures/import/model-v4/existing-segments.json": "75d92936bf63463321663aa6b751ea7c77ba5db7986aaed726668257102794e6",
+      "tests/fixtures/import/model-v4/explicit-defaults-absent.json": "da776796810c67e591d4578106c801a62d364e8a2ba2b878be5b7f37175742ca",
+      "tests/fixtures/import/model-v4/explicit-dotenv-absent.json": "aedc6cfd0e3048198f73bb17829dedc52bb55a016b88c82b3438b7ab5d448376",
+      "tests/fixtures/import/model-v4/explicit-dotenv-global.json": "bf697009a9f550766748bacce812c0f5f9a9434e8cba475ffff9ede003407a83",
+      "tests/fixtures/import/model-v4/explicit-dotenv-null.json": "f062db84ac2780900f3508700968ba1a72b9e0e43bce7ae875f063f93c8664e4",
+      "tests/fixtures/import/model-v4/explicit-process-absent.json": "5c86f8384c6070c0944d06983eee59481826d74c09c619d02333ff90c46051e9",
+      "tests/fixtures/import/model-v4/explicit-process-global.json": "415bf6836dbbe829f2ab8483a7cc29a4a0c136ff704a8f482ce233fb2050f2f3",
+      "tests/fixtures/import/model-v4/explicit-process-null.json": "7ab87b94e64f5248109836a378e832782d4e3f2d61c66dbccfe11d77a531acca",
+      "tests/fixtures/import/model-v4/explicit-sources-retired.json": "74022534646e8194c8ee8b54f1ad3e9bd0bd911d9b8d3e166ab3c02a408c32d8",
+      "tests/fixtures/import/model-v4/global-777.json": "b8b13bf85fdccea001fee7fb967d47c754b3da67c30a6e8ad9112aa7932fd1ca",
+      "tests/fixtures/import/model-v4/global-None.json": "21448efbcd82e0bab86b4c96128a8942bf37726078760c0539ec0864be27ab0a",
+      "tests/fixtures/import/model-v4/main-profile-defaults.json": "06535f1ea1442de6130303ffeae872dd5629a2fcdbad2b8a520d583150fc3f6c",
+      "tests/fixtures/import/model-v4/no-empty-key.json": "38977b4f21861d4e9e0f59cae651b7260a6d56ab09a27d52fc2989d26980a01d",
+      "tests/fixtures/import/model-v4/no-partial-write.json": "290f4f42747004f8bb270259b1418e2cd9c9b7bb5d0792db0556dba5c0a2b22a",
+      "tests/fixtures/import/model-v4/offline-effective.json": "132cf82970a72d11cdb78984f4ecaa0ec342c8ab872ac973fa2cd083ee80c751",
+      "tests/fixtures/import/model-v4/persisted-model-source.json": "46e624ab5d04d267553af7afab17a7c001d036c16955ee25f75fb0adcbd0a2b2",
+      "tests/fixtures/import/model-v4/provenance.json": "3f6b0fa3a3db649d8cdc3d9650891ea01be48e8a5866f4e292be25069f133fbc",
+      "tests/fixtures/import/model-v4/retirement-partial.json": "ad06b7ccc35123822d77514c7d9e539e03414b7d3307d3406d7cab79ad1b2a30",
+      "tests/fixtures/import/model-v4/search-mode-both.json": "35f3c6998f46b5875cda107cd70fce22cbd818c1bb782edc56e84527f1f56b69",
+      "tests/fixtures/import/model-v4/search-mode-native.json": "82c3dd32eaee7affb3c11f60fd769846f25edb3356ef2241a738d220c0069100",
+      "tests/fixtures/import/model-v4/search-mode-tavily.json": "75239af694f37cdc5862ca3b931e6a551449ddea043246c77482561c0fcbdea0",
+      "tests/fixtures/import/model-v4/settings-defaults.json": "80aca053161e7ee134d35b1b34c1f6318c764fea9f492c205672c0f78fcf4d39",
+      "tests/fixtures/timezones/America/Los_Angeles": "200d05754f6d83a371cf408d7085125797657b3b0bebeba1e508cffe86a3e5c8",
+      "tests/fixtures/timezones/America/New_York": "d7f2206b3a45989fc9ad63d558922532fa7352280d5f87176bf1db79cb1d1fa9",
+      "tests/fixtures/timezones/America/Sao_Paulo": "fa2ceb222f065c0289f3997ff0c54ba05a74a599b4522870fa86a96e24e18891",
+      "tests/fixtures/timezones/Asia/Shanghai": "bf8b7ed82fe6e63e6d98f8cea934eeac901cd16aba85eb5755ce3f8b4289ea8a",
+      "tests/fixtures/timezones/LICENSE": "33e8e5002d3512d3fcc2282b995e6bad9d334781b9c5ac31843f404900e1f3b4",
+      "tests/fixtures/timezones/LICENSE_APACHE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "tests/fixtures/timezones/provenance.json": "4210f5064571fc72f31b7b70c891432a4d247a0dd034a72c14327627697a068c",
+      "tests/fixtures/usage/known-coverage-cache.json": "a003f6406ae4162a7d5c407436b151855f6784e3743ee749eb87689b9179496d",
+      "tests/harness/__init__.py": "ec33d0441f499494dc67b89600218c0bcf951aa36918ba55ef42a9137ba5bf96",
+      "tests/harness/client_stream.py": "4edbc1a3075be1c9818a79656341a996b556b129b4f6f602b2141f1f647b5063",
+      "tests/harness/client_uploads.py": "e42771d23d2527d3be8294c614ead04778ce67082a2f6945e24f515e460247de",
+      "tests/harness/code_scenarios.py": "87dcf1c47117d42059b8ca030d563df1c6f746833a0e4245fddba04f9700d0a7",
+      "tests/harness/compact.py": "b7a9136b97b5cfab726040641fb94a29ea5c784e56e498031e1be36cf3fee148",
+      "tests/harness/connector_auth.py": "0c06201effe2127826253eb2e8f40cb3b63557520f1bf8db684a92e2bc857ec7",
+      "tests/harness/contacts.py": "06fe4228c05d173c734ef0c323230eafb29a4f5397bce5490fb15b7b00af3a5f",
+      "tests/harness/control_authority.py": "e25818b30335766c489ebe60bfde3869d34199e21ea7f460e40a189886bd7f76",
+      "tests/harness/control_config.py": "1c7fedae36d89d8e93c6c5797e2a4c529b5059d61f1523638eae0742c1da285d",
+      "tests/harness/control_discovery.py": "1a203eeca4837eced309c42ca3a8f07899a21f0ea28719c0927df5a418f3a95b",
+      "tests/harness/control_failure_receipts.py": "b97738f81d84d7cdaa36865f4ab6539b1ccf88a25d5459c40bc2fd8f7d73a82e",
+      "tests/harness/control_identity.py": "859223d472433f1dd9c649f8f653b7baff327da11b79efb5f9df119c59b37327",
+      "tests/harness/control_model_probes.py": "0087599cd070c89f6788dd9e7436c5e12fe35692f6585a51e07c7684482a24ff",
+      "tests/harness/control_outbox.py": "b7745c5d11cfa59564edf02fc4e087448b1af95ce897efe6db31d3da9fc93ce8",
+      "tests/harness/control_presence.py": "af669372e9b0e0398621ecfbba1c95ae14856c0a1649cfefee53aa36c9907382",
+      "tests/harness/control_sdk.py": "907e617277cb6c06cb1872f7e051760102a1c67ca1c247df60f23a44610797c5",
+      "tests/harness/control_trace.py": "5ca0c8b0f42697c22796d412e9fbc67578743f9e7f42d0a1946b618f5b2cac25",
+      "tests/harness/control_usage.py": "96011fd1419babac224cda4f6ceb9ab291ff1a8524379cc334e10c24a8802081",
+      "tests/harness/control_work.py": "89f4067730f47816b3e57b3596a7db69976edf798e916a53115c268ea77af526",
+      "tests/harness/crash.py": "a7f687e72157a9a4d6df01d4f79e931d6cb68fc752a354f6ea31aa18813e4f65",
+      "tests/harness/current_group_report.py": "362c14f36519dac40c209037ba04fa1d956fe700f23159ac4eddcc181503e1f8",
+      "tests/harness/entry_selection.py": "6518ba20baf358b1ec28d3973adffca31ea0eb89dd0fb70be5c707153e232000",
+      "tests/harness/external_search.py": "c95e564cd8983b739c7ba75911b0584644d812072471c965d60610993e8f5405",
+      "tests/harness/gateway_media.py": "b1750401cfb5c0999d59d74998777f213a7a23e3895cb5b7594cae04176fd851",
+      "tests/harness/group_attribution.py": "7baa560ed91732e6c6cbca1954d294c3d242ab86631fe57135fbd1b477d1d969",
+      "tests/harness/handshake.py": "0285743942c4f51b34d3f362b0a61f86fbad328250f24d5d35961289cdf15a63",
+      "tests/harness/history_wire.py": "cceaf7a5ab162f072a7fbf686c4e4cef8bba9c59183a407126d369c71c8fbab6",
+      "tests/harness/json_file.py": "fc4eb602c67981e72cd36a3753bc984c583d7d092d5193eb024423c766036d52",
+      "tests/harness/memory_contest.py": "50e64eb1d1b898735bfadb09a311ee225b5848b72e6d75a63eed08a72ff38db2",
+      "tests/harness/memory_create.py": "2890abf37bab15871f85783d1adadfa96d7c903668b238d435bd96512df683c8",
+      "tests/harness/memory_merge.py": "93b6a33573b45419b349cb4b253d4f65086cd2c2df2f8ba1c33ed285945cfaef",
+      "tests/harness/memory_metadata.py": "8fe6678c9ef519f82ed320226e592804d341903436597b3d1acf18591236c32a",
+      "tests/harness/memory_restore.py": "b80e40dfc09a83e36092ae4797eb227b1982f928d11a66b89a85862efc2fe2e1",
+      "tests/harness/memory_selectors.py": "0174f03b46fd471ae77a455c8e8b02536808216feb2c063483cb52a02c541fb2",
+      "tests/harness/memory_temporal.py": "fe2adcc64c33235bfb4bf8353b3f79d8276205eb611ec17c7ad9ce0ba0b7a691",
+      "tests/harness/native_only_search.py": "567843fd5901cc5ef89bedcac864462e193d953874485ad97a031104430c8e55",
+      "tests/harness/network.py": "a602f384bb40fbbde9c0632e97945997a3c9af80b2731de687c4e585c8e176cb",
+      "tests/harness/observed_members.py": "2da68a9894ebaa6621154ef78dc72350761596b596b2785e52dd6f1d6363c4ed",
+      "tests/harness/owner_cleanup.py": "f019a4753b270cd1bf1207789abde8a7e43c37e44f53070c54904284b46cb478",
+      "tests/harness/permission_directory.py": "5e804652e89e91c8ba71a5f4d30a15953de9ed777be5437717c7307ce505c386",
+      "tests/harness/personal.py": "cfafbc71f4de9e61c5c3c75312e6a69475ae191b5428c7b8f986940ab42b22b2",
+      "tests/harness/personal_files.py": "f4c5fc9fb46ca77a0f5bdff6cd04ec26cfad84097c424e051cdccd06012d8168",
+      "tests/harness/portable_cleanup.py": "0baf7c99dbc26be14bf68f1a7aba0efa3ee7fc656f31d24d8da2209efb7cced3",
+      "tests/harness/recall_wire.py": "23a7ed74b3ab25395d083f031dbb52797103e2c8d48008b9c6c7f9c51c97c6ad",
+      "tests/harness/selected_processor.py": "bb980ab1ca159ed5281ce9357b5f3a0acb0f1e1d62cbd37dd47d9caee4470229",
+      "tests/harness/selected_work.py": "0e439ab0c11d9a1cb1d31ede4210ccb98cc437df6ff603c86bf2f62e0b319169",
+      "tests/harness/send_entry.py": "b3d94e18ac70317a573235f2d4dc95ff8624960939cb883493b47ce98adbb66e",
+      "tests/harness/service.py": "e0ac3f2909ccdf8837be0a2d85649cd855a98e1fc184d03055742dc98a59f517",
+      "tests/harness/terminal_work.py": "a3fe708cb172c5460f418bd0ff34de5ffa7c10bc72ac1d65aa3336c78128edf9",
+      "tests/harness/timezones.py": "5699ac6e4a80c8759344f7a210fd10c75814c909c1606f471c95f09dbee449b1",
+      "tests/harness/tool_call_isolation.py": "a758f44005facd2f96a1d62b9f67eb534e8981137ad154879c2e714b651bab31",
+      "tests/harness/windows_acl.py": "c4ff85c1becc6f0a6177a41676364872fa4a62abbc860730b4f9f41e5c50d4ec",
+      "tests/harness/work_segments.py": "56ea2d69dc5cce78d8b603f2dbf0e554b6c0dc08ece125885a235a8c6c33afaf",
+      "tests/harness/worker.py": "51af13f1d56dff3100cba35424be8918c48503e73bba8b7ef6e73b0d8a96662d",
+      "tests/peers/aux-model/peer.py": "aed149eb8214a9a353a1872523ddbe0d28bc28185470636441cf05c12a343bbf",
+      "tests/peers/base/joint.py": "8e0fa19a8e8bc6542f421dc0e69262c655406957e469a36344013102915dd88b",
+      "tests/peers/base/probe.py": "efd5d0af66914e6337e573beb7d16cd0f6dc221a751c0b8c72b5da1034e956b1",
+      "tests/peers/base/qualify.py": "17667e36a90929a7a246ba236bc3641948fddae210e1a50cec5f75419b3ba28e",
+      "tests/peers/base/relay.py": "dc7374a5aef00468a09ac3a55e80428d2798263cc6eecda55d6f71e0bffadd4f",
+      "tests/peers/chat/recorder.py": "ed7d7c9b557ee47118e62778aa5e4191732bcef77220ed4b52ccbe77ab2ba985",
+      "tests/peers/code/peer.py": "1a98ecc2e01058762cbaecff5f0b17e7e0d42870de1d5a11c7389d87ae5e33f6",
+      "tests/peers/control/configuration.py": "8a1ab07e6f9edf14711b44eaf47325122ec914e0d7ce7e79ea73716ea50a658d",
+      "tests/peers/control/invocation.py": "736307e9b26bc823e4b5210823e90a3b4e86cde3d23c5e01a78632b2606779f7",
+      "tests/peers/control/rust.rs": "0495185a1bd495a8aa54c9a56f7ab185ecdfa6f9da8d602e8f117befa0a198c1",
+      "tests/peers/erasure/owner.py": "2c8c603f647377d0b32505675d6b0856706970ec812e61dbb4545a4d323b8278",
+      "tests/peers/forget/peer.py": "92a6a79373e96f1e3703cc5f23beea611d1813b69d3dbbaa6547e3975befbe47",
+      "tests/peers/host-media/peer.py": "c89ac2063d60ad5c56e304d22fddf0224d0aa81d0dce7717ab8ee84a91f859d0",
+      "tests/peers/host/peer.py": "154df6126bd3c1988b61173f0f3ef4cf1cc5dfa0d65414af2d44f3cc5c16c92e",
+      "tests/peers/host/rust.rs": "5ef82ec666046c49af03760988f49f4df35b264bd6e5da1f8a24868b0fa2e4d0",
+      "tests/peers/onebot/peer.py": "371bb15bbae043a3c851dd5786a9c6ef986c85b96a57484cf94fe33749c3a6bc",
+      "tests/peers/personal/consumer.py": "4a7e4d0fd921720acab2b1dfdc5399a215ef77260a0c67e5de4afea141a9f98a",
+      "tests/peers/personal/wire4.py": "ff5ca2e0a6151581cbea54760b8426e6df0ae7d30e16c8fd403ecf6e54943a68",
+      "tests/peers/search_probe.py": "f12a4d01b2eb32ba56d3c30d4de78167c42eadd7f2c83a763ce4a92f835ab178",
+      "tests/peers/terminal/consumer.py": "14f9e1480d4705a880a66e1be2d170c37c65d73dbac0b22f86c789e6c801eda5"
+    }
+  },
+  "capabilities": [
+    "scoped-media-byte-bridge",
+    "immutable-plugin-publication",
+    "presentation-independent-effects"
+  ],
+  "cargo_lock_sha256": "02e527a0e710173689134165007b111217d3c612022882328bc53b695d5fed59",
+  "stages": [
+    {
+      "name": "rust-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "timeout_seconds": 600,
+      "timed_out": false
+    },
+    {
+      "name": "rust-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "timeout_seconds": 600,
+      "timed_out": false
+    },
+    {
+      "name": "rust-writer-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--bin",
+        "yuki-core",
+        "--message-format=json",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "timeout_seconds": 600,
+      "timed_out": false
+    },
+    {
+      "name": "rust-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--bin",
+        "yuki-core"
+      ],
+      "exit_code": 0,
+      "timeout_seconds": 600,
+      "timed_out": false
+    }
+  ],
+  "rust_cases": {
+    "r01_cancel_rollback_failure_keeps_writer_until_physical_close": true,
+    "r01_unknown_close_stops_new_writers_while_reader_works": true,
+    "root_commit_hints_exclude_savepoint_release_and_rollback": true
+  },
+  "sqlite_compile_options_sha256": "63d3630cc2fbb35380499508bcc1edd258f4dd70025a4e0c43bfe1414fc7dac6",
+  "schema_version": 55,
+  "sdk_version": null,
+  "duration_seconds": 24.850754
+}

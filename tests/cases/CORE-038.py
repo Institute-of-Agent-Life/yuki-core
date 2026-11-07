@@ -2,7 +2,7 @@
 
 import base64
 from concurrent.futures import ThreadPoolExecutor
-import hashlib, json, os, struct, subprocess, sys, zlib
+import hashlib, json, os, struct, subprocess, sys, uuid, zlib
 from pathlib import Path
 from tests.harness.compact import Owner, call, reply
 from tests.harness.gateway_media import refused_media_send, run as gateway_inbound
@@ -59,7 +59,7 @@ def installed(ctx, o, folders, sdk, model=None, visual=False, gateway=None, proc
         if gateway is not None and plugin == "codec-b":
             text = (
                 text.rsplit("grants=", 1)[0]
-                + 'grants=["media.open","media.publish","media.process","tool.call","forget.owner","gateway.inbound","gateway.send"]\n'
+                + 'grants=["media.open","media.publish","media.process","tool.call","forget.owner","gateway.inbound","gateway.send","gateway.recall"]\n'
             )
             text += f'platform="telegram"\nbot_stage="{gateway}"\n'
         if plugin == "codec-a":
@@ -103,7 +103,7 @@ def gateway_delivery(ctx, sdk, paper):
     with Recorder() as model:
         installed(ctx, owner, folders, sdk, model, False, gateway=bot["assignment"])
         config = owner.svc.data / "yuki.toml"
-        config.write_text(config.read_text().replace("root_slots=8", "root_slots=16"))
+        config.write_text(config.read_text().replace("root_slots=8", "root_slots=32"))
         env = {**os.environ, "YUKI_BROKER_QQ": "synthetic-media-receiver"}
         with owner.svc.running(environment=env):
             ready(owner, folders)
@@ -217,8 +217,52 @@ def gateway_delivery(ctx, sdk, paper):
             ctx.equal("quoted dispatch preserves the plan's first immutable part", quoted["part"]["reply"], quoted["reply"])
             ctx.equal("quoted send succeeds on its original operation",
                       json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == "original-reply"))["state"], "confirmed")
+            sent = owner.rows("SELECT d.event,o.locator,o.child FROM personal_deliveries d JOIN social_outbound o ON o.id=d.outbound WHERE o.namespace=? ORDER BY o.id", execution)
+            ctx.equal("two original gateway deliveries have public event identities", len(sent), 2)
+            recall_results = {}
+            for name, original in [("recall-original", sent[-1]), ("recall-again", sent[-1]), ("recall-refused", sent[0])]:
+                if name == "recall-refused":
+                    (peer / "recall-failed").touch()
+                reply(q, calls=[call(name, "recall_own_message", {"event_id": original[0]})])
+                wire, q = owner.wire(model)
+                result = json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == name))
+                recall_results[name] = result
+                ctx.equal(name + " retains the original terminal state", result["state"], "failed" if name == "recall-refused" else "confirmed")
+            (peer / "recall-failed").unlink()
+            physical = [json.loads(line) for line in (peer / "recalls.ndjson").read_bytes().splitlines()]
+            ctx.equal("two logical recalls share one physical original recall", len(physical), 2)
+            ctx.equal("recall uses the sent part's original native locator", physical[0]["original"]["native_id"], sent[-1][1])
+            ctx.equal("recall preserves the original route", physical[0]["route"]["chat"], "room-42")
+            ctx.equal("only the confirmed recall hides its own original part",
+                      owner.rows("SELECT recalled FROM social_outbound WHERE namespace=? ORDER BY id", execution), [(0,), (1,)])
+            reply(q, calls=[call("lost-recall-source", "send", {"text":"original to recall"})])
+            wire, q = owner.wire(model)
+            uncertain_event = owner.rows("SELECT d.event FROM personal_deliveries d JOIN social_outbound o ON o.id=d.outbound WHERE o.namespace=? ORDER BY o.id DESC LIMIT 1", execution)[0][0]
+            (peer / "recall-lost").touch()
+            reply(q, calls=[call("recall-lost", "recall_own_message", {"event_id":uncertain_event})])
+            wire, q = owner.wire(model)
+            uncertain = json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == "recall-lost"))
+            ctx.equal("lost native recall retains unknown on the original operation", uncertain["state"], "unknown")
+            (peer / "recall-lost").unlink()
+            routed["recalls"] = {"results":recall_results,"lost":uncertain,"physical":3}
             reply(q, "done")
             owner.finished(event)
+        config.write_text(config.read_text().replace(',"gateway.recall"', ''))
+        for folder in folders.values():
+            (folder / "ready.json").unlink(missing_ok=True)
+        with owner.svc.running(environment=env):
+            state = owner.op("control", "read", "plugin.get", '{"plugin_id":"codec-b"}')
+            owner.op("control", "write", "plugin.approve", json.dumps({
+                "plugin_id":"codec-b", "request_id":str(uuid.uuid4()),
+                "expected_revision":state["revision"], "permissions":state["requested_permissions"],
+            }))
+            owner.op("host", "enable", "codec-b", "true")
+            ready(owner, folders)
+            ctx.equal("cold owner retains all original recall receipts",
+                      owner.rows("SELECT state FROM social_recalls ORDER BY state"),
+                      [("confirmed",), ("failed",), ("unknown",)])
+            ctx.equal("cold owner never redispatches a retained native recall",
+                      len((peer / "recalls.ndjson").read_bytes().splitlines()), 3)
             ctx.equal(
                 "only successful native child binds outbound artifact",
                 owner.rows(
@@ -236,6 +280,29 @@ def gateway_delivery(ctx, sdk, paper):
                 owner.until(lambda: (peer / "probed.json").exists())
                 return json.loads((peer / "probed.json").read_bytes())["result"]["event"]
 
+            replay_event = submit_source("recall-after-cold", True)
+            _, q = owner.wire(model)
+            for name, original_event, expected in [
+                ("cold-confirmed", sent[-1][0], "confirmed"),
+                ("cold-failed", sent[0][0], "failed"),
+                ("cold-unknown", uncertain_event, "unknown"),
+            ]:
+                reply(q, calls=[call(name, "recall_own_message", {"event_id":original_event})])
+                wire, q = owner.wire(model)
+                retained = json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == name))
+                ctx.equal(name + " reads the original receipt", retained["state"], expected)
+            reply(q, calls=[call("ungranted-source", "send", {"text":"requires a fresh recall grant"})])
+            wire, q = owner.wire(model)
+            ungranted_event = owner.rows("SELECT d.event FROM personal_deliveries d JOIN social_outbound o ON o.id=d.outbound ORDER BY o.id DESC LIMIT 1")[0][0]
+            for name, original_event in [("ungranted-recall", ungranted_event), ("foreign-recall", event)]:
+                reply(q, calls=[call(name, "recall_own_message", {"event_id":original_event})])
+                wire, q = owner.wire(model)
+                denied = json.loads(next(m["content"] for m in wire["messages"] if m.get("tool_call_id") == name))
+                ctx.equal(name + " fails before a native request", denied["state"], "failed")
+            ctx.equal("new logical requests after cold start produce zero physical recalls",
+                      len((peer / "recalls.ndjson").read_bytes().splitlines()), 3)
+            reply(q, "done")
+            owner.finished(replay_event)
             quoted_event = submit_source("erasable-reply", False)
             foreign_event = submit_source("other-topic", False, space="separate-room", topic="other")
             trigger = submit_source("reply-race", True)
