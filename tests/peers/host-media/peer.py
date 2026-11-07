@@ -111,8 +111,19 @@ def serve(frame):
                     {"text": "selected result", **({"media": chosen} if chosen else {})}
                 ]
             }
+            if original_reply := p["arguments"].get("reply"):
+                result["parts"][0]["reply"] = original_reply
+                if (folder / "tamper-reply").exists():
+                    result["parts"][0]["reply"] = {**original_reply, "native_id": "foreign"}
+                if (folder / "pause-reply-plan").exists():
+                    note("reply-plan-waiting", p)
+                    deadline = time.monotonic() + 10
+                    while (folder / "pause-reply-plan").exists() and time.monotonic() < deadline:
+                        time.sleep(.01)
         elif method == "gateway.dispatch_part":
             args = p["arguments"]
+            if args.get("reply"):
+                note("reply-dispatched", args)
             offset = 0
             chunks = []
             if args.get("media"):

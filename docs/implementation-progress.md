@@ -2,6 +2,8 @@
 
 2026-11-06。固定 v4 行為基線 `329ca7c487414d2f54ddd98ff4727446ed2446cd`；任務書工作副本的 CORE-011 已採用 K05 的邏輯請求預留規則。下列證據路徑相對於 yuki-core 工作目錄。
 
+**CORE-038 原事件引用補齊進行中。** 分支 `codex/core-038-gateway-original-reply`。Host 以原 entry 和接收 SELF 解析 `reply_to_event_id`，只允許第一段攜帶原 native locator，並在 writer 的派發邊界再次檢查。跨 entry、被刪來源與插件改寫定位均停止。Mac 預驗 `artifacts/CORE-038/original-reply-preflight-04/manifest.json` 已通過，包含規劃期間刪除來源後零物理派發。此時原執行保留 held，原操作可診斷。三端完整 CI、簽署候選及 Telegram 真插件引用重放接續執行。
+
 **核心任務已完成 49／58 張。** CORE-001–039、044、048–052、055–058 已完成。CORE-040 已取得部分驗收證據，剩餘 9 張的交接條件見下表。[逐卡分支與原產物](https://github.com/Institute-of-Agent-Life/yuki-core/blob/8555755a439b0e67bdda6f00673eaed2ab7502a0/docs/implementation-progress.md)，[先前候選、回放與清理明細](https://github.com/Institute-of-Agent-Life/yuki-core/blob/e680fc23847c8460639294eef7448d27d465b79c/docs/implementation-progress.md)。
 
 | 已合併 PR | head | main 合併提交 | 本地 Mac／Linux／HJW Windows |
