@@ -371,6 +371,8 @@ def run(ctx):
         )
     from tests.harness.memory_create import run as create_arguments
     create_arguments(ctx)
+    from tests.harness.current_group_report import run as current_group
+    ctx.write("current-group-report.json", current_group(ctx))
     from tests.harness.group_attribution import run as attribution
     ctx.write("group-attribution.json",attribution(ctx))
     from tests.harness.memory_contest import run as contest

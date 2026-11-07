@@ -21,6 +21,18 @@ async fn source_actor(
          JOIN assignments bot ON bot.id=e.bot_stage AND bot.status='active' WHERE e.id=? AND g.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=e.id)")
          .bind(event).bind(&r.base.home).fetch_optional(&mut *db).await?.ok_or("original_group_required")?;
     let (person, authority) = match reference {
+        "current_group" => {
+            return Ok((
+                facts::Subject {
+                    kind: "group".into(),
+                    person: None,
+                    space: Some(group),
+                    visibility: None,
+                    entry: None,
+                },
+                "group_report",
+            ));
+        }
         "current_speaker" => (actor, "explicit"),
         reference if reference == "mentioned_user" || reference.starts_with("member_") => {
             // Only admitted human Assignment IDs from this event qualify. Exclude the
@@ -70,7 +82,9 @@ pub(super) async fn apply(
     let reference = req["target"]["subject_ref"]
         .as_str()
         .ok_or("missing_subject")?;
-    if req["target"]["scope_type"] != "person_group"
+    let group_report =
+        req["target"]["scope_type"] == "group" && reference == "current_group" && !moved;
+    if !group_report && req["target"]["scope_type"] != "person_group"
         || (moved && reference == "current_speaker")
         || !req["selector"].is_null()
         || (!moved && !req["fact_id"].is_null())
@@ -181,17 +195,27 @@ pub(super) async fn apply(
         sqlx::query("INSERT INTO memory_versions(fact,revision,body,confidence,execution) VALUES(?,?,?,?,?)").bind(former).bind(rev).bind(old["body"].as_str()).bind(old["confidence"].as_f64()).bind(exec).execute(&mut *db).await?;
         tools::bind_sources(db, exec, former).await?;
     }
-    sqlx::query("UPDATE memory_evidence SET attribution=? WHERE fact=?")
-        .bind(authority)
+    if group_report {
+        sqlx::query(
+            "UPDATE memory_evidence SET relation='group_statement' WHERE fact=? AND event=?",
+        )
         .bind(&id)
+        .bind(event)
         .execute(&mut *db)
         .await?;
-    sqlx::query("INSERT INTO memory_attributions(fact,authority,supersedes) VALUES(?,?,?)")
-        .bind(&id)
-        .bind(authority)
-        .bind(prior)
-        .execute(&mut *db)
-        .await?;
+    } else {
+        sqlx::query("UPDATE memory_evidence SET attribution=? WHERE fact=?")
+            .bind(authority)
+            .bind(&id)
+            .execute(&mut *db)
+            .await?;
+        sqlx::query("INSERT INTO memory_attributions(fact,authority,supersedes) VALUES(?,?,?)")
+            .bind(&id)
+            .bind(authority)
+            .bind(prior)
+            .execute(&mut *db)
+            .await?;
+    }
     sqlx::query("INSERT INTO memory_operations VALUES(?,?,?,?,1,'committed')")
         .bind(exec)
         .bind(op)
@@ -205,6 +229,6 @@ pub(super) async fn apply(
         .fetch_one(&mut *db)
         .await?;
     Ok(
-        json!({"fact":id,"fact_id":number,"old_fact_id":old.as_ref().map(|v|v["fact_id"].clone()),"new_fact_id":number,"revision":1,"outcome":"committed","applied_operation":req["operation"],"reason_code":if moved{"memory_reassigned"}else{"created"},"authority":authority}),
+        json!({"fact":id,"fact_id":number,"old_fact_id":old.as_ref().map(|v|v["fact_id"].clone()),"new_fact_id":number,"revision":1,"outcome":"committed","applied_operation":req["operation"],"reason_code":if moved{"memory_reassigned"}else if group_report{"independent_claim"}else{"created"},"authority":authority}),
     )
 }

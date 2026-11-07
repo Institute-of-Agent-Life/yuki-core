@@ -86,6 +86,10 @@ async fn summary(
     if let Some(authority) = row.try_get::<Option<String>, _>("attribution")? {
         result["authority"] = json!(authority);
     }
+    if evidence.iter().any(|e| e["relation"] == "group_statement") {
+        result["authority"] = json!("group_report");
+        result["source_type"] = json!("automatic");
+    }
     if detail {
         result["evidence"] = json!(evidence);
     }
