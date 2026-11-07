@@ -248,7 +248,7 @@ pub async fn message(conn: &mut SqliteConnection, who: &Principal, body: &Value)
         answer_work_id: None,
         text: (!parts.is_empty()).then_some(rendered),
     };
-    let admitted = admit::from_gateway(conn, frame, true).await?;
+    let (admitted, _) = admit::from_gateway(conn, frame, true).await?;
     let event = admitted["event"].as_i64().ok_or("message_unavailable")?;
     super::uploads::attach(conn, event, &parts).await?;
     let original: (String, String) =

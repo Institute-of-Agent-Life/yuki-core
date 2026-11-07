@@ -209,7 +209,7 @@ pub(crate) async fn from_gateway(
     conn: &mut SqliteConnection,
     frame: Frame,
     accept: bool,
-) -> Result<Value> {
+) -> Result<(Value, bool)> {
     let prepared = facts(conn, &frame).await?;
     apply(
         conn,
@@ -313,7 +313,7 @@ async fn entry_for(
     .await?)
 }
 
-pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<Value> {
+pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<(Value, bool)> {
     let f = &request.frame;
     let verified = facts(conn, f).await?;
     let scope = if let Some(image) = &request.shared_image {
@@ -335,9 +335,12 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
     .bind(&f.source)
     .fetch_optional(&mut *conn)
     .await?;
-    let (id, eligible) = if let Some(row) = existing {
+    let (id, eligible, created) = if let Some(row) = existing {
         if row.try_get::<bool, _>("erased")? {
-            return Ok(json!({"event":row.try_get::<i64,_>("id")?,"accepted":false,"erased":true}));
+            return Ok((
+                json!({"event":row.try_get::<i64,_>("id")?,"accepted":false,"erased":true}),
+                false,
+            ));
         }
         let mut original: Frame = serde_json::from_str(row.try_get("envelope")?)?;
         original.observed = f.observed; // Arrival timestamps may differ on redelivery.
@@ -358,6 +361,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
         (
             row.try_get("id")?,
             same_actor && row.try_get::<bool, _>("open_entry")?,
+            false,
         )
     } else {
         // A changing assignment is reclassified inside this writer transaction.
@@ -372,7 +376,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
             .bind(&scope).bind(&f.source).bind(&entry).bind(&f.account).bind(&facts.actor).bind(&facts.stage)
             .bind(&f.bot_stage).bind(f.occurred).bind(f.observed).bind(serde_json::to_string(f)?)
             .bind(facts.mentions.to_string()).fetch_one(&mut *conn).await?;
-        (id, entry.is_some())
+        (id, entry.is_some(), true)
     };
     if let Some(native) = &f.native_id {
         sqlx::query(
@@ -421,7 +425,7 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<V
     {
         receipt["work_answer"] = json!({"matched":routed});
     }
-    Ok(receipt)
+    Ok((receipt, created))
 }
 
 async fn accept_source(conn: &mut SqliteConnection, event: i64, frame: &Frame) -> Result<bool> {

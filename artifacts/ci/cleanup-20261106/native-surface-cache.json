@@ -1,0 +1,11 @@
+{
+  "state": "removed-and-protected-files-reverified",
+  "target": "/Volumes/huawei/\u9805\u76ee\u5be6\u6230/yuki-core/.cache/native-surface-target",
+  "logical_bytes": 4494281162,
+  "protected_files": 4364,
+  "verified_at": "2026-11-07T06:19:41Z",
+  "open_files": 0,
+  "evidence_archive": "native-surface-cache.zip",
+  "archive_sha256": "8581206294f788812e56b5ce905090051df5237869d99ba2cbb6d0b484aec240",
+  "receipt_sha256": "d898b596d81657ba0f6aea2263215e8aea097096ed018e0ce0b0494ea2bb5440"
+}
