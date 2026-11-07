@@ -10,6 +10,7 @@ import sys
 import time
 import tomllib
 from contextlib import closing
+from tests.harness.external_search import exercise as external_search
 from tests.harness.terminal_work import exercise as terminal_work
 from tests.harness.service import Service, previous_schema
 from tests.peers.chat.recorder import Recorder
@@ -729,6 +730,7 @@ grants=["observe.metadata","tool.call"]
                 pass
             statuses = op("host", "status")
     return {
+        "external_search": external_search(ctx,sdkdir,profile),
         "terminal_work":terminal_work(ctx,sdkdir,profile),
         "normal": {
             "observation": observation,

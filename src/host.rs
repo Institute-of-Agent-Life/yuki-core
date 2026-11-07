@@ -5,6 +5,7 @@ pub(crate) mod composition;
 pub(crate) mod configuration;
 mod control;
 pub(crate) mod domain;
+mod external_search;
 pub(crate) mod gateway_media;
 pub(crate) mod grants;
 pub(crate) mod lifecycle;
@@ -39,7 +40,7 @@ pub enum Change {
     Maintenance(Box<maintenance::Change>),
     PluginSession(Box<plugin_sessions::Change>),
     Notification(notification::Change),
-    Configure(Vec<Install>),
+    Configure(Vec<Install>, bool),
     Start(String, bool, String),
     Online(String, String),
     Close(String, String),
@@ -258,7 +259,14 @@ impl Hub {
                 .fetch_one(store.readers())
                 .await?
         {
-            write(store, Change::Configure(installs.clone())).await?;
+            write(
+                store,
+                Change::Configure(
+                    installs.clone(),
+                    store.search.as_ref().is_some_and(|s| s.external_enabled()),
+                ),
+            )
+            .await?;
         }
         let slots = installs
             .into_iter()

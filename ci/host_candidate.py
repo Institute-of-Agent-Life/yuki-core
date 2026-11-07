@@ -116,6 +116,11 @@ def tested_contents(receipt, profile, personal=False, card=None):
         "licenses/OpenCC.txt": (ROOT / "native/opencc/LICENSES.txt").read_bytes(),
     }
     if card=="CORE-032":
+        search = receipt("external-search-ledger.json")
+        if data["external_search"] != json.loads(search):
+            raise ValueError("external search receipt differs from exercised host")
+        files["evidence/external-search-ledger.json"] = search
+        files["docs/external-search.md"] = (ROOT/"docs/external-search.md").read_bytes()
         terminal=receipt("terminal-work-scope.json")
         oracle=(ROOT/"fixtures/host/terminal-work-v4.json").read_bytes()
         if data["terminal_work"]!=json.loads(terminal) or digest(oracle)!=data["terminal_work"]["original_oracle_sha256"]:

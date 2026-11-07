@@ -573,6 +573,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
     sqlx::raw_sql("INSERT INTO accepted_sources VALUES(1);
        INSERT INTO executions(id,source,original_actor,state) VALUES('run',1,'00000000-0000-4000-8000-000000000088','running')").execute(&mut *conn).await.unwrap();
     let install = Install {
+        external_search: None,
         gateway_media: None,
         notifications: None,
         enabled: true,
@@ -607,7 +608,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
         args: json!({}),
     };
     let declaration = crate::memory::scope::hash(&serde_json::to_value(&install).unwrap());
-    domain::apply(conn, &Change::Configure(vec![install]))
+    domain::apply(conn, &Change::Configure(vec![install], false))
         .await
         .unwrap();
     let g = domain::apply(

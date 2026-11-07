@@ -41,7 +41,12 @@ def mailbox():
             data = take_command(item)
             if data is None:
                 continue
-            if "reply" in data:
+            if "dispatch_search" in data:
+                from tests.peers.search_probe import observe
+                permit = json.loads((folder / ("out-" + str(data["dispatch_search"]) + ".json")).read_bytes())["result"]
+                original = json.loads((folder / ("call-" + permit["handle"] + ".json")).read_bytes())
+                record("http-" + permit["attempt"], observe(permit, original))
+            elif "reply" in data:
                 send({"jsonrpc": "2.0", "id": data["id"], "result": data["reply"]})
             else:
                 with lock:

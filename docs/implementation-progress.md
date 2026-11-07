@@ -40,6 +40,8 @@
 
 **CORE-024 搜尋宣告與上限。** 分支 `codex/core-024-original-search-limits`，實作 `c0dd72c38311`、解碼修正 `62c45c94b8f1`（#101）。舊版普通工具取部署上限的實測在 `artifacts/CORE-024/original-result-limit-04/original-search-policy.json`。Rust 獨立搜尋已對回原 E13 的完整模型工具宣告，原 wire SHA-256 為 `fb18802b8b4e2e5187ae8e853808ac085ad862e3ca9d4764dee65fd0c76a016e`。部署值 3 傳到獨立搜尋請求，模型覆寫 20 在派發前被拒。同批成功與拒絕兩份回條在 `artifacts/CORE-024/e13-bridge-preflight-02/search-tool-policy.json`。原簽署版已接納的 Work 跨版本重開後仍可依舊合同搜尋 7 筆，實際送出的獨立請求及原回條見 `artifacts/CORE-024/e13-original-paid-upgrade-04/previous-paid-search.json`。
 
+**CORE-024／032 給 EXT-029 的開發接口。** 分支 `codex/core-024-ext029-search-accounting`。部署可將 Tavily 工具綁定到明選的 provider、目的及 endpoint。`search.begin` 以原 handle 在同一筆交易預留根額度並登記物理 attempt，`search.finish` 登記實際回應和可得費用，`search.status` 可在重啟後讀原回條。安裝配置與故障時序見 [external-search.md](external-search.md)。Rust SDK `1.0.0-alpha.15`、Python SDK `1.0.0a15`、Host schema 2。逐平台驗收檔為 CORE-032／039 的 `external-search-ledger.json`；三端完成後，簽署候選和雜湊從 `artifacts/CORE-024/ext029-handoff/index.json` 交接。這三個方法屬開發版，EXT-029 的真插件消費和業務結果由擴展倉驗收。
+
 **CORE-044 插件基底 1.0.0。** 分支 `codex/core-044-witnessed-base`，實作 `4860314c2e8e`。以實際 main 合併提交 `c6bd0c75e38717abc71373201d31a77982428d5b` 再驗 CORE-039／044、打包。握手 revision 1、Host schema 2、資料庫 reader 54、Rust／Python SDK 1.0.0。凍結 `initialize`、`gateway.inbound`、`gateway.plan_send`、`gateway.dispatch_part`、`tool.call` 及 `tool.status`。
 
 Mac arm64、Linux arm64 與 HJW Windows x64 各做 14 次真插件重放，七種情境皆於冷重開後零重送。Windows 用擴展倉 #42 的原包先重跑舊簽署宿主的原版 EXT-067，再用完全相同的 EXE 驗基底。EXT-067 最早兩個本地 EXE 目前未找到；原清單及雜湊獨立保存在 `fixtures/compat/ext-067/`。
@@ -60,7 +62,7 @@ GitHub 已正式發布 `plugin-base-v1.0.0`。九個附件均已重新下載，�
 | 待辦 | 下一步與交接物 |
 |---|---|
 | CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；另需共同部署的搜尋設定。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
-| CORE-045 → 053 | 核心基底 1.0.0 已可供 EXT-043 下載。核對擴展倉 `3b5976312853` 與 GitHub Releases，仍待正式 Telegram 套件及 `extension-release-lock.json`。取得兩者後執行 CORE-045 的版本組合驗收。 |
+| CORE-045 → 053 | 核心基底 1.0.0 已可供 EXT-043 下載。擴展倉 main `16f92e1f9af3` 已交 `artifacts/EXT-043/01/extension-release-lock.json`，其中 `extension_published=false`。取得對應的正式 Telegram 包與發布回執後，執行 CORE-045 版本組合驗收。 |
 | CORE-043 → 046 → 047 | 待 EXT-041 的 `extension-import-diff.json`、EXT-044 的 `desktop-package-matrix.json`、EXT-045 的 `install-restore-matrix.json` 及 EXT-042 的實物逐字稿。 |
 
 本輪 Mac 清理回執見 `artifacts/ci/cleanup-20261106/`。先前五個閒置 incremental 目錄合計回收 17.61 GiB，Telegram 建置後另清理約 130 MiB 的中間檔案。#98 的獨立 Mac 預驗再回收 4.39 GiB，保留核心、測試執行檔和回條並重驗 SHA-256（`pr98-mac-preflight-intermediates-verified.json`）。 #99 的專用編譯中間檔另回收 Mac 8.32 GiB、HJW 1.75 GiB；執行檔與保留記錄均已重驗（`core044-mac-build-verified.json` 和 `core044-windows-owned-build-verified.json`）。 #101 完成後另回收 0.57 GiB 已被替代的本機編譯快取，保留包及回條雜湊均相符（`core101-mac-superseded-verified.json`）。

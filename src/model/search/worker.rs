@@ -1,9 +1,8 @@
 use super::{Change, Config, Mode, Query, source};
 use crate::{
     Result,
-    identity::new_id,
     model::attempt,
-    runtime::{effects, execution, main::transport},
+    runtime::{effects, main::transport},
     store::{Mutation, Store},
 };
 use serde_json::{Value, json};
@@ -103,17 +102,7 @@ async fn prepare(
     }
     let body = q.wire(profile)?;
     if existing.is_none() {
-        let child = new_id(conn).await?;
-        sqlx::query("INSERT INTO main_origins(ref,kind,conversation,parent) VALUES(?,'child',?,?)")
-            .bind(&logical)
-            .bind(&entry)
-            .bind(exec)
-            .execute(&mut *conn)
-            .await?;
-        sqlx::query("INSERT INTO executions(id,origin,state,work_id) SELECT ?,?,'running',work_id FROM executions WHERE id=?").bind(&child).bind(&logical).bind(exec).execute(&mut *conn).await?;
-        sqlx::query("INSERT OR IGNORE INTO main_dependencies SELECT ?1,e.id FROM events e WHERE e.id IN(SELECT source FROM executions WHERE id=?2 UNION SELECT event FROM main_dependencies WHERE execution=?2)").bind(&child).bind(exec).execute(&mut *conn).await?;
-        sqlx::query_scalar::<_,String>("INSERT INTO budget_members SELECT ?1,m.root FROM budget_members m JOIN main_origins o ON o.parent=m.execution JOIN executions x ON x.origin=o.ref WHERE x.id=?1 AND o.ref=?2 RETURNING root").bind(&child).bind(&logical).fetch_one(&mut *conn).await?;
-        execution::activate(conn, &child, &logical, namespace).await?;
+        super::activate_child(conn, exec, &entry, &logical, namespace).await?;
         attempt::apply(
             conn,
             &attempt::Action::Reserve(attempt::Reservation {

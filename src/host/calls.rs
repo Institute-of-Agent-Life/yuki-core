@@ -105,7 +105,9 @@ pub async fn status(
     {
         return Err("handle outside method or original manifest".into());
     }
-    if super::terminal_work::receipt(conn, h, id, generation).await? {
+    if super::terminal_work::receipt(conn, h, id, generation).await?
+        || super::external_search::receipt(conn, h, id, generation).await?
+    {
         return Ok(json!({"handle":h,"state":row.try_get::<String,_>("state")?,"result":null}));
     }
     Ok(
@@ -224,6 +226,9 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .ok_or("unknown grant")?,
             )
             .await?;
+            if method == "tool.call" {
+                super::external_search::before_dispatch(conn, handle, plugin, generation).await?;
+            }
             super::terminal_work::check(conn, handle, plugin, generation).await?;
             super::selected_processor::check(conn, handle).await?;
             let resume=sqlx::query("UPDATE code_resume_attempts SET state='dispatched' WHERE handle=? AND generation=? AND state='queued'").bind(handle).bind(generation).execute(&mut *conn).await?.rows_affected()==1;
@@ -292,6 +297,13 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
             } else {
                 "confirmed"
             };
+            let provider_state = if method == "tool.call" {
+                super::external_search::tool_outcome(conn, handle, state).await?
+            } else {
+                state
+            };
+            let valid = valid && provider_state == state;
+            let state = provider_state;
             let data = if publish && valid {
                 body.clone()
             } else {

@@ -20,6 +20,8 @@ pub struct Install {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gateway_media: Option<super::gateway_media::Identity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub external_search: Option<super::external_search::Policy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sessions: Option<super::plugin_sessions::Policy>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maintenance: Option<super::maintenance::Policy>,
@@ -118,6 +120,12 @@ fn identifier(s: &str) -> bool {
 }
 impl Install {
     pub fn validate(&self) -> Result<()> {
+        if self.grants.contains("search.external") != self.external_search.is_some() {
+            return Err("search.external requires an explicit external search policy".into());
+        }
+        if let Some(policy) = &self.external_search {
+            policy.validate(self)?;
+        }
         if self.grants.contains("terminal.work")
             && !["tool.call", "forget.owner"]
                 .iter()
@@ -234,6 +242,9 @@ impl Install {
     }
     pub fn revision(&self) -> Result<String> {
         let mut identity = json!({"id":self.id,"namespace":self.namespace,"platform":self.platform,"bot_stage":self.bot_stage,"commands":self.commands,"tools":self.tools,"grants":self.grants});
+        if let Some(policy) = &self.external_search {
+            identity["external_search"] = serde_json::to_value(policy)?;
+        }
         if let Some(media) = &self.gateway_media {
             identity["gateway_media"] = serde_json::to_value(media)?;
         }
@@ -323,6 +334,7 @@ mod tests {
     #[test]
     fn neither_sender_nor_observer_can_claim_the_native_qq_namespace() {
         let mut i = Install {
+            external_search: None,
             gateway_media: None,
             notifications: None,
             enabled: true,
