@@ -41,6 +41,9 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
         stage.replace(path)
 
     def projection(serial):
+        # The private operator socket can be ready before Host negotiation.
+        wait(lambda: owner.rows("SELECT 1 FROM host_installations "
+                                "WHERE plugin='trace.fixture' AND enabled AND online"))
         path = folder / "command.json"
         path.unlink(missing_ok=True)
         event = owner.op("ingress", "record", json.dumps({
@@ -50,7 +53,16 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
             "occurred": 2000 + serial, "observed": 2000 + serial,
             "segments": [{"type": "text", "text": "/trace inspect original timeline"}],
         }), "--accept")["event"]
-        command = wait(lambda: json.loads(path.read_bytes()))
+        try:
+            command = wait(lambda: json.loads(path.read_bytes()))
+        except AssertionError:
+            ctx.write("trace-invocation-barrier.json", {
+                "event": event,
+                "event_state": owner.rows("SELECT state FROM host_command_events WHERE event=?", event),
+                "plugin_state": owner.rows("SELECT enabled,online FROM host_installations WHERE plugin='trace.fixture'"),
+                "bindings": owner.rows("SELECT path,plugin FROM host_commands"),
+            })
+            raise
         handle = command["params"]["handle"]
         send(f"request-{serial}.json", {
             "id": serial, "method": "control.read",
@@ -166,6 +178,7 @@ def run(ctx, wire):
             original_ids=[v['id'] for v in meta['data']['items']]
             ctx.equal('event and original turn select same timeline',[v['id'] for v in wire(owner.svc.address,f'/admin/v1/traces/event/{event}',metadata)[1]['data']['items']],original_ids)
             ctx.equal('continuation event locates its actual original execution',[v['id'] for v in wire(owner.svc.address,f'/admin/v1/traces/event/{continuation}',metadata)[1]['data']['items']],original_ids)
+        (folder / "ready").unlink(missing_ok=True)
         with owner.svc.running(environment=env):
             ctx.equal('cold restart preserves diagnostic cursor',[v['id'] for v in wire(owner.svc.address,path,metadata)[1]['data']['items']],original_ids)
             saved=registry.read_text();registry.write_text(saved.replace('token_env="TRACE_CONTENT"','token_env="TRACE_CONTENT"\nenabled=false'))
