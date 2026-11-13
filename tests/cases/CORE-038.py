@@ -375,7 +375,7 @@ def run(ctx):
     digest = hashlib.sha256(raw).hexdigest()
     (o.svc.data / "media-inputs" / "voice.amr").write_bytes(raw)
 
-    def event(n, cache=True):
+    def event(n, cache=True, second=False):
         frame = {
             "source": "original-" + str(n),
             "account": o.user["account"],
@@ -393,6 +393,8 @@ def run(ctx):
                 },
             ],
         }
+        if second:
+            frame["segments"].append({"type": "media", "kind": "record", "reference": f"voice-second-{n}"})
         eid = o.op("ingress", "record", json.dumps(frame), "--accept")["event"]
         ex = o.op("ingress", "claim", eid)["execution"]
         if cache:
@@ -408,9 +410,15 @@ def run(ctx):
                 "voice.amr",
             )
             ctx.equal("core loaded exact descriptor bytes", cached["digest"], digest)
+            if second:
+                second_cached = o.op(
+                    "media", "cache-file", ex, o.actor, eid, 1,
+                    o.bot["assignment"], f"voice-second-{n}", "voice.amr",
+                )
+                ctx.equal("second recording has its own original position", second_cached["segment"], 2)
         return eid, ex
 
-    def process(ex, op, e):
+    def process(ex, op, e, slot=0):
         return o.op(
             "host",
             "process",
@@ -418,13 +426,13 @@ def run(ctx):
             ex,
             o.actor,
             op,
-            json.dumps({"event": e, "slot": 0}),
+            json.dumps({"event": e, "slot": slot}),
             "transcript",
         )
 
     with o.svc.running(), ThreadPoolExecutor() as pool:
         ready(o, folders)
-        eid, ex = event(100)
+        eid, ex = event(100, second=True)
         f = folders["codec-a"]
         other = folders["codec-b"]
         (f / "hold-audio").touch()
@@ -464,6 +472,28 @@ def run(ctx):
             ),
             [(eid, 1, "controlled transcription /ai admin")],
         )
+        second = process(ex, "second-audio", eid, 1)
+        ctx.check("second recording has its own confirmed projection", second["state"] == "confirmed"
+                  and second["result"]["data"]["transcript_stored"])
+        ctx.equal(
+            "transcribing one recording preserves the previous recording of the same event",
+            o.rows("SELECT segment,text FROM history_transcripts WHERE source=? ORDER BY segment", eid),
+            [(1, "controlled transcription /ai admin"), (2, "controlled transcription /ai admin")],
+        )
+        repeated_receipt = process(ex, "second-audio", eid, 1)
+        ctx.equal("same second call returns its original terminal handle",
+                  {k: repeated_receipt[k] for k in ("handle", "state")},
+                  {k: second[k] for k in ("handle", "state")})
+        receipt = o.op("effect", "read", ex, "second-audio", o.actor)
+        ctx.equal("original effect keeps the stored projection", receipt["result"], second["result"])
+        ctx.equal("same second call keeps one stored Host operation",
+                  o.rows("SELECT count(*) FROM host_calls WHERE operation='second-audio'"), [(1,)])
+        revision = o.rows("SELECT revision FROM history_items WHERE source_event=?", eid)
+        repeated = process(ex, "second-audio-again", eid, 1)
+        ctx.check("a repeated projection still reports the original transcript stored",
+                  repeated["result"]["data"]["transcript_stored"])
+        ctx.equal("an unchanged transcript does not advance the search revision",
+                  o.rows("SELECT revision FROM history_items WHERE source_event=?", eid), revision)
         other_event, other_exec = event(102)
         (f / "hold-late").touch()
         late = pool.submit(process, other_exec, "late", other_event)

@@ -60,6 +60,85 @@ pub enum Change {
         cursor: Option<i64>,
     },
 }
+
+async fn original_audio_segments(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+    source: i64,
+) -> Result<Vec<i64>> {
+    effects::authorize(conn, exec, actor, true).await?;
+    let owns_source: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM executions x JOIN events e ON e.id=x.source
+         WHERE x.id=? AND e.id=? AND e.raw_actor=?
+         AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id))",
+    )
+    .bind(exec)
+    .bind(source)
+    .bind(actor)
+    .fetch_one(&mut *conn)
+    .await?;
+    if !owns_source {
+        return Err("transcription requires original active source authority".into());
+    }
+    Ok(sqlx::query_scalar(
+        "SELECT CAST(s.key AS INTEGER) FROM events e JOIN json_each(e.envelope,'$.segments') s
+         WHERE e.id=? AND json_extract(s.value,'$.type')='media'
+         AND json_extract(s.value,'$.kind') IN ('record','audio')",
+    )
+    .bind(source)
+    .fetch_all(conn)
+    .await?)
+}
+
+async fn revise_transcript_index(conn: &mut SqliteConnection, source: i64) -> Result<()> {
+    sqlx::query("UPDATE history_items SET revision=revision+1 WHERE source_event=? AND visible")
+        .bind(source)
+        .execute(conn)
+        .await?;
+    Ok(())
+}
+
+pub(crate) async fn project_transcript(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+    source: i64,
+    segment: i64,
+    text: &str,
+) -> Result<bool> {
+    if text.is_empty() || text.len() > 32768 {
+        return Ok(false);
+    }
+    if !original_audio_segments(conn, exec, actor, source)
+        .await?
+        .contains(&segment)
+    {
+        return Err("transcript must refer to an original audio segment".into());
+    }
+    let inserted = sqlx::query(
+        "INSERT INTO history_transcripts(source,segment,text) VALUES(?,?,?)
+         ON CONFLICT(source,segment) DO NOTHING",
+    )
+    .bind(source)
+    .bind(segment)
+    .bind(text)
+    .execute(&mut *conn)
+    .await?
+    .rows_affected();
+    if inserted > 0 {
+        revise_transcript_index(conn, source).await?;
+        return Ok(true);
+    }
+    let current: String =
+        sqlx::query_scalar("SELECT text FROM history_transcripts WHERE source=? AND segment=?")
+            .bind(source)
+            .bind(segment)
+            .fetch_one(conn)
+            .await?;
+    Ok(current == text)
+}
+
 pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value> {
     match change {
         Change::PublicAnchor {
@@ -71,7 +150,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
         } => query::original::anchor(conn, exec, actor, key, args, result).await,
         Change::Index(p) => index::publish(conn, p).await,
         Change::Transcript(exec, actor, source, segments) => {
-            effects::authorize(conn, exec, actor, true).await?;
+            let attachments = original_audio_segments(conn, exec, actor, *source).await?;
             #[derive(Deserialize)]
             #[serde(deny_unknown_fields)]
             struct Transcript {
@@ -80,13 +159,6 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 text: String,
             }
             let fields: Vec<Transcript> = serde_json::from_str(segments)?;
-            let row:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM executions x JOIN events e ON e.id=x.source WHERE x.id=? AND e.id=? AND e.raw_actor=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id))")
-                .bind(exec).bind(source).bind(actor).fetch_one(&mut *conn).await?;
-            if !row {
-                return Err("transcription requires original active source authority".into());
-            }
-            let attachments:Vec<i64>=sqlx::query_scalar("SELECT CAST(s.key AS INTEGER) FROM events e JOIN json_each(e.envelope,'$.segments') s WHERE e.id=?
-                AND json_extract(s.value,'$.type')='media' AND json_extract(s.value,'$.kind') IN ('record','audio')").bind(source).fetch_all(&mut *conn).await?;
             if fields.is_empty()
                 || fields.iter().any(|f| {
                     !matches!(f.source.as_str(), "current" | "reply")
@@ -109,12 +181,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                     .execute(&mut *conn)
                     .await?;
             }
-            sqlx::query(
-                "UPDATE history_items SET revision=revision+1 WHERE source_event=? AND visible",
-            )
-            .bind(source)
-            .execute(conn)
-            .await?;
+            revise_transcript_index(conn, *source).await?;
             Ok(json!({"source":source}))
         }
         Change::Anchor {

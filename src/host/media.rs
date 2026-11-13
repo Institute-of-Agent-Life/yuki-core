@@ -348,22 +348,21 @@ pub(super) async fn project(
                 r.get::<Option<i64>, _>("source"),
                 r.get::<Option<i64>, _>("segment"),
             ) {
-                if text.len() > 32768 {
-                    false
-                } else {
-                    crate::history::apply(
-                        conn,
-                        &crate::history::Change::Transcript(
-                            exec.into(),
-                            actor.into(),
-                            event,
-                            json!([{"source":"current","segment_index":segment,"text":text}])
-                                .to_string(),
-                        ),
-                    )
-                    .await
-                    .is_ok()
+                sqlx::query("SAVEPOINT project_transcript")
+                    .execute(&mut *conn)
+                    .await?;
+                let projection =
+                    crate::history::project_transcript(conn, exec, actor, event, segment, text)
+                        .await;
+                if projection.is_err() {
+                    sqlx::query("ROLLBACK TO project_transcript")
+                        .execute(&mut *conn)
+                        .await?;
                 }
+                sqlx::query("RELEASE project_transcript")
+                    .execute(&mut *conn)
+                    .await?;
+                projection.unwrap_or(false)
             } else {
                 false
             };
