@@ -14,6 +14,7 @@ pub async fn prepare(
     exec: &str,
     soul: &str,
     policy: &super::segment::Config,
+    audio: Option<&std::collections::BTreeSet<i64>>,
 ) -> Result<Value> {
     crate::model::profile_store::runtime::pin(conn, exec, cfg).await?;
     let actor = execution::eligible(conn, exec).await?;
@@ -26,6 +27,15 @@ pub async fn prepare(
         "pending" | "running"
     ) {
         return Ok(Value::Null);
+    }
+    if let Some(prepared) = audio {
+        let missing: Vec<i64> = sqlx::query_scalar(super::audio::MISSING)
+            .bind(exec)
+            .fetch_all(&mut *conn)
+            .await?;
+        if missing.iter().any(|id| !prepared.contains(id)) {
+            return Ok(json!({"audio_input_changed":true}));
+        }
     }
     if crate::social::model_receipt::stale(conn, exec, &actor).await? {
         return hold(conn, exec, crate::social::model_receipt::CHANGED).await;
@@ -47,9 +57,8 @@ pub async fn prepare(
     let prior=sqlx::query("SELECT r.id,r.ordinal,r.request_json,p.state,p.response,p.diagnostic
       FROM model_requests r LEFT JOIN model_attempts p ON p.logical=r.id WHERE r.activation=? ORDER BY r.ordinal DESC,p.ordinal DESC LIMIT 1")
         .bind(&activation).fetch_optional(&mut *conn).await?;
-    let event_rows = sqlx::query(
-        "SELECT e.id,e.envelope,i.consumed FROM main_inputs i JOIN events e ON e.id=i.event
-      WHERE i.execution=? ORDER BY e.id",
+    let fresh: Vec<i64> = sqlx::query_scalar(
+        "SELECT event FROM main_inputs WHERE execution=? AND NOT consumed ORDER BY event",
     )
     .bind(exec)
     .fetch_all(&mut *conn)
@@ -58,14 +67,9 @@ pub async fn prepare(
         Some(raw) => serde_json::from_str::<Input>(&raw)?,
         None => Input::default(),
     };
-    let fresh: Vec<i64> = event_rows
-        .iter()
-        .filter(|r| r.try_get::<bool, _>("consumed").ok() == Some(false))
-        .map(|r| r.try_get("id"))
-        .collect::<std::result::Result<_, sqlx::Error>>()?;
     let zone = cfg.timezone.as_deref().unwrap_or("Asia/Shanghai");
     if !fresh.is_empty() {
-        material.text = crate::context::event::trigger(conn, &fresh, zone).await?;
+        material.text = crate::context::event::trigger(conn, &fresh, zone, audio).await?;
         sqlx::query("INSERT OR IGNORE INTO exec_public_tails(execution,first_event,last_event,message) VALUES(?,?,?,?)")
             .bind(exec).bind(fresh[0]).bind(fresh[fresh.len()-1]).bind(&material.text).execute(&mut *conn).await?;
     }

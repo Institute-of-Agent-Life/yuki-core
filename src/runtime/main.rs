@@ -1,4 +1,5 @@
 pub(crate) mod activity;
+mod audio;
 mod domain;
 pub(crate) use domain::{human_text as event_text, window};
 pub(crate) mod segment;
@@ -30,6 +31,8 @@ pub struct Config {
     pub profile_task: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attachment_processor: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audio_processor: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile_binding: Option<crate::model::profile_store::runtime::Binding>,
     #[serde(skip)]
@@ -92,6 +95,11 @@ impl Config {
         )
     }
     pub fn validate(&self) -> Result<()> {
+        if self.audio_processor.as_deref().is_some_and(|name| {
+            name.is_empty() || name.len() > 128 || name.chars().any(char::is_whitespace)
+        }) {
+            return Err("invalid configured audio processor".into());
+        }
         if self
             .profile_task
             .as_deref()
@@ -257,7 +265,12 @@ pub enum Change {
     Defer(i64, i64),
     Wait(String, i64),
     Schedule(i64, i64),
-    Prepare(String, String, segment::Config),
+    Prepare(
+        String,
+        String,
+        segment::Config,
+        Option<std::collections::BTreeSet<i64>>,
+    ),
     Hold(String, String),
 }
 pub async fn apply(conn: &mut SqliteConnection, cfg: &Config, action: &Change) -> Result<Value> {
@@ -284,7 +297,9 @@ pub async fn apply(conn: &mut SqliteConnection, cfg: &Config, action: &Change) -
                 .bind(event).bind(until).execute(conn).await?;
             Ok(Value::Null)
         }
-        Change::Prepare(exec, soul, policy) => step::prepare(conn, cfg, exec, soul, policy).await,
+        Change::Prepare(exec, soul, policy, audio) => {
+            step::prepare(conn, cfg, exec, soul, policy, audio.as_ref()).await
+        }
         Change::Hold(exec, reason) => step::hold(conn, exec, reason).await,
     }
 }

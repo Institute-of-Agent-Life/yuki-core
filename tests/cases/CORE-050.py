@@ -17,6 +17,7 @@ from tests.harness.compact import Owner, reply, call
 from tests.harness.crash import kill_writer
 from concurrent.futures import ThreadPoolExecutor
 from tests.peers.chat.recorder import Recorder
+from tests.harness import main_audio
 
 
 def install(
@@ -275,6 +276,7 @@ def run(ctx):
         "segment": measured("segment", parent_call, ctx, sdk, True),
         "wires": measured("wires", protocols, ctx, sdk),
         "media": measured("media", media_input, ctx, sdk),
+        "main_audio": measured("main_audio", main_audio.run, ctx, sdk, install, Peer),
         "changed_profile": measured("changed_profile", changed_profile, ctx, sdk),
     }
     proofs["binary_sha256"] = hashlib.sha256(

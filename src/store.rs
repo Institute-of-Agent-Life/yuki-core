@@ -380,6 +380,7 @@ enum Command {
 pub struct Store {
     pub(crate) draining_http: tokio::sync::watch::Sender<bool>,
     pub(crate) active_turns: crate::runtime::main::activity::Active,
+    pub(crate) audio_preparation: Arc<tokio::sync::Semaphore>,
     pub(crate) profile_files: Option<Arc<crate::model::profile_store::Service>>,
     pub(crate) control: Option<Arc<crate::operator::domain::Service>>,
     pub media: Option<Arc<crate::media::Runtime>>,
@@ -477,6 +478,7 @@ impl Store {
         Self {
             draining_http: tokio::sync::watch::channel(false).0,
             active_turns: Default::default(),
+            audio_preparation: Arc::new(tokio::sync::Semaphore::new(2)),
             profile_files: None,
             control: None,
             vectors: None,
