@@ -1,4 +1,14 @@
-**CORE-035 稽核報告的來源清除。** 分支 `codex/core-035-audit-erasure`，[#127](https://github.com/Institute-of-Agent-Life/yuki-core/pull/127)。開發 SDK Rust 1.0.0-alpha.23／Python 1.0.0a23 支持明選保留報告。Reader 60 將報告來源關聯獨立保存，只供原 forget watermark 分批交付給同一 owner。清除後保留原 apply 操作圍欄及可用的記帳。Mac 預驗通過 371 項，`artifacts/CORE-035/audit-erasure-macos-06/manifest.json` SHA-256 `ef3a8b78658dfce0c8c9a2ffa748eac15daaa936b3a4d69089f30cbf4723eaa9`。三端原包交 EXT-036 驗本地報告清理及冷啟。
+**CORE-035 稽核報告的來源清除。** 分支 `codex/core-035-audit-erasure`，head `76ecc817e4d3`，已合入 `4ca980df2748`。Mac、Linux、HJW Windows 各通過 52 張卡和 200 項原生檢查，合併回條 `artifacts/ci/local-pr/127/main-confirmation.json` 的 SHA-256 為 `4b2f7008822a61543697397254406310fb7262735a471f353bafa59c67b8cd20`。[核心 #127](https://github.com/Institute-of-Agent-Life/yuki-core/pull/127)
+
+Reader 60 將保留報告的來源關聯獨立保存，按原 forget watermark 分批交付同一 owner。清除後保留原 apply 操作圍欄和帳本。三端未發布候選的來源 `dcabd6fc5b52`，SDK Rust 1.0.0-alpha.23／Python 1.0.0a23。各端完整 SHA-256、schema 和所含能力在 `artifacts/CORE-035/pr127-quality-erasure-01/verified-candidates.json`，索引 SHA-256 `06843cf18f1492ec06b511741a317c2a56094a8cf186503eb99a2f73174ca50e`。
+
+EXT-036 的 Rust memory-maintenance alpha.4 使用上述三端原包，每端通過 23 組保留報告、21 組舊 Host 和原重建回歸。無法分類時保留清除待辦，冷啟後清除指定報告並回覆原 watermark。擴展回條 `artifacts/EXT-036/native-quality-erasure-01/hygiene-report.json` 的 SHA-256 為 `c1ad5195a79e31621efa214a3cea77c5aaf4dead5113f1db2c693c3786f180e8`。下一步用受限 Host 和已發布 1.1.0 消費者核對 minor 的實際方法與欄位，再取得正式安裝證據。[擴展 #79](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/79)
+
+**CORE-058 真訂閱消費。** 擴展 [#77](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/77) 和 [#78](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/78) 使用原 Host `cb02f74ea48b` 和 SDK alpha.10。Mac、Linux、HJW Windows 各驗授權、六筆訂閱發布與一組物理確認遺失後的冷啟，後續只送新項，原投遞仍為 unknown。擴展 `artifacts/EXT-027/native-delivery-01/subscription-deliveries.json` 的 SHA-256 為 `ed719efe2fb71928d73afa2e89b2711cf5d29298dcfa0626bc5eb6ccd653c24c`。線路使用本機來源和 OneBot 測試端，仍需 R06 的來源錄製與正式 Host／插件安裝組合。
+
+同一 Host 和 SDK 已在擴展 #80 通過三端 Miniflux 分頁回放。第二頁中斷、總數變動或 ID 重複時保留原狀態，恢復後送達兩個訂閱。擴展 `artifacts/EXT-027/native-pagination-01/subscription-deliveries.json` 的 SHA-256 為 `e42f62a754d0bbc2654f807cec66be34b4abb00c6c128c03ddc5e950197c4ad2`。[擴展 #80](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/80)
+
+**本地建置清理。** 核心 #127 證據封存後，Linux 回收 6.04 GiB，HJW Windows 的 D 槽增加 57.34 GiB 可用空間，Mac 回收獨立預驗和共用 incremental 共 15.78 GiB。原包保留校驗見 `artifacts/ci/cleanup-20261113/{linux-pr127-01,windows-pr127-native-03,macos-pr127-standalone-01,macos-pr127-incremental-01}/receipt.json`。
 
 **CORE-035 記憶來源與索引稽核。** [#126](https://github.com/Institute-of-Agent-Life/yuki-core/pull/126) head `2ca044dda243`，合入 `8ecc81153e98`。Mac、Linux、HJW Windows 各通過 52 張卡與 200 項原生檢查。開發 SDK Rust 1.0.0-alpha.22／Python 1.0.0a22 的三端包在 `artifacts/CORE-035/pr126-quality-integrity-01/verified-candidates.json`，SHA-256 `8200134205bf668288d19b295f14eb0f9c15d4dfef875b94a389f5f678db50db`。擴展 [#75](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/75) 各驗 21 組稽核及原重建回歸，合入 `081fef403d55`。Mac 獨立預驗與 Linux #126 共享快取已核對回收，回條在 `artifacts/ci/cleanup-20261113/{macos-pr126-standalone-01,linux-pr126-01}/receipt.json`。
 
@@ -10,7 +20,7 @@
 
 **CORE-038 Main 所選附件的擦除已合併。** 分支 `codex/core-038-selected-forget`，[#122](https://github.com/Institute-of-Agent-Life/yuki-core/pull/122) head `d56898e065f8`，main `43657d6df0cb`。資料 reader 58 允許清除可讀附件 handle 並保留原效果的事件與位置。Mac、Linux、HJW Windows 各通過 52 張卡與 200 項原生檢查，合併回條 `artifacts/ci/local-pr/122/main-confirmation.json`，SHA-256 `90cd1f72b1f8418ac32ff7313ac572f88a0da3ab64425b83a2defb715a8e7aa3`。三端未發布候選索引 `artifacts/CORE-038/pr122-selected-erasure-01/verified-candidates.json`，SHA-256 `e8925472c9af0804d4aaa040289bb44218657f349372125ab8f9122859b0a182`。擴展 #71 已用三端原包驗 PDF、影片影格與清除後遲到結果。Linux 回收 4,446,728,192 bytes，142,011 個保留檔案校驗一致，見 `artifacts/ci/cleanup-20261113/linux-pr122-01/receipt.json`。
 
-**CORE-040 同安裝讀網頁。** #120 Mac 簽署 Host `fca3f22ce60d` 與擴展 #66 的 Rust web-fetch alpha.3 使用原 `read_webpage` 選裝宣告，配同一安裝的模型原生 `web_search`。四個固定 v4 QQ 輸入都送達，兩項宣告及 Chat 設定與 v4 相同。回條 `artifacts/CORE-040/installed-reader-pr120-01/installed-reader.json` 的 SHA-256 為 `b3e1c8107902ac91017bcd04c290e50f8e9ef7d04e64b38abd4b065c506e8fe7`。仍缺設備、external_agent、附件存入工作區與三項終端宣告，另有四項已公布工具的宣告差異。E13 全套耗時裁決待補齊同功能範圍。
+**CORE-040 同安裝讀網頁。** #127 的 Mac 簽署 Host `dcabd6fc5b52` 與擴展 #76 的 Rust web-fetch alpha.4 在同一安裝驗 `read_webpage` 和模型原生 `web_search`。四個固定 v4 QQ 輸入都送達，兩項宣告及 Chat 設定與 v4 相同。回條 `artifacts/CORE-040/installed-reader-pr127-01/installed-reader.json` 的 SHA-256 為 `ede2fe1656c030ffe19ad6ffa64524c1a55244ad52a28b87dcf90b25e3787110`。仍缺兩個設備工具、`external_agent`、`save_conversation_attachment_to_workspace` 和三個終端工具。現有 `automation_manage`、`memory_change`、`send`、`workspace_inspect` 的宣告亦有差異。E13 耗時裁決等待等功能安裝。
 
 **CORE-027 自動提取的回覆來源已合併。** [#121](https://github.com/Institute-of-Agent-Life/yuki-core/pull/121) head `cb20ef1b5b40`，main `ab1a5cb6064c`。 分支 `codex/core-027-source-erasure`。準備請求時綁定同入口、同接收階段的原回覆來源，涵蓋已移出上下文頁的原訊息。來源擦除使批次失效並清除私料，晚到回應只結算原 attempt 的用量。reader 57 補綁舊提取批次的可證來源。Mac 原卡通過 251 項斷言，回條 `artifacts/CORE-027/original-reply-source-04/manifest.json`（SHA-256 `adf9864abe1b340d9a0358ecc8c74c224ca4eca8f675f420a568819fcc6afb68`）。以 #120 的簽署 reader 56 原包實測先擦除後升級及先升級後擦除，回條 `artifacts/CORE-027/original-reply-upgrade-01/upgrade.json`（SHA-256 `81a290cfd0ee2b56f896b6eaf4ac7bd53faabf92104091501c34b68536941741`）。Mac、Linux、HJW Windows 各通過 52 張卡和 200 項原生檢查。三端回條 `artifacts/ci/local-pr/121/receipt.json`，SHA-256 `94a2e8fe3e538cb9744d110c74c1dfb97adf8a645ed7a452d19850bd74915864`。未發布候選見 `artifacts/CORE-039/pr121-extraction-reply/verified-candidates.json`。
 
@@ -18,7 +28,7 @@
 
 **CORE-053 1.1.0 已正式發布。** #118、#119 已分別合併 `2a25234e0a44`、`09bdd7382de4`。#119 在 Mac、Linux、HJW Windows 各通過 52 張卡與 200 項選面重放，回條 `artifacts/ci/local-pr/119/receipt.json`，SHA-256 `3e204aca8eb12cd81e3d30f72a0b2a2e5942779656ebb3f2f764d48f8889ea75`。以實際 main `09bdd7382de41343767960c0aa0e279db2b618dc` 重建三端原生 Host 和 Rust／Python SDK 1.1.0，資料 reader 56。飛書與 Lark、Telegram、web-fetch 在三端完成正常、拒權及冷啟重放。新增七個方法與原事件 `topic_root` 欄位。主 ZIP SHA-256 `90933f039d2aaa19231f03b7ea12dabd0ebfb09cac282d05e8385a8d33738845`。七個附件已對簽署清單，公開 tag 已核對到原 commit。發布回條 `artifacts/CORE-053/native-gateway-release-1.1-main-09bdd7382de4/github-assets-01/github-publication.json` 的 SHA-256 為 `f7255fddaa9e37101b799b271590b8867e7131f6972ffa0581d1aabebf0979d4`。Windows 首輪缺兩份鎖定 wheel，補齊後完整重跑。[plugin-base-v1.1.0](https://github.com/Institute-of-Agent-Life/yuki-core/releases/tag/plugin-base-v1.1.0)
 
-核心正式 51／58。CORE-040 的 QQ 同安裝比較仍需原 Work／終端與本機設備消費證據。擴展 #66 已交 Rust `read_webpage` 的三端宣告和原結果，可納入下一輪同安裝對拍。#120 後的 Linux 閒置 target 回收 4,451,426,304 bytes，136,095 個保留檔案雜湊一致，回條在 `artifacts/ci/cleanup-20261113/linux-pr120-01/receipt.json`。
+核心正式 51／58。CORE-040 的 QQ 同安裝比較仍需原 Work／終端與本機設備消費證據。#120 後的 Linux 閒置 target 回收 4,451,426,304 bytes，136,095 個保留檔案雜湊一致，回條在 `artifacts/ci/cleanup-20261113/linux-pr120-01/receipt.json`。
 
 CORE-053 清除結果回寫的正常與故障時序見 [清除回執](selected-forget-sequences.md)。已選 `forget.request` 依原請求 key、watermark 和當前程序授權保存清除 proof，冷啟補交未完成的義務。
 
@@ -155,7 +165,7 @@ GitHub 已正式發布 `plugin-base-v1.0.0`。九個附件均已重新下載，�
 
 | 待辦 | 下一步與交接物 |
 |---|---|
-| CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置／工作區、普通事件與 Work 終端、external_agent 及讀網頁方法和授權回執；A／B／C 的搜尋設定還需在同一安裝對齊。現有 `environment_status` 只交 Manager readiness；`web_fetch` 與 v4 `read_webpage` 的宣告不同。完整差異與原模型請求見 `artifacts/CORE-040/installed-inputs-pr95-02/consumer-requirements.json`，普通輪次的固定 v4 回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
+| CORE-040 → 041 → 042 → 054 | 取同一安裝的裝置與工作區、普通事件與 Work 終端及 external_agent 的方法和授權回執。#127 已見證 `read_webpage` 和原生 `web_search`，剩餘差異見上方回條。原普通輪次回執在 `artifacts/CORE-040/original-terminal-source-03/ordinary-terminal-source.json`。取得可比安裝後重跑 A／B／C。 |
 | CORE-053 後續原生候選 | #112 的受限 Host 構建已通過三端全量及選面重放。真 minor 選面仍需同來源、逐方法及新增欄位的真擴展見證。 |
 | CORE-043 → 046 → 047 | 待 EXT-041 的 `extension-import-diff.json`、EXT-044 的 `desktop-package-matrix.json`、EXT-045 的 `install-restore-matrix.json` 及 EXT-042 的實物逐字稿。 |
 
