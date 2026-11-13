@@ -21,6 +21,15 @@ calls = Calls(initialized['result'])
 (folder / 'ready').touch()
 def inputs():
     while True:
+        reply = folder / 'reply.json'
+        if reply.is_file():
+            try:
+                frame = json.loads(reply.read_text())
+                reply.unlink()
+            except (OSError, ValueError):
+                pass
+            else:
+                send(frame)
         for path in folder.glob('request-*.json'):
             try:
                 data = json.loads(path.read_text()); path.unlink()

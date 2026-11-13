@@ -1,4 +1,8 @@
+**CORE-037 診斷原來源。** 分支 `codex/core-037-trace-source`。Host 在交付每頁診斷時，同一 writer 保存原輸入和續訊依賴。另一位管理者已完成和仍在途的診斷副本都能隨原來源清除，已確認的操作狀態與模型用量保留。Mac 的原卡入口通過 1,071 項檢查，開發回條 `artifacts/CORE-037/trace-source-mac-01/manifest.json` SHA-256 `e37c81f8ea163f611a2cb5746e80925da79d2f7e4212836fa31142b57e741337`。接續驗三端 Host 候選及 EXT-037 的私庫清除、訂閱和檔案匯出。
+
 **CORE-040 等功能裁決。** 分支 `codex/core-040-equivalence-decision`。固定原 A／B／C 共 12 次冷暖啟動，重新從原始紀錄核對 14,400 筆 QQ 外部效果。實際模型工具有七項缺少、四項不同，決定維持已驗的舊部署和獨立 Rust 候選。速度與供應商成本仍無可比值。裁決 `artifacts/CORE-040/equivalence-decision-01/slice-decision.json` SHA-256 `d6ae6d06832b73791289b89c81d76800eafccfccc93b9e5ceab9398fc9cca300`。CORE-041／042／054 的資料移交仍待等功能裁決與隔離資料副本。正式完成維持 51／58。
+
+核心 [#129](https://github.com/Institute-of-Agent-Life/yuki-core/pull/129) 已合入 `b4d3095bd46f`。三端各 52 張現有卡、200 項原生檢查。合併回條 `artifacts/ci/local-pr/129/main-confirmation.json` SHA-256 `53357ad7d5278cdc61f34f738b9c0cc07644bdcc2f1de0a7c0ac1ded0f699da4`，開發包索引 `artifacts/CORE-039/pr129-core040-equivalence-01/verified-candidates.json` SHA-256 `5d59bb141f126df1970ced1b83e5ef2642a54dde7762a93cd06c46671f30673e`。
 
 **核心 #128 原候選交接。** 分支 `codex/core-candidate-handoff-20261113`，head `5fae3c89ad7e`，main `f9f9a4cce7d0`。Mac、Linux、HJW Windows 各通過 52 張卡，原生重放分別通過 200、201、200 項。`artifacts/ci/local-pr/128/main-confirmation.json` SHA-256 `d354539b4d01ec7fe77cf6eb9aad8f8664a85987f9157ae7f942d5b27e28c4e0`。[核心 #128](https://github.com/Institute-of-Agent-Life/yuki-core/pull/128)
 
