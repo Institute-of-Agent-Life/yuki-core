@@ -9,6 +9,10 @@ from tests.harness.compact import Owner, call, reply
 from tests.peers.chat.recorder import Recorder
 
 
+def recorded_wire(peer):
+    return b"".join(path.read_bytes() + b"\n" for path in sorted((peer / "wire").glob("*.json")))
+
+
 def run(ctx, sdk, profile="debug"):
     owner = Owner(ctx, "gateway-text", 56, profile)
     peer = ctx.working / "text-peer"
@@ -278,10 +282,8 @@ def run(ctx, sdk, profile="debug"):
                     len(list(peer.glob("sent-" + mode + "-*.json"))),
                     physical,
                 )
-    frames = [
-        json.loads(line)["frame"]
-        for line in (peer / "wire.jsonl").read_bytes().splitlines()
-    ]
+    wire = recorded_wire(peer)
+    frames = [json.loads(line)["frame"] for line in wire.splitlines()]
     sizes = [
         len(json.dumps(frame, separators=(",", ":"), ensure_ascii=False).encode())
         for frame in frames
@@ -295,5 +297,5 @@ def run(ctx, sdk, profile="debug"):
         "status": "PASS",
         "cases": observations,
         "max_frame_bytes": max(sizes),
-        "wire_sha256": hashlib.sha256((peer / "wire.jsonl").read_bytes()).hexdigest(),
+        "wire_sha256": hashlib.sha256(wire).hexdigest(),
     }

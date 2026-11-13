@@ -14,6 +14,7 @@ pub struct Event {
     pub version: String,
     pub subjects: Value,
     pub aliases: BTreeMap<String, String>,
+    pub reply_source: Option<i64>,
     pub occurred: Option<String>,
 }
 impl Event {
@@ -80,6 +81,7 @@ async fn load_inner(
         json!({"subject_ref":"speaker","display_label":format!("{label}（Person {actor}）"),"allowed_scopes":if space.is_some(){json!(["person","person_group"])}else{json!(["person"])},"relation_to_speaker":"self"}),
     ];
     let mut aliases = BTreeMap::from([("speaker".into(), actor.clone())]);
+    let mut reply_source = None;
     if space.is_some() {
         subjects.push(json!({"subject_ref":"group","display_label":"当前 Space","allowed_scopes":["group"],"relation_to_speaker":"current_group"}));
         subjects.push(json!({"subject_ref":"named_member","display_label":"当前群中姓名唯一匹配的成员","allowed_scopes":["person_group"],"relation_to_speaker":"named_member"}));
@@ -117,18 +119,30 @@ async fn load_inner(
                 }
             }
         }
-        let reply = raw["segments"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .find(|v| v["type"] == "reply")
-            .and_then(|v| v["native_id"].as_str());
-        if let Some(locator) = reply {
-            let person:Option<String>=sqlx::query_scalar("SELECT e.raw_actor FROM event_locators l JOIN events e ON e.id=l.event_id WHERE e.entry_id=? AND l.receiver=? AND l.native_id=? AND e.raw_actor IS NOT NULL AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)").bind(&entry).bind(row.get::<String,_>("bot_stage")).bind(locator).fetch_optional(&mut *conn).await?;
-            if let Some(person) = person {
-                aliases.insert("reply_author".into(), person);
-                subjects.push(json!({"subject_ref":"reply_author","display_label":"回复消息的发言者","allowed_scopes":["person_group"],"relation_to_speaker":"reply_author"}));
+        let reply = if historical {
+            // Maintenance review still uses its original source version contract.
+            let locator = raw["segments"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .find(|v| v["type"] == "reply")
+                .and_then(|v| v["native_id"].as_str());
+            if let Some(locator) = locator {
+                sqlx::query_as("SELECT e.id,e.raw_actor FROM event_locators l JOIN events e ON e.id=l.event_id WHERE e.entry_id=? AND l.receiver=? AND l.native_id=? AND e.raw_actor IS NOT NULL AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)")
+                    .bind(&entry).bind(row.get::<String,_>("bot_stage")).bind(locator)
+                    .fetch_optional(&mut *conn).await?
+            } else {
+                None
             }
+        } else {
+            super::super::attribution::reply_author(conn, id).await?
+        };
+        if let Some((original, person)) = reply {
+            aliases.insert("reply_author".into(), person);
+            if !historical {
+                reply_source = Some(original);
+            }
+            subjects.push(json!({"subject_ref":"reply_author","display_label":"回复消息的发言者","allowed_scopes":["person_group"],"relation_to_speaker":"reply_author"}));
         }
     }
     let zone = zone.parse::<chrono_tz::Tz>()?;
@@ -146,6 +160,7 @@ async fn load_inner(
         version: scope::hash(&json!([raw, speech, aliases])),
         subjects: json!(subjects),
         aliases,
+        reply_source,
         occurred,
     }))
 }
