@@ -92,10 +92,8 @@ pub(super) async fn hold(
     execution: &str,
     args: &Value,
 ) -> Result<()> {
-    let sources: BTreeSet<_> = native_content::decode(args)?
-        .into_iter()
-        .map(|m| m.source)
-        .collect();
+    let mentions = native_content::decode(args)?;
+    let sources: BTreeSet<_> = mentions.iter().map(|m| m.source).collect();
     for event in sources {
         source::acquire(db, plugin, handle, event).await?;
         sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
@@ -104,6 +102,17 @@ pub(super) async fn hold(
             .execute(&mut *db)
             .await?;
     }
+    let identities: BTreeSet<_> = mentions
+        .iter()
+        .map(|m| (&m.account, &m.native, &m.assignment, m.source))
+        .collect();
+    sqlx::query(
+        "UPDATE host_calls SET args=json_set(args,'$._mention_identities',json(?)) WHERE handle=?",
+    )
+    .bind(serde_json::to_string(&identities)?)
+    .bind(handle)
+    .execute(db)
+    .await?;
     Ok(())
 }
 

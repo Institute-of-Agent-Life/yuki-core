@@ -297,7 +297,47 @@ pub(crate) async fn check(
         .map(|m| (&m.account, &m.native, &m.assignment, m.source))
         .collect();
     for (account, native, assignment, source) in identities {
-        let valid: bool = sqlx::query_scalar(
+        check_identity(db, plugin, account, native, assignment.as_deref(), source).await?;
+    }
+    Ok(())
+}
+
+pub(crate) async fn check_page(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    annotations: &[u8],
+    admitted_identities: Option<&str>,
+) -> Result<()> {
+    let identities: Vec<(String, String, Option<String>, i64)> = match admitted_identities {
+        Some(original) => serde_json::from_str(original)?,
+        None => {
+            let rows: Vec<String> = sqlx::query_scalar(
+                "SELECT DISTINCT json_extract(value,'$.account','$.native','$.assignment','$.source')
+                 FROM json_each(?)",
+            )
+            .bind(annotations)
+            .fetch_all(&mut *db)
+            .await?;
+            rows.iter()
+                .map(|row| serde_json::from_str(row))
+                .collect::<std::result::Result<_, _>>()?
+        }
+    };
+    for (account, native, assignment, source) in identities {
+        check_identity(db, plugin, &account, &native, assignment.as_deref(), source).await?;
+    }
+    Ok(())
+}
+
+async fn check_identity(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    account: &str,
+    native: &str,
+    assignment: Option<&str>,
+    source: i64,
+) -> Result<()> {
+    let valid: bool = sqlx::query_scalar(
             "SELECT EXISTS(SELECT 1 FROM accounts a JOIN host_installations i ON i.plugin=?1 AND i.platform=a.platform AND i.namespace=a.namespace
              JOIN events e ON e.id=?5 LEFT JOIN assignments actor ON actor.id=e.actor_stage
              WHERE a.id=?2 AND a.native=?3 AND (e.actor_stage IS NULL OR actor.status='active')
@@ -305,9 +345,8 @@ pub(crate) async fn check(
                   OR EXISTS(SELECT 1 FROM assignments s WHERE s.id=?4 AND s.account_id=a.id AND s.status='active'))
              AND NOT EXISTS(SELECT 1 FROM invalidated_sources erased WHERE erased.source=e.id))")
             .bind(plugin).bind(account).bind(native).bind(assignment).bind(source).fetch_one(&mut *db).await?;
-        if !valid {
-            return Err("original mention account, stage or source changed".into());
-        }
+    if !valid {
+        return Err("original mention account, stage or source changed".into());
     }
     Ok(())
 }

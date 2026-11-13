@@ -1,5 +1,5 @@
 //! Original outbound text is paged through the current call handle without enlarging frames.
-use crate::{Result, privacy::source, runtime::effects};
+use crate::{Result, privacy::source, runtime::effects, social::native_content};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -91,17 +91,23 @@ pub(super) async fn callback(
     generation: &str,
     params: &Value,
     annotations: bool,
+    admitted_digest: Option<&str>,
 ) -> Result<Value> {
     super::domain::active(db, plugin, generation, "forget.owner").await?;
     let handle = params["handle"]
         .as_str()
         .ok_or("missing original text handle")?;
     let row = sqlx::query(
-        "SELECT c.execution,c.method,c.args,o.parent,coalesce(x.original_actor,x.origin) AS actor
+        "WITH original AS MATERIALIZED (
+        SELECT c.execution,c.method,jsonb(c.args) AS args,o.parent,coalesce(x.original_actor,x.origin) AS actor
         FROM host_calls c JOIN host_installations i ON i.plugin=c.plugin AND i.revision=c.revision
         JOIN operations o ON o.namespace=c.execution AND o.operation_id=c.operation
         JOIN executions x ON x.id=c.execution
-        WHERE c.handle=? AND c.plugin=? AND c.generation=? AND c.state='dispatched'",
+        WHERE c.handle=? AND c.plugin=? AND c.generation=? AND c.state='dispatched')
+        SELECT execution,method,parent,actor,json_remove(args,'$.mentions','$._mention_identities') AS args,
+        json_extract(args,'$.mentions') AS mentions,jsonb_extract(args,'$.mentions') AS identities,
+        json_extract(args,'$._mention_identities') AS admitted_identities
+        FROM original",
     )
     .bind(handle)
     .bind(plugin)
@@ -112,8 +118,12 @@ pub(super) async fn callback(
     let actor: String = row.try_get("actor")?;
     effects::authorize(db, &execution, &actor, true).await?;
     let args: Value = serde_json::from_str(row.try_get("args")?)?;
+    let mentions: Option<&str> = row.try_get("mentions")?;
     super::send::check_reply(db, plugin, &args).await?;
-    super::gateway_mentions::check(db, plugin, &args).await?;
+    if let Some(identities) = row.try_get::<Option<&[u8]>, _>("identities")? {
+        native_content::check_page(db, plugin, identities, row.try_get("admitted_identities")?)
+            .await?;
+    }
     super::native_route::check(db, plugin, &execution, &args).await?;
     let original = if annotations {
         if !matches!(
@@ -122,10 +132,7 @@ pub(super) async fn callback(
         ) {
             return Err("annotations belong to another method".into());
         }
-        serde_json::to_string(
-            args.get("mentions")
-                .ok_or("call has no original mentions")?,
-        )?
+        mentions.ok_or("call has no original mentions")?.to_owned()
     } else {
         match row.try_get::<&str, _>("method")? {
             "gateway.plan_send" => args["message"]["text"]
@@ -167,15 +174,59 @@ pub(super) async fn callback(
     if offset > original.len() || !(1..=12288).contains(&length) {
         return Err("text page outside original selection".into());
     }
-    super::gateway_mentions::hold(db, plugin, handle, &execution, &args).await?;
     let dependencies: Vec<i64> = sqlx::query_scalar("SELECT source FROM executions WHERE id=?1 AND source IS NOT NULL UNION SELECT event FROM main_dependencies WHERE execution=?1")
         .bind(&execution).fetch_all(&mut *db).await?;
     for event in dependencies {
         source::acquire(db, plugin, handle, event).await?;
     }
     let end = offset.saturating_add(length).min(original.len());
+    let digest = if annotations {
+        admitted_digest.map(str::to_owned)
+    } else {
+        None
+    }
+    .unwrap_or_else(|| format!("{:x}", Sha256::digest(original.as_bytes())));
     Ok(
-        json!({"offset":offset,"total":original.len(),"sha256":format!("{:x}",Sha256::digest(original.as_bytes())),
+        json!({"offset":offset,"total":original.len(),"sha256":digest,
         "bytes":STANDARD.encode(&original.as_bytes()[offset..end]),"done":end==original.len()}),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::Connection;
+
+    #[tokio::test]
+    async fn sqlite_projection_preserves_original_annotation_bytes() {
+        let mut db = SqliteConnection::connect(":memory:").await.unwrap();
+        let mention = json!({"start":0,"end":8,"account":"original","native":"ou_\\\"雪",
+            "label":"@小雪<&","assignment":"stage","source":1});
+        let mentions = vec![mention; 11_000];
+        let args =
+            json!({"message":{"text":"@小雪 "},"mentions":mentions,"route":{"entry":"original"}});
+        let stored: String =
+            sqlx::query_scalar("SELECT json_set(?,'$._mention_identities',json(?))")
+                .bind(args.to_string())
+                .bind(r#"[["original","ou_original","stage",1]]"#)
+                .fetch_one(&mut db)
+                .await
+                .unwrap();
+        let row = sqlx::query(
+            "WITH original AS MATERIALIZED (SELECT jsonb(?1) AS args)
+             SELECT json_remove(args,'$.mentions','$._mention_identities') AS args,
+             json_extract(args,'$.mentions') AS mentions
+             FROM original",
+        )
+        .bind(stored)
+        .fetch_one(&mut db)
+        .await
+        .unwrap();
+        assert_eq!(row.get::<&str, _>("mentions"), args["mentions"].to_string());
+        let projected: Value = serde_json::from_str(row.get("args")).unwrap();
+        assert!(projected.get("mentions").is_none());
+        assert!(projected.get("_mention_identities").is_none());
+        assert_eq!(projected["message"], args["message"]);
+        assert_eq!(projected["route"], args["route"]);
+    }
 }

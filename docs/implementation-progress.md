@@ -1,3 +1,13 @@
+**#118 補修通過預驗。** `codex/core-025-mention-paging` 在接納時整理相異的原身份。每頁重新核對當前授權，較早的呼叫從原註記推導身份。測試 peer 接上原命令領取機制，檔案解鎖後只領取一次。Mac 和 HJW Windows 各通過 13 個情境、172 個斷言。HJW 另以飛書、Lark、飛書三次重放原 11,000 個提及，逐次核對 323 頁及原回執。
+
+預驗索引 `artifacts/CORE-032/mention-paging-authority-preflight/index.json` 的 SHA-256 為 `b2b69d9d268ed667396f5454cfee02c31b5fbef0d4f0221e7b63f4b924bc391c`。首輪 Windows 鎖檔失敗及修正證據均已保留。最新三端完整 CI 通過後再交付候選。正式完成數仍為 51／58。
+
+**CORE-025／CORE-032 密集提及分頁修正已通過預驗。** 分支 `codex/core-025-mention-paging`，基於 main `77cec16d84817`。Windows 原飛書失敗案例的 11,000 個提及與 323 頁註記，已以原 alpha.8 插件在飛書／Lark／飛書三次重放通過。Mac debug／release 的 13 情境通過，Windows 核心 13 情境與 169 個斷言通過。Mac 另補摘要注入拒絕，debug 共 170 個斷言。格式、Clippy 與原 JSON bytes 回歸通過。
+
+每頁重新驗證原授權與來源，複用接納時已計算的原摘要。12 秒期限、reader 56、SDK alpha.21 沿原合同。具名預驗 `artifacts/CORE-032/mention-paging-evidence/index.json`，SHA-256 `a731c6a0b82e7dbed798116f0bdeb2a3d3e8c906c84bfef43a7d603a9bad5963`。下一步推送本補修，執行最新合併樹的完整本地三端 CI，通過後合併及交付飛書候選。穩定公開合同與 EXT-006 完整驗收仍待後續，核心正式總數維持 51／58。
+
+**#117 已合併。** main `77cec16d84817864567e687a208b13ffa600b5bd`，三端各 52 張與 42 項原生驗證通過。完整回條在本倉根目錄 `artifacts/ci/local-pr/117/receipt.json`，未發布三端候選在 `artifacts/CORE-039/pr117-native-mentions/verified-candidates.json`。
+
 **#117 三端重驗中。** 首輪 Mac、Linux 各 52 張與 42 項原生驗證通過。Windows 的測試 mailbox 遇到暫時性 EACCES，已改用既有 `take_command`，三次隔離附件重放各 152 個斷言及真檔案鎖回歸通過。失敗與修正證據見 `artifacts/ci/native-mentions-windows-failure/`。本輪補丁仍須完成最新提交的三端完整 CI。
 
 **CORE-025／CORE-038 原帳號提及準備完成。** 分支 `codex/core-025-native-mentions`，Rust／Python SDK alpha.21／a21，reader 56。同 app／namespace 的原 account、原事件名稱與 UTF-8 範圍交給 Host；`gateway.read_mentions` 以原 call handle 分頁。計畫完整覆蓋原文字且保留整個提及，派發前重核原階段與來源，來源持有同時登記 execution dependency，遺忘後清除 Host 材料。

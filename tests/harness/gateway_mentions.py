@@ -120,6 +120,7 @@ def run(ctx, sdk, profile="debug"):
             "confirmed",
         ),
         ("mention-large", ("@小雪 " + "雪" * 90 + "\n") * 500, "confirmed"),
+        ("mention-dense", "@小雪 " * 11_000, "confirmed"),
         ("mention-unknown", ("@小雪 " + "雪" * 90 + "\n") * 100, "unknown"),
         ("mention-cut", "你好 @小雪", "failed"),
         ("mention-replaced", "你好 @小雪", "failed"),
@@ -171,6 +172,27 @@ def run(ctx, sdk, profile="debug"):
                                 first_source,
                             ),
                         )
+                        forged = probe(
+                            "gateway.read_mentions",
+                            {"handle": held["handle"], "offset": 0, "length": 1,
+                             "sha256": "0" * 64},
+                        )
+                        ctx.check("annotation digest comes only from admission", "error" in forged)
+                        page_params = {"handle": held["handle"], "offset": 0, "length": 1}
+                        indexed = probe("gateway.read_mentions", page_params)
+                        with closing(sqlite3.connect(owner.svc.data / "core.sqlite")) as db:
+                            stored, = db.execute(
+                                "SELECT json_extract(args,'$._mention_identities') FROM host_calls WHERE handle=?",
+                                (held["handle"],),
+                            ).fetchone()
+                            ctx.equal("admission stores one distinct original identity", len(json.loads(stored)), 1)
+                            db.execute(
+                                "UPDATE host_calls SET args=json_remove(args,'$._mention_identities') WHERE handle=?",
+                                (held["handle"],),
+                            )
+                            db.commit()
+                        legacy = probe("gateway.read_mentions", page_params)
+                        ctx.equal("older stored calls return the same original page", legacy["result"], indexed["result"])
                         original = owner.rows(
                             "SELECT grants,revision,generation FROM host_installations WHERE plugin=?",
                             "gateway-mentions",

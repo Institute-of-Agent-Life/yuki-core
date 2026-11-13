@@ -52,7 +52,7 @@ pub enum Change {
     Online(String, String),
     Close(String, String),
     Enable(String, bool),
-    Callback(String, String, String, Value),
+    Callback(String, String, String, Value, Option<String>),
     Call(calls::Change),
     FetchDispatch(Box<gateway_media::Gate>, String, String),
     ActivityDispatch(activity::Gate, String, String),
@@ -582,6 +582,7 @@ async fn acknowledge(
             session.generation.clone(),
             "forget.ack".into(),
             reply,
+            None,
         ),
     )
     .await?;

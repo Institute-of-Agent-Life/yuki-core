@@ -12,6 +12,8 @@ import time
 
 folder = Path(sys.argv[1])
 sys.path.insert(0, sys.argv[2])
+sys.path.insert(1, str(Path(__file__).resolve().parents[3]))
+from tests.harness.json_file import take_command
 from yuki_plugin_sdk.connection import Binding, Peer, encode, read_frame
 from yuki_plugin_sdk.host import Calls
 
@@ -206,10 +208,8 @@ def serve(frame):
 
 def commands():
     while True:
-        probe = folder / "probe.json"
-        if probe.exists():
-            request = json.loads(probe.read_bytes())
-            probe.unlink()
+        request = take_command(folder / "probe.json")
+        if request is not None:
             note("probed", call(request["method"], request["params"]))
         time.sleep(0.02)
 
