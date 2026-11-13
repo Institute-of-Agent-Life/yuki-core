@@ -11,7 +11,7 @@ pub(crate) async fn retain_quality(
 ) -> Result<String> {
     check(conn, owner, source).await?;
     let item: Option<String> = sqlx::query_scalar(
-        "SELECT item FROM source_holds WHERE owner=? AND source=? AND item GLOB 'maintenance-quality:*'",
+        "SELECT reference FROM maintenance_quality_dependencies WHERE owner=? AND source=?",
     )
     .bind(owner)
     .bind(source)
@@ -21,7 +21,12 @@ pub(crate) async fn retain_quality(
         return Ok(item);
     }
     let item = format!("{QUALITY_PREFIX}{}", crate::identity::new_id(conn).await?);
-    insert_hold(conn, owner, &item, source).await?;
+    sqlx::query("INSERT INTO maintenance_quality_dependencies VALUES(?,?,?)")
+        .bind(owner)
+        .bind(source)
+        .bind(&item)
+        .execute(conn)
+        .await?;
     Ok(item)
 }
 
@@ -35,9 +40,9 @@ pub(crate) async fn require_live_quality_refs(
     }
     let invalid: bool = sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM json_each(?1) r
-          WHERE NOT EXISTS(SELECT 1 FROM source_holds h JOIN events e ON e.id=h.source
+          WHERE NOT EXISTS(SELECT 1 FROM maintenance_quality_dependencies h JOIN events e ON e.id=h.source
            JOIN persons p ON p.id=e.raw_actor JOIN persons root ON root.id=coalesce(p.current_root,p.id)
-           WHERE h.owner=?2 AND h.item=r.value AND p.enabled AND root.enabled
+           WHERE h.owner=?2 AND h.reference=r.value AND p.enabled AND root.enabled
              AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=h.source)))",
     )
     .bind(refs.to_string())
@@ -125,27 +130,14 @@ pub async fn acquire(
     item: &str,
     source: i64,
 ) -> Result<Value> {
-    if item.starts_with(QUALITY_PREFIX) {
-        return Err("reserved source hold reference".into());
-    }
     check(conn, owner, source).await?;
-    insert_hold(conn, owner, item, source).await?;
-    read(conn, owner, item, source).await
-}
-
-async fn insert_hold(
-    conn: &mut SqliteConnection,
-    owner: &str,
-    item: &str,
-    source: i64,
-) -> Result<()> {
     sqlx::query("INSERT INTO source_holds(owner,item,source) VALUES(?,?,?) ON CONFLICT DO NOTHING")
         .bind(owner)
         .bind(item)
         .bind(source)
         .execute(&mut *conn)
         .await?;
-    Ok(())
+    read(conn, owner, item, source).await
 }
 
 pub fn accounting_only(raw: &str) -> String {

@@ -602,12 +602,42 @@ async fn acknowledge(
     session: &process::Session,
     ob: &Value,
 ) -> Result<()> {
-    let mut params = json!({"key":ob["key"],"watermark":ob["watermark"],"sources":ob["sources"]});
-    if let Some(refs) = ob.get("erasure_refs") {
-        params["erasure_refs"] = refs.clone();
-        params["sources"] = ob["callback_sources"].clone();
-    }
-    let definition = grants::schema("forget.request", "host_to_plugin", &params)?;
+    let params = json!({"key":ob["key"],"watermark":ob["watermark"],"sources":ob["sources"]});
+    let proof = if let Some(refs) = ob["erasure_refs"].as_array() {
+        let mut proof = None;
+        for batch in refs.chunks(256) {
+            let params = json!({"key":ob["key"],"watermark":ob["watermark"],
+                                "sources":ob["callback_sources"],"erasure_refs":batch});
+            let observed = cleanup_receipt(store, session, &params).await?;
+            if proof.as_ref().is_some_and(|previous| previous != &observed) {
+                return Err("cleanup proof changed across original watermark".into());
+            }
+            proof = Some(observed);
+        }
+        proof.ok_or("quality erasure obligation has no references")?
+    } else {
+        cleanup_receipt(store, session, &params).await?
+    };
+    write(
+        store,
+        Change::ForgetResult {
+            plugin: id.into(),
+            generation: session.generation.clone(),
+            key: params["key"].as_str().ok_or("invalid cleanup key")?.into(),
+            watermark: params["watermark"].as_i64().ok_or("invalid watermark")?,
+            proof,
+        },
+    )
+    .await?;
+    Ok(())
+}
+
+async fn cleanup_receipt(
+    store: &Store,
+    session: &process::Session,
+    params: &Value,
+) -> Result<String> {
+    let definition = grants::schema("forget.request", "host_to_plugin", params)?;
     let reply = session
         .call(store, "forget.request", params.clone(), None)
         .await?;
@@ -617,21 +647,10 @@ async fn acknowledge(
     if reply["key"] != params["key"] || reply["watermark"] != params["watermark"] {
         return Err("cleanup acknowledgment differs from assigned watermark".into());
     }
-    write(
-        store,
-        Change::ForgetResult {
-            plugin: id.into(),
-            generation: session.generation.clone(),
-            key: reply["key"].as_str().ok_or("invalid cleanup key")?.into(),
-            watermark: reply["watermark"].as_i64().ok_or("invalid watermark")?,
-            proof: reply["proof"]
-                .as_str()
-                .ok_or("invalid cleanup proof")?
-                .into(),
-        },
-    )
-    .await?;
-    Ok(())
+    Ok(reply["proof"]
+        .as_str()
+        .ok_or("invalid cleanup proof")?
+        .into())
 }
 async fn maintain(store: Store, install: Install, session: process::Session) {
     let mut watermark = 0i64;

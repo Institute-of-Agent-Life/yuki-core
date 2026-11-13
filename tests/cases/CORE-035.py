@@ -716,7 +716,7 @@ def reembed(ctx, sdk, aux):
 
 
 def retained_quality(ctx, sdk, aux):
-    owner = Owner(ctx, "maintenance-quality-retention", 32)
+    owner = Owner(ctx, "maintenance-quality-retention", 59)
     data = owner.svc.data
     facts = []
     with owner.svc.running():
@@ -756,12 +756,14 @@ def retained_quality(ctx, sdk, aux):
         owner.until((folder / "ready.json").exists)
         plain = peer.call("maintenance.audit", scope)
         ctx.equal("read-only audit still creates no retention association",
-                  owner.rows("SELECT count(*) FROM source_holds WHERE owner=?", owner_id), [(0,)])
+                  owner.rows("SELECT count(*) FROM maintenance_quality_dependencies WHERE owner=?", owner_id), [(0,)])
         audit = peer.call("maintenance.audit", {**scope, "retain": True})
         refs = {item["fact"]: item["erasure_refs"] for item in audit["items"]}
         ctx.equal("retention leaves the original scan fingerprint intact", audit["fingerprint"], plain["fingerprint"])
         ctx.equal("two original sources have distinct opaque references",
                   sorted(map(len, refs.values())), [1, 1])
+        ctx.equal("quality retention never acquires a source-reading hold",
+                  owner.rows("SELECT count(*) FROM source_holds WHERE owner=?", owner_id), [(0,)])
         ctx.check("retained reports avoid source text or native event identity",
                   "original quality" not in str(audit) and not any("event" in item or "source_ids" in item for item in audit["items"]))
         ctx.equal("the same source keeps its reference across audits",

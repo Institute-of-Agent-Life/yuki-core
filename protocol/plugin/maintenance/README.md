@@ -39,6 +39,9 @@ Persist the references atomically with any retained local result. The original
 `forget.request` watermark carries the matching `erasure_refs`. Remove the
 local reports that reference them before acknowledging that watermark. The Host
 continues to pass event IDs for other grants that already returned those IDs.
+Large reference lists arrive in bounded batches under the same watermark.
+Each batch requires the same successful cleanup proof before the Host records
+the acknowledgment.
 After erasure a retained apply key remains fenced and the original effect is
 unavailable for replay. A lost callback leaves the obligation pending.
 
