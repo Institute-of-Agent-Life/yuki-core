@@ -40,8 +40,9 @@ async fn request(
     params: &Value,
 ) -> Result<Value> {
     super::super::domain::active(db, plugin, generation, "llm.complete").await?;
-    let (revision, mut route) =
-        scope::route(db, plugin, text(params, "route")?, text(params, "purpose")?).await?;
+    let route_name = text(params, "route")?;
+    let purpose = text(params, "purpose")?;
+    let (revision, mut route) = scope::route(db, plugin, route_name, purpose).await?;
     let original = params["origin"].to_string();
     let hash = crate::memory::scope::hash(params);
     if let Some(row) = sqlx::query(
@@ -57,7 +58,7 @@ async fn request(
         plugin,
         generation,
         &params["origin"],
-        text(params, "route")?,
+        route_name,
         &route,
         true,
     )
@@ -96,19 +97,59 @@ async fn request(
         layout["tool_choice"] = json!("none");
     }
     let mut body = profile.protocol.request(layout, profile, task.as_ref())?;
-    if params["selected_media"] == true || params.get("media").is_some() {
+    let has_media = params["selected_media"] == true || params.get("media").is_some();
+    let transcript = if purpose == "transcript" && has_media {
+        let handle = text(&params["origin"], "handle")?;
+        Some(transcript_source(db, plugin, handle).await?)
+    } else {
+        None
+    };
+    if has_media {
         append_media(
             db,
             plugin,
             text(&params["origin"], "handle")?,
             &route,
-            text(params, "purpose")?,
+            purpose,
             params.get("media"),
             &mut body,
         )
         .await?;
     }
     let raw = body.to_string();
+    let task = task
+        .map(|value| serde_json::to_string(&value))
+        .transpose()?;
+    if let Some((event, segment)) = transcript
+        && let Some(row) = sqlx::query(
+            "SELECT q.id,q.route,q.revision,q.task,r.request_json,a.profile_contract,o.parent_execution,
+                    NOT EXISTS(SELECT 1 FROM json_each(?4) declared WHERE NOT EXISTS(
+                        SELECT 1 FROM source_holds h WHERE h.owner=q.plugin
+                        AND h.item=q.id AND h.source=declared.value)) AS sources_covered
+             FROM host_aux_transcripts t JOIN host_aux_requests q ON q.id=t.request
+             JOIN host_aux_origins o ON o.plugin=q.plugin AND o.original=q.origin
+             JOIN model_requests r ON r.id=q.logical JOIN activations a ON a.id=r.activation
+             WHERE t.plugin=?1 AND t.source=?2 AND t.segment=?3",
+        )
+        .bind(plugin)
+        .bind(event)
+        .bind(segment)
+        .bind(params.get("sources").map_or_else(|| "[]".into(), Value::to_string))
+        .fetch_optional(&mut *db)
+        .await?
+    {
+        if row.get::<&str, _>("route") != route_name
+            || row.get::<&str, _>("revision") != revision
+            || row.get::<Option<String>, _>("task") != task
+            || row.get::<&str, _>("request_json") != raw
+            || row.get::<&str, _>("profile_contract") != profile.contract()
+            || row.get::<Option<String>, _>("parent_execution") != origin.parent
+            || !row.get::<bool, _>("sources_covered")
+        {
+            return Err("original transcript request conflicts".into());
+        }
+        return Ok(json!({"request":row.get::<&str,_>("id"),"observe_only":true}));
+    }
     let exec = scope::execution(db, plugin, &origin, &route).await?;
     if let Some(turn) = params["origin"]["session"].as_str() {
         super::super::plugin_sessions::bind_execution(db, plugin, turn, &exec).await?;
@@ -160,13 +201,22 @@ async fn request(
         .bind(revision)
         .bind(original)
         .bind(text(params, "call_id")?)
-        .bind(text(params, "route")?)
-        .bind(text(params, "purpose")?)
+        .bind(route_name)
+        .bind(purpose)
         .bind(&logical)
         .bind(hash)
-        .bind(task.map(|v| serde_json::to_string(&v)).transpose()?)
+        .bind(task)
         .execute(&mut *db)
         .await?;
+    if let Some((event, segment)) = transcript {
+        sqlx::query("INSERT INTO host_aux_transcripts VALUES(?,?,?,?)")
+            .bind(plugin)
+            .bind(event)
+            .bind(segment)
+            .bind(&id)
+            .execute(&mut *db)
+            .await?;
+    }
     let sources: Vec<i64> =
         sqlx::query_scalar("SELECT event FROM main_dependencies WHERE execution=?")
             .bind(&exec)
@@ -176,6 +226,26 @@ async fn request(
         source::acquire(db, plugin, &id, event).await?;
     }
     Ok(json!({"request":id}))
+}
+
+async fn transcript_source(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    handle: &str,
+) -> Result<(i64, i64)> {
+    let (exec, actor, event, segment): (String, String, i64, i64) = sqlx::query_as(
+        "SELECT h.execution,x.original_actor,s.source,s.segment FROM host_calls h
+         JOIN executions x ON x.id=h.execution JOIN host_media_selected s ON s.handle=h.handle
+         JOIN media_sources m ON m.event=s.source AND m.segment=s.segment AND m.digest=s.digest
+         WHERE h.handle=? AND h.plugin=? AND h.method='media.process' AND s.purpose='transcript'
+         AND m.kind IN('audio','record') AND m.state='cached' AND m.expires>unixepoch('subsec')*1000",
+    )
+    .bind(handle)
+    .bind(plugin)
+    .fetch_one(&mut *db)
+    .await?;
+    crate::history::authorize_audio_source(db, &exec, &actor, event).await?;
+    Ok((event, segment))
 }
 
 async fn append_media(

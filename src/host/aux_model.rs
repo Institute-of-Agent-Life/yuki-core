@@ -103,7 +103,9 @@ pub(super) async fn callback(
         .ok_or("missing admitted request")?;
     #[cfg(test)]
     crate::store::tests::commit_barrier("aux-reserved-before-dispatch").await;
-    transport::run(store, plugin, generation, request).await?;
+    if admitted["observe_only"] != true {
+        transport::run(store, plugin, generation, request).await?;
+    }
     write(
         store,
         Change::Result {

@@ -46,6 +46,10 @@ Mac 正常 `CORE-032` 入口已通過 837 項斷言，回條 `artifacts/CORE-032
 
 # 核心實作進度
 
+**CORE-038 逐段語音轉寫。** 分支 `codex/core-038-transcript-segments`，[#123](https://github.com/Institute-of-Agent-Life/yuki-core/pull/123) head `7b8831fece7c`，main `69e036bba116`。同一訊息的兩段轉寫都保留，重讀原回執沿用原搜尋版本。Mac、Linux、HJW Windows 各通過 52 張卡及 200 項原生檢查。完整合併回條在 `artifacts/ci/local-pr/123/main-confirmation.json`，SHA-256 `908801718bc307cf09489a90cdde8e98798021238c4b5b71d06b92aad3c098a5`。CORE-038／050 同源未發布包索引分別在 `artifacts/CORE-038/pr123-transcript-segments-01/verified-candidates.json`（`14ecd35e1c5341a270cb912c23e3bf8256b538f87fbbc7680ac8f0fbaa50bdfb`）及 `artifacts/CORE-050/pr123-transcript-segments-01/verified-candidates.json`（`00fc592296a02bb11bcd7ae36ce4fab15d6856612a43ceec74e1fff23295345b`）。
+
+**CORE-050 語音來源記帳。** 分支 `codex/core-050-original-audio`。同一個原事件及段位的已購請求保留在原根，另一個 Host handle 只讀原收據。改 route、Profile、付費內容或原根時拒絕。reader 59 由舊帳本回填最早原請求，保留後續舊記帳。EXT-030 下一步驗原 QQ 前景、雙 Bot 去重與首輪文字。
+
 **CORE-038 原生話題路由正在驗證。** 分支 `codex/core-038-native-route`。SDK alpha.18 以可選 `topic_root` 保存原根，資料 migration 56 與原事件同筆接納。既有 `topic` 與防重鍵沿用。Mac 已用實際安裝 SDK 與 Rust Host 通過 88 項預驗，涵蓋舊訊息重投、缺證拒絕、兩租戶、冷啟、忘記與規劃後替換部署。原預驗位於本分支 `artifacts/CORE-032/native-topic-preflight-02/`。正常 CORE-032 入口已過 377 項斷言，CORE-039 release 入口過 454 項，含格式、Clippy 及 writer 測試。具名驗收包與完整 SHA-256 在 `artifacts/CORE-038/native-topic-preflight/index.json`。首輪 writer 測試揭示舊的無原根呼叫形狀需繼續接納，已修正並重跑通過。三端全量仍待驗證，後續交給飛書 alpha.5 真插件消費。
 
 **CORE-053 受限構建入口正在驗證。** 分支 `codex/core-053-native-surface`，接續 #111 的本地發版器。原 B0 schema 隨來源保存，候選 Host 明確編入 plan digest 與所選方法聯集，普通啟動自動使用受限線路。Mac 真程序的正常、拒權、冷啟及兩套 SDK 內含面核對已過 42 項斷言，原 CORE-039 正常入口與 Rust 檢查共 367 項斷言通過，CORE-053 卡入口另過 42 項。後續本地三端會在全量 suite 完成後，獨佔同一端編譯快取，再執行 `ci/native_surface_check.py`。資料 reader 55 與 wire min_reader 1.0.0 分列。三份完整 preflight、原生執行檔、SDK 與逐檔 SHA-256 的可交接包在 `artifacts/CORE-053/native-builder-preflight/index.json`。追加驗收 `artifacts/CORE-053/native-profile-admission-03/` 以同一 Bot／namespace 真正接納原事件，冷啟重投回同一事件鍵，原生構建的 331 個輸入逐檔相符。當前選面為合成 activity 控制，真能力發布繼續需要原 consumer 證據。
