@@ -445,8 +445,6 @@ pub async fn launch(
                         } else if super::composition::handles(&method) {
                             super::composition::callback(&s,&l.plugin,&l.generation,&method,msg["params"].clone()).await
                         } else {
-                            // Reuse the digest from the admitted outbound frame. The current
-                            // database scope and original identities are still checked per page.
                             let digest = if method == "gateway.read_mentions" {
                                 let handle = msg["params"]["handle"].as_str();
                                 l.pending.lock().await.values()

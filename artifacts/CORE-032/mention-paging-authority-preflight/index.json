@@ -1,0 +1,310 @@
+{
+  "status": "PREFLIGHT_PASS",
+  "source_commit": "8a849d306d87e44525ee9e53be3afbdae21f2fe8",
+  "source_tree_sha256": "b71c7596806920e9b5e7d42c2443108ae2f31ba36bbd081811f48d2a6070cbb7",
+  "source_dirty": true,
+  "core_cases": 13,
+  "core_assertions": {
+    "macos": 172,
+    "windows": 172
+  },
+  "windows_real_consumer_cases": [
+    {
+      "status": "PASS",
+      "domain": "feishu",
+      "scenario": "mention-parts",
+      "state": "confirmed",
+      "receipt": {
+        "id": "c13b30c9-b671-4056-bf29-aa53da7206b6",
+        "namespace": "43cd139d-26d0-4acf-bfd2-227e83a4e10c",
+        "ordinal": null,
+        "parent": null,
+        "result": {
+          "parts": [
+            {
+              "id": "c13b30c9-b671-4056-bf29-aa53da7206b6:gateway:1",
+              "namespace": "43cd139d-26d0-4acf-bfd2-227e83a4e10c",
+              "ordinal": 1,
+              "parent": "c13b30c9-b671-4056-bf29-aa53da7206b6",
+              "result": {
+                "locator": "om_sent_1",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "c13b30c9-b671-4056-bf29-aa53da7206b6:gateway:2",
+              "namespace": "43cd139d-26d0-4acf-bfd2-227e83a4e10c",
+              "ordinal": 2,
+              "parent": "c13b30c9-b671-4056-bf29-aa53da7206b6",
+              "result": {
+                "locator": "om_sent_2",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "c13b30c9-b671-4056-bf29-aa53da7206b6:gateway:3",
+              "namespace": "43cd139d-26d0-4acf-bfd2-227e83a4e10c",
+              "ordinal": 3,
+              "parent": "c13b30c9-b671-4056-bf29-aa53da7206b6",
+              "result": {
+                "locator": "om_sent_3",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "c13b30c9-b671-4056-bf29-aa53da7206b6:gateway:4",
+              "namespace": "43cd139d-26d0-4acf-bfd2-227e83a4e10c",
+              "ordinal": 4,
+              "parent": "c13b30c9-b671-4056-bf29-aa53da7206b6",
+              "result": {
+                "locator": "om_sent_4",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            }
+          ],
+          "planned": 4
+        },
+        "state": "confirmed"
+      },
+      "native_requests": 4,
+      "token_issuances": 1,
+      "original_receipt_reopened": true,
+      "source_commit": "8a849d306d87e44525ee9e53be3afbdae21f2fe8",
+      "host_sha256": "79c00c4169f06772b497e765832cb61aa09f5f010efd36652170263044a8111a",
+      "host_zip_sha256": "5466e5e3db5be794c38c339a3c651cb64f76674503a818b3c93e1a783ddc4904",
+      "plugin_sha256": "5d264410bc5f3db15d3499d1407b6dae0bd0014e1a2385babf2ca0e1600deb2b",
+      "paid_calls": 0,
+      "mentions": {
+        "annotation_pages": 323,
+        "original_handles": 5,
+        "native_text_sha256": "4f95d244127d9396be11c92440e2fe22bd322e956be4fab24c2393aa5b2a1e35"
+      }
+    },
+    {
+      "status": "PASS",
+      "domain": "lark",
+      "scenario": "mention-parts",
+      "state": "confirmed",
+      "receipt": {
+        "id": "e324549a-ce21-4950-a5c0-f2523f1a3ceb",
+        "namespace": "f8dfe25c-652c-489b-94b2-fd194f8e4308",
+        "ordinal": null,
+        "parent": null,
+        "result": {
+          "parts": [
+            {
+              "id": "e324549a-ce21-4950-a5c0-f2523f1a3ceb:gateway:1",
+              "namespace": "f8dfe25c-652c-489b-94b2-fd194f8e4308",
+              "ordinal": 1,
+              "parent": "e324549a-ce21-4950-a5c0-f2523f1a3ceb",
+              "result": {
+                "locator": "om_sent_1",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "e324549a-ce21-4950-a5c0-f2523f1a3ceb:gateway:2",
+              "namespace": "f8dfe25c-652c-489b-94b2-fd194f8e4308",
+              "ordinal": 2,
+              "parent": "e324549a-ce21-4950-a5c0-f2523f1a3ceb",
+              "result": {
+                "locator": "om_sent_2",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "e324549a-ce21-4950-a5c0-f2523f1a3ceb:gateway:3",
+              "namespace": "f8dfe25c-652c-489b-94b2-fd194f8e4308",
+              "ordinal": 3,
+              "parent": "e324549a-ce21-4950-a5c0-f2523f1a3ceb",
+              "result": {
+                "locator": "om_sent_3",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "e324549a-ce21-4950-a5c0-f2523f1a3ceb:gateway:4",
+              "namespace": "f8dfe25c-652c-489b-94b2-fd194f8e4308",
+              "ordinal": 4,
+              "parent": "e324549a-ce21-4950-a5c0-f2523f1a3ceb",
+              "result": {
+                "locator": "om_sent_4",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            }
+          ],
+          "planned": 4
+        },
+        "state": "confirmed"
+      },
+      "native_requests": 4,
+      "token_issuances": 1,
+      "original_receipt_reopened": true,
+      "source_commit": "8a849d306d87e44525ee9e53be3afbdae21f2fe8",
+      "host_sha256": "79c00c4169f06772b497e765832cb61aa09f5f010efd36652170263044a8111a",
+      "host_zip_sha256": "5466e5e3db5be794c38c339a3c651cb64f76674503a818b3c93e1a783ddc4904",
+      "plugin_sha256": "5d264410bc5f3db15d3499d1407b6dae0bd0014e1a2385babf2ca0e1600deb2b",
+      "paid_calls": 0,
+      "mentions": {
+        "annotation_pages": 323,
+        "original_handles": 5,
+        "native_text_sha256": "4f95d244127d9396be11c92440e2fe22bd322e956be4fab24c2393aa5b2a1e35"
+      }
+    },
+    {
+      "status": "PASS",
+      "domain": "feishu",
+      "scenario": "mention-parts",
+      "state": "confirmed",
+      "receipt": {
+        "id": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb",
+        "namespace": "50c9fd1f-6b72-47d8-920c-cb7190a7537b",
+        "ordinal": null,
+        "parent": null,
+        "result": {
+          "parts": [
+            {
+              "id": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb:gateway:1",
+              "namespace": "50c9fd1f-6b72-47d8-920c-cb7190a7537b",
+              "ordinal": 1,
+              "parent": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb",
+              "result": {
+                "locator": "om_sent_1",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb:gateway:2",
+              "namespace": "50c9fd1f-6b72-47d8-920c-cb7190a7537b",
+              "ordinal": 2,
+              "parent": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb",
+              "result": {
+                "locator": "om_sent_2",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb:gateway:3",
+              "namespace": "50c9fd1f-6b72-47d8-920c-cb7190a7537b",
+              "ordinal": 3,
+              "parent": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb",
+              "result": {
+                "locator": "om_sent_3",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            },
+            {
+              "id": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb:gateway:4",
+              "namespace": "50c9fd1f-6b72-47d8-920c-cb7190a7537b",
+              "ordinal": 4,
+              "parent": "8c899a65-ed4c-41b1-9137-b79b5a7c68eb",
+              "result": {
+                "locator": "om_sent_4",
+                "state": "confirmed"
+              },
+              "state": "confirmed"
+            }
+          ],
+          "planned": 4
+        },
+        "state": "confirmed"
+      },
+      "native_requests": 4,
+      "token_issuances": 1,
+      "original_receipt_reopened": true,
+      "source_commit": "8a849d306d87e44525ee9e53be3afbdae21f2fe8",
+      "host_sha256": "79c00c4169f06772b497e765832cb61aa09f5f010efd36652170263044a8111a",
+      "host_zip_sha256": "5466e5e3db5be794c38c339a3c651cb64f76674503a818b3c93e1a783ddc4904",
+      "plugin_sha256": "5d264410bc5f3db15d3499d1407b6dae0bd0014e1a2385babf2ca0e1600deb2b",
+      "paid_calls": 0,
+      "mentions": {
+        "annotation_pages": 323,
+        "original_handles": 5,
+        "native_text_sha256": "4f95d244127d9396be11c92440e2fe22bd322e956be4fab24c2393aa5b2a1e35"
+      }
+    }
+  ],
+  "windows_original_result_sha256": "9bf0163b004d11281c95b2b2a6e7800597a9de14e20d2f2f608c5dab751b32ba",
+  "windows_original_binary_sha256": "79c00c4169f06772b497e765832cb61aa09f5f010efd36652170263044a8111a",
+  "windows_prior_failed_result_sha256": "54f9eb7f76c74a5106eff4b57c05191876c08ae8c9f2fbd9cb45da9c21d747b4",
+  "mailbox_lock": {
+    "status": "PASS",
+    "old_unlink": {
+      "errno": 13,
+      "winerror": 32
+    },
+    "deferred": true,
+    "claimed_after_release": true,
+    "duplicate": false
+  },
+  "archive": "preflight.zip",
+  "archive_sha256": "da1b43250e521d3b7c904705beaba966a538f07de15b1e26e4b15b35b7b4f35a",
+  "members": {
+    "macos/assertions.json": "829a8e3003539ebfd96bcae6db634619f74d4011e298811283d3ba96c0e859c5",
+    "macos/build-and-check.log": "9a561b7104ad938540eeec4706e96408ca70e4aebe1729d1a942bf75279ee933",
+    "macos/gateway-mentions.json": "d313cfca4456960e0e1261f2175022ee5c9a39ac9c3ba75ccadfbd98fe4fbc11",
+    "macos/run.py": "a447bcc545457194a683b03b72a1ad5f557e95eedd0087ba4a4ba0f7b8b4f99f",
+    "runner/run_windows_05.py": "d0d147cced3a9c955c10b7a6f7000f0524f6b6ae11a6ef788a22a586b36da904",
+    "runner/source-05.json": "a669e825b0afb36ec168a34bc61d39ea2ac8271d3b9b6e3a75367da64cd96c2f",
+    "runner/windows_preflight_05.py": "5cc5eb3231432f6637e97a0cec95e878b539df4b7db8319ac3572f26586fc84f",
+    "runner/windows_replay_05.py": "77316ed00b0a5dddbb63675fca77f20d27f59cbf148cc8eaf8ac5bae49f94b96",
+    "windows/build.log": "5b431cd923d8657d205cec0c5f6c6c4bd2495f54e5f0ffaea3c7903bb4ca4383",
+    "windows/consumer-0/acks.json": "cd6c05d7c8f68ba963106d94a6e378afcc89f2ec8d53b9b1f0d1dc825274c841",
+    "windows/consumer-0/delivery.json": "9e5f1e5b68668ddfd23cbcceb696c2a8d96bcf7dee09fbcff5b59c2c4c9fc214",
+    "windows/consumer-0/errors.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "windows/consumer-0/host.log": "592c3900fe46561d8b7b254a3dc674e6ca6262e7651c729ee1b24a1454b6c105",
+    "windows/consumer-0/models.json": "43468509e6d64990a8696d2e146ea24ee3a8610f8234ac831b058e7d6ef6c74b",
+    "windows/consumer-0/native.json": "e643ca3781100424a8630b6398ea9bf3e32c0d4a2bb9def2050d850780d5c4fe",
+    "windows/consumer-0/operations.json": "044abb5ff0eb14f7b1dc806a37aa0334c81a1b80aa04ae2df602b245194ff642",
+    "windows/consumer-0/tokens.json": "6ecfa0d07d24a36d5e6b4dbb278fd4698956733d8e9671070ad7f84bd2515afc",
+    "windows/consumer-0/wire.jsonl": "e3ac38c42d009d59eb2060ecc596fced8da8d383551b8e54a0f89b4d43f10750",
+    "windows/consumer-1/acks.json": "5bab25084681256be67ad6bb3be97b62a1802bff283bfff08efd29fa3d9ca47e",
+    "windows/consumer-1/delivery.json": "89fc94ebdaa9d8fddbec8554c5e786fd01e148ee7ef590407fccdf77ece8504a",
+    "windows/consumer-1/errors.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "windows/consumer-1/host.log": "f30b568230de1921503f9bb38527ef5a80d5a6b0d7e33c171c541e79ef6302bb",
+    "windows/consumer-1/models.json": "63d305d24e2be9147ec978682603093d95dcc44359c1771bcc2eec5912ca5f7d",
+    "windows/consumer-1/native.json": "1f641db9420146b3b7951514647fd0825e1967054116e07759cb222c9883594c",
+    "windows/consumer-1/operations.json": "607b615ca0a00810b0e8fe225fd3fffcdcdcb04d2747ea8e026d6209e19533f4",
+    "windows/consumer-1/tokens.json": "559bbb506a3473f5a7ad499cf8203057fb5b285e2a2861683fbd4069dc0e5703",
+    "windows/consumer-1/wire.jsonl": "15eb303d4553d91c05015166b0638d01578d9cb1865643c92ebb7c8b06bee402",
+    "windows/consumer-2/acks.json": "cd6c05d7c8f68ba963106d94a6e378afcc89f2ec8d53b9b1f0d1dc825274c841",
+    "windows/consumer-2/delivery.json": "87e0fc60a6c4e83ddcf7ad74909da82923c2046da6929f3966525a422590332c",
+    "windows/consumer-2/errors.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "windows/consumer-2/host.log": "b19356f8fe49fc2deb217a68ff984f4bee173de85f45b34e1f4e2bd32c89bbeb",
+    "windows/consumer-2/models.json": "2850ce9fd28bc0575ddb2755ca32da7c2012d12c602157532593bd7ba733e3d6",
+    "windows/consumer-2/native.json": "e643ca3781100424a8630b6398ea9bf3e32c0d4a2bb9def2050d850780d5c4fe",
+    "windows/consumer-2/operations.json": "fb77efb9f35b23f64510dcd122828f6b71bb30c6fdbd1acc3c69810f4500e0e2",
+    "windows/consumer-2/tokens.json": "6ecfa0d07d24a36d5e6b4dbb278fd4698956733d8e9671070ad7f84bd2515afc",
+    "windows/consumer-2/wire.jsonl": "76bc1c876280f3940c9f3361600e78ee9cf3f8f7329d70a2583576a034547cb5",
+    "windows/core/assertions.json": "0290808cde09e86490510fab8145da48c036603c37292d1cbd235010927ecac7",
+    "windows/core/gateway-mentions.json": "50a2d0796bb601e72dc808c35691a46d119a06814bd8f53e9782d889951ea74b",
+    "windows/core/mention-authority-observed.json": "ffa3fe3d0777553636d5fcd46fd0d3424101b90191361243af4c9f7bff2230e3",
+    "windows/core/mention-cut-observed.json": "2c95ee7d713706be92e9ed163e5f408c7cb7c93c39e907a31ed0ab13a2659f9a",
+    "windows/core/mention-dense-observed.json": "4323a1feeea3cc6fdf98e1bb9359df35ce90e12584c15af6fe28c3e45260740b",
+    "windows/core/mention-exact-observed.json": "1ea17f7c25d52bf78f3a4fc941906e2882e44401f3c48e92cd84799f585f5354",
+    "windows/core/mention-gap-observed.json": "056b6766969921200e6fbde9cb40e24f425447a33b23a3c59a514b99f7605b19",
+    "windows/core/mention-large-observed.json": "8aba64d89a1c60d7f9ecf2b9aad64c789d9564d8339ab53c4e751b2639747811",
+    "windows/core/mention-literal-observed.json": "62793d57282a9008c1cde69ccaafd7efac15b4fe7dad15013efe46127310b079",
+    "windows/core/mention-names-observed.json": "24c031138fa75e72f52b99271caa1dc742b1aca4f767c3163bf5e48cfa833c9e",
+    "windows/core/mention-private-observed.json": "ea276ffbb09faaa27baa12680e774f3976cc514010491d44046fa4e2f939a7a0",
+    "windows/core/mention-replaced-observed.json": "1ce17e8d51be8b97f53d12ec2e1ed6dd681e005d7b1b3266a208d65176a3e1b8",
+    "windows/core/mention-unknown-observed.json": "4fc7d10f37d854bfd54f541775c426fa7c9097dcb680b9ad5c2b9e8b978743fc",
+    "windows/core/sqlite-build.json": "d597ba4aa01670294b405bddf8c68380f5d80b068f03804637f4af1e4c2a387e",
+    "windows/diagnostic.json": "3d3eece3705ead7ab3e89f36cc5fe4fec24edbe1f4749306cf65f154a8629a10",
+    "windows/mailbox-lock.json": "93409e28ed4feff61814f5c6adbdca9b2063f1639474d58032075836e65e4d5c",
+    "windows/replay.log": "54e3370a040399777f234d36b60bc50c5dad8fa640397825553ff6d9d21cc1b0"
+  },
+  "published": false,
+  "formal_acceptance": false
+}

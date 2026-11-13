@@ -104,8 +104,9 @@ pub(super) async fn callback(
         JOIN operations o ON o.namespace=c.execution AND o.operation_id=c.operation
         JOIN executions x ON x.id=c.execution
         WHERE c.handle=? AND c.plugin=? AND c.generation=? AND c.state='dispatched')
-        SELECT execution,method,parent,actor,json_remove(args,'$.mentions') AS args,
-        json_extract(args,'$.mentions') AS mentions,jsonb_extract(args,'$.mentions') AS identities
+        SELECT execution,method,parent,actor,json_remove(args,'$.mentions','$._mention_identities') AS args,
+        json_extract(args,'$.mentions') AS mentions,jsonb_extract(args,'$.mentions') AS identities,
+        json_extract(args,'$._mention_identities') AS admitted_identities
         FROM original",
     )
     .bind(handle)
@@ -120,7 +121,8 @@ pub(super) async fn callback(
     let mentions: Option<&str> = row.try_get("mentions")?;
     super::send::check_reply(db, plugin, &args).await?;
     if let Some(identities) = row.try_get::<Option<&[u8]>, _>("identities")? {
-        native_content::check_page(db, plugin, identities).await?;
+        native_content::check_page(db, plugin, identities, row.try_get("admitted_identities")?)
+            .await?;
     }
     super::native_route::check(db, plugin, &execution, &args).await?;
     let original = if annotations {
@@ -172,7 +174,6 @@ pub(super) async fn callback(
     if offset > original.len() || !(1..=12288).contains(&length) {
         return Err("text page outside original selection".into());
     }
-    // Admission registered all annotation sources as execution dependencies.
     let dependencies: Vec<i64> = sqlx::query_scalar("SELECT source FROM executions WHERE id=?1 AND source IS NOT NULL UNION SELECT event FROM main_dependencies WHERE execution=?1")
         .bind(&execution).fetch_all(&mut *db).await?;
     for event in dependencies {
@@ -204,18 +205,27 @@ mod tests {
         let mentions = vec![mention; 11_000];
         let args =
             json!({"message":{"text":"@小雪 "},"mentions":mentions,"route":{"entry":"original"}});
+        let stored: String =
+            sqlx::query_scalar("SELECT json_set(?,'$._mention_identities',json(?))")
+                .bind(args.to_string())
+                .bind(r#"[["original","ou_original","stage",1]]"#)
+                .fetch_one(&mut db)
+                .await
+                .unwrap();
         let row = sqlx::query(
             "WITH original AS MATERIALIZED (SELECT jsonb(?1) AS args)
-             SELECT json_remove(args,'$.mentions') AS args,json_extract(args,'$.mentions') AS mentions
+             SELECT json_remove(args,'$.mentions','$._mention_identities') AS args,
+             json_extract(args,'$.mentions') AS mentions
              FROM original",
         )
-        .bind(args.to_string())
+        .bind(stored)
         .fetch_one(&mut db)
         .await
         .unwrap();
         assert_eq!(row.get::<&str, _>("mentions"), args["mentions"].to_string());
         let projected: Value = serde_json::from_str(row.get("args")).unwrap();
         assert!(projected.get("mentions").is_none());
+        assert!(projected.get("_mention_identities").is_none());
         assert_eq!(projected["message"], args["message"]);
         assert_eq!(projected["route"], args["route"]);
     }

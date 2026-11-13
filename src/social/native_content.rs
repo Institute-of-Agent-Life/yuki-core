@@ -306,19 +306,24 @@ pub(crate) async fn check_page(
     db: &mut SqliteConnection,
     plugin: &str,
     annotations: &[u8],
+    admitted_identities: Option<&str>,
 ) -> Result<()> {
-    // Call admission validated the full annotations. Each page rechecks their
-    // distinct identities without allocating every repeated label and range.
-    let identities: Vec<String> = sqlx::query_scalar(
-        "SELECT DISTINCT json_extract(value,'$.account','$.native','$.assignment','$.source')
-         FROM json_each(?)",
-    )
-    .bind(annotations)
-    .fetch_all(&mut *db)
-    .await?;
-    for identity in identities {
-        let (account, native, assignment, source): (String, String, Option<String>, i64) =
-            serde_json::from_str(&identity)?;
+    let identities: Vec<(String, String, Option<String>, i64)> = match admitted_identities {
+        Some(original) => serde_json::from_str(original)?,
+        None => {
+            let rows: Vec<String> = sqlx::query_scalar(
+                "SELECT DISTINCT json_extract(value,'$.account','$.native','$.assignment','$.source')
+                 FROM json_each(?)",
+            )
+            .bind(annotations)
+            .fetch_all(&mut *db)
+            .await?;
+            rows.iter()
+                .map(|row| serde_json::from_str(row))
+                .collect::<std::result::Result<_, _>>()?
+        }
+    };
+    for (account, native, assignment, source) in identities {
         check_identity(db, plugin, &account, &native, assignment.as_deref(), source).await?;
     }
     Ok(())
