@@ -106,9 +106,13 @@ async fn status(db: &mut SqliteConnection, c: &Change, p: &Profile) -> Result<Va
             false,
         )
     };
-    Ok(
-        json!({"operation":c.params["operation"],"fact":row.get::<String,_>("fact"),"revision":row.get::<i64,_>("fact_revision"),"profile":p.identity(),"logical":logical,"state":state,"usage":usage,"dispatch_now":dispatch}),
-    )
+    let fact: &str = row.get("fact");
+    let mut result = json!({"operation":c.params["operation"],"fact":fact,"revision":row.get::<i64,_>("fact_revision"),"profile":p.identity(),"logical":logical,"state":state,"usage":usage,"dispatch_now":dispatch});
+    if c.params["retain"] == true {
+        result["erasure_refs"] =
+            json!(super::fact_sources::retain_quality(db, &c.plugin, fact).await?);
+    }
+    Ok(result)
 }
 pub(super) async fn profile(store: &Store, plugin: &str, logical: &str) -> Result<Profile> {
     let (body,route):(String,String)=sqlx::query_as("SELECT p.body,e.route FROM maintenance_embeddings e JOIN host_maintenance p ON p.plugin=e.plugin AND p.revision=e.revision WHERE e.plugin=? AND e.logical=?")

@@ -88,6 +88,8 @@ while raw := read_frame(sys.stdin.buffer):
         for path in folder.glob("private-*.json"):
             path.unlink()
         p = frame["params"]
+        if "erasure_refs" in p:
+            save("forget-" + str(p["watermark"]), p)
         send(
             {
                 "jsonrpc": "2.0",

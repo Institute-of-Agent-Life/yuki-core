@@ -93,6 +93,15 @@ pub(super) async fn erase_sources(
         for owner in owners {
             obligations.entry(owner).or_default().push(*event);
         }
+        sqlx::query(
+            "UPDATE maintenance_audit_apply AS a SET result='{\"erased\":true}'
+             WHERE EXISTS(SELECT 1 FROM source_holds h WHERE h.source=?1 AND h.owner=a.plugin
+             AND h.item GLOB 'maintenance-quality:*'
+             AND EXISTS(SELECT 1 FROM json_each(a.result,'$.erasure_refs') r WHERE r.value=h.item))",
+        )
+        .bind(event)
+        .execute(&mut *conn)
+        .await?;
         source::scrub(conn, *event).await?;
     }
     for (owner, refs) in obligations {
@@ -108,11 +117,33 @@ pub(super) async fn erase_sources(
 
 pub async fn pending(conn: &mut SqliteConnection, owner: &str) -> Result<Value> {
     let rows=sqlx::query("SELECT r.erase_key,d.watermark,d.sources FROM owner_erasures d JOIN source_erasure_requests r
-        ON r.watermark=d.watermark WHERE d.owner=? AND d.proof IS NULL ORDER BY d.watermark").bind(owner).fetch_all(conn).await?;
+        ON r.watermark=d.watermark WHERE d.owner=? AND d.proof IS NULL ORDER BY d.watermark").bind(owner).fetch_all(&mut *conn).await?;
     let mut items = Vec::new();
     for row in rows {
-        items.push(json!({"key":row.try_get::<String,_>("erase_key")?,"watermark":row.try_get::<i64,_>("watermark")?,
-        "sources":serde_json::from_str::<Vec<i64>>(row.try_get("sources")?)?}));
+        let sources: &str = row.try_get("sources")?;
+        let mut item = json!({"key":row.try_get::<String,_>("erase_key")?,"watermark":row.try_get::<i64,_>("watermark")?,
+        "sources":serde_json::from_str::<Vec<i64>>(sources)?});
+        let refs: Vec<String> = sqlx::query_scalar(
+            "SELECT item FROM source_holds WHERE owner=? AND source IN(SELECT value FROM json_each(?))
+              AND item GLOB 'maintenance-quality:*' ORDER BY item",
+        )
+        .bind(owner)
+        .bind(sources)
+        .fetch_all(&mut *conn)
+        .await?;
+        if !refs.is_empty() {
+            item["erasure_refs"] = json!(refs);
+            let visible: Vec<i64> = sqlx::query_scalar(
+                "SELECT DISTINCT source FROM source_holds WHERE owner=? AND source IN(SELECT value FROM json_each(?))
+                  AND item NOT GLOB 'maintenance-quality:*' ORDER BY source",
+            )
+            .bind(owner)
+            .bind(sources)
+            .fetch_all(&mut *conn)
+            .await?;
+            item["callback_sources"] = json!(visible);
+        }
+        items.push(item);
     }
     Ok(json!({"owner":owner,"obligations":items}))
 }

@@ -101,7 +101,7 @@ pub(super) async fn facts_full(
     }
     Ok(result)
 }
-pub(super) async fn audit(db: &mut SqliteConnection, c: &Change, g: &Granted) -> Result<Value> {
+async fn audit_page(db: &mut SqliteConnection, c: &Change, g: &Granted) -> Result<Value> {
     let page = memory::scope::visible(
         db,
         &g.reader,
@@ -143,6 +143,21 @@ pub(super) async fn audit(db: &mut SqliteConnection, c: &Change, g: &Granted) ->
     )
 }
 
+pub(super) async fn audit(db: &mut SqliteConnection, c: &Change, g: &Granted) -> Result<Value> {
+    let mut result = audit_page(db, c, g).await?;
+    if c.params["retain"] == true {
+        for item in result["items"]
+            .as_array_mut()
+            .ok_or("audit items missing")?
+        {
+            let fact = item["fact"].as_str().ok_or("audit fact missing")?;
+            item["erasure_refs"] =
+                json!(super::fact_sources::retain_quality(db, &c.plugin, fact).await?);
+        }
+    }
+    Ok(result)
+}
+
 pub(super) async fn apply_audit(
     db: &mut SqliteConnection,
     c: &Change,
@@ -166,24 +181,40 @@ pub(super) async fn apply_audit(
         if original != digest {
             return Err("original audit operation changed".into());
         }
-        return Ok(serde_json::from_str(&result)?);
+        let result: Value = serde_json::from_str(&result)?;
+        if c.params["retain"] == true {
+            crate::privacy::source::require_live_quality_refs(
+                db,
+                &c.plugin,
+                &result["erasure_refs"],
+            )
+            .await?;
+        }
+        return Ok(result);
     }
-    let current = audit(db, c, g).await?;
+    let current = audit_page(db, c, g).await?;
     if current["fingerprint"] != c.params["fingerprint"] {
         return Err("original source audit changed".into());
     }
     let visible = current["items"].as_array().ok_or("audit page required")?;
     let approved: std::collections::BTreeSet<String> =
         serde_json::from_value(c.params["approved"].clone())?;
+    let mut sources = std::collections::BTreeSet::new();
     for id in &approved {
         if !visible.iter().any(|item| item["fact"] == *id) {
             return Err("fact outside original audit page".into());
         }
         memory::scope::writable(db, &g.reader, id).await?;
+        if c.params["retain"] == true {
+            sources.extend(super::fact_sources::retain_quality(db, &c.plugin, id).await?);
+        }
         sqlx::query("DELETE FROM memory_retrieval_fts WHERE rowid=(SELECT number FROM memory_facts WHERE id=?)").bind(id).execute(&mut *db).await?;
         sqlx::query("INSERT INTO memory_retrieval_fts(rowid,content,memory_key,category) SELECT number,content,fact_key,category FROM retrieval_documents WHERE id=?").bind(id).execute(&mut *db).await?;
     }
-    let result = json!({"operation":operation,"fingerprint":c.params["fingerprint"],"rebuilt":approved,"paid_calls":0});
+    let mut result = json!({"operation":operation,"fingerprint":c.params["fingerprint"],"rebuilt":approved,"paid_calls":0});
+    if c.params["retain"] == true {
+        result["erasure_refs"] = json!(sources);
+    }
     sqlx::query("INSERT INTO maintenance_audit_apply VALUES(?,?,?,?)")
         .bind(&c.plugin)
         .bind(operation)

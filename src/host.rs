@@ -602,7 +602,11 @@ async fn acknowledge(
     session: &process::Session,
     ob: &Value,
 ) -> Result<()> {
-    let params = json!({"key":ob["key"],"watermark":ob["watermark"],"sources":ob["sources"]});
+    let mut params = json!({"key":ob["key"],"watermark":ob["watermark"],"sources":ob["sources"]});
+    if let Some(refs) = ob.get("erasure_refs") {
+        params["erasure_refs"] = refs.clone();
+        params["sources"] = ob["callback_sources"].clone();
+    }
     let definition = grants::schema("forget.request", "host_to_plugin", &params)?;
     let reply = session
         .call(store, "forget.request", params.clone(), None)

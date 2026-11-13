@@ -646,6 +646,14 @@
               "type": "integer",
               "minimum": 0
             }
+          },
+          "erasure_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^maintenance-quality:[a-f0-9-]{36}$"
+            }
           }
         },
         "required": [

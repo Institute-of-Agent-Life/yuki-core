@@ -2,6 +2,54 @@ use crate::Result;
 use serde_json::{Value, json};
 use sqlx::{Row, SqliteConnection};
 
+const QUALITY_PREFIX: &str = "maintenance-quality:";
+
+pub(crate) async fn retain_quality(
+    conn: &mut SqliteConnection,
+    owner: &str,
+    source: i64,
+) -> Result<String> {
+    check(conn, owner, source).await?;
+    let item: Option<String> = sqlx::query_scalar(
+        "SELECT item FROM source_holds WHERE owner=? AND source=? AND item GLOB 'maintenance-quality:*'",
+    )
+    .bind(owner)
+    .bind(source)
+    .fetch_optional(&mut *conn)
+    .await?;
+    if let Some(item) = item {
+        return Ok(item);
+    }
+    let item = format!("{QUALITY_PREFIX}{}", crate::identity::new_id(conn).await?);
+    insert_hold(conn, owner, &item, source).await?;
+    Ok(item)
+}
+
+pub(crate) async fn require_live_quality_refs(
+    conn: &mut SqliteConnection,
+    owner: &str,
+    refs: &Value,
+) -> Result<()> {
+    if !refs.is_array() {
+        return Err("original audit receipt erased".into());
+    }
+    let invalid: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM json_each(?1) r
+          WHERE NOT EXISTS(SELECT 1 FROM source_holds h JOIN events e ON e.id=h.source
+           JOIN persons p ON p.id=e.raw_actor JOIN persons root ON root.id=coalesce(p.current_root,p.id)
+           WHERE h.owner=?2 AND h.item=r.value AND p.enabled AND root.enabled
+             AND NOT EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=h.source)))",
+    )
+    .bind(refs.to_string())
+    .bind(owner)
+    .fetch_one(conn)
+    .await?;
+    if invalid {
+        return Err("original audit receipt sources unavailable".into());
+    }
+    Ok(())
+}
+
 pub async fn is_erased(conn: &mut SqliteConnection, source: i64) -> Result<bool> {
     Ok(
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=?)")
@@ -77,15 +125,27 @@ pub async fn acquire(
     item: &str,
     source: i64,
 ) -> Result<Value> {
-    // Commit the holder association before returning any source material to the retained owner.
+    if item.starts_with(QUALITY_PREFIX) {
+        return Err("reserved source hold reference".into());
+    }
     check(conn, owner, source).await?;
+    insert_hold(conn, owner, item, source).await?;
+    read(conn, owner, item, source).await
+}
+
+async fn insert_hold(
+    conn: &mut SqliteConnection,
+    owner: &str,
+    item: &str,
+    source: i64,
+) -> Result<()> {
     sqlx::query("INSERT INTO source_holds(owner,item,source) VALUES(?,?,?) ON CONFLICT DO NOTHING")
         .bind(owner)
         .bind(item)
         .bind(source)
         .execute(&mut *conn)
         .await?;
-    read(conn, owner, item, source).await
+    Ok(())
 }
 
 pub fn accounting_only(raw: &str) -> String {
