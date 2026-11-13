@@ -65,6 +65,10 @@ pub(super) async fn select(
             {
                 return Err("selected original media not available for this purpose".into());
             }
+            if purpose == "transcript" {
+                crate::history::authorize_audio_source(conn, &req.execution, actor, original)
+                    .await?;
+            }
             dependencies.extend([s.event, original]);
             (
                 format!("event:{}:{}", original, origin["slot"]),

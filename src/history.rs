@@ -61,17 +61,18 @@ pub enum Change {
     },
 }
 
-async fn original_audio_segments(
+pub(crate) async fn authorize_audio_source(
     conn: &mut SqliteConnection,
     exec: &str,
     actor: &str,
     source: i64,
-) -> Result<Vec<i64>> {
+) -> Result<()> {
     effects::authorize(conn, exec, actor, true).await?;
     let owns_source: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM executions x JOIN events e ON e.id=x.source
-         WHERE x.id=? AND e.id=? AND e.raw_actor=?
-         AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id))",
+        "SELECT EXISTS(SELECT 1 FROM executions x JOIN events e ON e.id=?2
+         WHERE x.id=?1 AND e.raw_actor=?3
+         AND (x.source=e.id OR EXISTS(SELECT 1 FROM main_inputs i
+              WHERE i.execution=x.id AND i.event=e.id)))",
     )
     .bind(exec)
     .bind(source)
@@ -81,6 +82,20 @@ async fn original_audio_segments(
     if !owns_source {
         return Err("transcription requires original active source authority".into());
     }
+    crate::ingress::admit::validate_claim(conn, source).await?;
+    if crate::privacy::source::execution_erased(conn, exec, Some(source)).await? {
+        return Err("transcription source erased".into());
+    }
+    Ok(())
+}
+
+async fn original_audio_segments(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    actor: &str,
+    source: i64,
+) -> Result<Vec<i64>> {
+    authorize_audio_source(conn, exec, actor, source).await?;
     Ok(sqlx::query_scalar(
         "SELECT CAST(s.key AS INTEGER) FROM events e JOIN json_each(e.envelope,'$.segments') s
          WHERE e.id=? AND json_extract(s.value,'$.type')='media'

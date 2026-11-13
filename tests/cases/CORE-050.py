@@ -1055,6 +1055,53 @@ def media_input(ctx, sdk):
                             owner.rows("SELECT source,text FROM history_transcripts"),
                             [(src, "authorized original transcript")],
                         )
+                        replay = pool.submit(
+                            owner.op, "host", "process", "aux", execution, owner.actor,
+                            "another-host-call", json.dumps({"event": src, "slot": 0}), purpose,
+                        )
+                        paths = owner.until(lambda: [
+                            p for p in folder.glob("call-*.json") if p.stem != "call-" + handle
+                        ])
+                        again = read_json(paths[0])["params"]["handle"]
+                        second = {
+                            **params, "origin": {"handle": again}, "call_id": "another-aux-key",
+                        }
+                        if kind == "converted-audio":
+                            converted = peer.call("media.publish", {
+                                "handle": again, "key": "converted", "filename": "converted.wav",
+                                "kind": "file", "mime": "audio/wav", "size": len(raw), "offset": 0,
+                                "digest": hashlib.sha256(raw).hexdigest(),
+                                "bytes": base64.b64encode(raw).decode(),
+                            })
+                            second["media"] = {
+                                "artifact_id": converted["artifact_id"], "version": converted["version"],
+                            }
+                            ctx.check("conversion in another handle has its own reference",
+                                      second["media"]["artifact_id"] != params["media"]["artifact_id"])
+                        key = peer.submit("llm.complete", second)
+                        owner.until(lambda: (folder / ("reply-job-" + key + ".json")).exists()
+                                    or not upstream.wires.empty())
+                        # Release an unexpected second physical request so the red case can
+                        # preserve its receipt and fail on the actual accounting difference.
+                        if not upstream.wires.empty():
+                            _, extra = upstream.receive()
+                            reply(extra, "unexpected second purchase")
+                        same = peer.receive(key)
+                        ctx.equal("distinct host call observes original paid receipt", same, answer)
+                        ctx.equal("original source reserves only once", owner.rows(
+                            "SELECT reserved_requests FROM root_budgets WHERE root=?", execution,
+                        ), [(1,)])
+                        ctx.equal("original source dispatches only once",
+                                  owner.rows("SELECT count(*) FROM model_attempts"), [(1,)])
+                        peer.call("llm.complete", {**second, "text": "changed request"}, False)
+                        key = peer.submit("llm.complete", {**second, "call_id": "changed-key",
+                                                           "text": "changed request"})
+                        peer.receive(key, False)
+                        (folder / ("finish-" + again + ".json")).write_text(json.dumps(
+                            {"ok": True, "data": {"text": "authorized original transcript"}},
+                        ))
+                        ctx.equal("separate receipt settles without a new model purchase",
+                                  replay.result()["state"], "confirmed")
                     proofs.append(
                         {
                             "kind": kind,
