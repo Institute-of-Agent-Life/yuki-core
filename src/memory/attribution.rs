@@ -9,11 +9,34 @@ use crate::Result;
 use serde_json::{Value, json};
 use sqlx::SqliteConnection;
 
+async fn reply_author(conn: &mut SqliteConnection, event: i64) -> Result<Option<(i64, String)>> {
+    let matches: Vec<(i64, String)> = sqlx::query_as(
+        "SELECT reply.id,reply.raw_actor FROM events source
+         JOIN entries g ON g.id=source.entry_id AND g.scope='group' AND g.closed_at IS NULL
+         JOIN json_each(source.envelope,'$.segments') part ON json_extract(part.value,'$.type')='reply'
+         JOIN event_locators l ON l.receiver=source.bot_stage AND l.native_id=json_extract(part.value,'$.native_id')
+         JOIN events reply ON reply.id=l.event_id AND reply.entry_id=source.entry_id AND reply.bot_stage=source.bot_stage AND reply.id<source.id
+         JOIN assignments author ON author.id=reply.actor_stage AND author.kind='person' AND author.original_person=reply.raw_actor AND author.status='active'
+         JOIN assignments bot ON bot.id=reply.bot_stage AND bot.status='active'
+         JOIN persons p ON p.id=reply.raw_actor AND p.enabled
+         JOIN persons root ON root.id=coalesce(p.current_root,p.id) AND root.enabled
+         WHERE source.id=? AND json_extract(reply.envelope,'$.kind')='message'
+         AND (SELECT count(*) FROM json_each(source.envelope,'$.segments') p WHERE json_extract(p.value,'$.type')='reply')=1
+         AND (SELECT count(*) FROM event_locators candidates JOIN events e ON e.id=candidates.event_id WHERE candidates.receiver=source.bot_stage AND candidates.native_id=l.native_id AND e.entry_id=source.entry_id AND e.id<source.id)=1
+         AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source IN(source.id,reply.id)) LIMIT 2",
+    ).bind(event).fetch_all(conn).await?;
+    Ok(match matches.as_slice() {
+        [one] => Some(one.clone()),
+        _ => None,
+    })
+}
+
 async fn source_actor(
     db: &mut SqliteConnection,
     r: &Reader,
     event: i64,
     reference: &str,
+    exec: &str,
 ) -> Result<(facts::Subject, &'static str)> {
     let (actor,group):(String,String)=sqlx::query_as(
         "SELECT e.raw_actor,g.space FROM events e JOIN entries g ON g.id=e.entry_id AND g.scope='group' AND g.closed_at IS NULL
@@ -34,6 +57,29 @@ async fn source_actor(
             ));
         }
         "current_speaker" => (actor, "explicit"),
+        "replied_message_author" => {
+            let (reply, person) = reply_author(db, event)
+                .await?
+                .ok_or("unproved_reply_author")?;
+            let root: String =
+                sqlx::query_scalar("SELECT coalesce(current_root,id) FROM persons WHERE id=?")
+                    .bind(&person)
+                    .fetch_one(&mut *db)
+                    .await?;
+            sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
+                .bind(exec)
+                .bind(reply)
+                .execute(&mut *db)
+                .await?;
+            (
+                person,
+                if root == r.root {
+                    "explicit"
+                } else {
+                    "third_party"
+                },
+            )
+        }
         reference if reference == "mentioned_user" || reference.starts_with("member_") => {
             // Only admitted human Assignment IDs from this event qualify. Exclude the
             // original speaker (and their merged identities); never resolve a display label.
@@ -95,8 +141,14 @@ pub(super) async fn apply(
     let evidence::Source::Event { id: event, .. } = &source else {
         return Err("original_group_event_required".into());
     };
-    let proof = evidence::resolve(db, r, &r.actor, &source).await?;
-    let (subject, authority) = source_actor(db, r, *event, reference).await?;
+    let mut proof = evidence::resolve(db, r, &r.actor, &source).await?;
+    let (subject, authority) = source_actor(db, r, *event, reference, exec).await?;
+    if moved && authority == "explicit" {
+        return Err("operation_not_allowed_for_target".into());
+    }
+    if reference == "replied_message_author" {
+        proof.execution = Some(exec.into());
+    }
     let old = if moved {
         if req["expected_fact_state"]
             .as_str()

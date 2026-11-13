@@ -1,0 +1,73 @@
+{
+  "source_commit": "329ca7c487414d2f54ddd98ff4727446ed2446cd",
+  "source_files": {
+    "src/yuki/memory/subjects.py": "f017c8e69190c0b63292c5beb6a7f0ceadebc4f34935fc669d89bfa2c6cdf569",
+    "src/yuki/memory/mutation/service.py": "92b3489a7fb00c3898da301597e1aa3f18e8ce8a5860b26bf29baa6ca0e62b76",
+    "src/yuki/memory/models.py": "fc6a276fa62dcf5cd07f72060f02bbd6b33711c6ef62f3750e5e74c059da96d6",
+    "tests/unit/test_memory_mutation.py": "398efbb285fd12410fadfa20e8f23e30bee763f7a8097c4bbeb4de0f3090ae47"
+  },
+  "junit_sha256": "6db52e96ca15607b3f5b19c4021d97f2ec10c357260c1b702c463884082096bf",
+  "projection": {
+    "direct": {
+      "ok": true,
+      "reason": "independent_claim",
+      "subject": "2002",
+      "scope": "person_group",
+      "group": "3001",
+      "authority": "third_party",
+      "content": "喜欢摄影",
+      "evidence": [
+        {
+          "author": "1001",
+          "quote": "他喜欢摄影",
+          "authority": "third_party"
+        }
+      ]
+    },
+    "self_reply": {
+      "ok": true,
+      "reason": "independent_claim",
+      "subject": "1001",
+      "scope": "person_group",
+      "group": "3001",
+      "authority": "explicit",
+      "content": "喜欢摄影",
+      "evidence": [
+        {
+          "author": "1001",
+          "quote": "他喜欢摄影",
+          "authority": "explicit"
+        }
+      ]
+    },
+    "reassigned": {
+      "ok": true,
+      "reason": "memory_reassigned",
+      "subject": "2002",
+      "scope": "person_group",
+      "group": "3001",
+      "authority": "third_party",
+      "content": "喜欢摄影",
+      "evidence": [
+        {
+          "author": "1001",
+          "quote": "他喜欢摄影",
+          "authority": "third_party"
+        },
+        {
+          "author": "1001",
+          "quote": "他喜欢摄影",
+          "authority": "third_party"
+        }
+      ]
+    },
+    "self_reassigned": {
+      "ok": false,
+      "reason": "operation_not_allowed_for_target"
+    },
+    "missing": {
+      "ok": false,
+      "reason": "target_not_available_in_current_event"
+    }
+  }
+}

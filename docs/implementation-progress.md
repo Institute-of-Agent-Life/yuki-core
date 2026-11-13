@@ -1,4 +1,8 @@
-**CORE-053 清除結果回寫。** 分支 `codex/core-053-forget-response`。已選 `forget.request` 的受限 Host 依原請求 key、watermark 和當前程序授權保存清除 proof，冷啟只補交未完成的義務。Mac 受限 Host 預驗 200 項、原 activity-only 42 項通過。獨立審查確認錯請求 ID 及停用後回覆均無法結算。重現、正常與故障時序見 [清除回執](selected-forget-sequences.md)。完整三端 CI 和真擴展 minor 見證待驗。
+**CORE-026 原回覆作者。** 分支 `codex/core-026-original-reply`。Main 的明確記憶操作以同入口、同接收帳號的先前原事件定位被回覆者。歧義、已擦除與後來才接納的來源按接納次序處理。對拍固定 v4 的接納結果，Mac 正常與故障重放通過 101 項斷言，另由 SWE-2 Max 核對來源與授權。預驗回條位於本倉 `artifacts/CORE-026/original-reply-20261113-01/verification.json`，SHA-256 `783f10329674d2e6521fc9e78d8a462b204646bc4edd0fa486f24c8196af556b`。讀取依賴與擦除案例一同納入 CORE-026 本地三端檢查。
+
+**CORE-053 1.1.0 本地晉級。** #118、#119 已分別合併 `2a25234e0a44`、`09bdd7382de4`。#119 在 Mac、Linux、HJW Windows 各通過 52 張卡與 200 項選面重放，回條 `artifacts/ci/local-pr/119/receipt.json`，SHA-256 `3e204aca8eb12cd81e3d30f72a0b2a2e5942779656ebb3f2f764d48f8889ea75`。以實際 main `09bdd7382de41343767960c0aa0e279db2b618dc` 重建三端原生 Host 和 Rust／Python SDK 1.1.0，資料 reader 56。飛書與 Lark、Telegram、web-fetch 在三端完成正常、拒權及冷啟重放。新增七個方法與原事件 `topic_root` 欄位，完整方法、來源及雜湊在本倉 `artifacts/CORE-053/native-gateway-release-1.1-main-09bdd7382de4/registry/versions/1.1.0/manifest.json`。相鄰 `package.zip` 的 SHA-256 為 `90933f039d2aaa19231f03b7ea12dabd0ebfb09cac282d05e8385a8d33738845`。包可供擴展本地驗證，GitHub 發布待單獨授權。Windows 首輪缺兩份鎖定 wheel，補齊後完整重跑。核心正式 51／58，下一張未完成的本倉前置仍是 CORE-040。
+
+CORE-053 清除結果回寫的正常與故障時序見 [清除回執](selected-forget-sequences.md)。已選 `forget.request` 依原請求 key、watermark 和當前程序授權保存清除 proof，冷啟補交未完成的義務。
 
 **#118 補修通過預驗。** `codex/core-025-mention-paging` 在接納時整理相異的原身份。每頁重新核對當前授權，較早的呼叫從原註記推導身份。測試 peer 接上原命令領取機制，檔案解鎖後只領取一次。Mac 和 HJW Windows 各通過 13 個情境、172 個斷言。HJW 另以飛書、Lark、飛書三次重放原 11,000 個提及，逐次核對 323 頁及原回執。
 
