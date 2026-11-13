@@ -9,9 +9,11 @@ from tests.harness.compact import Owner, call, reply
 from tests.peers.chat.recorder import Recorder
 
 
-def run(ctx,sdk,installed,ready,png):
+def run(ctx,sdk,installed,ready,png,*,only=None):
     observations={}
-    for case,kind,visual in [('video','video',True),('pdf','file',False),('text','video',False),('late','video',True),('switch','video',True)]:
+    for case,kind,visual in [('video','video',True),('pdf','file',False),('text','video',False),('late','video',True),('switch','video',True),('forget','video',True)]:
+        if only is not None and case != only:
+            continue
         o=Owner(ctx,'sel-'+case,49)
         folders={key:ctx.working/(key+case) for key in ['codec-a','codec-b']}
         for path in folders.values():path.mkdir()
@@ -36,9 +38,46 @@ def run(ctx,sdk,installed,ready,png):
                 ctx.check('initial Main has no frame or decoded PDF',all(base64.b64encode(img).decode() not in str(initial) for img in frames) and 'controlled selected PDF page' not in str(initial))
                 if case=='switch':
                     edit("UPDATE core_meta SET value=json_set(value,'$.deployment','other-deployment') WHERE key='plugin-approval:codec-a'")
-                if case=='late':(peer/'hold-selected').touch()
+                if case in ('late','forget'):(peer/'hold-selected').touch()
                 args={'event_id':eid,'attachment_index':0,'question':'show original details'}
                 reply(q,calls=[call('read-original','inspect_conversation_attachment',args)])
+                if case=='forget':
+                    o.until(lambda:(peer/'selected-ready.json').exists())
+                    proof=json.loads((peer/'selected-ready.json').read_bytes())
+                    handle=proof['handle']
+                    ctx.equal('selected processor has an original position before erase',
+                              o.rows('SELECT event,slot FROM main_processor_calls WHERE handle=?',handle),[(eid,0)])
+                    try:
+                        erased=o.op('privacy','erase','selected-processor-forget',o.actor,json.dumps([eid]))
+                    finally:
+                        (peer/'hold-selected').unlink()
+                    ctx.equal('selected original erasure is accepted',erased['sources'],[eid])
+                    callback=peer/'forget-selected-processor-forget.json'
+                    o.until(callback.exists)
+                    ctx.equal('selected codec receives original sources and watermark',
+                              json.loads(callback.read_bytes()),erased)
+                    def settled_without_result():
+                        state=o.rows("SELECT state,args,result FROM host_calls WHERE handle=?",handle)
+                        return state if state==[('confirmed','{}',None)] else None
+                    ctx.equal('original processor settles without private payload after erasure',
+                              o.until(settled_without_result),[('confirmed','{}',None)])
+                    ctx.equal('original attachment position and private codec references are cleared',
+                              o.rows("""SELECT
+                                (SELECT count(*) FROM media_handles WHERE event=?1),
+                                (SELECT count(*) FROM host_media_selected WHERE handle=?2),
+                                (SELECT count(*) FROM host_media_uploads WHERE handle=?2),
+                                (SELECT count(*) FROM host_media_presentations WHERE handle=?2),
+                                (SELECT count(*) FROM media_versions WHERE execution=?3 AND digest IS NOT NULL)""",
+                                eid,handle,exec_id),[(0,0,0,0,0)])
+                    ctx.equal('the effect retains its original position after erasure',
+                              o.rows('SELECT event,slot FROM main_processor_calls WHERE handle=?',handle),[(eid,0)])
+                    ctx.equal('erasure preserves referential integrity',o.rows('PRAGMA foreign_key_check'),[])
+                    ctx.equal('late codec result sends no further model request',
+                              o.rows('SELECT count(*) FROM model_attempts'),[(1,)])
+                    o.until(lambda:not o.op('privacy','pending','codec-a')['obligations'])
+                    observations[case]={'original_event':eid,'original_handle':handle,'erasure':erased,
+                                        'private_receipt_retained':False,'model_attempts':1}
+                    continue
                 if case=='late':
                     o.until(lambda:(peer/'selected-ready.json').exists())
                     edit("UPDATE media_sources SET expires=0 WHERE event=? AND slot=0",eid)
