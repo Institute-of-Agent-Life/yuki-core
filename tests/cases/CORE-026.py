@@ -375,6 +375,8 @@ def run(ctx):
     ctx.write("current-group-report.json", current_group(ctx))
     from tests.harness.group_attribution import run as attribution
     ctx.write("group-attribution.json",attribution(ctx))
+    from tests.harness.reply_author import run as reply_author
+    ctx.write("reply-author.json", reply_author(ctx))
     from tests.harness.memory_contest import run as contest
     ctx.write("memory-contest.json", contest(ctx))
     from tests.harness.memory_merge import run as merge
