@@ -41,8 +41,14 @@ r = json.loads(raw)
 peer.receive(raw)
 methods = Calls(r["result"]).allowed
 note("ready", methods=sorted(methods))
+if purpose == "normal" and (folder / "probe-ack").exists():
+    send({"jsonrpc": "2.0", "id": "unselected-ack", "method": "forget.ack",
+          "params": {"key": "outside", "watermark": 1, "proof": "outside"}})
 while raw := read_frame(sys.stdin.buffer):
     frame = json.loads(raw)
+    if frame.get("id") == "unselected-ack":
+        note("ack-rejected", response=frame)
+        continue
     if frame.get("method") != "forget.request":
         continue
     if purpose != "cleanup":
@@ -54,10 +60,15 @@ while raw := read_frame(sys.stdin.buffer):
     if (folder / "lose-ack").exists():
         (folder / "lose-ack").unlink()
         sys.exit(53)
+    result = {"key": p["key"], "watermark": p["watermark"], "proof": token}
+    if (folder / "malformed-reply").exists():
+        result["proof"] = 7
+    if (folder / "stale-reply").exists():
+        result["watermark"] += 1
     send(
         {
             "jsonrpc": "2.0",
             "id": frame["id"],
-            "result": {"key": p["key"], "watermark": p["watermark"], "proof": token},
+            "result": result,
         }
     )
