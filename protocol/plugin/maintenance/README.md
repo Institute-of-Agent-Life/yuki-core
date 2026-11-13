@@ -27,6 +27,24 @@ invalid shape is a diagnostic. For a lexical repair, pass the same flag and audi
 parameters to `maintenance.audit.apply`. The fingerprint binds the scoped
 source and lexical row. An apply against a changed row requires a fresh scan.
 
+An operator worker that saves reports requests `retain: true` on audit, apply
+and reembed. Each audit item carries opaque `erasure_refs` for its original
+dependencies. Apply returns the union for the approved facts. Reembed returns
+the dependencies for the selected revision. A plain audit performs no retention
+writes. The retained audit uses the same scan fingerprint and makes no model
+request. The Host refuses retention if it cannot return the complete reference
+set within the response limits.
+
+Persist the references atomically with any retained local result. The original
+`forget.request` watermark carries the matching `erasure_refs`. Remove the
+local reports that reference them before acknowledging that watermark. The Host
+continues to pass event IDs for other grants that already returned those IDs.
+Large reference lists arrive in bounded batches under the same watermark.
+Each batch requires the same successful cleanup proof before the Host records
+the acknowledgment.
+After erasure a retained apply key remains fenced and the original effect is
+unavailable for replay. A lost callback leaves the obligation pending.
+
 Fact summaries carry opaque event IDs needed to honor erasure obligations. Quotes and tool receipts require explicit evidence permission. Tool evidence remains attributed to the original human execution ancestry. Unattributed SELF executions do not acquire a substitute human author.
 
 Pages contain up to eight items. Long fact bodies, evidence and paid previews expose a `content` descriptor. `maintenance.content` returns at most 12,288 bytes as base64, with offsets and the same SHA-256 on every page. `maintenance.dependencies` pages the complete original event set when its first 128 IDs do not fit the summary. Source changes invalidate both content versions and review eligibility.

@@ -187,6 +187,7 @@ def run(ctx):
         }
     paid = paid_previews(ctx, sdk, aux)
     vectors = reembed(ctx, sdk, aux)
+    quality_erasure = retained_quality(ctx, sdk, aux)
     historic = historical(ctx, sdk, aux)
     fact_plans = fact_inputs(ctx, sdk, aux)
     tool_map = tool_receipts(ctx, sdk, aux)
@@ -194,6 +195,7 @@ def run(ctx):
         "tool_receipts": tool_map,
         "paid_previews": paid,
         "reembed": vectors,
+        "quality_erasure": quality_erasure,
         "historical": historic,
         "fact_inputs": fact_plans,
         "read_scope": read_scope,
@@ -711,6 +713,89 @@ def reembed(ctx, sdk, aux):
                 "integrity_before": audit_before,
                 "integrity_after_rebuild": after,
             }
+
+
+def retained_quality(ctx, sdk, aux):
+    owner = Owner(ctx, "maintenance-quality-retention", 59)
+    data = owner.svc.data
+    facts = []
+    with owner.svc.running():
+        for label in ["erased", "unrelated"]:
+            text = "original quality " + label
+            source = owner.human(text)
+            execution = owner.op("ingress", "claim", source)["execution"]
+            edit = {
+                "action": "add", "subject": {"kind": "person", "person": owner.actor},
+                "fact_key": "quality-" + label, "body": text,
+                "evidence": [{"kind": "event", "id": source, "quote": text}],
+            }
+            fact = owner.op("memory", "edit", execution, owner.actor, label, json.dumps(edit))["fact"]
+            facts.append((source, fact))
+        entry = owner.rows("SELECT entry_id FROM events WHERE id=?", facts[0][0])[0][0]
+
+    folder = ctx.working / "quality-retention-peer"
+    folder.mkdir()
+    methods = ["maintenance.audit", "maintenance.audit.apply"]
+    owner_id = "quality-retention"
+    installation = {
+        "id": owner_id, "namespace": owner_id, "program": sys.executable,
+        "args": [str(ctx.root / "tests/peers/aux-model/peer.py"),
+                 str(folder), str(sdk / "python-install")],
+        "grants": ["forget.owner", *methods],
+    }
+    with (data / "yuki.toml").open("a", encoding="utf-8") as config:
+        config.write("\n[[plugins]]\n" + "\n".join(f"{key}={json.dumps(value)}" for key,value in installation.items()))
+        config.write(
+            '\n[plugins.maintenance.scopes.original]\nactor=' + json.dumps(owner.actor)
+            + '\nentry=' + json.dumps(entry) + '\npurposes=["audit"]\nmethods=' + json.dumps(methods)
+            + '\nwrite_subject={kind="person",person=' + json.dumps(owner.actor) + '}\n'
+        )
+    peer = aux.Peer(owner, folder)
+    scope = {"scope": "original", "purpose": "audit", "integrity": True}
+    with owner.svc.running():
+        owner.until((folder / "ready.json").exists)
+        plain = peer.call("maintenance.audit", scope)
+        ctx.equal("read-only audit still creates no retention association",
+                  owner.rows("SELECT count(*) FROM maintenance_quality_dependencies WHERE owner=?", owner_id), [(0,)])
+        audit = peer.call("maintenance.audit", {**scope, "retain": True})
+        refs = {item["fact"]: item["erasure_refs"] for item in audit["items"]}
+        ctx.equal("retention leaves the original scan fingerprint intact", audit["fingerprint"], plain["fingerprint"])
+        ctx.equal("two original sources have distinct opaque references",
+                  sorted(map(len, refs.values())), [1, 1])
+        ctx.equal("quality retention never acquires a source-reading hold",
+                  owner.rows("SELECT count(*) FROM source_holds WHERE owner=?", owner_id), [(0,)])
+        ctx.check("retained reports avoid source text or native event identity",
+                  "original quality" not in str(audit) and not any("event" in item or "source_ids" in item for item in audit["items"]))
+        ctx.equal("the same source keeps its reference across audits",
+                  peer.call("maintenance.audit", {**scope, "retain": True}), audit)
+        apply = {**scope, "retain": True, "operation": "approved-retention",
+                 "fingerprint": audit["fingerprint"], "approved": [facts[0][1]]}
+        applied = peer.call("maintenance.audit.apply", apply)
+        ctx.equal("repair carries only the selected original source reference",
+                  applied["erasure_refs"], refs[facts[0][1]])
+        ctx.equal("cold replay keeps the original approved effect",
+                  peer.call("maintenance.audit.apply", apply), applied)
+    with owner.svc.running():
+        owner.until(lambda: any(plugin["online"] for plugin in owner.op("host", "status")["plugins"]))
+        erased = owner.op("privacy", "erase", "erase-quality-report", owner.actor, json.dumps([facts[0][0]]))
+        ctx.write("quality-erasure-pending.json", owner.op("privacy", "pending", owner_id))
+        callback_path = folder / f"forget-{erased['watermark']}.json"
+        owner.until(callback_path.exists)
+        owner.until(lambda: not owner.op("privacy", "pending", owner_id)["obligations"])
+        callback = json.loads(callback_path.read_bytes())
+        ctx.equal("forget passes the exact opaque dependency without another fact's reference",
+                  callback["erasure_refs"], refs[facts[0][1]])
+        ctx.equal("quality retention grants no access to event locators", callback["sources"], [])
+        peer.call("maintenance.audit.apply", apply, False)
+        remaining = peer.call("maintenance.audit", {**scope, "retain": True, "fact": facts[1][1]})
+        ctx.equal("the unrelated original report remains authorized",
+                  remaining["items"][0]["erasure_refs"], refs[facts[1][1]])
+        ctx.equal("the erased receipt leaves its original operation fence",
+                  owner.rows("SELECT result FROM maintenance_audit_apply WHERE operation=?", apply["operation"]),
+                  [('{"erased":true}',)])
+    evidence = {"audit": audit, "apply": applied, "forget": callback, "unrelated": remaining}
+    ctx.write("quality-erasure.json", evidence)
+    return evidence
 
 
 def historical(ctx, sdk, aux):

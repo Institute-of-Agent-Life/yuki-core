@@ -611,6 +611,9 @@
           },
           "integrity": {
             "type": "boolean"
+          },
+          "retain": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -673,10 +676,10 @@
                       "type": "boolean"
                     },
                     "event_evidence_checked": {
-                  "type": "integer",
-                  "minimum": 0
-                },
-                "invalid_event_evidence": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "invalid_event_evidence": {
                       "type": "integer",
                       "minimum": 0
                     },
@@ -723,10 +726,19 @@
                     "lexical",
                     "evidence_missing",
                     "event_evidence_checked",
-                "invalid_event_evidence",
+                    "invalid_event_evidence",
                     "vectors"
                   ],
                   "additionalProperties": false
+                },
+                "erasure_refs": {
+                  "type": "array",
+                  "maxItems": 128,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^maintenance-quality:[a-f0-9-]{36}$"
+                  }
                 }
               },
               "required": [
@@ -1249,6 +1261,9 @@
           "revision": {
             "type": "integer",
             "minimum": 1
+          },
+          "retain": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1296,6 +1311,15 @@
           },
           "dispatch_now": {
             "type": "boolean"
+          },
+          "erasure_refs": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^maintenance-quality:[a-f0-9-]{36}$"
+            }
           }
         },
         "required": [
@@ -1553,6 +1577,9 @@
           },
           "integrity": {
             "type": "boolean"
+          },
+          "retain": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1583,6 +1610,15 @@
           },
           "paid_calls": {
             "const": 0
+          },
+          "erasure_refs": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^maintenance-quality:[a-f0-9-]{36}$"
+            }
           }
         },
         "required": [

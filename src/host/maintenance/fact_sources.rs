@@ -94,3 +94,22 @@ pub(super) async fn retain(db: &mut SqliteConnection, plugin: &str, refs: &Value
     }
     Ok(())
 }
+
+pub(super) async fn retain_quality(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    fact: &str,
+) -> Result<Vec<String>> {
+    // Keep a single association for this owner and event. A later erasure still
+    // identifies old audit reports even if the fact has since been corrected.
+    let mut refs = Vec::new();
+    let sources = source_ids(db, fact).await?;
+    if sources.len() > 128 {
+        return Err("retained quality report exceeds source limit".into());
+    }
+    for event in sources {
+        refs.push(crate::privacy::source::retain_quality(db, plugin, event).await?);
+    }
+    refs.sort_unstable();
+    Ok(refs)
+}
