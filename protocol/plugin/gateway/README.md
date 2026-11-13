@@ -1,6 +1,6 @@
 # Host candidate
 
-The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.21` and Python SDK `1.0.0a21`.
+The CORE-032 candidate contains the tested native host, Rust and Python SDK distributions, both schemas and a per-file digest manifest. The host advertises business schema revision 2 separately from handshake revision 1. Development builds use Rust SDK `1.0.0-alpha.22` and Python SDK `1.0.0a22`.
 
 Install an executable through a `[[plugins]]` entry in the owner's private `yuki.toml`. Specify `id`, `namespace`, an absolute `program` and `args`. A gateway also needs its `platform` and the installed SELF assignment's `bot_stage`. Configure `grants` individually. `commands` lists full command paths. `[[plugins.tools]]` records the name, description, JSON Schema and visibility that the host freezes for the next activation. The `env` list selects which environment variables reach this executable.
 

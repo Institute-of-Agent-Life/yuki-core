@@ -4,8 +4,10 @@ import hashlib
 import importlib.util
 import json
 import os
+import sqlite3
 import subprocess
 import sys
+from contextlib import closing
 from tests.harness.compact import Owner
 
 
@@ -451,6 +453,16 @@ def reembed(ctx, sdk, aux):
             )["fact"]
             facts.append((event, ex, fact))
         entry = o.rows("SELECT entry_id FROM events WHERE id=?", facts[0][0])[0][0]
+    with closing(sqlite3.connect(o.svc.data / "core.sqlite")) as fixture, fixture:
+        fixture.execute(
+            "UPDATE memory_retrieval_fts SET content=? WHERE rowid=(SELECT number FROM memory_facts WHERE id=?)",
+            ("outdated index fixture", facts[0][2]),
+        )
+        fixture.execute("DELETE FROM memory_evidence WHERE fact=?", (facts[1][2],))
+        fixture.execute(
+            "UPDATE memory_evidence SET source_version=? WHERE fact=?",
+            ("0" * 64, facts[2][2]),
+        )
     folder = ctx.working / "reembed-peer"
     folder.mkdir()
     methods = json.loads(
@@ -499,6 +511,23 @@ def reembed(ctx, sdk, aux):
         with o.svc.running():
             o.until((folder / "ready.json").exists)
             audit = p.call("maintenance.audit", params)
+            audit_params = {**params, "integrity": True}
+            audit_before = p.call("maintenance.audit", audit_params)
+            quality = {item["fact"]: item["integrity"] for item in audit_before["items"]}
+            ctx.equal("legacy audit omits optional integrity report",
+                      ["integrity" in item for item in audit["items"]], [False, False, False])
+            ctx.equal("audit observes the mismatched FTS row",
+                      quality[facts[0][2]]["lexical"], "mismatch")
+            ctx.equal("audit observes missing evidence without inventing it",
+                      quality[facts[1][2]]["evidence_missing"], True)
+            ctx.equal("audit checks event evidence against its original revision",
+                      quality[facts[2][2]]["invalid_event_evidence"], 1)
+            ctx.equal("audit states the number of source proofs it checked",
+                      [quality[f[2]]["event_evidence_checked"] for f in facts], [1, 0, 1])
+            ctx.equal("audit binds missing embeddings to both exact profiles",
+                      [r["coverage"] for r in quality[facts[0][2]]["vectors"]], ["missing", "missing"])
+            ctx.check("audit is content-free and does not buy a request",
+                      "scoped vector source" not in str(audit_before) and http.wires.empty())
             routes = {r["route"]: r["profile"] for r in audit["embedding_routes"]}
             ctx.check(
                 "same dimension models retain separate semantic profiles",
@@ -583,12 +612,12 @@ def reembed(ctx, sdk, aux):
                 },
                 False,
             )
-            fresh = p.call("maintenance.audit", params)
+            fresh = p.call("maintenance.audit", audit_params)
             original_fts = o.rows(
                 "SELECT rowid,content,memory_key,category FROM memory_retrieval_fts ORDER BY rowid"
             )
             repair = {
-                **params,
+                **audit_params,
                 "operation": "approved-fts",
                 "fingerprint": fresh["fingerprint"],
                 "approved": [facts[0][2]],
@@ -599,13 +628,17 @@ def reembed(ctx, sdk, aux):
                 repaired["rebuilt"],
                 [facts[0][2]],
             )
-            ctx.equal(
-                "scoped rebuild preserves every source document",
-                o.rows(
-                    "SELECT rowid,content,memory_key,category FROM memory_retrieval_fts ORDER BY rowid"
-                ),
-                original_fts,
-            )
+            revised_fts = o.rows("SELECT rowid,content,memory_key,category FROM memory_retrieval_fts ORDER BY rowid")
+            expected_fts = [tuple("scoped vector source 0" if i == 1 and value == "outdated index fixture" else value
+                                  for i, value in enumerate(row)) for row in original_fts]
+            ctx.equal("scoped rebuild repairs only the approved index row", revised_fts, expected_fts)
+            after = p.call("maintenance.audit", audit_params)
+            refreshed = next(item["integrity"] for item in after["items"] if item["fact"] == facts[0][2])
+            ctx.write("quality-coverage.json", {"before": audit_before, "after": after})
+            ctx.equal("repaired lexical row has current coverage", refreshed["lexical"], "current")
+            ctx.equal("two semantic profiles retain separate current coverage",
+                      [r["coverage"] for r in refreshed["vectors"]], ["current", "current"])
+            p.call("maintenance.audit.apply", {**repair, "operation": "stale-index-state"}, False)
             ctx.equal(
                 "same audit key returns original write receipt",
                 p.call("maintenance.audit.apply", repair),
@@ -659,11 +692,24 @@ def reembed(ctx, sdk, aux):
             ctx.check(
                 "cold reembed does not buy replacement vectors", http.wires.empty()
             )
+        with closing(sqlite3.connect(o.svc.data / "core.sqlite")) as fixture, fixture:
+            fixture.execute(
+                "INSERT INTO fact_vectors SELECT fact,profile,purpose,dimension,?,revision,vector "
+                "FROM fact_vectors WHERE fact=? AND profile=?",
+                ("0" * 64, facts[0][2], routes["dense-a"]),
+            )
+        with o.svc.running():
+            checked = p.call("maintenance.audit", {**audit_params, "fact": facts[0][2]})
+            ctx.equal("an exact vector still counts when a later stale row exists",
+                      checked["items"][0]["integrity"]["vectors"][0]["coverage"], "current")
+            ctx.check("vector inspection sends no physical request", http.wires.empty())
             return {
                 "profiles": routes,
                 "first": receipt,
                 "second": other,
                 "attempts": original,
+                "integrity_before": audit_before,
+                "integrity_after_rebuild": after,
             }
 
 

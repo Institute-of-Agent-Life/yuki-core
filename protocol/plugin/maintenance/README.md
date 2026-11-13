@@ -18,6 +18,15 @@ The candidate exposes twelve `maintenance.*` methods through both SDK packages. 
 4. `extract.apply` accepts the original preview ID, a stable operation key and approved ordinals. Each ordinal uses its original idempotency key. After restart, additional approved ordinals can be applied from that paid preview. The core recognizes revisions written by that same preview while rejecting external source or evidence changes.
 5. `audit` reads source and profile coverage without a model. `audit.apply` accepts its fingerprint and selected fact IDs to rebuild their FTS rows. `reembed` requires a separately installed semantic profile, its identity and the exact fact revision. Pending and unknown embeddings retain their original barrier and accounting.
 
+The development SDK can request `integrity: true` on `maintenance.audit`.
+Each visible fact then includes its lexical index state, missing evidence,
+the number of event proofs checked and invalid within approved entries, and
+vector coverage and last observed attempt state for each installed embedding
+route. Findings omit fact and evidence text. A vector with a stale hash or
+invalid shape is a diagnostic. For a lexical repair, pass the same flag and audit page
+parameters to `maintenance.audit.apply`. The fingerprint binds the scoped
+source and lexical row. An apply against a changed row requires a fresh scan.
+
 Fact summaries carry opaque event IDs needed to honor erasure obligations. Quotes and tool receipts require explicit evidence permission. Tool evidence remains attributed to the original human execution ancestry. Unattributed SELF executions do not acquire a substitute human author.
 
 Pages contain up to eight items. Long fact bodies, evidence and paid previews expose a `content` descriptor. `maintenance.content` returns at most 12,288 bytes as base64, with offsets and the same SHA-256 on every page. `maintenance.dependencies` pages the complete original event set when its first 128 IDs do not fit the summary. Source changes invalidate both content versions and review eligibility.
