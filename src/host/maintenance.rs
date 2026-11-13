@@ -2,6 +2,7 @@ mod background;
 mod content;
 mod fact_sources;
 mod preview;
+mod quality;
 mod reads;
 mod reembed;
 mod scope;

@@ -112,17 +112,29 @@ pub(super) async fn audit(db: &mut SqliteConnection, c: &Change, g: &Granted) ->
     .await?;
     let mut items = vec![];
     let mut versions = vec![];
+    let integrity = c.params["integrity"] == true;
     for id in page {
-        let row=sqlx::query("SELECT f.revision,state.status,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id) AS total,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id AND e.quote IS NOT NULL) AS retained,(SELECT count(*) FROM fact_vectors v WHERE v.fact=f.id AND v.revision=f.revision) AS vectors FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id WHERE f.id=?")
-            .bind(&id).fetch_one(&mut *db).await?;
-        let evidence:Vec<String>=sqlx::query_scalar("SELECT json_array(e.kind,e.source_key,e.source_version,e.quote,source.envelope,(SELECT json_group_array(json_array(segment,text)) FROM (SELECT segment,text FROM history_transcripts WHERE source=e.event ORDER BY segment))) FROM memory_evidence e LEFT JOIN events source ON source.id=e.event WHERE e.fact=? ORDER BY e.id")
-            .bind(&id).fetch_all(&mut *db).await?;
-        let body:Option<String>=sqlx::query_scalar("SELECT v.body FROM memory_versions v JOIN memory_facts f ON f.id=v.fact AND f.revision=v.revision WHERE f.id=?")
+        let row=sqlx::query("SELECT f.revision,state.status,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id) AS total,(SELECT count(*) FROM memory_evidence e WHERE e.fact=f.id AND e.quote IS NOT NULL) AS retained FROM memory_facts f JOIN memory_fact_states state ON state.id=f.id WHERE f.id=?")
             .bind(&id).fetch_one(&mut *db).await?;
         let profiles:Vec<String>=sqlx::query_scalar("SELECT DISTINCT profile FROM fact_vectors WHERE fact=? AND revision=? ORDER BY profile")
             .bind(&id).bind(row.get::<i64,_>("revision")).fetch_all(&mut *db).await?;
-        versions.push(json!([id, body, evidence, profiles]));
-        items.push(json!({"fact":id,"revision":row.get::<i64,_>("revision"),"status":row.get::<String,_>("status"),"evidence_total":row.get::<i64,_>("total"),"evidence_retained":row.get::<i64,_>("retained"),"vector_profiles":profiles}));
+        let revision = row.try_get::<i64, _>("revision")?;
+        let total = row.try_get::<i64, _>("total")?;
+        let mut item = json!({"fact":id,"revision":revision,"status":row.get::<String,_>("status"),
+            "evidence_total":total,"evidence_retained":row.get::<i64,_>("retained"),"vector_profiles":profiles});
+        if integrity {
+            let (quality, lexical) = super::quality::inspect(db, g, &id, revision, total).await?;
+            let source = super::fact_sources::version(db, &id).await?;
+            versions.push(json!([id, source, lexical, profiles]));
+            item["integrity"] = serde_json::to_value(quality)?;
+        } else {
+            let evidence:Vec<String>=sqlx::query_scalar("SELECT json_array(e.kind,e.source_key,e.source_version,e.quote,source.envelope,(SELECT json_group_array(json_array(segment,text)) FROM (SELECT segment,text FROM history_transcripts WHERE source=e.event ORDER BY segment))) FROM memory_evidence e LEFT JOIN events source ON source.id=e.event WHERE e.fact=? ORDER BY e.id")
+                .bind(&id).fetch_all(&mut *db).await?;
+            let body:Option<String>=sqlx::query_scalar("SELECT v.body FROM memory_versions v JOIN memory_facts f ON f.id=v.fact AND f.revision=v.revision WHERE f.id=?")
+                .bind(&id).fetch_one(&mut *db).await?;
+            versions.push(json!([id, body, evidence, profiles]));
+        }
+        items.push(item);
     }
     let routes=g.embedding_routes.iter().filter(|(name,_)|g.policy.embedding_routes.contains(*name))
         .map(|(name,profile)|json!({"route":name,"profile":profile.identity(),"dimensions":profile.dimensions})).collect::<Vec<_>>();

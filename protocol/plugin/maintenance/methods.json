@@ -608,6 +608,9 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256
+          },
+          "integrity": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -652,6 +655,78 @@
                     "type": "string",
                     "pattern": "^[a-f0-9]{64}$"
                   }
+                },
+                "integrity": {
+                  "type": "object",
+                  "properties": {
+                    "lexical": {
+                      "type": "string",
+                      "enum": [
+                        "current",
+                        "missing",
+                        "mismatch",
+                        "not_indexed",
+                        "unexpected"
+                      ]
+                    },
+                    "evidence_missing": {
+                      "type": "boolean"
+                    },
+                    "event_evidence_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "invalid_event_evidence": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "vectors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "route": {
+                            "type": "string"
+                          },
+                          "profile": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          },
+                          "coverage": {
+                            "type": "string",
+                            "enum": [
+                              "current",
+                              "missing",
+                              "invalid_shape",
+                              "stale",
+                              "not_indexed"
+                            ]
+                          },
+                          "attempt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "route",
+                          "profile",
+                          "coverage",
+                          "attempt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "lexical",
+                    "evidence_missing",
+                    "event_evidence_checked",
+                "invalid_event_evidence",
+                    "vectors"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -1475,6 +1550,9 @@
               "minLength": 1,
               "maxLength": 256
             }
+          },
+          "integrity": {
+            "type": "boolean"
           }
         },
         "required": [
