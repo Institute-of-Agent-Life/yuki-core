@@ -503,6 +503,33 @@ impl Hub {
         }
         result
     }
+    pub(crate) async fn transcribe(
+        &self,
+        store: &Store,
+        plugin: &str,
+        revision: String,
+        execution: &str,
+        event: i64,
+        slot: i64,
+    ) -> Result<()> {
+        self.execute(
+            store,
+            calls::Request {
+                vision: false,
+                plugin: plugin.into(),
+                revision,
+                execution: execution.into(),
+                operation: format!("main-audio:{event}:{slot}"),
+                method: "media.process".into(),
+                name: "media.process".into(),
+                args: json!({"media":{"event":event,"slot":slot},"purpose":"transcript"}),
+                parent: None,
+                ordinal: None,
+            },
+        )
+        .await?;
+        Ok(())
+    }
     pub async fn tool(
         &self,
         store: &Store,

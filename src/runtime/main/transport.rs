@@ -462,17 +462,33 @@ pub async fn run(
     mut cancel: watch::Receiver<bool>,
     hub: &crate::gateway::qq::Hub,
 ) -> Result<()> {
+    let mut audio_deadline = None;
     loop {
         if *cancel.borrow() {
             return Ok(());
         }
+        let audio = if let Some(processor) = cfg.audio_processor.as_deref() {
+            let deadline = *audio_deadline.get_or_insert_with(|| {
+                tokio::time::Instant::now() + std::time::Duration::from_secs(8)
+            });
+            tokio::select! {
+                _ = cancel.changed() => return Ok(()),
+                result = super::audio::prepare(store, hub, exec, processor, deadline) => Some(result?),
+            }
+        } else {
+            None
+        };
         let soul = std::fs::read_to_string(data.join("SOUL.md"))?;
         let step = write(
             store,
             cfg,
-            Change::Prepare(exec.to_owned(), soul, store.work_segments),
+            Change::Prepare(exec.to_owned(), soul, store.work_segments, audio),
         )
         .await?;
+        if step["audio_input_changed"] == true {
+            continue;
+        }
+        audio_deadline = None;
         if step["segment_yielded"] == true {
             #[cfg(test)]
             crate::store::tests::commit_barrier("work-segment-yielded").await;

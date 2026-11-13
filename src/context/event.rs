@@ -5,7 +5,10 @@ use crate::{
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use sqlx::{Row, SqliteConnection};
-use std::{collections::HashSet, sync::LazyLock};
+use std::{
+    collections::{BTreeSet, HashSet},
+    sync::LazyLock,
+};
 static CONTROL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\p{C}").expect("Unicode category C"));
 fn name(text: &str) -> String {
@@ -21,6 +24,15 @@ fn name(text: &str) -> String {
         .to_string()
 }
 pub async fn line(conn: &mut SqliteConnection, id: i64, zone: &str) -> Result<String> {
+    line_with_audio(conn, id, zone, false).await
+}
+
+async fn line_with_audio(
+    conn: &mut SqliteConnection,
+    id: i64,
+    zone: &str,
+    pending: bool,
+) -> Result<String> {
     let row=sqlx::query("SELECT e.envelope,e.raw_actor,e.occurred_at,e.entry_id,e.bot_stage,a.native FROM events e JOIN accounts a ON a.id=e.account_id WHERE e.id=? AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)").bind(id).fetch_one(&mut *conn).await?;
     let frame: Frame = serde_json::from_str(row.try_get("envelope")?)?;
     let person: String = row.try_get("raw_actor")?;
@@ -137,10 +149,48 @@ pub async fn line(conn: &mut SqliteConnection, id: i64, zone: &str) -> Result<St
             .to_string(),
         None => String::new(),
     };
-    Ok(format!(
+    let mut rendered = format!(
         "[{clock}{display}|person:{person}]\n{}>{text}",
         fields.join("|")
-    ))
+    );
+    if !frame.segments.iter().any(|segment| {
+        matches!(segment, Segment::Media { kind, .. } if matches!(kind.as_str(), "audio" | "record"))
+    }) {
+        return Ok(rendered);
+    }
+    let audio: Vec<(i64, Option<String>)> = sqlx::query_as(
+        "SELECT s.segment,t.text FROM media_sources s LEFT JOIN history_transcripts t
+         ON t.source=s.event AND t.segment=s.segment WHERE s.event=?
+         AND s.kind IN('audio','record') AND (t.text IS NOT NULL OR ?2) ORDER BY s.segment",
+    )
+    .bind(id)
+    .bind(pending)
+    .fetch_all(conn)
+    .await?;
+    for (segment, transcript) in audio {
+        let content = match transcript {
+            Some(text) => {
+                // Reader 58 and earlier admitted operator transcripts without
+                // the processor's size bound. Keep their history record intact.
+                let mut end = text.len().min(32768);
+                while !text.is_char_boundary(end) {
+                    end -= 1;
+                }
+                let mut result = serde_json::json!({
+                    "source_event":id,"segment_index":segment,"text":&text[..end],
+                });
+                if end < text.len() {
+                    result["truncated"] = serde_json::Value::Bool(true);
+                }
+                result
+            }
+            None => {
+                serde_json::json!({"source_event":id,"segment_index":segment,"state":"not_ready"})
+            }
+        };
+        rendered.push_str(&format!("\n语音转写（原附件内容） {content}"));
+    }
+    Ok(rendered)
 }
 // Span offsets refer to the sanitized source in Unicode scalars, never to labels
 // or to a textual search for a marker (which may also occur in literal user text).
@@ -166,7 +216,12 @@ fn render_agent_spans(text: &str, spans: &[(usize, usize, bool)]) -> String {
     output.push_str(&text[last..]);
     output
 }
-pub async fn trigger(conn: &mut SqliteConnection, events: &[i64], zone: &str) -> Result<String> {
+pub async fn trigger(
+    conn: &mut SqliteConnection,
+    events: &[i64],
+    zone: &str,
+    audio: Option<&BTreeSet<i64>>,
+) -> Result<String> {
     let Some(first) = events.first() else {
         return Ok(String::new());
     };
@@ -174,7 +229,8 @@ pub async fn trigger(conn: &mut SqliteConnection, events: &[i64], zone: &str) ->
     let scene = if kind == "group" { "群聊" } else { "私聊" };
     let mut rendered = Vec::new();
     for id in events {
-        rendered.push(line(conn, *id, zone).await?);
+        rendered
+            .push(line_with_audio(conn, *id, zone, audio.is_some_and(|a| a.contains(id))).await?);
     }
     Ok(format!(
         "当前是{scene}。\n资料：{}\n\n{}",

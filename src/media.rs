@@ -407,7 +407,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
 async fn write(store: &Store, change: Change) -> Result<Value> {
     store.write(Mutation::Media(Box::new(change))).await
 }
-async fn acquire(
+pub(crate) async fn acquire(
     store: &Store,
     hub: &Hub,
     exec: &str,
