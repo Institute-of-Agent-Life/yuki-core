@@ -113,7 +113,7 @@ class Scene:
         with closing(sqlite3.connect(self.db.as_uri() + "?mode=ro", uri=True)) as db:
             return db.execute(sql, args).fetchall()
 
-    def event(self, person, text, group=None, accept=False, segments=None):
+    def event(self, person, text, group=None, accept=False, segments=None, native_id=None):
         self.seq += 1
         f = {
             "source": "extract-" + str(self.seq),
@@ -129,6 +129,8 @@ class Scene:
         }
         if group:
             f["space"] = group
+        if native_id is not None:
+            f["native_id"] = native_id
         return self.op(
             "ingress",
             "record",
@@ -372,6 +374,59 @@ def asr_case(ctx):
             return {"event": event, "fact": fact}
 
 
+def reply_source_erasure(ctx):
+    records = {}
+    for late in (False, True):
+        phase = "in-flight" if late else "after-commit"
+        s = Scene(ctx, f"extract-reply-{phase}")
+        with s.s.running():
+            original = s.event(s.b, "被回覆的原句", "700", native_id="original")
+            for i in range(10):
+                s.event(s.a, f"中間事件 {i}", "700")
+        with Recorder() as model:
+            s.config(model, count=1)
+            with s.s.running():
+                text = "他喜欢摄影"
+                segments = [{"type": "text", "text": text}, {"type": "reply", "native_id": "original"}]
+                current = s.event(s.a, text, "700", accept=True, segments=segments)
+                _, payload, pending = s.wire(model)
+                [event] = payload["events"]
+                ctx.equal(f"{phase}: the original reply is not another primary source", event["source_event_id"], current)
+                ctx.check(f"{phase}: the original reply author is offered",
+                          "reply_author" in {item["subject_ref"] for item in event["available_subjects"]})
+                [(execution,)] = s.rows("SELECT execution FROM extraction_batches")
+                ctx.equal(f"{phase}: the old reply survives the context page boundary",
+                          s.rows("SELECT event FROM main_dependencies WHERE execution=? AND event=?", execution, original),
+                          [(original,)])
+                response = [claim(current, "person_group", "reply_author", "reply-derived", "喜欢摄影", text)]
+                fact = """SELECT f.fact_key,f.person,f.status,v.body,e.quote FROM memory_facts f
+                         JOIN memory_versions v ON v.fact=f.id JOIN memory_evidence e ON e.fact=f.id
+                         WHERE f.created_execution=?"""
+                if not late:
+                    answer(pending, response)
+                    ctx.equal("the attributed fact keeps its original author's evidence",
+                              s.until(lambda: s.rows(fact, execution)),
+                              [("reply-derived", s.b, "active", "喜欢摄影", text)])
+                erased = s.op("privacy", "erase", "original-reply-target", s.b, json.dumps([original]))
+                if late:
+                    answer(pending, response)
+                def scrubbed_attempt():
+                    rows = s.rows("""SELECT diagnostic,response,partial_bytes,
+                                     json_extract(usage_json,'$.input'),json_extract(usage_json,'$.output')
+                                     FROM model_attempts""")
+                    return rows if rows == [("source_erased", None, None, 31, 7)] else None
+                ctx.equal(f"{phase}: keep usage, clear original model body", s.until(scrubbed_attempt),
+                          [("source_erased", None, None, 31, 7)])
+                observed = s.rows(fact, execution)
+                ctx.equal(f"{phase}: no derived body or quote remains", observed,
+                          [] if late else [("erased-1", s.b, "erased", None, None)])
+                ctx.equal(f"{phase}: the related batch and its private aliases are cleared",
+                          s.rows("SELECT state,task,(SELECT count(*) FROM extraction_sources WHERE batch=b.id AND subjects IS NOT NULL) FROM extraction_batches b"),
+                          [("invalid", "{}", 0)])
+                records[phase] = {"source": original, "reply": current, "erasure": erased, "retained": observed}
+    return records
+
+
 def run(ctx):
     s = Scene(ctx, "claims")
     with Recorder() as http:
@@ -542,6 +597,7 @@ def run(ctx):
         "faults": faults(ctx),
         "foreground": foreground(ctx),
         "asr": asr_case(ctx),
+        "reply_source_erasure": reply_source_erasure(ctx),
         "claim_dispositions": statuses,
         "watermark": b,
         "cold": {"fact_source": source, "paid_attempts": 1},

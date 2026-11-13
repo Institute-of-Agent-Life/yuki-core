@@ -85,6 +85,7 @@ pub async fn apply(conn: &mut SqliteConnection, act: &Change) -> Result<Value> {
 pub(crate) async fn can_dispatch(conn: &mut SqliteConnection, exec: &str) -> Result<bool> {
     Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM extraction_batches j JOIN extraction_policy policy ON policy.id=1 AND policy.enabled WHERE j.execution=? AND j.state='prepared'
        AND EXISTS(SELECT 1 FROM extraction_sources f WHERE f.batch=j.id AND f.role='primary')
+       AND NOT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=j.execution)
        AND NOT EXISTS(SELECT 1 FROM extraction_sources f JOIN events e ON e.id=f.event LEFT JOIN entries d ON d.id=e.entry_id LEFT JOIN persons p ON p.id=e.raw_actor LEFT JOIN persons r ON r.id=coalesce(p.current_root,p.id)
          LEFT JOIN assignments a ON a.id=e.actor_stage LEFT JOIN assignments b ON b.id=e.bot_stage WHERE f.batch=j.id AND (d.closed_at IS NOT NULL OR NOT p.enabled OR NOT r.enabled OR a.status!='active' OR b.status!='active' OR EXISTS(SELECT 1 FROM invalidated_sources i WHERE i.source=f.event))))").bind(exec).fetch_one(conn).await?)
 }

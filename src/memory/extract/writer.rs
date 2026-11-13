@@ -65,7 +65,13 @@ async fn bind_source(
     .bind(serde_json::to_string(&e.aliases)?)
     .execute(&mut *conn)
     .await?;
-    sqlx::query("INSERT OR IGNORE INTO main_dependencies SELECT execution,?2 FROM extraction_batches WHERE id=?1").bind(batch).bind(e.id).execute(conn).await?;
+    for event in std::iter::once(e.id).chain(e.reply_source) {
+        sqlx::query("INSERT OR IGNORE INTO main_dependencies SELECT execution,?2 FROM extraction_batches WHERE id=?1")
+            .bind(batch)
+            .bind(event)
+            .execute(&mut *conn)
+            .await?;
+    }
     Ok(())
 }
 pub async fn tick(
