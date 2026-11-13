@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path[:0] = [str(ROOT), str(ROOT / "ci")]
 
 
-def exercise(ctx, binary, installed, profile):
+def exercise(ctx, binary, installed, profile, *, selected_cleanup=False):
     from surface import read, sha
     from tests.harness.service import Service
 
@@ -69,7 +69,7 @@ def exercise(ctx, binary, installed, profile):
         for name, grants in [
             ("baseline", ["tool.call"]),
             ("selected", ["gateway.inbound", "gateway.activity"]),
-            ("blocked", ["forget.owner"]),
+            ("blocked", ["observe.metadata" if selected_cleanup else "forget.owner"]),
         ]:
             definition = dict(
                 id=name,
@@ -173,7 +173,7 @@ def exercise(ctx, binary, installed, profile):
                     "event": admitted["event"],
                 }
             )
-    return {
+    result = {
         "status": "PASS",
         "scope": "native-selected-profile-admission",
         "real_capabilities_promoted": [],
@@ -183,6 +183,15 @@ def exercise(ctx, binary, installed, profile):
         "profile": descriptor,
         "cases": runs,
     }
+    if selected_cleanup:
+        from tests.harness.selected_cleanup import exercise as cleanup
+
+        ctx.check(
+            "selected cleanup exercises the original reply without an explicit ack",
+            "forget.request" in descriptor["methods"] and "forget.ack" not in descriptor["methods"],
+        )
+        result["cleanup"] = cleanup(ctx, binary, installed / "python-install")
+    return result
 
 
 def main():
@@ -195,13 +204,16 @@ def main():
     parser.add_argument("--kit", type=Path, required=True)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--selected-cleanup", action="store_true")
     args = parser.parse_args()
     args.out = args.out.resolve()
     args.out.mkdir(parents=True, exist_ok=False)
     ctx = Context(ROOT, args.out, read(ROOT / "ci/checks.json"))
     result = {"status": "failed", "assertions": ctx.assertions}
     try:
-        with tempfile.TemporaryDirectory(prefix="yuki-profile-") as temporary:
+        with tempfile.TemporaryDirectory(
+            prefix="ysp-", dir="/tmp" if sys.platform == "darwin" else None
+        ) as temporary:
             ctx.working = Path(temporary)
             installed = ctx.working / "sdk"
             installed.mkdir()
@@ -227,7 +239,13 @@ def main():
                 ctx.equal(language + " installed selected SDK", frames, golden)
             ctx.write("sdk-wire.json", wire)
             result.update(
-                exercise(ctx, args.host.resolve(), installed, read(args.plan))
+                exercise(
+                    ctx,
+                    args.host.resolve(),
+                    installed,
+                    profile,
+                    selected_cleanup=args.selected_cleanup,
+                )
             )
             result["plan_sha256"] = sha(args.plan.read_bytes())
             result["sdk_sha256"] = {

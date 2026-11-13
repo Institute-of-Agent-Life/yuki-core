@@ -26,7 +26,10 @@ def run(root, output, target):
             "candidate_source": source["commit"],
             "parent_stable_digest": digest,
             "consumers": ["native-profile-control"],
-            "selection": {"gateway.activity": {"new_method": True}},
+            "selection": {
+                "gateway.activity": {"new_method": True},
+                "forget.request": {"new_method": True},
+            },
         },
         idl,
         files,
@@ -67,6 +70,7 @@ def run(root, output, target):
                 str(plan_path),
                 "--out",
                 str(output / "admission"),
+                "--selected-cleanup",
             ],
             cwd=root,
             stdout=log,
@@ -79,6 +83,10 @@ def run(root, output, target):
         or admission["binary_sha256"] != build["binary"]["sha256"]
     ):
         raise ValueError("qualification source or native binary changed")
+    if [case["case"] for case in admission["cleanup"]] != [
+        "normal", "malformed-reply", "stale-reply", "lose-ack"
+    ]:
+        raise ValueError("incomplete selected cleanup qualification")
     receipt = {
         "status": "PASS",
         "source": source,

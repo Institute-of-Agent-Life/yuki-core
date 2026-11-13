@@ -51,4 +51,4 @@ python ci/promote-surface.py promote --registry /path/registry --plan /path/plan
 
 `plan.min_reader` 是插件 wire 版本。原生 `host-build.json` 另列實際初始化觀察到的 `storage.schema_version` 與 `storage.minimum_reader`。本來源的資料 reader 為 55，原 B0 發行物為 54。切換資料卷時使用資料 reader 限制與 K14 的驗收回條。所有受限候選仍標 `published=false`。
 
-本地全量 suite 完成、編譯快取取得獨佔使用後，再執行 `python ci/native_surface_check.py --out <新目錄> --target-dir <閒置 target>`。它從原 B0 自動建立 activity 合成 profile，調用正常 SDK／Host 構建入口並重跑上述真程序隔離控制，輸出帶來源與逐檔 SHA-256 的 `validation.json`。三個本地平台各執行一次。
+本地全量 suite 完成、編譯快取取得獨佔使用後，再執行 `python ci/native_surface_check.py --out <新目錄> --target-dir <閒置 target>`。它從原 B0 建立同時選入 `gateway.activity` 與 `forget.request` 的合成 profile，調用正常 SDK／Host 構建入口。真程序重放以 `observe.metadata` 檢查未選授權，並用 `--selected-cleanup` 核對原清除結果入庫、拒絕錯誤回覆及冷啟續交。輸出帶來源與逐檔 SHA-256 的 `validation.json`。三個本地平台各執行一次。

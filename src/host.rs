@@ -53,6 +53,13 @@ pub enum Change {
     Close(String, String),
     Enable(String, bool),
     Callback(String, String, String, Value, Option<String>),
+    ForgetResult {
+        plugin: String,
+        generation: String,
+        key: String,
+        watermark: i64,
+        proof: String,
+    },
     Call(calls::Change),
     FetchDispatch(Box<gateway_media::Gate>, String, String),
     ActivityDispatch(activity::Gate, String, String),
@@ -569,21 +576,28 @@ async fn acknowledge(
     ob: &Value,
 ) -> Result<()> {
     let params = json!({"key":ob["key"],"watermark":ob["watermark"],"sources":ob["sources"]});
+    let definition = grants::schema("forget.request", "host_to_plugin", &params)?;
     let reply = session
         .call(store, "forget.request", params.clone(), None)
         .await?;
+    if !jsonschema::validator_for(&definition["result"])?.is_valid(&reply) {
+        return Err("cleanup result violates advertised schema".into());
+    }
     if reply["key"] != params["key"] || reply["watermark"] != params["watermark"] {
         return Err("cleanup acknowledgment differs from assigned watermark".into());
     }
     write(
         store,
-        Change::Callback(
-            id.into(),
-            session.generation.clone(),
-            "forget.ack".into(),
-            reply,
-            None,
-        ),
+        Change::ForgetResult {
+            plugin: id.into(),
+            generation: session.generation.clone(),
+            key: reply["key"].as_str().ok_or("invalid cleanup key")?.into(),
+            watermark: reply["watermark"].as_i64().ok_or("invalid watermark")?,
+            proof: reply["proof"]
+                .as_str()
+                .ok_or("invalid cleanup proof")?
+                .into(),
+        },
     )
     .await?;
     Ok(())

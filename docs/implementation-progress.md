@@ -1,3 +1,5 @@
+**CORE-053 清除結果回寫。** 分支 `codex/core-053-forget-response`。已選 `forget.request` 的受限 Host 依原請求 key、watermark 和當前程序授權保存清除 proof，冷啟只補交未完成的義務。Mac 受限 Host 預驗 200 項、原 activity-only 42 項通過。獨立審查確認錯請求 ID 及停用後回覆均無法結算。重現、正常與故障時序見 [清除回執](selected-forget-sequences.md)。完整三端 CI 和真擴展 minor 見證待驗。
+
 **#118 補修通過預驗。** `codex/core-025-mention-paging` 在接納時整理相異的原身份。每頁重新核對當前授權，較早的呼叫從原註記推導身份。測試 peer 接上原命令領取機制，檔案解鎖後只領取一次。Mac 和 HJW Windows 各通過 13 個情境、172 個斷言。HJW 另以飛書、Lark、飛書三次重放原 11,000 個提及，逐次核對 323 頁及原回執。
 
 預驗索引 `artifacts/CORE-032/mention-paging-authority-preflight/index.json` 的 SHA-256 為 `b2b69d9d268ed667396f5454cfee02c31b5fbef0d4f0221e7b63f4b924bc391c`。首輪 Windows 鎖檔失敗及修正證據均已保留。最新三端完整 CI 通過後再交付候選。正式完成數仍為 51／58。

@@ -414,6 +414,25 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 .await?;
             Ok(json!({"enabled":enabled}))
         }
+        Change::ForgetResult {
+            plugin,
+            generation,
+            key,
+            watermark,
+            proof,
+        } => {
+            active(conn, plugin, generation, "forget.owner").await?;
+            crate::privacy::apply(
+                conn,
+                &crate::privacy::Action::Ack {
+                    owner: plugin.clone(),
+                    key: key.clone(),
+                    watermark: *watermark,
+                    proof: proof.clone(),
+                },
+            )
+            .await
+        }
         Change::Callback(id, instance, method, params, admitted_digest) => {
             let def = grants::schema(method, "plugin_to_host", params)?;
             active(conn, id, instance, def["grant"].as_str().unwrap()).await?;
