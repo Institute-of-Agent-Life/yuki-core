@@ -9,7 +9,10 @@ use crate::Result;
 use serde_json::{Value, json};
 use sqlx::SqliteConnection;
 
-async fn reply_author(conn: &mut SqliteConnection, event: i64) -> Result<Option<(i64, String)>> {
+pub(super) async fn reply_author(
+    conn: &mut SqliteConnection,
+    event: i64,
+) -> Result<Option<(i64, String)>> {
     let matches: Vec<(i64, String)> = sqlx::query_as(
         "SELECT reply.id,reply.raw_actor FROM events source
          JOIN entries g ON g.id=source.entry_id AND g.scope='group' AND g.closed_at IS NULL

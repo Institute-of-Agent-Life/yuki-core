@@ -2,6 +2,7 @@
 
 import base64
 import hashlib
+from itertools import count
 import json
 import os
 from pathlib import Path
@@ -29,8 +30,15 @@ def note(name, value):
 
 
 def record(direction, frame):
-    with lock, (folder / "wire.jsonl").open("a", encoding="utf8") as log:
-        log.write(json.dumps({"direction": direction, "frame": frame}) + "\n")
+    # The Host may terminate this peer at any point during shutdown. Publish
+    # one complete record by rename so a cut cannot leave half a trace row.
+    with lock:
+        entry = folder / "wire" / f"{generation:06d}-{next(records):08d}"
+        temporary = entry.with_suffix(".tmp")
+        temporary.write_text(
+            json.dumps({"direction": direction, "frame": frame}), encoding="utf8"
+        )
+        temporary.replace(entry.with_suffix(".json"))
 
 
 def send(frame):
@@ -50,6 +58,16 @@ def call(method, params):
     return waiting.get(timeout=10)
 
 
+wire = folder / "wire"
+wire.mkdir(exist_ok=True)
+generation = 0
+while True:
+    try:
+        (wire / f"{generation:06d}.generation").mkdir()
+        break
+    except FileExistsError:
+        generation += 1
+records = count()
 binding = Binding.from_json(json.loads(os.environ["YUKI_PLUGIN_BINDING"]))
 peer = Peer(binding)
 send(peer.request(1, binding.offer()))

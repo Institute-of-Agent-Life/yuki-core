@@ -6,6 +6,7 @@ import sqlite3
 import sys
 from contextlib import closing
 from tests.harness.compact import Owner, call, reply
+from tests.harness.gateway_text import recorded_wire
 from tests.peers.chat.recorder import Recorder
 
 
@@ -377,10 +378,8 @@ def run(ctx, sdk, profile="debug"):
                         len(list(peer.glob("sent-" + mode + "-*.json"))),
                         len(sent),
                     )
-    frames = [
-        json.loads(line)["frame"]
-        for line in (peer / "wire.jsonl").read_bytes().splitlines()
-    ]
+    wire = recorded_wire(peer)
+    frames = [json.loads(line)["frame"] for line in wire.splitlines()]
     maximum = max(
         len(json.dumps(frame, separators=(",", ":"), ensure_ascii=False).encode())
         for frame in frames
@@ -394,5 +393,5 @@ def run(ctx, sdk, profile="debug"):
         "status": "PASS",
         "cases": observations,
         "max_frame_bytes": maximum,
-        "wire_sha256": hashlib.sha256((peer / "wire.jsonl").read_bytes()).hexdigest(),
+        "wire_sha256": hashlib.sha256(wire).hexdigest(),
     }
