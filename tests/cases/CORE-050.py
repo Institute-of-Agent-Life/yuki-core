@@ -427,8 +427,40 @@ def reflection_budget(ctx, sdk):
                       owner.rows("SELECT (SELECT count(*) FROM host_aux_requests),(SELECT count(*) FROM model_attempts a JOIN host_aux_requests q ON q.logical=a.logical)"),
                       [(2, 1)])
             attempts = owner.rows("SELECT a.id,a.logical,a.state,a.dispatched_at FROM model_attempts a JOIN host_aux_requests q ON q.logical=a.logical")
+        # Give the previously reserved second request a slot in the same test database.
+        config.write_text(config.read_text(encoding="utf-8").replace("max_daily_calls=1", "max_daily_calls=2"),
+                          encoding="utf-8")
+        with owner.svc.running():
+            online()
+            time.sleep(1.1)
+            in_flight = second.submit("llm.complete", blocked)
+            _, wire = upstream.receive()
+            busy = owner.human("Foreground preempts the in-flight reflection.")
+            _, foreground = owner.wire(main)
+            preempted = second.receive(in_flight, False)
+            ctx.equal("in-flight reflection stops before the provider replies",
+                      preempted["error"]["message"], "reflection_deferred_for_foreground")
+            held = owner.rows("SELECT a.id,a.state,a.ever_unknown,a.usage_json,a.response FROM model_attempts a "
+                              "JOIN host_aux_requests q ON q.logical=a.logical WHERE q.plugin=?", second_plugin)
+            ctx.equal("preemption records unknown usage on the original attempt",
+                      [row[1:] for row in held], [("unknown", 1, None, None)])
+            reply(wire, json.dumps({"actions": []}))
+            reply(foreground, "")
+            owner.until(lambda: owner.rows("SELECT state FROM executions WHERE source=?", busy) == [("completed",)])
+        with owner.svc.running():
+            online()
+            original = second.call("llm.complete", blocked)
+            replay = second.call("llm.result", {"request":original["request"],"limit":1})
+            ctx.equal("cold replay observes the same unknown physical attempt",
+                      replay["receipt"]["state"], "unknown")
+            ctx.equal("late response and cold replay buy no additional attempt",
+                      owner.rows("SELECT a.id,a.state,a.ever_unknown,a.usage_json,a.response FROM model_attempts a "
+                                 "JOIN host_aux_requests q ON q.logical=a.logical WHERE q.plugin=?", second_plugin),
+                      held)
+            ctx.check("cold observation produces zero additional HTTP requests", upstream.wires.empty())
         return {"request": paid["request"], "physical_attempts": attempts, "applied": applied,
                 "limit": 1, "timezone": "Asia/Shanghai", "owners_share_limit": True,
+                "preempted_attempt": held[0][0], "cold_preempted_request": original["request"],
                 "foreground_deferred_before_read_dispatch_and_apply": True}
 
 

@@ -21,6 +21,7 @@ pub(super) async fn run(
         let mut profile: main::Config = serde_json::from_str(&value)?;
         crate::model::profile_store::runtime::ready(store, &mut profile)?;
     }
+    let foreground = super::super::maintenance::reflection_foreground(store);
     let permit = write(
         store,
         Change::Dispatch {
@@ -28,7 +29,7 @@ pub(super) async fn run(
             generation: generation.into(),
             request: request.into(),
             reflection_budget: store.reflection_budget.clone(),
-            foreground: super::super::maintenance::reflection_foreground(store),
+            foreground: foreground.clone(),
         },
     )
     .await?;
@@ -53,7 +54,21 @@ pub(super) async fn run(
         .retry(reqwest::retry::never())
         .timeout(std::time::Duration::from_secs(30))
         .build()?;
-    let result = main::physical_request(&client, &profile, raw).await;
+    let physical = main::physical_request(&client, &profile, raw);
+    let result = match (foreground, permit["foreground_generation"].as_u64()) {
+        (Some((active, _)), Some(generation)) => {
+            tokio::select! {
+                biased;
+                () = active.foreground_since(generation) => None,
+                completed = physical => Some(completed),
+            }
+        }
+        _ => Some(physical.await),
+    };
+    let Some(result) = result else {
+        attempt::invoke(store, attempt::Action::Unknown { attempt }).await?;
+        return Err(super::super::maintenance::ReflectionDeferred.into());
+    };
     let Ok((status, bytes, complete)) = result else {
         attempt::invoke(store, attempt::Action::Unknown { attempt }).await?;
         return Ok(());
