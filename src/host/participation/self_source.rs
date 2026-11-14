@@ -72,6 +72,31 @@ pub(super) async fn read(
     Ok(page)
 }
 
+pub(in crate::host) async fn retained_review_reply(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    focus: Option<i64>,
+    event: i64,
+) -> Result<bool> {
+    let Some(focus) = focus.filter(|focus| *focus > event) else {
+        return Ok(false);
+    };
+    let retained: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM source_holds h JOIN personal_deliveries d ON d.event=h.source
+         WHERE h.owner=? AND h.item=? AND h.source=?)",
+    )
+    .bind(plugin)
+    .bind(format!("participation:{focus}"))
+    .bind(event)
+    .fetch_one(&mut *db)
+    .await?;
+    if !retained {
+        return Ok(false);
+    }
+    let (_, policy) = super::policy(db, plugin).await?;
+    Ok(record(db, &policy, event).await?.is_some())
+}
+
 pub(super) async fn anchor(
     db: &mut SqliteConnection,
     plugin: &str,
