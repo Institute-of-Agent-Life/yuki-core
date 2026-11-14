@@ -26,6 +26,8 @@ pub struct Config {
     #[serde(default)]
     pub extraction: Option<crate::memory::extract::Config>,
     #[serde(default)]
+    pub(crate) reflection_budget: Option<crate::host::maintenance::ReflectionBudget>,
+    #[serde(default)]
     pub search: Option<crate::model::search::Config>,
     #[serde(default)]
     pub qq: Option<crate::gateway::qq::Config>,
@@ -88,6 +90,9 @@ impl Config {
         }
         if let Some(extract) = &config.extraction {
             extract.validate()?;
+        }
+        if let Some(budget) = &config.reflection_budget {
+            budget.validate()?;
         }
         Ok(config)
     }

@@ -278,6 +278,7 @@ def run(ctx):
         "media": measured("media", media_input, ctx, sdk),
         "main_audio": measured("main_audio", main_audio.run, ctx, sdk, install, Peer),
         "changed_profile": measured("changed_profile", changed_profile, ctx, sdk),
+        "reflection_budget": measured("reflection_budget", reflection_budget, ctx, sdk),
     }
     proofs["binary_sha256"] = hashlib.sha256(
         (
@@ -303,6 +304,96 @@ def run(ctx):
         ["llm.complete", "llm.result"],
     )
     return proofs
+
+
+def reflection_budget(ctx, sdk):
+    owner = Owner(ctx, "aux-reflection-budget", 60)
+    first_plugin, second_plugin = "reflect-first", "reflect-second"
+    with owner.svc.running():
+        source = owner.human("Original reflection budget source.")
+        entry = owner.rows("SELECT entry_id FROM events WHERE id=?", source)[0][0]
+    config = owner.svc.data / "yuki.toml"
+    with config.open("a", encoding="utf-8") as out:
+        out.write('\n[reflection_budget]\ntimezone="Asia/Shanghai"\nmax_daily_calls=1\n')
+    grants = ["maintenance.history.page", "maintenance.evidence", "maintenance.model.open",
+              "maintenance.extract.preview", "maintenance.extract.apply"]
+    peers = {}
+    with Recorder() as upstream:
+        with config.open("a", encoding="utf-8") as out:
+            for plugin in (first_plugin, second_plugin):
+                folder = ctx.working / plugin
+                folder.mkdir()
+                peers[plugin] = Peer(owner, folder)
+                args = [str(ctx.root / "tests/peers/aux-model/peer.py"), str(folder),
+                        str(sdk / "python-install")]
+                out.write(
+                    '\n[[plugins]]\nid=' + json.dumps(plugin) + "\nnamespace=" + json.dumps(plugin)
+                    + "\nprogram=" + json.dumps(sys.executable) + "\nargs=" + json.dumps(args)
+                    + "\ngrants=" + json.dumps([*grants, "llm.complete", "llm.result", "forget.owner"])
+                    + "\n[plugins.maintenance.scopes.own]\nactor=" + json.dumps(owner.actor)
+                    + "\nentry=" + json.dumps(entry) + '\nmethods=' + json.dumps(grants)
+                    + '\npurposes=["reflect"]\nroutes=["review"]\nwrite_subject={kind="self",visibility="private",entry='
+                    + json.dumps(entry) + '}\n[plugins.aux_routes.review]\npurposes=["reflect"]\n'
+                    + 'origins=["maintenance"]\nentries=' + json.dumps([entry])
+                    + '\n[plugins.aux_routes.review.profile]\nendpoint=' + json.dumps(upstream.url)
+                    + '\nmodel="quota-fixture"\nname="Quota fixture"\nmerge_ms=0\nroot_slots=1\n'
+                    + 'max_input_units=100000\nmax_output=128\n'
+                )
+        params = {"scope": "own", "purpose": "reflect"}
+        task = {
+            "mode": "text_json",
+            "schema": {"type": "object", "properties": {"actions": {"type": "array"}},
+                       "required": ["actions"], "additionalProperties": False},
+            "validation_retries": 0,
+        }
+
+        def online():
+            owner.until(lambda: {
+                plugin for plugin, in owner.rows("SELECT plugin FROM host_installations WHERE online")
+            } == set(peers))
+
+        def open_call(peer, key):
+            original, = peer.call("maintenance.history.page", {**params, "event": source})["items"]
+            inputs = [{"event": source, "version": original["version"], "role": "primary"}]
+            origin = peer.call("maintenance.model.open",
+                               {**params, "key": key, "route": "review", "sources": inputs})["origin"]
+            return inputs, {"origin": origin, "call_id": key, "route": "review", "purpose": "reflect",
+                            "text": "Original bounded input.", "task": task}
+
+        first, second = peers[first_plugin], peers[second_plugin]
+        with owner.svc.running():
+            online()
+            inputs, allowed = open_call(first, "first-batch")
+            _, blocked = open_call(second, "next-batch")
+            first_job = first.submit("llm.complete", allowed)
+            _, wire = upstream.receive()
+            # The physical attempt is committed while the HTTP response is still held.
+            second.call("llm.complete", blocked, False)
+            ctx.check("parallel reflection shares one physical quota", upstream.wires.empty())
+            reply(wire, json.dumps({"actions": []}))
+            paid = first.receive(first_job)
+            ctx.equal("original attempt completed", paid["state"], "response")
+            ctx.equal("blocked quota keeps just one physical attempt",
+                      owner.rows("SELECT count(*) FROM model_attempts"), [(1,)])
+        with owner.svc.running():
+            online()
+            original = first.call("llm.complete", allowed)
+            ctx.equal("cold replay uses original paid request at full quota", original["request"], paid["request"])
+            second.call("llm.complete", blocked, False)
+            ctx.check("restart neither resets the daily quota nor buys a known attempt", upstream.wires.empty())
+            preview = first.call("maintenance.extract.preview",
+                                 {**params, "key": "first-batch", "request": paid["request"],
+                                  "format": "edits", "sources": inputs})
+            applied = first.call("maintenance.extract.apply",
+                                 {**params, "operation": "quota-finish", "preview": preview["preview"],
+                                  "approved": []})
+            ctx.equal("paid reflection can settle after the daily limit", applied["applied"], [])
+            ctx.equal("cold full-quota ledger preserves the two logical requests and one physical attempt",
+                      owner.rows("SELECT (SELECT count(*) FROM host_aux_requests),(SELECT count(*) FROM model_attempts)"),
+                      [(2, 1)])
+            attempts = owner.rows("SELECT id,logical,state,dispatched_at FROM model_attempts")
+        return {"request": paid["request"], "physical_attempts": attempts, "applied": applied,
+                "limit": 1, "timezone": "Asia/Shanghai", "owners_share_limit": True}
 
 
 def cuts(ctx, sdk):

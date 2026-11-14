@@ -11,3 +11,12 @@ The acceptance suite will use actual SDK subprocesses and local HTTP peers. It w
 Result pages belong to the original plugin and current route authority. Source erasure retains request and usage facts while removing request and response content. The public tuple remains a candidate until its real extension consumers supply matching evidence.
 
 Private context from additional events declares those IDs in `sources`. Each reference must already belong to the original parent or be retained by this plugin within the approved entry. The request binds these dependencies before reservation. Erasure of an extra context source also fences a late response, while preserving its accounting. Static instructions can omit source references.
+
+An installation can enable `[reflection_budget]` in `yuki.toml`. It defaults to
+`timezone = "Asia/Shanghai"` and `max_daily_calls = 96` when the table is
+present. The shared limit counts committed physical attempts for `reflect`
+calls from maintenance origins, including unknown outcomes. The Host checks it
+in the dispatch transaction against the recorded attempt time. A full quota
+defers the original unpaid call, which remains eligible under the same key
+when the next local day opens. Paid result reads and preview application keep
+their original authorization and can settle at the limit.

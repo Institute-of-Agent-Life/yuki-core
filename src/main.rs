@@ -149,6 +149,7 @@ async fn execute(args: Args) -> Result<()> {
             let listener = tokio::net::TcpListener::bind(config.listen).await?;
             let mut store = store::Store::open(&owner.data).await?;
             store.main = config.main.clone().map(Arc::new);
+            store.reflection_budget = config.reflection_budget.take();
             store.control = Some(operator::domain::Service::open(
                 &owner.data,
                 config.operator_registry_file.as_deref(),

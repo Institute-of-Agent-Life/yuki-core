@@ -27,6 +27,7 @@ pub(super) async fn run(
             plugin: plugin.into(),
             generation: generation.into(),
             request: request.into(),
+            reflection_budget: store.reflection_budget.clone(),
         },
     )
     .await?;
