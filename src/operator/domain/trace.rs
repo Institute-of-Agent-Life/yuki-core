@@ -108,7 +108,11 @@ async fn payload(
     }
     Ok(Some(value))
 }
-pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Value> {
+pub(super) async fn read(
+    db: &mut SqliteConnection,
+    args: &Value,
+    authority: &Authority,
+) -> Result<Value> {
     let kind = args["kind"].as_str().ok_or("validation_error")?;
     let id = args["identity"].as_str().ok_or("validation_error")?;
     let after = args["after"].as_i64().unwrap_or(0);
@@ -139,8 +143,10 @@ pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Valu
     let more = rows.len() > limit as usize;
     let content = args["content"].as_bool().unwrap_or(false);
     let mut items = Vec::new();
+    let mut page_executions = std::collections::BTreeSet::new();
     for row in rows.iter().take(limit as usize) {
-        let execution: String = row.try_get("execution")?;
+        let execution: &str = row.try_get("execution")?;
+        page_executions.insert(execution);
         let operation: Option<String> = row.try_get("operation")?;
         let attempt: Option<String> = row.try_get("attempt")?;
         let kind: String = row.try_get("kind")?;
@@ -153,7 +159,7 @@ pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Valu
         if content {
             match payload(
                 db,
-                &execution,
+                execution,
                 &kind,
                 operation.as_deref(),
                 attempt.as_deref(),
@@ -176,5 +182,24 @@ pub(super) async fn read(db: &mut SqliteConnection, args: &Value) -> Result<Valu
     } else {
         None
     };
+    if let Authority::Invocation { handle, .. } = authority
+        && !page_executions.is_empty()
+    {
+        // Commit the sources for the projected page before returning it to the plugin.
+        // The writer will then fence late results and scrub previously saved copies.
+        sqlx::query(
+            "WITH page(id) AS (SELECT value FROM json_each(?1)),
+                  sources(event) AS (
+                   SELECT x.source FROM page JOIN executions x USING(id) WHERE x.source IS NOT NULL
+                   UNION SELECT d.event FROM page JOIN main_dependencies d ON d.execution=page.id
+                  )
+             INSERT OR IGNORE INTO main_dependencies(execution,event)
+             SELECT c.execution,s.event FROM host_calls c CROSS JOIN sources s WHERE c.handle=?2",
+        )
+        .bind(serde_json::to_string(&page_executions)?)
+        .bind(handle)
+        .execute(db)
+        .await?;
+    }
     Ok(json!({"items":items,"next_cursor":next}))
 }
