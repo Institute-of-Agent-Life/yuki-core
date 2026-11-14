@@ -18,8 +18,16 @@ the observed value as `expected_generation` to `participation.promote`. The
 writer requires it to match both the stored observation and the current
 conversation generation before promotion.
 
+Request `include_reply: true` for an internal `reply_to` event and its source
+version. The original locator must identify a single earlier human message in
+the same group entry, receiving assignment and recorded generation. A missing
+or erased anchor, unknown generation, SELF echo or ambiguous locator yields
+`null`. The writer retains the quoted source on the plugin's erasure ledger
+before returning the reference. The reply projection does not alter the focus
+envelope or authorize promotion by itself.
+
 Acceptance races rule and invitation promotion, transfer or disable the original actor, erase a hydrated source, restart without the original envelope, pause a group before activation, and exercise a real SELF send after another member's message. The receiver, original execution, source IDs and model request counts are recorded in `promotion-vs-self.json`.
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.7` and Python `1.0.0a7`. True EXT-025 consumption is pending. The core provides no sampling or Jev algorithm.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.27` and Python `1.0.0a27`. True EXT-025 consumption is pending. The core provides no sampling or Jev algorithm.

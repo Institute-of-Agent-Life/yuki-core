@@ -62,17 +62,22 @@ def run(ctx):
     env = {**os.environ, "YUKI_SCHEDULE_PEER": "offline-participation"}
     proofs = {}
 
-    def record(key, text="original observation", person=None, accept=False):
+    def record(key, text="original observation", person=None, accept=False, *,
+               native=None, quoted=(), group=space, topic=None, receiver=None):
         frame = {
             "source": key,
+            "native_id": native,
             "account": s.handles[person or s.a]["account"],
-            "bot_stage": s.bot["assignment"],
+            "bot_stage": receiver or s.bot["assignment"],
             "reply_bot": "100",
-            "space": space,
+            "space": group,
+            "topic": topic,
             "kind": "message",
             "observed": 200,
             "occurred": 200,
-            "segments": [{"type": "text", "text": text}],
+            "segments": [{"type": "text", "text": text}, *(
+                {"type": "reply", "native_id": target} for target in quoted
+            )],
         }
         args = ["ingress", "record", json.dumps(frame)]
         if accept:
@@ -210,6 +215,56 @@ def run(ctx):
                 [(src,)],
             )
             p.call("participation.source", {"event": src, "version": "wrong"}, False)
+            qq_message = {
+                "self_id": 100, "message_type": "group", "post_type": "message",
+                "group_id": 700, "time": 100,
+            }
+            qq.send({**qq_message, "user_id": 202, "message_id": 36011,
+                     "message": [{"type": "text", "data": {"text": "original quoted message"}}]})
+            anchor = s.until(lambda: s.rows(
+                "SELECT event_id FROM event_locators WHERE receiver=? AND native_id='36011'",
+                s.bot["assignment"],
+            ))[0][0]
+            qq.send({**qq_message, "user_id": 200, "message_id": 36012, "message": [
+                {"type": "reply", "data": {"id": "36011"}},
+                {"type": "text", "data": {"text": "original reply"}},
+            ]})
+            quoted = s.until(lambda: s.rows(
+                "SELECT event_id FROM event_locators WHERE receiver=? AND native_id='36012'",
+                s.bot["assignment"],
+            ))[0][0]
+            anchor_page = p.call("participation.source", {"event": anchor})
+            plain_reply = p.call("participation.source", {"event": quoted})
+            reply_request = {"event": quoted, "version": plain_reply["version"], "include_reply": True}
+            quoted_page = p.call("participation.source", reply_request)
+            reference = {"event": anchor, "version": anchor_page["version"]}
+            ctx.equal("one proven original human reply", quoted_page["reply_to"], reference)
+            ctx.equal("reply lookup leaves the source bytes and version intact",
+                      {key: value for key, value in quoted_page.items() if key != "reply_to"}, plain_reply)
+            p.call("participation.source", {**reply_request, "version": "wrong"}, False)
+
+            other_receiver = s.op("account", "open", "qq", "schedule", "101", 1, "--start", 1)
+            record("different-receiver-anchor", native="other-receiver", receiver=other_receiver["assignment"])
+            record("different-topic-anchor", native="other-topic", topic="unrelated")
+            record("different-group-anchor", native="other-group",
+                   group=json.dumps(["qq", "schedule", "701"], separators=(",", ":")))
+            record("duplicate-anchor-one", native="same-native")
+            record("duplicate-anchor-two", native="same-native")
+            unsafe_quotes = {
+                "other-receiver": ("other-receiver",),
+                "other-topic": ("other-topic",),
+                "other-group": ("other-group",),
+                "ambiguous": ("same-native",),
+                "multiple": ("36011", "36011"),
+                "future": ("future-anchor",),
+                "absent": (),
+            }
+            unsafe_events = {case: record(f"reply-{case}", quoted=targets)
+                             for case, targets in unsafe_quotes.items()}
+            record("future-anchor", native="future-anchor")
+            for case, event in unsafe_events.items():
+                actual_reply = p.call("participation.source", {"event": event, "include_reply": True})
+                ctx.equal(f"{case} cannot prove an original reply", actual_reply["reply_to"], None)
             # Rule admission races two invitation callbacks over the exact stored ID.
             a = p.submit("participation.promote", {"event": src, "expected_generation": 1})
             b = p.submit("participation.promote", {"event": src})
@@ -380,6 +435,8 @@ def run(ctx):
             s.op("person", "set-enabled", s.c, "false")
             p.call("participation.promote", {"event": disabled}, False)
             p.call("participation.source", {"event": disabled, "include_origin": True}, False)
+            ctx.equal("disabled original author blocks the reference",
+                      p.call("participation.source", reply_request)["reply_to"], None)
             s.op("person", "set-enabled", s.c, "true")
             proofs["erasure"] = {
                 "event": erase,
@@ -397,6 +454,9 @@ def run(ctx):
             fresh_origin = p.call("participation.source", {"event": fresh, "include_origin": True})["origin"]
             ctx.equal("an unpromoted event records the new generation", fresh_origin,
                       {**first_origin, "observed_generation": 2, "current_generation": 2})
+            past_quote = record("reply-before-reset", quoted=("36011",))
+            ctx.equal("a reply in the new generation cannot take an old anchor",
+                      p.call("participation.source", {"event": past_quote, "include_reply": True})["reply_to"], None)
             ctx.equal("a redelivery after reset keeps the original event", record("race-source"), src)
             s.op("person", "merge", s.a, s.b)
             moved = {**first_origin, "current_person": s.b, "current_generation": 2}
@@ -411,7 +471,7 @@ def run(ctx):
                        bot_stage,occurred_at,observed_at,envelope,mentions)
                    SELECT source_scope,'pre-reader-61',entry_id,account_id,raw_actor,actor_stage,
                        bot_stage,occurred_at,observed_at,json_set(envelope,'$.source','pre-reader-61'),mentions
-                   FROM events WHERE id=? RETURNING id""", (fresh,)
+                   FROM events WHERE id=? RETURNING id""", (quoted,)
             ).fetchone()[0]
         with s.svc.running(environment=env):
             # No process-local envelope is recreated after a cold start.
@@ -431,6 +491,27 @@ def run(ctx):
             ctx.equal("cold hydration retains the original identity and generation", cold_origin, moved)
             ctx.equal("older rows without a recorded observation generation remain unknown",
                       legacy_origin, {**moved, "observed_generation": None})
+            ctx.equal("an old row with a matching locator cannot prove the reply generation",
+                      p.call("participation.source", {"event": legacy, "include_reply": True})["reply_to"], None)
+            ctx.equal("cold source read keeps the old same-generation reference",
+                      p.call("participation.source", reply_request)["reply_to"], reference)
+            isolated_anchor = record("reply-erasure-anchor", person=s.c, native="erased-quote")
+            isolated_reply = record("reply-erasure-focus", quoted=("erased-quote",))
+            isolated_request = {"event": isolated_reply, "include_reply": True}
+            ctx.equal("reply read takes an erasure obligation on the anchor",
+                      p.call("participation.source", isolated_request)["reply_to"]["event"], isolated_anchor)
+            ctx.equal("quoted original and focus share the plugin dependency",
+                      s.rows("SELECT source FROM source_holds WHERE owner=? AND item=? ORDER BY source",
+                             "participation", f"participation:{isolated_reply}"),
+                      [(isolated_anchor,), (isolated_reply,)])
+            s.op("privacy", "erase", "participation-reply-anchor", s.c, json.dumps([isolated_anchor]))
+            s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
+            ctx.equal("erased anchor is unavailable from the unchanged reply envelope",
+                      p.call("participation.source", isolated_request)["reply_to"], None)
+            proofs["reply_reference"] = {
+                "focus": quoted, "reference": reference,
+                "absent_for": [*unsafe_events, "disabled-author", "across-reset", "erased-anchor"],
+            }
             proofs["observation_origin"] = {"event": src, "original": first_origin, "cold": cold_origin,
                                             "fresh": fresh_origin, "legacy": legacy_origin}
         import re
