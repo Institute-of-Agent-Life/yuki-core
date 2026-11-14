@@ -35,6 +35,7 @@ async fn available(
     g: &Granted,
     id: Option<i64>,
     execution: Option<&str>,
+    event: Option<i64>,
     after: i64,
 ) -> Result<Vec<Receipt>> {
     if !g.policy.methods.contains("maintenance.tool.page")
@@ -50,6 +51,11 @@ async fn available(
          JOIN executions x ON x.id=o.namespace
          WHERE a.entry=?1 AND o.rowid>?2 AND (?3 IS NULL OR o.namespace=?3)
            AND (?4 IS NULL OR o.rowid=?4) AND o.state='confirmed' AND o.result IS NOT NULL
+           AND (?5 IS NULL OR EXISTS(
+             SELECT 1 FROM maintenance_execution_ancestry ancestry
+             JOIN executions original ON original.id=ancestry.member
+             JOIN events trigger_event ON trigger_event.id=original.source
+             WHERE ancestry.execution=o.namespace AND trigger_event.id=?5 AND trigger_event.entry_id=a.entry))
            AND (o.action!='get' OR o.value_source IS NOT NULL OR x.origin IS NOT NULL OR o.result='null')
            AND (o.value_source IS NULL OR EXISTS(
              SELECT 1 FROM events e JOIN persons p ON p.id=e.raw_actor
@@ -62,6 +68,7 @@ async fn available(
     .bind(after)
     .bind(execution)
     .bind(id)
+    .bind(event)
     .fetch_all(&mut *db)
     .await?;
     let mut receipts = Vec::with_capacity(rows.len());
@@ -86,7 +93,7 @@ async fn available(
 }
 
 pub(super) async fn full(db: &mut SqliteConnection, g: &Granted, id: i64) -> Result<Receipt> {
-    available(db, g, Some(id), None, 0)
+    available(db, g, Some(id), None, None, 0)
         .await?
         .into_iter()
         .next()
@@ -95,7 +102,12 @@ pub(super) async fn full(db: &mut SqliteConnection, g: &Granted, id: i64) -> Res
 
 pub(super) async fn page(db: &mut SqliteConnection, c: &Change, g: &Granted) -> Result<Value> {
     let after = c.params["after"].as_i64().unwrap_or(0);
-    let receipts = available(db, g, None, c.params["execution"].as_str(), after).await?;
+    let event = c
+        .params
+        .get("event")
+        .map(|id| id.as_i64().ok_or("original event ID out of range"))
+        .transpose()?;
+    let receipts = available(db, g, None, c.params["execution"].as_str(), event, after).await?;
     let mut next = after;
     let mut items = vec![];
     for receipt in receipts {
