@@ -16,6 +16,17 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub(crate) use reflection_budget::ReflectionBudget;
 
+#[derive(Debug)]
+pub(crate) struct ReflectionDeferred;
+
+impl std::fmt::Display for ReflectionDeferred {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("reflection_deferred_for_foreground")
+    }
+}
+
+impl std::error::Error for ReflectionDeferred {}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Scope {
@@ -80,6 +91,7 @@ pub struct Change {
     pub method: String,
     pub params: Value,
     pub paid_request: Option<String>,
+    pub foreground: Option<(crate::runtime::main::activity::Active, u32)>,
 }
 pub(super) async fn configure(db: &mut SqliteConnection, install: &super::Install) -> Result<()> {
     if let Some(policy) = &install.maintenance {
@@ -105,6 +117,7 @@ pub(super) async fn callback(
         method: method.into(),
         params: params.clone(),
         paid_request: None,
+        foreground: reflection_foreground(store),
     };
     let first = super::write(store, super::Change::Maintenance(Box::new(change()))).await?;
     if method == "maintenance.extract.preview" && params.get("request").is_none() {
@@ -150,6 +163,18 @@ pub(super) async fn apply(db: &mut SqliteConnection, c: &Change) -> Result<Value
     )
     .await?;
     let granted = scope::resolve(db, c).await?;
+    if c.params["purpose"] == "reflect"
+        && matches!(
+            c.method.as_str(),
+            "maintenance.history.page"
+                | "maintenance.tool.page"
+                | "maintenance.model.open"
+                | "maintenance.extract.preview"
+                | "maintenance.extract.apply"
+        )
+    {
+        check_reflection_foreground(db, c.foreground.as_ref()).await?;
+    }
     if c.method == "maintenance.extract.preview"
         && c.params.get("request").is_none()
         && c.paid_request.is_none()
@@ -175,6 +200,34 @@ pub(super) async fn apply(db: &mut SqliteConnection, c: &Change) -> Result<Value
         return Err("maintenance response violates public schema".into());
     }
     Ok(result)
+}
+
+pub(super) fn reflection_foreground(
+    store: &Store,
+) -> Option<(crate::runtime::main::activity::Active, u32)> {
+    store.main.as_ref()?;
+    let seconds = store.reflection_budget.as_ref()?.quiet_seconds()?;
+    Some((store.active_turns.clone(), seconds))
+}
+
+pub(super) async fn check_reflection_foreground(
+    db: &mut SqliteConnection,
+    policy: Option<&(crate::runtime::main::activity::Active, u32)>,
+) -> Result<()> {
+    let Some((activity, seconds)) = policy else {
+        return Ok(());
+    };
+    let queued = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM main_turns t JOIN executions x ON x.id=t.execution
+         WHERE x.source IS NOT NULL AND x.state IN ('pending','running') AND NOT x.cancelled
+           AND NOT EXISTS(SELECT 1 FROM work_suspensions w WHERE w.work=x.work_id))",
+    )
+    .fetch_one(db)
+    .await?;
+    if queued || !activity.foreground_idle(*seconds) {
+        return Err(ReflectionDeferred.into());
+    }
+    Ok(())
 }
 
 pub(crate) use background::{is_background, resolve_origin};

@@ -14,6 +14,48 @@ fn version(raw: &str) -> String {
     format!("{:x}", Sha256::digest(raw.as_bytes()))
 }
 
+pub(crate) async fn retain(
+    conn: &mut SqliteConnection,
+    exec: &str,
+    op: &str,
+    raw: &str,
+    quota: i64,
+) -> Result<Option<(String, String)>> {
+    let hash = version(raw);
+    let original: Option<(String, String, Option<String>)> = sqlx::query_as(
+        "SELECT handle,version,body FROM tool_artifacts WHERE execution=? AND operation=?",
+    )
+    .bind(exec)
+    .bind(op)
+    .fetch_optional(&mut *conn)
+    .await?;
+    if let Some((handle, previous, body)) = original {
+        if previous != hash || body.as_deref() != Some(raw) {
+            return Err("original tool artifact changed or was erased".into());
+        }
+        return Ok(Some((handle, hash)));
+    }
+    let bytes = i64::try_from(raw.len())?;
+    let used: i64 = sqlx::query_scalar(
+        "SELECT coalesce(sum(length(CAST(body AS BLOB))),0) FROM tool_artifacts",
+    )
+    .fetch_one(&mut *conn)
+    .await?;
+    if quota.saturating_sub(used) < bytes {
+        return Ok(None);
+    }
+    let handle = new_id(conn).await?;
+    sqlx::query("INSERT INTO tool_artifacts VALUES(?,?,?,?,?)")
+        .bind(&handle)
+        .bind(&hash)
+        .bind(exec)
+        .bind(op)
+        .bind(raw)
+        .execute(&mut *conn)
+        .await?;
+    Ok(Some((handle, hash)))
+}
+
 // The limit includes the complete JSON model receipt. A stored array length describes only
 // that artifact; an original query's total and next_cursor have independent meanings.
 pub async fn present(
@@ -28,39 +70,13 @@ pub async fn present(
         return Ok(original);
     }
     let raw = original.to_string();
-    let hash = version(&raw);
-    let bytes = i64::try_from(raw.len())?;
-    let existing:Option<String>=sqlx::query_scalar("SELECT handle FROM tool_artifacts WHERE execution=? AND operation=? AND version=? AND body IS NOT NULL")
-        .bind(exec).bind(op).bind(&hash).fetch_optional(&mut *conn).await?;
-    let handle = if existing.is_some() {
-        existing
-    } else {
-        let used: i64 = sqlx::query_scalar(
-            "SELECT coalesce(sum(length(CAST(body AS BLOB))),0) FROM tool_artifacts",
-        )
-        .fetch_one(&mut *conn)
-        .await?;
-        if quota.saturating_sub(used) < bytes {
-            None
-        } else {
-            let h = new_id(conn).await?;
-            sqlx::query("INSERT INTO tool_artifacts VALUES(?,?,?,?,?)")
-                .bind(&h)
-                .bind(&hash)
-                .bind(exec)
-                .bind(op)
-                .bind(&raw)
-                .execute(&mut *conn)
-                .await?;
-            Some(h)
-        }
-    };
+    let artifact = retain(conn, exec, op, &raw, quota).await?;
     let cursor = original["result"].get("next_cursor").cloned();
-    let mut out = json!({"id":op,"state":original["state"],"result":{"truncated":true,"reason":if handle.is_some(){"size"}else{"storage_full"},"total":original["result"].get("total")}});
+    let mut out = json!({"id":op,"state":original["state"],"result":{"truncated":true,"reason":if artifact.is_some(){"size"}else{"storage_full"},"total":original["result"].get("total")}});
     if let Some(cursor) = cursor {
         out["result"]["next_cursor"] = cursor;
     }
-    if let Some(h) = handle {
+    if let Some((h, hash)) = artifact {
         out["result"]["artifact"] = json!({"handle":h,"version":hash,"path":"/result","offset":0});
         out["result"]["read_more"] = json!({"handle":h,"operation":"get","path":[],"offset":0});
     }
@@ -101,6 +117,7 @@ pub async fn authorize(
     .await?
     .ok_or("artifact unavailable")?;
     effects::authorize(conn, &owner, actor, false).await?;
+    crate::operator::domain::trace::authorize_artifact(conn, handle, actor).await?;
     if owner != exec {
         let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM executions x JOIN executions y ON y.id=? LEFT JOIN events e ON e.id=x.source LEFT JOIN events f ON f.id=y.source
             WHERE x.id=? AND x.work_id IS y.work_id AND ((x.origin IS NOT NULL AND x.origin=y.origin) OR (e.entry_id=f.entry_id AND x.original_actor=y.original_actor)))")

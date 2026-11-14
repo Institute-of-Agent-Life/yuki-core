@@ -58,6 +58,19 @@ The value source must belong to the installed entry and remain readable.
 A legacy local read with a value and unknown provenance is unavailable to
 maintenance.
 
+An operator can set `quiet_seconds` in `[reflection_budget]` to defer
+`reflect` history and tool selection, model opening and dispatch, preview
+and apply while a human Main turn is queued or running. The same quiet
+interval applies after startup and after the last human turn ends. The Host
+returns JSON-RPC error `-32003` with message
+`reflection_deferred_for_foreground`. Retry the original operation when
+Main is idle. An existing model request remains observable under the
+original key. Its paid result and usage remain available for settlement.
+If a human turn starts while the auxiliary HTTP response is outstanding, the
+Host stops waiting and records the original physical attempt as unknown.
+The original request remains observable by the same key. Its usage stays
+unknown and the original physical attempt consumes its daily slot.
+
 ## Verification scope
 
 The core case drives installed SDK subprocesses, real Rust Work children and loopback HTTP model/embedding peers. It covers closed historical entries, private SELF evidence, large content, scope denial, same-count source changes, partial apply/restart, selected FTS rebuild, semantic profile changes and late responses after erasure. True EXT-033, EXT-034, EXT-035, EXT-036 and EXT-048 consumption is pending.

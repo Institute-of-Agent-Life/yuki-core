@@ -1,4 +1,5 @@
 """Trace projections retain real model/effect states, with separate content authority."""
+import hashlib
 import json
 import os
 import sys
@@ -21,7 +22,7 @@ namespace="trace.fixture"
 program={json.dumps(sys.executable)}
 args={json.dumps(args)}
 grants=["command.invoke","control.invoke"]
-commands=["/trace"]
+commands=["/trace","/ai/trace/export"]
 ''')
     return folder
 
@@ -40,18 +41,20 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
         stage.write_text(json.dumps(value), encoding="utf-8")
         stage.replace(path)
 
-    def projection(serial):
+    def projection(serial, method="trace.read", content=True):
         # The private operator socket can be ready before Host negotiation.
         wait(lambda: owner.rows("SELECT 1 FROM host_installations "
                                 "WHERE plugin='trace.fixture' AND enabled AND online"))
         path = folder / "command.json"
         path.unlink(missing_ok=True)
+        export = method == "trace.export"
+        text = f"/ai trace export turn {execution}" if export else "/trace inspect original timeline"
         event = owner.op("ingress", "record", json.dumps({
             "source": f"trace-reader-{serial}",
             "account": account["account"], "bot_stage": owner.bot["assignment"],
             "reply_bot": "100", "kind": "message",
             "occurred": 2000 + serial, "observed": 2000 + serial,
-            "segments": [{"type": "text", "text": "/trace inspect original timeline"}],
+            "segments": [{"type": "text", "text": text}],
         }), "--accept")["event"]
         try:
             command = wait(lambda: json.loads(path.read_bytes()))
@@ -63,14 +66,19 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
                 "bindings": owner.rows("SELECT path,plugin FROM host_commands"),
             })
             raise
+        if export:
+            ctx.equal("chat export routes to the exact installed plugin command",
+                      command["params"]["name"], "/ai/trace/export")
+            ctx.equal("the plugin receives the original export text",
+                      command["params"]["arguments"]["text"], text)
         handle = command["params"]["handle"]
         send(f"request-{serial}.json", {
             "id": serial, "method": "control.read",
-            "params": {"handle": handle, "method": "trace.read",
-                       "args": {"kind": "turn", "identity": execution, "content": True}},
+            "params": {"handle": handle, "method": method,
+                       "args": {"kind": "turn", "identity": execution, "content": content}},
         })
         response = wait(lambda: json.loads((folder / f"response-{serial}.json").read_bytes()))
-        return event, command, response["result"]
+        return event, command, response.get("result", response.get("error"))
 
     def finish(command, data):
         send("reply.json", {"jsonrpc": "2.0", "id": command["id"],
@@ -90,6 +98,50 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
     stored_before, _ = settled(first)
     ctx.check("authorized completed command retained its trace result",
               "a visible response" in stored_before)
+
+    def artifact(event, descriptor, path):
+        reader_execution = owner.rows("SELECT id FROM executions WHERE source=?", event)[0][0]
+        return owner.svc.command("operator", "tools", "read-artifact", reader_execution, reader, json.dumps({
+            "handle":descriptor["handle"],"version":descriptor["version"],"path":path,
+        }))
+
+    meta_event, meta_command, meta = projection(4, "trace.export", False)
+    finish(meta_command, meta)
+    settled(meta_command)
+    raw, = owner.rows("SELECT body FROM tool_artifacts WHERE handle=?", meta["handle"])[0]
+    document = json.loads(raw)["result"]
+    ctx.equal("trace export uses versioned JSON bytes", hashlib.sha256(raw.encode()).hexdigest(), meta["version"])
+    ctx.equal("trace export records its schema", document["schema"], "yuki.trace.export/1")
+    ctx.check("metadata export omits all payloads",
+              bool(document["page"]["items"]) and all("payload" not in x for x in document["page"]["items"]))
+    ctx.equal("owner can read the exact version with the existing artifact entry point",
+              artifact(meta_event, meta, "/result/schema")["value"], "yuki.trace.export/1")
+
+    full_event, full_command, full = projection(5, "trace.export")
+    send("request-51.json", {"id":51,"method":"control.read","params":{
+        "handle":full_command["params"]["handle"],"method":"trace.export",
+        "args":{"kind":"turn","identity":execution,"content":True},
+    }})
+    replay = wait(lambda: json.loads((folder / "response-51.json").read_bytes()))
+    ctx.equal("same invocation repeats its original immutable export descriptor", replay["result"], full)
+    send("request-52.json", {"id":52,"method":"control.read","params":{
+        "handle":full_command["params"]["handle"],"method":"trace.export",
+        "args":{"kind":"turn","identity":execution,"content":False},
+    }})
+    conflict = wait(lambda: json.loads((folder / "response-52.json").read_bytes()))
+    ctx.equal("same invocation cannot substitute a different export selection", conflict["error"]["code"], -32003)
+    finish(full_command, full)
+    settled(full_command)
+    body, = owner.rows("SELECT body FROM tool_artifacts WHERE handle=?", full["handle"])[0]
+    ctx.check("full export omits secrets and transport URLs",
+              "a visible response" in body and "PRIVATE-TRACE-" not in body and "SIGNED-URL" not in body)
+    owner.op("person", "set-admin", reader, "false")
+    exec_id = owner.rows("SELECT id FROM executions WHERE source=?", full_event)[0][0]
+    refused = owner.svc.command("operator", "tools", "read-artifact", exec_id, reader,
+                                json.dumps({"handle":full["handle"],"version":full["version"],"path":"/result/schema"}),
+                                accepted=False)
+    ctx.check("revoking operator rights removes original export read access", "forbidden" in refused)
+    owner.op("person", "set-admin", reader, "true")
     second_event, second, delayed = projection(2)
     ctx.check("paused plugin holds the original trace before source erasure",
               "a visible response" in json.dumps(delayed))
@@ -118,6 +170,9 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
     ctx.equal("previously persisted plugin trace response is erased", old, None)
     ctx.check("previously persisted trace effect lost its body",
               "a visible response" not in (old_effect or ""))
+    ctx.equal("erasure clears both already published trace artifact bodies",
+              owner.rows("SELECT body FROM tool_artifacts WHERE handle IN (?,?) ORDER BY handle",
+                         meta["handle"],full["handle"]), [(None,),(None,)])
     _, unrelated, empty = projection(3)
     ctx.equal("the reader stays enabled and can see the missing timeline", empty["items"], [])
     finish(unrelated, empty)
@@ -125,7 +180,9 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
     ctx.equal("trace erasure leaves original attempt counts and token usage unchanged",
               accounting(), attempts)
     return {"original_continuation": continuation, "reader_events": [first_event, second_event],
-            "original_watermark": erasure["watermark"], "confirmed_effect_retained": True}
+            "original_watermark": erasure["watermark"], "confirmed_effect_retained": True,
+            "trace_export":{"schema":meta["schema"],"metadata_version":meta["version"],
+                            "content_version":full["version"],"erased":True}}
 
 
 def run(ctx, wire):
@@ -147,7 +204,7 @@ def run(ctx, wire):
             continuation=owner.human('follow-up trace input')
             owner.until(lambda:owner.rows('SELECT event FROM main_inputs WHERE execution=? AND event=?',execution,continuation))
             answer.put(({'choices':[{'message':{'role':'assistant','content':None,'tool_calls':[call('trace-get','get',{'target':json.dumps({'api_key':'PRIVATE-TRACE-ENCODED','nested':{'secret':'PRIVATE-TRACE-NESTED'}})})]},'finish_reason':'tool_calls'}],
-                'provider_state':{'signature':'PRIVATE-TRACE-SIGNATURE','encrypted_content':'PRIVATE-TRACE-ENCRYPTED','thoughtSignature':'PRIVATE-TRACE-THOUGHT','api_key':'PRIVATE-TRACE-KEY','authorization':'PRIVATE-TRACE-AUTH','code':'PRIVATE-TRACE-PAIR','nested':[{'token':'PRIVATE-TRACE-TOKEN'}]}},0))
+                'provider_state':{'signature':'PRIVATE-TRACE-SIGNATURE','encrypted_content':'PRIVATE-TRACE-ENCRYPTED','thoughtSignature':'PRIVATE-TRACE-THOUGHT','api_key':'PRIVATE-TRACE-KEY','authorization':'PRIVATE-TRACE-AUTH','code':'PRIVATE-TRACE-PAIR','nested':[{'token':'PRIVATE-TRACE-TOKEN'}],'attachment_url':'https://fixture.invalid/download?token=SIGNED-URL'}},0))
             body,answer=owner.wire(http)
             ctx.check('follow-up input remains on original trace execution','follow-up trace input' in str(body['messages']))
             answer.put(({

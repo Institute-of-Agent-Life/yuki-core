@@ -444,7 +444,7 @@ impl Runner {
                 let _ = job.cancel.send(true);
             }
         }
-        let rows=sqlx::query("SELECT x.id,l.lane FROM executions x JOIN main_turns t ON t.execution=x.id JOIN main_work_lanes l ON l.execution=x.id WHERE x.state IN ('pending','running')
+        let rows=sqlx::query("SELECT x.id,l.lane,x.source IS NOT NULL AS foreground FROM executions x JOIN main_turns t ON t.execution=x.id JOIN main_work_lanes l ON l.execution=x.id WHERE x.state IN ('pending','running')
           AND NOT x.cancelled AND NOT EXISTS(SELECT 1 FROM work_suspensions suspended WHERE suspended.work=x.work_id) AND t.ready_after<=? AND NOT EXISTS(SELECT 1 FROM main_turns prior JOIN executions p ON p.id=prior.execution JOIN main_work_lanes pl ON pl.execution=p.id
           WHERE pl.lane=l.lane AND prior.rowid<t.rowid AND p.state IN ('pending','running') AND NOT p.cancelled AND NOT EXISTS(SELECT 1 FROM work_suspensions paused WHERE paused.work=p.work_id)) ORDER BY t.rowid LIMIT 32")
           .bind(timestamp).fetch_all(self.store.readers()).await?;
@@ -481,9 +481,10 @@ impl Runner {
                 }
             };
             let id = exec.clone();
+            let foreground = row.try_get::<bool, _>("foreground")?;
             let hub = self.hub.clone();
             let task = self.tasks.spawn(async move {
-                let _live = store.active_turns.enter(&id);
+                let _live = store.active_turns.enter(&id, foreground);
                 if let Err(error) =
                     transport::run(&store, &cfg, &client, &data, &id, rx, &hub).await
                 {

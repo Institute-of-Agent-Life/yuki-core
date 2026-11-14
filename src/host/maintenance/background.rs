@@ -191,6 +191,7 @@ pub(crate) async fn authorize(db: &mut SqliteConnection, exec: &str) -> Result<(
             method,
             params: serde_json::from_str(row.get("params"))?,
             paid_request: None,
+            foreground: None,
         };
         let g = scope::resolve(db, &c).await?;
         if g.revision != row.get::<String, _>("revision") {
