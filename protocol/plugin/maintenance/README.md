@@ -51,6 +51,13 @@ Pages contain up to eight items. Long fact bodies, evidence and paid previews ex
 
 The core validates original tool receipt versions alongside event and fact versions before model dispatch, publication and reviewed writes. Reading or selecting those inputs acquires SourceHold obligations. Erasure clears preview content and fences late writes while preserving operation IDs and known usage.
 
+A confirmed local read can contain a value written by an earlier event. Its
+maintenance receipt version includes both the reading execution's ancestry and
+the recorded value source. Both events receive the same erasure protection.
+The value source must belong to the installed entry and remain readable.
+A legacy local read with a value and unknown provenance is unavailable to
+maintenance.
+
 ## Verification scope
 
 The core case drives installed SDK subprocesses, real Rust Work children and loopback HTTP model/embedding peers. It covers closed historical entries, private SELF evidence, large content, scope denial, same-count source changes, partial apply/restart, selected FTS rebuild, semantic profile changes and late responses after erasure. True EXT-033, EXT-034, EXT-035, EXT-036 and EXT-048 consumption is pending.
