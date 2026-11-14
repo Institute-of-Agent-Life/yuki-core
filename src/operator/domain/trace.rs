@@ -150,7 +150,14 @@ async fn projection(
         return Err("validation_error".into());
     }
     let sql = format!(
-        "SELECT t.*,x.source,coalesce(w.work,x.work_id) AS work,coalesce(m.conversation,e.entry_id,o.conversation) AS conversation,m.window,o.kind AS origin FROM control_trace_entries t JOIN executions x ON x.id=t.execution LEFT JOIN main_turns m ON m.execution=x.id LEFT JOIN events e ON e.id=x.source LEFT JOIN main_origins o ON o.ref=x.origin LEFT JOIN work_runs w ON w.execution=x.id WHERE {selector} AND t.id>?2 AND t.expires>unixepoch() AND NOT EXISTS(SELECT 1 FROM invalidated_sources s WHERE s.source=x.source) AND NOT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources s ON s.source=d.event WHERE d.execution=x.id) ORDER BY t.id LIMIT ?3"
+        "SELECT t.*,x.source,coalesce(w.work,x.work_id) AS work,coalesce(m.conversation,e.entry_id,o.conversation) AS conversation,m.window,o.kind AS origin
+         FROM control_trace_entries t JOIN executions x ON x.id=t.execution LEFT JOIN main_turns m ON m.execution=x.id
+         LEFT JOIN events e ON e.id=x.source LEFT JOIN main_origins o ON o.ref=x.origin LEFT JOIN work_runs w ON w.execution=x.id
+         WHERE {selector} AND t.id>?2 AND t.expires>unixepoch()
+           AND NOT EXISTS(SELECT 1 FROM invalidated_sources s WHERE s.source=x.source)
+           AND NOT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources s ON s.source=d.event WHERE d.execution=x.id)
+           AND NOT EXISTS(SELECT 1 FROM operations op JOIN invalidated_sources s ON s.source=op.value_source WHERE op.namespace=x.id)
+         ORDER BY t.id LIMIT ?3"
     );
     let rows = sqlx::query(&sql)
         .bind(id)
@@ -210,6 +217,7 @@ async fn projection(
                   sources(event) AS (
                    SELECT x.source FROM page JOIN executions x USING(id) WHERE x.source IS NOT NULL
                    UNION SELECT d.event FROM page JOIN main_dependencies d ON d.execution=page.id
+                   UNION SELECT op.value_source FROM page JOIN operations op ON op.namespace=page.id WHERE op.value_source IS NOT NULL
                   )
              INSERT OR IGNORE INTO main_dependencies(execution,event)
              SELECT c.execution,s.event FROM host_calls c CROSS JOIN sources s WHERE c.handle=?2",
