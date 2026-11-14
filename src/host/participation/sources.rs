@@ -157,34 +157,54 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy)
         page["mentions"] = mentions::page(db, id, cursor).await?;
     }
     if c.params["include_reply"] == true {
-        page["reply_to"] = Value::Null;
-        if frame["kind"] == "message"
-            && let Some(generation) = original.observed_generation
-        {
-            let delivery = if c.params["include_self"] == true {
-                self_source::anchor(db, &c.plugin, policy, id, generation).await?
-            } else {
-                None
-            };
-            if let Some(reference) = delivery {
-                page["reply_to"] = reference;
-            } else if let Some(reply) = group_human_reply(db, id).await?
-                && reply.observed_generation == Some(generation)
-                && !sqlx::query_scalar::<_, bool>(
-                    "SELECT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=?)",
-                )
-                .bind(reply.event)
-                .fetch_one(&mut *db)
-                .await?
-            {
-                let held =
-                    source::acquire(db, &c.plugin, &format!("participation:{id}"), reply.event)
-                        .await?;
-                page["reply_to"] = reference(reply.event, &serde_json::to_vec(&held["envelope"])?);
-            }
-        }
+        page["reply_to"] = match (frame["kind"].as_str(), original.observed_generation) {
+            (Some("message"), Some(generation)) => reply_reference(
+                db,
+                &c.plugin,
+                policy,
+                id,
+                generation,
+                c.params["include_self"] == true,
+            )
+            .await?
+            .unwrap_or(Value::Null),
+            _ => Value::Null,
+        };
     }
     Ok(page)
+}
+
+async fn reply_reference(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    policy: &Policy,
+    event: i64,
+    generation: i64,
+    include_self: bool,
+) -> Result<Option<Value>> {
+    if include_self
+        && let Some(delivery) = self_source::anchor(db, plugin, policy, event, generation).await?
+    {
+        return Ok(Some(delivery));
+    }
+    let Some(reply) = group_human_reply(db, event).await? else {
+        return Ok(None);
+    };
+    if reply.observed_generation != Some(generation)
+        || sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=?)",
+        )
+        .bind(reply.event)
+        .fetch_one(&mut *db)
+        .await?
+    {
+        return Ok(None);
+    }
+    let held = source::acquire(db, plugin, &format!("participation:{event}"), reply.event).await?;
+    Ok(Some(reference(
+        reply.event,
+        &serde_json::to_vec(&held["envelope"])?,
+    )))
 }
 
 pub(super) fn reference(event: i64, raw: &[u8]) -> Value {
@@ -221,6 +241,22 @@ pub(super) async fn promote(
         && (source.observed_generation != Some(expected) || source.current_generation != expected)
     {
         return Err("participation observation is outside the expected generation".into());
+    }
+    if let Some(expected) = c.params.get("expected_reply")
+        && (source.observed_generation != Some(source.current_generation)
+            || reply_reference(
+                db,
+                &c.plugin,
+                policy,
+                event,
+                source.current_generation,
+                true,
+            )
+            .await?
+            .as_ref()
+                != Some(expected))
+    {
+        return Err("original participation reply changed before admission".into());
     }
     let result = admit::promote(db, event).await?;
     sqlx::query("INSERT OR IGNORE INTO participation_promotions VALUES(?,?)")

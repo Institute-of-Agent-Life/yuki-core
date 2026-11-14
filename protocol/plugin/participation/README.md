@@ -26,6 +26,11 @@ or erased anchor, unknown generation, SELF echo or ambiguous locator yields
 before returning the reference. The reply projection does not alter the focus
 envelope or authorize promotion by itself.
 
+For a review based on that reference, pass it as `expected_reply` to
+`participation.promote`. The same writer transaction checks that the focus
+still belongs to the current generation and that its canonical reply event
+and version still match. A removed or changed reply prevents admission.
+
 With `include_self: true`, a reply can also reference an acknowledged group
 delivery by its canonical delivery event. Read that event with the same
 option and version. Its paged JSON is a `kind: "self"` record with the event,
@@ -54,4 +59,6 @@ Acceptance races rule and invitation promotion, transfer or disable the original
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.30` and Python `1.0.0a30`. EXT-025's installed library has exercised the native review on the previous candidate. The core provides source authority and transport while the library owns semantic decisions.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.31` and Python `1.0.0a31`.
+EXT-025's installed library exercised native review on alpha.30.
+The core provides source authority and transport while the library owns semantic decisions.

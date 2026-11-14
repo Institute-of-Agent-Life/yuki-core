@@ -256,6 +256,10 @@ def run(ctx):
             ctx.equal("reply lookup leaves the source bytes and version intact",
                       {key: value for key, value in quoted_page.items() if key != "reply_to"}, plain_reply)
             p.call("participation.source", {**reply_request, "version": "wrong"}, False)
+            wrong_reply_version = {**reference, "version": "0" * 64}
+            p.call("participation.promote", {"event": quoted, "expected_reply": wrong_reply_version}, False)
+            ctx.equal("a wrong original version admits no Main input",
+                      s.rows("SELECT event_id FROM accepted_sources WHERE event_id=?", quoted), [])
 
             qq.send({**qq_message, "user_id": 200, "message_id": 36013, "message": [
                 {"type": "text", "data": {"text": "雪🙂 literal @Yuki "}},
@@ -507,6 +511,16 @@ def run(ctx):
                              "participation", "participation:" + str(self_reply), self_anchor), [(self_anchor,)])
             p.call("participation.source", self_reference, False)
             p.call("participation.promote", {"event": self_anchor}, False)
+            self_guarded = {"event": self_reply, "expected_generation": 1, "expected_reply": self_reference}
+            ctx.equal("a retained confirmed SELF reference admits its original human focus",
+                      p.call("participation.promote", self_guarded),
+                      {"event": self_reply, "accepted": True, "newly_accepted": True})
+            _, q = s.wire(http)
+            reply(q, "quiet original SELF quote")
+            s.finished(self_reply)
+            ctx.equal("a fresh conditional replay retains the original Main input",
+                      p.call("participation.promote", self_guarded),
+                      {"event": self_reply, "accepted": True, "newly_accepted": False})
             wrong_topic = record("self-reply-wrong-topic", quoted=("36003",), topic="observed-other")
             ctx.equal("authorized topic cannot select a delivery from another entry",
                       p.call("participation.source", {**read_self_reply, "event": wrong_topic})["reply_to"], None)
@@ -596,6 +610,7 @@ def run(ctx):
             ctx.equal("erasing the original input removes the retained SELF anchor",
                       p.call("participation.source", derived_request)["reply_to"], None)
             p.call("participation.source", derived_page, False)
+            p.call("participation.promote", {"event": derived_focus, "expected_reply": derived}, False)
             jev_response = {"model": "jev-response-fixture", "answers": {"floor_state": {
                 "type": "choice", "choice": "yuki", "probabilities": {"yuki": 1.0, "unknown": 0.0}}},
                 "usage": {"input_tokens": 31, "output_tokens": 5}}
@@ -692,8 +707,9 @@ def run(ctx):
             isolated_anchor = record("reply-erasure-anchor", person=s.c, native="erased-quote")
             isolated_reply = record("reply-erasure-focus", quoted=("erased-quote",))
             isolated_request = {"event": isolated_reply, "include_reply": True}
+            isolated_reference = p.call("participation.source", isolated_request)["reply_to"]
             ctx.equal("reply read takes an erasure obligation on the anchor",
-                      p.call("participation.source", isolated_request)["reply_to"]["event"], isolated_anchor)
+                      isolated_reference["event"], isolated_anchor)
             ctx.equal("quoted original and focus share the plugin dependency",
                       s.rows("SELECT source FROM source_holds WHERE owner=? AND item=? ORDER BY source",
                              "participation", f"participation:{isolated_reply}"),
@@ -702,6 +718,13 @@ def run(ctx):
             s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
             ctx.equal("erased anchor is unavailable from the unchanged reply envelope",
                       p.call("participation.source", isolated_request)["reply_to"], None)
+            p.call("participation.promote", {"event": isolated_reply, "expected_reply": isolated_reference}, False)
+            ctx.equal("the admission transaction rejects a focus with a withdrawn original anchor",
+                      s.rows("SELECT event_id FROM accepted_sources WHERE event_id=?", isolated_reply), [])
+            proofs["conditional_reply"] = {
+                "confirmed_self_focus": self_reply, "confirmed_self_reference": self_reference,
+                "withdrawn_human_focus": isolated_reply, "withdrawn_human_reference": isolated_reference,
+            }
             s.op("account", "transfer", s.handles[s.c]["assignment"], 200000, 200000, "--person", s.a)
             ctx.equal("cold read after account transfer retains the event-time target",
                       p.call("participation.source", mention_request)["mentions"], frozen_mentions)
