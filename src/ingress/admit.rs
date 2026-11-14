@@ -372,7 +372,10 @@ pub async fn apply(conn: &mut SqliteConnection, request: &Admission) -> Result<(
         };
         let entry = entry_for(conn, f, facts).await?;
         let id:i64=sqlx::query_scalar("INSERT INTO events(source_scope,source_key,entry_id,account_id,raw_actor,actor_stage,
-            bot_stage,occurred_at,observed_at,envelope,mentions) VALUES(?,?,?,?,?,?,?,?,?,?,?) RETURNING id")
+            bot_stage,occurred_at,observed_at,envelope,mentions,observed_generation)
+            VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,
+                CASE WHEN ?3 IS NOT NULL THEN coalesce((SELECT generation FROM main_windows WHERE conversation=?3),1) END)
+            RETURNING id")
             .bind(&scope).bind(&f.source).bind(&entry).bind(&f.account).bind(&facts.actor).bind(&facts.stage)
             .bind(&f.bot_stage).bind(f.occurred).bind(f.observed).bind(serde_json::to_string(f)?)
             .bind(facts.mentions.to_string()).fetch_one(&mut *conn).await?;

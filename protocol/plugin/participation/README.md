@@ -8,6 +8,16 @@ A SELF proposal has a stable plugin-scoped key, an approved scene and its own re
 
 Source pages expose bounded previews with actual IDs. Detailed source reads use bounded byte pages and acquire the plugin's erasure obligation before returning content. Auxiliary reviews declare those source IDs through the auxiliary model interface. Feedback derives confirmed, failed, unknown and quiet outcomes from the original execution and physical send records.
 
+Request `include_origin: true` on `participation.source` for the original entry,
+raw Person and account assignment. The same scoped read also reports the
+current Person root and conversation generation. Compare that generation with
+`observed_generation`, captured by the ingress writer when it first stored the
+event. A pre-migration observation has `observed_generation: null`. The original
+envelope bytes and their version are unchanged. For a live continuation, pass
+the observed value as `expected_generation` to `participation.promote`. The
+writer requires it to match both the stored observation and the current
+conversation generation before promotion.
+
 Acceptance races rule and invitation promotion, transfer or disable the original actor, erase a hydrated source, restart without the original envelope, pause a group before activation, and exercise a real SELF send after another member's message. The receiver, original execution, source IDs and model request counts are recorded in `promotion-vs-self.json`.
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
