@@ -28,6 +28,7 @@ pub(super) async fn run(
             generation: generation.into(),
             request: request.into(),
             reflection_budget: store.reflection_budget.clone(),
+            foreground: super::super::maintenance::reflection_foreground(store),
         },
     )
     .await?;

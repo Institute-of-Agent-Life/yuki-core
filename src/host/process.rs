@@ -455,7 +455,12 @@ pub async fn launch(
                             };
                             write(&s,Change::Callback(l.plugin.clone(),l.generation.clone(),method,msg["params"].clone(),digest)).await
                         };
-                        let out=match r{Ok(v)=>json!({"result":v}),Err(_)=>json!({"error":{"code":-32003,"message":"method, grant or original scope denied"}})};
+                        let out=match r{
+                            Ok(v)=>json!({"result":v}),
+                            Err(e) if e.is::<super::maintenance::ReflectionDeferred>()=>
+                                json!({"error":{"code":-32003,"message":"reflection_deferred_for_foreground"}}),
+                            Err(_)=>json!({"error":{"code":-32003,"message":"method, grant or original scope denied"}})
+                        };
                         let mut frame=out;frame["id"]=msg["id"].clone();frame["jsonrpc"]=json!("2.0");
                         if !l.notify(frame){l.stop();}
                     });

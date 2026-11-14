@@ -140,6 +140,7 @@ pub(crate) async fn authorize(db: &mut SqliteConnection, execution: &str) -> Res
             generation,
             method: "maintenance.reembed".into(),
             paid_request: None,
+            foreground: None,
             params: json!({"scope":row.get::<String,_>("scope"),"purpose":row.get::<String,_>("purpose")}),
         };
         let g = scope::resolve(db, &c).await?;

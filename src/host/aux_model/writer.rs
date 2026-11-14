@@ -394,6 +394,7 @@ async fn dispatch(
     generation: &str,
     id: &str,
     reflection_budget: Option<&crate::host::maintenance::ReflectionBudget>,
+    foreground: Option<&(crate::runtime::main::activity::Active, u32)>,
 ) -> Result<Value> {
     super::super::domain::active(db, plugin, generation, "llm.complete").await?;
     let row = load(db, plugin, id).await?;
@@ -406,6 +407,10 @@ async fn dispatch(
         return Ok(json!({"dispatch_now":false}));
     }
     let route = authorized_route(db, &row, plugin, generation, true).await?;
+    let origin: Value = serde_json::from_str(row.get("origin"))?;
+    if row.get::<&str, _>("purpose") == "reflect" && origin["maintenance"].is_string() {
+        super::super::maintenance::check_reflection_foreground(db, foreground).await?;
+    }
     sqlx::query("UPDATE host_aux_requests SET dispatched_generation=? WHERE id=?")
         .bind(generation)
         .bind(id)
@@ -423,7 +428,6 @@ async fn dispatch(
     // A quota denial rolls back the dispatch. Count the attempt using its
     // recorded timestamp, including when this transaction crosses midnight.
     if let Some(budget) = reflection_budget {
-        let origin = serde_json::from_str(row.get("origin"))?;
         budget
             .admit(db, &attempt, row.get("purpose"), &origin)
             .await?;
@@ -523,7 +527,18 @@ pub(in crate::host) async fn apply(db: &mut SqliteConnection, change: &Change) -
             generation,
             request,
             reflection_budget,
-        } => dispatch(db, plugin, generation, request, reflection_budget.as_ref()).await,
+            foreground,
+        } => {
+            dispatch(
+                db,
+                plugin,
+                generation,
+                request,
+                reflection_budget.as_ref(),
+                foreground.as_ref(),
+            )
+            .await
+        }
         Change::Result {
             plugin,
             generation,

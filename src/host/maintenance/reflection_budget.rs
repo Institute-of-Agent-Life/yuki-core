@@ -9,6 +9,7 @@ use sqlx::SqliteConnection;
 pub(crate) struct ReflectionBudget {
     timezone: String,
     max_daily_calls: u32,
+    quiet_seconds: Option<u32>,
 }
 
 impl Default for ReflectionBudget {
@@ -16,6 +17,7 @@ impl Default for ReflectionBudget {
         Self {
             timezone: "Asia/Shanghai".into(),
             max_daily_calls: 96,
+            quiet_seconds: None,
         }
     }
 }
@@ -24,6 +26,10 @@ impl ReflectionBudget {
     pub(crate) fn validate(&self) -> Result<()> {
         self.timezone.parse::<Tz>()?;
         Ok(())
+    }
+
+    pub(crate) fn quiet_seconds(&self) -> Option<u32> {
+        self.quiet_seconds
     }
 
     pub(crate) async fn admit(
