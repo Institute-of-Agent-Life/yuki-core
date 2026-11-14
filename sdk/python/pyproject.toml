@@ -1,6 +1,6 @@
 [project]
 name = "yuki-plugin-sdk"
-version = "1.0.0a25"
+version = "1.0.0a26"
 description = "Unpublished Yuki plugin stdio handshake preview"
 requires-python = ">=3.12"
 license = "AGPL-3.0-only"

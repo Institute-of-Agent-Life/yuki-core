@@ -88,6 +88,9 @@
           "cursor": {
             "type": "integer",
             "minimum": 0
+          },
+          "include_origin": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -119,6 +122,26 @@
           },
           "complete": {
             "type": "boolean"
+          },
+          "origin": {
+            "type": "object",
+            "properties": {
+              "entry": { "type": "string" },
+              "original_person": { "type": "string" },
+              "actor_assignment": { "type": "string" },
+              "current_person": { "type": "string" },
+              "observed_generation": { "type": ["integer", "null"], "minimum": 1 },
+              "current_generation": { "type": "integer", "minimum": 1 }
+            },
+            "required": [
+              "entry",
+              "original_person",
+              "actor_assignment",
+              "current_person",
+              "observed_generation",
+              "current_generation"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -140,6 +163,10 @@
         "type": "object",
         "properties": {
           "event": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expected_generation": {
             "type": "integer",
             "minimum": 1
           }

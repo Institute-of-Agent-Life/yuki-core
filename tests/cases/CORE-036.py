@@ -5,8 +5,10 @@ import hashlib
 import importlib.util
 import json
 import os
+import sqlite3
 import subprocess
 import sys
+from contextlib import closing
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from tests.harness.compact import reply, call
@@ -187,6 +189,17 @@ def run(ctx):
                 json.loads(base64.b64decode(raw["data"]))["source"],
                 "race-source",
             )
+            origin_query = {"event": src, "version": raw["version"], "include_origin": True}
+            origin_page = p.call("participation.source", origin_query)
+            first_origin = {
+                "entry": entry, "original_person": s.a,
+                "actor_assignment": s.handles[s.a]["assignment"], "current_person": s.a,
+                "observed_generation": 1, "current_generation": 1,
+            }
+            ctx.equal("source origin comes from the actual ingress row", origin_page["origin"], first_origin)
+            ctx.equal("opting in leaves the original envelope and version intact",
+                      {key: value for key, value in origin_page.items() if key != "origin"}, raw)
+            p.call("participation.source", {**origin_query, "entry": foreign}, False)
             ctx.equal(
                 "preview acquires original owner obligation",
                 s.rows(
@@ -198,7 +211,7 @@ def run(ctx):
             )
             p.call("participation.source", {"event": src, "version": "wrong"}, False)
             # Rule admission races two invitation callbacks over the exact stored ID.
-            a = p.submit("participation.promote", {"event": src})
+            a = p.submit("participation.promote", {"event": src, "expected_generation": 1})
             b = p.submit("participation.promote", {"event": src})
             with ThreadPoolExecutor(max_workers=1) as pool:
                 same = pool.submit(
@@ -362,9 +375,11 @@ def run(ctx):
             )
             p.call("participation.promote", {"event": erase}, False)
             p.call("participation.source", {"event": erase}, False)
+            p.call("participation.source", {"event": erase, "include_origin": True}, False)
             disabled = record("disabled-before-promote", "original disabled actor", s.c)
             s.op("person", "set-enabled", s.c, "false")
             p.call("participation.promote", {"event": disabled}, False)
+            p.call("participation.source", {"event": disabled, "include_origin": True}, False)
             s.op("person", "set-enabled", s.c, "true")
             proofs["erasure"] = {
                 "event": erase,
@@ -372,7 +387,32 @@ def run(ctx):
                     "SELECT event_id FROM accepted_sources WHERE event_id=?", erase
                 ),
             }
+            reset = record("reset-window", "/ai new", accept=True)
+            s.until(lambda: s.rows("SELECT event FROM main_controls WHERE event=?", reset))
+            for generation in (1, 2):
+                p.call("participation.promote", {"event": unrelated, "expected_generation": generation}, False)
+            ctx.equal("a stale observation cannot start a new turn after reset",
+                      s.rows("SELECT event_id FROM accepted_sources WHERE event_id=?", unrelated), [])
+            fresh = record("new-window-observation", "observed without Main")
+            fresh_origin = p.call("participation.source", {"event": fresh, "include_origin": True})["origin"]
+            ctx.equal("an unpromoted event records the new generation", fresh_origin,
+                      {**first_origin, "observed_generation": 2, "current_generation": 2})
+            ctx.equal("a redelivery after reset keeps the original event", record("race-source"), src)
+            s.op("person", "merge", s.a, s.b)
+            moved = {**first_origin, "current_person": s.b, "current_generation": 2}
+            ctx.equal("current scope changes without replacing the original observation",
+                      p.call("participation.source", origin_query)["origin"], moved)
             qq.close()
+        # Insert an event with the pre-migration column list in this isolated database.
+        # It has original authority but no observation-time generation evidence.
+        with closing(sqlite3.connect(s.svc.data / "core.sqlite")) as database, database:
+            legacy = database.execute(
+                """INSERT INTO events(source_scope,source_key,entry_id,account_id,raw_actor,actor_stage,
+                       bot_stage,occurred_at,observed_at,envelope,mentions)
+                   SELECT source_scope,'pre-reader-61',entry_id,account_id,raw_actor,actor_stage,
+                       bot_stage,occurred_at,observed_at,json_set(envelope,'$.source','pre-reader-61'),mentions
+                   FROM events WHERE id=? RETURNING id""", (fresh,)
+            ).fetchone()[0]
         with s.svc.running(environment=env):
             # No process-local envelope is recreated after a cold start.
             again = p.call("participation.self_propose", proposal)
@@ -385,6 +425,14 @@ def run(ctx):
             ctx.check(
                 "cold duplicate does not generate new model attempt", http.wires.empty()
             )
+            cold_origin = p.call("participation.source", origin_query)["origin"]
+            legacy_origin = p.call("participation.source", {"event": legacy, "include_origin": True})["origin"]
+            p.call("participation.promote", {"event": legacy, "expected_generation": 2}, False)
+            ctx.equal("cold hydration retains the original identity and generation", cold_origin, moved)
+            ctx.equal("older rows without a recorded observation generation remain unknown",
+                      legacy_origin, {**moved, "observed_generation": None})
+            proofs["observation_origin"] = {"event": src, "original": first_origin, "cold": cold_origin,
+                                            "fresh": fresh_origin, "legacy": legacy_origin}
         import re
 
         config.write_text(
