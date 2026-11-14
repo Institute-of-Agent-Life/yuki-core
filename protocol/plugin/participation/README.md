@@ -26,6 +26,16 @@ or erased anchor, unknown generation, SELF echo or ambiguous locator yields
 before returning the reference. The reply projection does not alter the focus
 envelope or authorize promotion by itself.
 
+With `include_self: true`, a reply can also reference an acknowledged group
+delivery by its canonical delivery event. Read that event with the same
+option and version. Its paged JSON is a `kind: "self"` record with the event,
+entry, original receiving stage, generation, observed time and delivered
+text. A late echo keeps the original ID and bytes. A different topic,
+receiver, generation or ambiguous locator cannot select that delivery.
+Only visible confirmed delivery text is served. The owner ledger retains
+the reference, including for input-source erasure. Human source reads and
+promotions retain their existing authority rules.
+
 Send `mention_cursor: 0` to read the first page of original native annotations.
 Each page holds up to 16 items in ingress order, including repeated targets.
 Use `mentions.next` as the next mention cursor and keep the source `version`.
@@ -44,4 +54,4 @@ Acceptance races rule and invitation promotion, transfer or disable the original
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.28` and Python `1.0.0a28`. True EXT-025 consumption is pending. The core provides no sampling or Jev algorithm.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.30` and Python `1.0.0a30`. EXT-025's installed library has exercised the native review on the previous candidate. The core provides source authority and transport while the library owns semantic decisions.

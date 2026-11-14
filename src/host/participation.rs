@@ -1,6 +1,7 @@
 mod feedback;
 mod mentions;
 mod proposals;
+mod self_source;
 mod sources;
 use crate::{Result, runtime::main::Config, store::Store};
 use serde::{Deserialize, Serialize};

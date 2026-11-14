@@ -1,4 +1,8 @@
-**CORE-050 Jev 原生線路。** 分支 `codex/core-050-jev-wire`，未發布 SDK alpha.29／a29、reader 62。原始觀察使用已安裝的 Jev route、同一邏輯請求和物理 attempt 帳本。Mac 預驗通過 743 項，回條在 `artifacts/CORE-050/jev-native-macos-06/manifest.json`。待三端驗收、原 SELF 引用、普通 UnitBinding 和固定參與庫消費重放。
+**CORE-036 原 SELF 引用。** 分支 `codex/core-036-source-self`，未發布 SDK alpha.30／a30、reader 62。原訊息引用以已確認的群內投遞定位，遲到的回聲沿用同一 ID。跨入口、跨代次及歧義查詢拒絕引用。Mac 預驗 `artifacts/CORE-036/source-self-macos-07/manifest.json` 通過 353 項檢查，含擦除原真人輸入後撤回投遞引用及通知已取得原投遞的 owner。
+
+**CORE-050 Jev 原生線路。** [#144](https://github.com/Institute-of-Agent-Life/yuki-core/pull/144) 合入 `a5f36b7ed6b0`。Mac、Linux 和雲端 Windows 各通過 52 張卡及 200 項原生檢查，CORE-050 各 743 項。未發布 SDK alpha.29／a29、reader 62。候選索引 `artifacts/CORE-039/pr144-core050-jev-wire-01/verified-candidates.json` SHA-256 `5b59f9054eada2aa59c774141199b401842ea60ab5b67b1d5042e2eac0af5206`。合併回條 `artifacts/ci/local-pr/144/main-confirmation.json` SHA-256 `42c84a5b846c9f2b591f843b45df8417125920e86f266786fa15f3449ac98e1c`。[Windows CI](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/43642403026)
+
+**EXT-025 固定庫消費回放。** [擴展 #102](https://github.com/Institute-of-Agent-Life/yuki-extensions/pull/102) 合入 `68db117b77ba`。同一核心來源 `d2b1b9af1d94` 在三端各完成原引用和提及到 Jev 的一次回環派發，重取原回條，零付費及零 Main 接納。擴展整卡仍待普通 UnitBinding、快照和正式運行路徑。[Windows CI](https://github.com/Institute-of-Agent-Life/yuki-extensions/actions/runs/43643774692)
 
 **CORE-036 原生提及。** 分支 `codex/core-036-source-mentions`，[#143](https://github.com/Institute-of-Agent-Life/yuki-core/pull/143) 合入 `e3056b05a3dd`。三端各通過 52 張卡、200 項原生檢查。插件分頁取得入站時的提及身分和位置。忘記提及對象後，已讀取的插件收到原事件 ID，關聯回應保留用量。候選 reader 62、SDK alpha.28／a28，索引 `artifacts/CORE-039/pr143-core036-source-mentions-01/verified-candidates.json` SHA-256 `cb1d319de70381ef83dcf528d8f93f8ea1098085c749bbca39bc98d2080b51bb`。合併回條 SHA-256 `54ea27811744440c1b35a1bab3ada1d54aa13c4cfec94b017129118668c35a88`。[Windows CI](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/43596726929)
 

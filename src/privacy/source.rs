@@ -142,6 +142,33 @@ pub async fn acquire(
     read(conn, owner, item, source).await
 }
 
+pub(crate) async fn retain_self_delivery(
+    conn: &mut SqliteConnection,
+    owner: &str,
+    item: &str,
+    event: i64,
+) -> Result<()> {
+    let available: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM source_owners o JOIN personal_live_deliveries d ON d.event=?1
+         WHERE o.id=?2 AND o.enabled AND NOT EXISTS(
+           SELECT 1 FROM owner_erasures WHERE owner=o.id AND proof IS NULL))",
+    )
+    .bind(event)
+    .bind(owner)
+    .fetch_one(&mut *conn)
+    .await?;
+    if !available {
+        return Err("original SELF owner or delivery unavailable".into());
+    }
+    sqlx::query("INSERT INTO source_holds(owner,item,source) VALUES(?,?,?) ON CONFLICT DO NOTHING")
+        .bind(owner)
+        .bind(item)
+        .bind(event)
+        .execute(conn)
+        .await?;
+    Ok(())
+}
+
 pub fn accounting_only(raw: &str) -> String {
     let usage: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
     if !usage.is_object() {
