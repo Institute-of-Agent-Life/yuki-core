@@ -3773,6 +3773,11 @@
             "type": "integer",
             "minimum": 0
           },
+          "before": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "With purpose reflect, return up to four earlier original messages in the anchor event's installed entry. The result cursor is the anchor event. Use this selector by itself."
+          },
           "event": {
             "type": "integer",
             "minimum": 0

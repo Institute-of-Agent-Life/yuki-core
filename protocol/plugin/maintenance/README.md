@@ -66,6 +66,14 @@ select that receipt by themselves. An optional `execution` further narrows the
 result. Page with `after` and keep the returned `next` cursor within the same
 selection. The query preserves original receipt IDs, versions and erasure holds.
 
+For a reflection batch, call `maintenance.history.page` with `purpose: "reflect"`
+and `before` set to the original trigger event. The Host returns up to four
+earlier readable messages in the same installed entry, in ascending event
+order. Use `before` alone. The returned `next_event` is the anchor, and the
+forward history cursor belongs to the caller's original batch. Keep the event
+IDs and versions as context. The reviewed preview requires primary sources for
+any new evidence.
+
 An operator can set `quiet_seconds` in `[reflection_budget]` to defer
 `reflect` history and tool selection, model opening and dispatch, preview
 and apply while a human Main turn is queued or running. The same quiet

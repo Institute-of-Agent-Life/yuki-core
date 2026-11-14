@@ -243,7 +243,8 @@ def tool_snapshot_sources(ctx, sdk, aux):
 
     folder = ctx.working / "maintenance-snapshot-peer"
     folder.mkdir()
-    methods = ["maintenance.tool.page", "maintenance.evidence", "maintenance.dependencies"]
+    methods = ["maintenance.tool.page", "maintenance.evidence", "maintenance.dependencies",
+               "maintenance.history.page"]
     args = [str(ctx.root / "tests/peers/aux-model/peer.py"), str(folder),
             str(sdk / "python-install")]
     with (o.svc.data / "yuki.toml").open("a", encoding="utf-8") as config:
@@ -273,6 +274,16 @@ def tool_snapshot_sources(ctx, sdk, aux):
                   peer.call("maintenance.tool.page", {**query, "event": written})["items"], [])
         ctx.equal("foreign event exposes no tool result",
                   peer.call("maintenance.tool.page", {**params, "event": other_event})["items"], [])
+        context_query = {**params, "before": read}
+        context = peer.call("maintenance.history.page", context_query)
+        ctx.equal("reflection context uses the original entry and prior events",
+                  [item["event"] for item in context["items"]], [written])
+        ctx.equal("reflection context leaves its cursor at the anchor", context["next_event"], read)
+        ctx.equal("reflection context cannot cross an installed entry",
+                  peer.call("maintenance.history.page", {**params, "before": other_event}, ok=False)["error"]["code"], -32003)
+        ctx.equal("reflection context cannot mix with a forward or explicit read",
+                  [peer.call("maintenance.history.page", {**context_query, selector: read}, ok=False)["error"]["code"]
+                   for selector in ("after", "event")], [-32003, -32003])
         ctx.equal("group scope cannot use a private trigger",
                   peer.call("maintenance.tool.page", {**params, "scope": "group", "event": read})["items"], [])
         ctx.equal("snapshot keeps both real original events", snapshot["source_ids"], [written, read])
@@ -294,10 +305,13 @@ def tool_snapshot_sources(ctx, sdk, aux):
                   peer.call("maintenance.tool.page", query)["items"], [])
         ctx.equal("event selection also fences the erased dependency",
                   peer.call("maintenance.tool.page", {**params, "event": read})["items"], [])
+        ctx.equal("reflection context excludes an erased original source",
+                  peer.call("maintenance.history.page", context_query), {"items": [], "next_event": read})
         ctx.equal("clearing the value keeps the separate original read event",
                   o.rows("SELECT source FROM invalidated_sources ORDER BY source"), [(written,)])
     return {"write_event": written, "read_event": read, "source_ids": refs["sources"],
             "original_receipt": snapshot["receipt"], "event_page": by_event,
+            "reflection_context": context,
             "invalidated_source": written}
 
 
