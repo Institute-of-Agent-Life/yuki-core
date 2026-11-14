@@ -11,6 +11,30 @@ from source import digest
 
 
 class LocalMatrix(unittest.TestCase):
+    def test_hosted_windows_receipt_requires_the_successful_run_for_this_merge(self):
+        url = f"https://github.com/{local_matrix.REPO}/actions/runs/42"
+        receipt = dict(merge_commit='merge', run=42, job=43, attempt=2,
+                       workflow_commit='workflow', url=url)
+        run = dict(head_sha='workflow', html_url=url, path='.github/workflows/check.yml',
+                   run_attempt=2, conclusion='success')
+        job = dict(run_id=42, conclusion='success', labels=['windows-latest'])
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / 'hosted-run.json').write_text(json.dumps(receipt), encoding='utf-8')
+            with patch.object(local_matrix, 'api', side_effect=[run, job]):
+                self.assertEqual(local_matrix.verify_hosted_windows(
+                    directory, {'commit': 'merge'}, url), receipt)
+            for source, records in [
+                ('other-merge', [run, job]),
+                ('merge', [{**run, 'run_attempt': 3}, job]),
+                ('merge', [run, {**job, 'conclusion': 'failure'}]),
+                ('merge', [run, {**job, 'labels': ['ubuntu-latest']}]),
+            ]:
+                with self.subTest(source=source, records=records), patch.object(
+                    local_matrix, 'api', side_effect=records
+                ), self.assertRaises(ValueError):
+                    local_matrix.verify_hosted_windows(directory, {'commit': source}, url)
+
     def test_stacked_pr_is_bound_to_the_current_base_and_merge(self):
         repo = {'full_name': local_matrix.REPO}
         pr = {'state': 'open', 'head': {'repo': repo, 'sha': 'head'},
