@@ -5,6 +5,7 @@ mod preview;
 mod quality;
 mod reads;
 mod reembed;
+mod reflection_budget;
 mod scope;
 mod tools;
 use crate::{Result, store::Store};
@@ -12,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::SqliteConnection;
 use std::collections::{BTreeMap, BTreeSet};
+
+pub(crate) use reflection_budget::ReflectionBudget;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

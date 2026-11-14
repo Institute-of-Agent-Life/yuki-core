@@ -393,6 +393,7 @@ async fn dispatch(
     plugin: &str,
     generation: &str,
     id: &str,
+    reflection_budget: Option<&crate::host::maintenance::ReflectionBudget>,
 ) -> Result<Value> {
     super::super::domain::active(db, plugin, generation, "llm.complete").await?;
     let row = load(db, plugin, id).await?;
@@ -415,10 +416,18 @@ async fn dispatch(
         db,
         &attempt::Action::Dispatch {
             logical: logical.into(),
-            attempt,
+            attempt: attempt.clone(),
         },
     )
     .await?;
+    // A quota denial rolls back the dispatch. Count the attempt using its
+    // recorded timestamp, including when this transaction crosses midnight.
+    if let Some(budget) = reflection_budget {
+        let origin = serde_json::from_str(row.get("origin"))?;
+        budget
+            .admit(db, &attempt, row.get("purpose"), &origin)
+            .await?;
+    }
     permit["profile"] = serde_json::to_value(route.profile)?;
     permit["task"] = row
         .get::<Option<&str>, _>("task")
@@ -513,7 +522,8 @@ pub(in crate::host) async fn apply(db: &mut SqliteConnection, change: &Change) -
             plugin,
             generation,
             request,
-        } => dispatch(db, plugin, generation, request).await,
+            reflection_budget,
+        } => dispatch(db, plugin, generation, request, reflection_budget.as_ref()).await,
         Change::Result {
             plugin,
             generation,

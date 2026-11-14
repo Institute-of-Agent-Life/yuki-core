@@ -57,6 +57,7 @@ pub enum Change {
         plugin: String,
         generation: String,
         request: String,
+        reflection_budget: Option<super::maintenance::ReflectionBudget>,
     },
     Result {
         plugin: String,
