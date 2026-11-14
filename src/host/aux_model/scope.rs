@@ -135,6 +135,9 @@ pub(in crate::host) async fn resolve_non_session(
                  OR EXISTS(SELECT 1 FROM source_holds WHERE owner=?3 AND source=e.id))",
         ).bind(event).bind(new_request).bind(plugin).bind(generation)
             .fetch_one(&mut *db).await?;
+        if route.jev.is_some() {
+            super::super::participation::authorize_review(db, plugin, event).await?;
+        }
         (entry, None, Some(event))
     };
     if !route.entries.contains(&entry) {

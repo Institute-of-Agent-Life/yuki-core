@@ -211,8 +211,8 @@
     "status": "unpublished-handshake-preview",
     "schema_revision": 1,
     "sdk_versions": {
-      "rust": "1.0.0-alpha.28",
-      "python": "1.0.0a28"
+      "rust": "1.0.0-alpha.29",
+      "python": "1.0.0a29"
     },
     "versions": [
       {

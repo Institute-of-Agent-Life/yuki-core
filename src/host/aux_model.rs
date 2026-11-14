@@ -1,10 +1,11 @@
+mod jev;
 pub(in crate::host) mod scope;
 mod transport;
 mod writer;
 
 use crate::{Result, runtime::main::Config, store::Store};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::collections::BTreeSet;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -16,6 +17,8 @@ pub struct Route {
     pub entries: BTreeSet<String>,
     #[serde(default)]
     pub media: BTreeSet<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jev: Option<jev::Jev>,
 }
 
 impl Route {
@@ -43,7 +46,38 @@ impl Route {
         {
             return Err("auxiliary route requires explicit purpose, entry scope and bounded model capabilities".into());
         }
+        if let Some(jev) = &self.jev {
+            jev.timeout()?;
+            if jev.response_model.trim().is_empty()
+                || self.origins.len() != 1
+                || !self.origins.contains("event")
+                || !self.media.is_empty()
+                || !self.profile.protocol.is_chat()
+                || self.profile.profile_task.is_some()
+                || self.profile.profile_binding.is_some()
+                || self.profile.vision_input
+                || self
+                    .profile
+                    .key_env
+                    .as_deref()
+                    .is_none_or(|key| key.trim().is_empty())
+            {
+                return Err("Jev requires a pinned review profile, event origins and an operator credential".into());
+            }
+        }
         Ok(())
+    }
+
+    fn contract(&self) -> String {
+        self.jev.as_ref().map_or_else(
+            || self.profile.contract(),
+            |jev| {
+                format!(
+                    "jev-v1:{}",
+                    crate::memory::scope::hash(&json!({"profile":self.profile,"jev":jev}))
+                )
+            },
+        )
     }
 }
 

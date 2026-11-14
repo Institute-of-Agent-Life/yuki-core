@@ -1,11 +1,11 @@
-use super::{Change, write};
+use super::{Change, Route, jev, write};
 use crate::{
     Result,
     model::{attempt, chat::Task},
     runtime::main,
     store::Store,
 };
-use serde_json::{Value, json};
+use serde_json::json;
 
 pub(super) async fn run(
     store: &Store,
@@ -38,8 +38,8 @@ pub(super) async fn run(
     }
     #[cfg(test)]
     crate::store::tests::commit_barrier("aux-dispatched-before-http").await;
-    let mut profile: main::Config = serde_json::from_value(permit["profile"].clone())?;
-    crate::model::profile_store::runtime::ready(store, &mut profile)?;
+    let mut route: Route = serde_json::from_value(permit["route"].clone())?;
+    crate::model::profile_store::runtime::ready(store, &mut route.profile)?;
     let task: Option<Task> = serde_json::from_value(permit["task"].clone())?;
     let attempt = permit["attempt"]
         .as_str()
@@ -48,13 +48,14 @@ pub(super) async fn run(
     let raw = permit["request_raw"]
         .as_str()
         .ok_or("original auxiliary request missing")?;
+    let timeout = route.jev.as_ref().map(|jev| jev.timeout()).transpose()?;
     let client = reqwest::Client::builder()
         .no_proxy()
         .redirect(reqwest::redirect::Policy::none())
         .retry(reqwest::retry::never())
-        .timeout(std::time::Duration::from_secs(30))
+        .timeout(timeout.unwrap_or(std::time::Duration::from_secs(30)))
         .build()?;
-    let physical = main::physical_request(&client, &profile, raw);
+    let physical = main::physical_request(&client, &route.profile, raw);
     let result = match (foreground, permit["foreground_generation"].as_u64()) {
         (Some((active, _)), Some(generation)) => {
             tokio::select! {
@@ -74,7 +75,12 @@ pub(super) async fn run(
         return Ok(());
     };
     let body = String::from_utf8_lossy(&bytes).into_owned();
-    let usage = profile.protocol.usage(&body).to_string();
+    let usage = if route.jev.is_some() {
+        jev::usage(&body)
+    } else {
+        route.profile.protocol.usage(&body)
+    }
+    .to_string();
     let action = if !complete {
         attempt::Action::Hold {
             attempt,
@@ -93,14 +99,20 @@ pub(super) async fn run(
             body,
             usage,
         }
-    } else if !profile
-        .protocol
-        .complete(&serde_json::from_str(&body).unwrap_or(Value::Null))
-        || profile
-            .protocol
-            .decode(&body, task.as_ref(), &profile, &serde_json::from_str(raw)?)
-            .is_err()
-    {
+    } else if if let Some(jev) = &route.jev {
+        jev.result(&body).is_err()
+    } else {
+        let protocol = route.profile.protocol;
+        !protocol.complete(&serde_json::from_str(&body).unwrap_or_default())
+            || protocol
+                .decode(
+                    &body,
+                    task.as_ref(),
+                    &route.profile,
+                    &serde_json::from_str(raw)?,
+                )
+                .is_err()
+    } {
         attempt::Action::Hold {
             attempt,
             body,

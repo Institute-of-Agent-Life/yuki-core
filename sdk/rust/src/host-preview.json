@@ -3229,6 +3229,23 @@
             "type": "string",
             "maxLength": 16000
           },
+          "jev": {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "object"
+              },
+              "questions": {
+                "type": "object",
+                "minProperties": 1
+              }
+            },
+            "required": [
+              "state",
+              "questions"
+            ],
+            "additionalProperties": false
+          },
           "context": {
             "type": "array",
             "maxItems": 32,
@@ -3275,8 +3292,53 @@
           "origin",
           "call_id",
           "route",
-          "purpose",
-          "text"
+          "purpose"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "text"
+            ],
+            "not": {
+              "required": [
+                "jev"
+              ]
+            }
+          },
+          {
+            "required": [
+              "jev"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "text"
+                  ]
+                },
+                {
+                  "required": [
+                    "context"
+                  ]
+                },
+                {
+                  "required": [
+                    "task"
+                  ]
+                },
+                {
+                  "required": [
+                    "selected_media"
+                  ]
+                },
+                {
+                  "required": [
+                    "media"
+                  ]
+                }
+              ]
+            }
+          }
         ],
         "additionalProperties": false,
         "not": {
