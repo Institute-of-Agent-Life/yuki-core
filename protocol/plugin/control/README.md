@@ -63,7 +63,9 @@ rechecks the original execution, source, route and generation; an operator
 cannot grant an unknown paid request another attempt.
 
 `control.read` with action `trace.export` uses the original `command.invoke`
-handle. Pass the same `kind`, `identity`, optional `after`, and optional
+handle. The Host routes `/ai trace export` to the installed
+`/ai/trace/export` command and passes the original text. Pass the same
+`kind`, `identity`, optional `after`, and optional
 `content` as for a trace read. The page limit is 20. The result carries the
 tool artifact `handle`, SHA-256 `version`, schema `yuki.trace.export/1`,
 `path` and `next_cursor`. It uses metadata by default. An explicit content

@@ -22,7 +22,7 @@ namespace="trace.fixture"
 program={json.dumps(sys.executable)}
 args={json.dumps(args)}
 grants=["command.invoke","control.invoke"]
-commands=["/trace"]
+commands=["/trace","/ai/trace/export"]
 ''')
     return folder
 
@@ -47,12 +47,14 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
                                 "WHERE plugin='trace.fixture' AND enabled AND online"))
         path = folder / "command.json"
         path.unlink(missing_ok=True)
+        export = method == "trace.export"
+        text = f"/ai trace export turn {execution}" if export else "/trace inspect original timeline"
         event = owner.op("ingress", "record", json.dumps({
             "source": f"trace-reader-{serial}",
             "account": account["account"], "bot_stage": owner.bot["assignment"],
             "reply_bot": "100", "kind": "message",
             "occurred": 2000 + serial, "observed": 2000 + serial,
-            "segments": [{"type": "text", "text": "/trace inspect original timeline"}],
+            "segments": [{"type": "text", "text": text}],
         }), "--accept")["event"]
         try:
             command = wait(lambda: json.loads(path.read_bytes()))
@@ -64,6 +66,11 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
                 "bindings": owner.rows("SELECT path,plugin FROM host_commands"),
             })
             raise
+        if export:
+            ctx.equal("chat export routes to the exact installed plugin command",
+                      command["params"]["name"], "/ai/trace/export")
+            ctx.equal("the plugin receives the original export text",
+                      command["params"]["arguments"]["text"], text)
         handle = command["params"]["handle"]
         send(f"request-{serial}.json", {
             "id": serial, "method": "control.read",
