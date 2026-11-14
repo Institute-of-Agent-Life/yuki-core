@@ -49,6 +49,7 @@ def run(ctx):
     space = json.dumps(["qq", "schedule", "700"], separators=(",", ":"))
     with s.svc.running():
         entry = s.op("entry", "group", space)["entry"]
+        other_topic = s.op("entry", "group", space, "--topic", "observed-other")["entry"]
         foreign = s.op("entry", "group", json.dumps(["qq", "schedule", "701"]))["entry"]
         open_entry = s.op("entry", "group", json.dumps(["qq", "schedule", "702"]))[
             "entry"
@@ -104,7 +105,7 @@ def run(ctx):
                 + "\ngrants="
                 + json.dumps(grants)
                 + "\n[plugins.participation]\nentries="
-                + json.dumps([entry, open_entry])
+                + json.dumps([entry, open_entry, other_topic])
                 + "\n[plugins.participation.self_scenes]\n"
                 + json.dumps(entry)
                 + "="
@@ -478,6 +479,46 @@ def run(ctx):
                 1,
             )
             ctx.check("actual send is not quiet", not actual["executions"][0]["quiet"])
+            self_anchor = s.rows(
+                "SELECT d.event FROM personal_deliveries d JOIN social_outbound o ON o.id=d.outbound "
+                "WHERE o.namespace=? AND o.locator='36003'", self_exec,
+            )[0][0]
+            self_reply = record("reply-to-confirmed-self", quoted=("36003",))
+            read_self_reply = {"event": self_reply, "include_reply": True, "include_self": True}
+            ctx.equal("existing human-only read omits confirmed SELF",
+                      p.call("participation.source", {"event": self_reply, "include_reply": True})["reply_to"], None)
+            self_reference = p.call("participation.source", read_self_reply)["reply_to"]
+            ctx.equal("quote uses the original confirmed SELF ledger event", self_reference["event"], self_anchor)
+            self_page = p.call("participation.source", {**self_reference, "include_self": True})
+            self_body = json.loads(base64.b64decode(self_page["data"]))
+            ctx.equal("SELF read preserves the published delivery identity and text",
+                      (self_body["event"], self_body["kind"], self_body["text"], self_body["receiver"],
+                       self_body["generation"]),
+                      (self_anchor, "self", "original SELF group delivery", s.bot["assignment"], 1))
+            ctx.equal("the participation owner retains the original delivery source",
+                      s.rows("SELECT source FROM source_holds WHERE owner=? AND item=? AND source=?",
+                             "participation", "participation:" + str(self_reply), self_anchor), [(self_anchor,)])
+            p.call("participation.source", self_reference, False)
+            p.call("participation.promote", {"event": self_anchor}, False)
+            wrong_topic = record("self-reply-wrong-topic", quoted=("36003",), topic="observed-other")
+            ctx.equal("authorized topic cannot select a delivery from another entry",
+                      p.call("participation.source", {**read_self_reply, "event": wrong_topic})["reply_to"], None)
+            colliding = record("ambiguous-self-locator", native="36003", person=s.c)
+            ambiguous = record("ambiguous-self-quote", quoted=("36003",))
+            ctx.equal("a confirmed SELF and another original locator stay ambiguous before any echo",
+                      p.call("participation.source", {**read_self_reply, "event": ambiguous})["reply_to"], None)
+            ctx.check("colliding observation is distinct from the published SELF",
+                      colliding != self_anchor)
+            qq.send({**qq_message, "user_id": 100, "post_type": "message_sent",
+                     "message_id": 36003, "message": "original SELF group delivery"})
+            s.until(lambda: s.rows(
+                "SELECT echo_event FROM social_outbound WHERE locator='36003' AND echo_event IS NOT NULL"
+            ))
+            ctx.equal("a late authentic echo does not replace the confirmed SELF event",
+                      p.call("participation.source", read_self_reply)["reply_to"], self_reference)
+            early_echo = {"event": self_anchor, "include_self": True, "version": self_reference["version"]}
+            ctx.equal("SELF content and hash are invariant after late echo",
+                      p.call("participation.source", early_echo), self_page)
             duplicate = p.call("participation.self_propose", proposal)
             ctx.equal(
                 "same SELF proposal keeps execution",
@@ -492,7 +533,35 @@ def run(ctx):
                 "admitted": admitted,
                 "feedback": actual,
                 "route": delivered,
+                "source": self_reference,
             }
+            delivery_origin = record("erasable-delivery-origin", "human input for a reply", s.c)
+            p.call("participation.promote", {"event": delivery_origin})
+            _, q = s.wire(http)
+            reply(q, calls=[call("send-for-erasure", "send", {"text": "retained derived text"})])
+            s.deliver(qq, "send_group_msg", 36004)
+            _, q = s.wire(http)
+            reply(q, "finished")
+            derived_focus = record("reply-to-erasable-delivery", quoted=("36004",))
+            derived_request = {**read_self_reply, "event": derived_focus}
+            derived = p.call("participation.source", derived_request)["reply_to"]
+            ctx.check("a human-triggered delivery has a readable canonical SELF source", derived is not None)
+            derived_page = {**derived, "include_self": True}
+            p.call("participation.source", derived_page)
+            erased_delivery = s.op("privacy", "erase", "participation-delivery-origin", s.c,
+                                   json.dumps([delivery_origin]))
+            ctx.equal("erasure covers the retained delivery derived from the original input",
+                      erased_delivery["sources"], [delivery_origin, derived["event"]])
+            obligations = s.rows("SELECT sources FROM owner_erasures WHERE watermark=? AND owner='participation'",
+                                 erased_delivery["watermark"])
+            ctx.equal("the owner receives the original derived delivery ID in its erasure obligation",
+                      [json.loads(row[0]) for row in obligations], [erased_delivery["sources"]])
+            s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
+            ctx.equal("erasing the original input removes the retained SELF anchor",
+                      p.call("participation.source", derived_request)["reply_to"], None)
+            p.call("participation.source", derived_page, False)
+            proofs["self"]["erasure"] = {"origin": delivery_origin, "derived": derived,
+                                          "invalidated": erased_delivery["sources"]}
             # Erased source is unavailable even though this generation has seen it.
             erase = record("erase-before-promote", "erasure canary", s.c)
             p.call("participation.source", {"event": erase})
@@ -529,6 +598,10 @@ def run(ctx):
             past_quote = record("reply-before-reset", quoted=("36011",))
             ctx.equal("a reply in the new generation cannot take an old anchor",
                       p.call("participation.source", {"event": past_quote, "include_reply": True})["reply_to"], None)
+            old_self = record("self-reply-across-reset", quoted=("36003",))
+            ctx.equal("new generation cannot select a prior SELF delivery",
+                      p.call("participation.source", {**read_self_reply, "event": old_self})["reply_to"], None)
+            p.call("participation.source", early_echo, False)
             ctx.equal("a redelivery after reset keeps the original event", record("race-source"), src)
             s.op("person", "merge", s.a, s.b)
             moved = {**first_origin, "current_person": s.b, "current_generation": 2}

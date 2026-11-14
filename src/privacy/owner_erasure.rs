@@ -45,7 +45,13 @@ pub(super) async fn erase_sources(
     let sources: Vec<i64> = sqlx::query_scalar(
         "WITH RECURSIVE erased(id) AS(SELECT value FROM json_each(?) UNION
          SELECT p.event FROM erased e JOIN notification_sources d ON d.source=e.id
-         JOIN notification_publications p ON p.id=d.publication)
+         JOIN notification_publications p ON p.id=d.publication UNION
+         SELECT anchor.event FROM erased e JOIN main_dependencies dep ON dep.event=e.id
+         JOIN social_outbound o ON o.namespace=dep.execution JOIN personal_deliveries anchor ON anchor.outbound=o.id
+         JOIN participation_held_sources retained ON retained.source=anchor.event UNION
+         SELECT anchor.event FROM erased e JOIN executions x ON x.source=e.id
+         JOIN social_outbound o ON o.namespace=x.id JOIN personal_deliveries anchor ON anchor.outbound=o.id
+         JOIN participation_held_sources retained ON retained.source=anchor.event)
          SELECT id FROM erased ORDER BY id",
     )
     .bind(serde_json::to_string(&sources)?)
@@ -99,8 +105,19 @@ pub(super) async fn erase_sources(
     // A participation reader can have a copy of an event authored by somebody else.
     if let Some(members) = family {
         let copies: Vec<(String, i64)> = sqlx::query_as(
-            "SELECT DISTINCT h.owner,h.source FROM participation_held_sources h JOIN event_person_mentions m ON m.event=h.source
-             WHERE m.person IN(SELECT value FROM json_each(?))",
+            "SELECT DISTINCT h.owner,h.source FROM participation_held_sources h
+             JOIN event_person_mentions m ON m.event=h.source
+             WHERE m.person IN(SELECT value FROM json_each(?1))
+             UNION
+             SELECT DISTINCT h.owner,h.source FROM participation_held_sources h
+             JOIN personal_deliveries d ON d.event=h.source JOIN social_outbound o ON o.id=d.outbound
+             JOIN main_dependencies dep ON dep.execution=o.namespace JOIN event_person_mentions m ON m.event=dep.event
+             WHERE m.person IN(SELECT value FROM json_each(?1))
+             UNION
+             SELECT DISTINCT h.owner,h.source FROM participation_held_sources h
+             JOIN personal_deliveries d ON d.event=h.source JOIN social_outbound o ON o.id=d.outbound
+             JOIN executions x ON x.id=o.namespace JOIN event_person_mentions m ON m.event=x.source
+             WHERE m.person IN(SELECT value FROM json_each(?1))",
         )
         .bind(members)
         .fetch_all(&mut *conn)

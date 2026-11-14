@@ -95,6 +95,9 @@
           "include_reply": {
             "type": "boolean"
           },
+          "include_self": {
+            "type": "boolean"
+          },
           "mention_cursor": {
             "type": "integer",
             "minimum": 0,

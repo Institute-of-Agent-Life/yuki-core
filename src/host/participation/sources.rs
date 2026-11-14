@@ -1,4 +1,4 @@
-use super::{Change, Policy, mentions};
+use super::{Change, Policy, mentions, self_source};
 use crate::{
     Result,
     ingress::{admit, reply::group_human_reply},
@@ -131,19 +131,20 @@ pub(super) async fn list(db: &mut SqliteConnection, c: &Change, policy: &Policy)
 }
 pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy) -> Result<Value> {
     let id = c.params["event"].as_i64().ok_or("event required")?;
+    if c.params["include_self"] == true
+        && sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM personal_deliveries WHERE event=?)",
+        )
+        .bind(id)
+        .fetch_one(&mut *db)
+        .await?
+    {
+        return self_source::read(db, c, policy, id).await;
+    }
     let original = original(db, &c.plugin, policy, id).await?;
     let frame: Value = serde_json::from_str(&original.envelope)?;
     let raw = serde_json::to_vec(&frame)?;
-    let digest = format!("{:x}", Sha256::digest(&raw));
-    if c.params["version"].as_str().is_some_and(|v| v != digest) {
-        return Err("original source version changed".into());
-    }
-    let start = c.params["cursor"].as_u64().unwrap_or(0) as usize;
-    if start > raw.len() {
-        return Err("invalid source cursor".into());
-    }
-    let end = raw.len().min(start + 8192);
-    let mut page = json!({"event":id,"version":digest,"data":STANDARD.encode(&raw[start..end]),"next":end,"size":raw.len(),"complete":end==raw.len()});
+    let mut page = page(c, id, &raw)?;
     if c.params["include_origin"] == true {
         page["origin"] = json!({
             "entry":original.entry_id,"original_person":original.raw_actor,
@@ -159,24 +160,54 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy)
         page["reply_to"] = Value::Null;
         if frame["kind"] == "message"
             && let Some(generation) = original.observed_generation
-            && let Some(reply) = group_human_reply(db, id).await?
-            && reply.observed_generation == Some(generation)
-            && !sqlx::query_scalar::<_, bool>(
-                "SELECT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=?)",
-            )
-            .bind(reply.event)
-            .fetch_one(&mut *db)
-            .await?
         {
-            let held =
-                source::acquire(db, &c.plugin, &format!("participation:{id}"), reply.event).await?;
-            let raw = serde_json::to_vec(&held["envelope"])?;
-            page["reply_to"] = json!({
-                "event": reply.event,
-                "version": format!("{:x}", Sha256::digest(&raw))
-            });
+            let delivery = if c.params["include_self"] == true {
+                self_source::anchor(db, &c.plugin, policy, id, generation).await?
+            } else {
+                None
+            };
+            if let Some(reference) = delivery {
+                page["reply_to"] = reference;
+            } else if let Some(reply) = group_human_reply(db, id).await?
+                && reply.observed_generation == Some(generation)
+                && !sqlx::query_scalar::<_, bool>(
+                    "SELECT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=?)",
+                )
+                .bind(reply.event)
+                .fetch_one(&mut *db)
+                .await?
+            {
+                let held =
+                    source::acquire(db, &c.plugin, &format!("participation:{id}"), reply.event)
+                        .await?;
+                page["reply_to"] = reference(reply.event, &serde_json::to_vec(&held["envelope"])?);
+            }
         }
     }
+    Ok(page)
+}
+
+pub(super) fn reference(event: i64, raw: &[u8]) -> Value {
+    json!({"event":event,"version":format!("{:x}",Sha256::digest(raw))})
+}
+
+pub(super) fn page(c: &Change, event: i64, raw: &[u8]) -> Result<Value> {
+    let mut page = reference(event, raw);
+    if c.params["version"]
+        .as_str()
+        .is_some_and(|v| page["version"] != v)
+    {
+        return Err("original source version changed".into());
+    }
+    let start = usize::try_from(c.params["cursor"].as_u64().unwrap_or(0))?;
+    if start > raw.len() {
+        return Err("invalid source cursor".into());
+    }
+    let end = raw.len().min(start.saturating_add(8192));
+    page["data"] = json!(STANDARD.encode(&raw[start..end]));
+    page["next"] = json!(end);
+    page["size"] = json!(raw.len());
+    page["complete"] = json!(end == raw.len());
     Ok(page)
 }
 pub(super) async fn promote(
