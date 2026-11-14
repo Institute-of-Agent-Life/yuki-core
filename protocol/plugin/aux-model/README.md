@@ -18,6 +18,10 @@ budget. The route's `jev` table pins `response_model` and `timeout_seconds`. It
 requires event origins in the same enabled participation entries. The original
 human event must belong to the current generation. For any additional context,
 declare the retained event IDs in `sources` from the same entry and generation.
+This can include the canonical SELF delivery already returned as that human
+event's `reply_to` by `participation.source`. The Host verifies the retained
+reply before dispatch and result reads. Erasing the delivery's original input
+removes its derived request and response content while retaining usage.
 
 On that route, send `jev: {state, questions}` with the original call key. The
 Host supplies the configured model and sends the native three-field request.

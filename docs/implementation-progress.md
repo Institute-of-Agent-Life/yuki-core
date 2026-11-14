@@ -1,3 +1,5 @@
+**CORE-050 Jev 引用原 SELF 投遞。** 分支 `codex/core-050-jev-self-context`，未發布 SDK alpha.30／a30、reader 62。只有原真人焦點已取得的同入口引用可加入 Jev。擦除投遞的原真人輸入或其中提及的人後，晚返只保留物理用量。Mac 的 `artifacts/CORE-050/jev-self-macos-04/manifest.json` 通過 360 項檢查，`artifacts/CORE-050/jev-self-aux-macos-01/manifest.json` 通過 743 項。下一步交三端候選供 EXT-025 讀取原投遞及覆核同一接納。
+
 **CORE-036 原 SELF 引用。** 分支 `codex/core-036-source-self`，未發布 SDK alpha.30／a30、reader 62。原訊息引用以已確認的群內投遞定位，遲到的回聲沿用同一 ID。跨入口、跨代次及歧義查詢拒絕引用。Mac 預驗 `artifacts/CORE-036/source-self-macos-07/manifest.json` 通過 353 項檢查，含擦除原真人輸入後撤回投遞引用及通知已取得原投遞的 owner。
 
 **CORE-050 Jev 原生線路。** [#144](https://github.com/Institute-of-Agent-Life/yuki-core/pull/144) 合入 `a5f36b7ed6b0`。Mac、Linux 和雲端 Windows 各通過 52 張卡及 200 項原生檢查，CORE-050 各 743 項。未發布 SDK alpha.29／a29、reader 62。候選索引 `artifacts/CORE-039/pr144-core050-jev-wire-01/verified-candidates.json` SHA-256 `5b59f9054eada2aa59c774141199b401842ea60ab5b67b1d5042e2eac0af5206`。合併回條 `artifacts/ci/local-pr/144/main-confirmation.json` SHA-256 `42c84a5b846c9f2b591f843b45df8417125920e86f266786fa15f3449ac98e1c`。[Windows CI](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/43642403026)

@@ -102,6 +102,7 @@ pub(super) async fn apply(db: &mut SqliteConnection, change: &Change) -> Result<
     Ok(result)
 }
 pub(crate) use proposals::{authorize, self_binding, self_group_route};
+pub(in crate::host) use self_source::retained_review_reply;
 pub(in crate::host) use sources::authorize_review;
 
 pub(crate) async fn qq_route(

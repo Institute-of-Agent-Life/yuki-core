@@ -1,4 +1,5 @@
 use super::{Change, Route, scope};
+use crate::host::participation::retained_review_reply;
 use crate::{
     Result,
     identity::new_id,
@@ -183,12 +184,16 @@ async fn request(
              AND NOT EXISTS(SELECT 1 FROM participation_erased_mentions f JOIN participation_held_sources h
                  ON h.source=f.event AND h.owner=?3 WHERE f.event=e.id)
              AND (NOT ?6 OR (e.entry_id=?2 AND e.observed_generation=coalesce(
-                 (SELECT generation FROM main_windows WHERE conversation=e.entry_id),1)))
+                 (SELECT generation FROM main_windows WHERE conversation=e.entry_id),1)
+                 AND NOT EXISTS(SELECT 1 FROM personal_deliveries d WHERE d.event=e.id)))
              AND (e.id=?5 OR (e.entry_id=?2 AND EXISTS(SELECT 1 FROM source_holds WHERE owner=?3 AND source=e.id))
                  OR e.id IN(SELECT source FROM executions WHERE id=?4 UNION SELECT event FROM main_dependencies WHERE execution=?4)))",
         ).bind(event).bind(&origin.entry).bind(plugin).bind(&origin.parent)
             .bind(origin.event).bind(route.jev.is_some()).fetch_one(&mut *db).await?;
-        if !allowed {
+        if !allowed
+            && (route.jev.is_none()
+                || !retained_review_reply(db, plugin, origin.event, event).await?)
+        {
             return Err("declared auxiliary source outside original retained scope".into());
         }
         sqlx::query("INSERT OR IGNORE INTO main_dependencies(execution,event) VALUES(?,?)")
@@ -240,13 +245,19 @@ async fn request(
             .execute(&mut *db)
             .await?;
     }
-    let sources: Vec<i64> =
-        sqlx::query_scalar("SELECT event FROM main_dependencies WHERE execution=?")
-            .bind(&exec)
-            .fetch_all(&mut *db)
-            .await?;
-    for event in sources {
-        source::acquire(db, plugin, &id, event).await?;
+    let sources: Vec<(i64, bool)> = sqlx::query_as(
+        "SELECT dep.event,d.event IS NOT NULL FROM main_dependencies dep
+         LEFT JOIN personal_deliveries d ON d.event=dep.event WHERE dep.execution=?",
+    )
+    .bind(&exec)
+    .fetch_all(&mut *db)
+    .await?;
+    for (event, self_delivery) in sources {
+        if self_delivery && retained_review_reply(db, plugin, origin.event, event).await? {
+            source::retain_self_delivery(db, plugin, &id, event).await?;
+        } else {
+            source::acquire(db, plugin, &id, event).await?;
+        }
     }
     Ok(json!({"request":id}))
 }
@@ -369,7 +380,7 @@ async fn authorized_route(
         return Err("original auxiliary route changed".into());
     }
     let origin: Value = serde_json::from_str(row.get("origin"))?;
-    scope::resolve(
+    let resolved = scope::resolve(
         db,
         plugin,
         generation,
@@ -379,6 +390,21 @@ async fn authorized_route(
         false,
     )
     .await?;
+    if route.jev.is_some() {
+        let replies: Vec<i64> = sqlx::query_scalar(
+            "SELECT h.source FROM source_holds h JOIN personal_deliveries d ON d.event=h.source
+             WHERE h.owner=? AND h.item=?",
+        )
+        .bind(plugin)
+        .bind(row.get::<&str, _>("id"))
+        .fetch_all(&mut *db)
+        .await?;
+        for event in replies {
+            if !retained_review_reply(db, plugin, resolved.event, event).await? {
+                return Err("original SELF reply unavailable for review".into());
+            }
+        }
+    }
     if dispatch && let Some(handle) = origin["handle"].as_str() {
         let closed: bool = sqlx::query_scalar(
             "SELECT state IN('confirmed','failed') FROM host_calls WHERE handle=?",

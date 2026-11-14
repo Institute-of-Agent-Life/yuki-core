@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import queue
 import sqlite3
 import subprocess
 import sys
@@ -85,7 +86,7 @@ def run(ctx):
             args += ["--accept"]
         return s.op(*args)["event"]
 
-    with Recorder() as http:
+    with Recorder() as http, Recorder("/systemone") as jev:
         config = s.svc.data / "yuki.toml"
         with config.open("a", encoding="utf-8") as f:
             f.write(
@@ -121,6 +122,12 @@ def run(ctx):
                 + json.dumps(http.url)
                 + '\nprotocol="chat"\nmodel="review-fixture"\nname="Jev"\nmerge_ms=0\n'
                 + 'root_slots=2\nmax_input_units=100000\nmax_output=128\n'
+                + '\n[plugins.aux_routes.jev]\npurposes=["review"]\norigins=["event"]\nentries='
+                + json.dumps([entry])
+                + '\n[plugins.aux_routes.jev.profile]\nendpoint=' + json.dumps(jev.url)
+                + '\nmodel="jev-request-fixture"\nname="Jev"\nmerge_ms=0\n'
+                + 'root_slots=2\nmax_input_units=100000\nmax_output=128\nkey_env="YUKI_SCHEDULE_PEER"\n'
+                + '[plugins.aux_routes.jev.jev]\nresponse_model="jev-response-fixture"\ntimeout_seconds=12.0\n'
             )
         p = aux.Peer(s, folder)
         with s.svc.running(environment=env):
@@ -544,10 +551,39 @@ def run(ctx):
             reply(q, "finished")
             derived_focus = record("reply-to-erasable-delivery", quoted=("36004",))
             derived_request = {**read_self_reply, "event": derived_focus}
+            native_review = {
+                "origin": {"event": derived_focus}, "call_id": "review-original-self-anchor",
+                "route": "jev", "purpose": "review",
+                "jev": {
+                    "state": {"focus": {"event_id": str(derived_focus)}, "context": []},
+                    "questions": {"floor_state": {"type": "choice", "instructions": "Who should respond?",
+                                                  "criteria": {"yuki": "Yuki", "unknown": "Unknown"}}},
+                },
+            }
             derived = p.call("participation.source", derived_request)["reply_to"]
             ctx.check("a human-triggered delivery has a readable canonical SELF source", derived is not None)
             derived_page = {**derived, "include_self": True}
             p.call("participation.source", derived_page)
+            native_review["sources"] = [derived["event"]]
+            native_review["jev"]["state"]["context"] = [{"event_id": str(derived["event"]),
+                                                           "text": "retained derived text"}]
+            requests_before = s.rows("SELECT count(*) FROM host_aux_requests")
+            p.call("llm.complete", {**native_review, "origin": {"event": self_reply}}, False)
+            p.call("llm.complete", {**native_review, "origin": {"event": derived["event"]}}, False)
+            ctx.equal("unrelated human and SELF origins reserve no auxiliary request",
+                      s.rows("SELECT count(*) FROM host_aux_requests"), requests_before)
+            ctx.check("unrelated human and SELF origins dispatch no Jev request", jev.wires.empty())
+            review_call = p.submit("llm.complete", native_review)
+            try:
+                wire, channel = jev.receive(timeout=6)
+            except queue.Empty as error:
+                ctx.write("jev-self-undispatched.json", p.receive(review_call, None))
+                raise AssertionError("the exact retained SELF reply must dispatch through Jev") from error
+            ctx.equal("native Jev receives the retained SELF context",
+                      json.loads(wire), {**native_review["jev"], "model": "jev-request-fixture"})
+            review_receipt = p.call("llm.complete", native_review)
+            ctx.equal("same-key SELF-context review keeps the physical request in flight",
+                      review_receipt["state"], "dispatched")
             erased_delivery = s.op("privacy", "erase", "participation-delivery-origin", s.c,
                                    json.dumps([delivery_origin]))
             ctx.equal("erasure covers the retained delivery derived from the original input",
@@ -560,8 +596,21 @@ def run(ctx):
             ctx.equal("erasing the original input removes the retained SELF anchor",
                       p.call("participation.source", derived_request)["reply_to"], None)
             p.call("participation.source", derived_page, False)
+            jev_response = {"model": "jev-response-fixture", "answers": {"floor_state": {
+                "type": "choice", "choice": "yuki", "probabilities": {"yuki": 1.0, "unknown": 0.0}}},
+                "usage": {"input_tokens": 31, "output_tokens": 5}}
+            channel.put((jev_response, 0))
+            p.receive(review_call, None)
+            late = p.call("llm.result", {"request": review_receipt["request"]})
+            ctx.equal("erased SELF context retains Jev usage without answer bytes",
+                      (late["size"], late["receipt"]["state"], late["receipt"]["erased"], late["receipt"]["usage"]),
+                      (0, "response_held", True, {"input": 31, "output": 5}))
+            original_attempts = s.rows("SELECT state,response FROM model_attempts WHERE logical=?",
+                                      review_receipt["logical"])
+            ctx.equal("erased SELF context has exactly one physical attempt and no stored response",
+                      original_attempts, [("response_held", None)])
             proofs["self"]["erasure"] = {"origin": delivery_origin, "derived": derived,
-                                          "invalidated": erased_delivery["sources"]}
+                                          "invalidated": erased_delivery["sources"], "jev": late["receipt"]}
             # Erased source is unavailable even though this generation has seen it.
             erase = record("erase-before-promote", "erasure canary", s.c)
             p.call("participation.source", {"event": erase})
@@ -668,6 +717,26 @@ def run(ctx):
             ctx.equal("the retained annotation belongs to the original mentioned Person",
                       p.call("participation.source", retained_request)["mentions"]["items"][0]["person_id"],
                       target_person)
+            with closing(QQ(s.svc.address, "100", "offline-participation")) as qq:
+                p.call("participation.promote", {"event": retained})
+                _, q = s.wire(http)
+                reply(q, calls=[call("send-with-mentioned-input", "send", {"text": "derived from the mention"})])
+                s.deliver(qq, "send_group_msg", 36006)
+                _, q = s.wire(http)
+                reply(q, "finished")
+            review_focus = record("reply-to-mention-derived-self", quoted=("36006",))
+            mention_reply_request = {**read_self_reply, "event": review_focus}
+            mention_reply = p.call("participation.source", mention_reply_request)["reply_to"]
+            mention_review = {**native_review, "origin": {"event": review_focus},
+                              "sources": [mention_reply["event"]],
+                              "jev": {**native_review["jev"], "state": {
+                                  "focus": {"event_id": str(review_focus)}, "context": [
+                                      {"event_id": str(mention_reply["event"]), "text": "derived from the mention"}
+                                  ],
+                              }}}
+            mention_call = p.submit("llm.complete", mention_review)
+            _, mention_channel = jev.receive()
+            mention_receipt = p.call("llm.complete", mention_review)
             review = {
                 "call_id": "original-native-mention-review",
                 "origin": {"event": retained},
@@ -686,9 +755,15 @@ def run(ctx):
                 "WHERE q.plugin='participation' AND o.event=?", retained,
             )[0]
             erased = s.op("privacy", "forget", "participation-mentioned-only", target_person)
-            ctx.equal("a mention-only erasure notifies the owner of the exact retained source",
-                      s.rows("SELECT sources FROM owner_erasures WHERE watermark=? AND owner='participation'",
-                             erased["watermark"]), [(json.dumps([retained]),)])
+            obligations = s.rows("SELECT sources FROM owner_erasures WHERE watermark=? AND owner='participation'",
+                                 erased["watermark"])
+            ctx.equal("a mention-only erasure notifies the owner of the retained source and derived SELF",
+                      [json.loads(row[0]) for row in obligations], [[retained, mention_reply["event"]]])
+            ctx.equal("mention erasure fences the original derived review execution",
+                      s.rows("SELECT f.watermark FROM participation_mention_redactions f "
+                             "JOIN host_aux_origins o ON o.execution=f.execution "
+                             "JOIN host_aux_requests q ON q.plugin=o.plugin AND q.origin=o.original WHERE q.id=?",
+                             mention_receipt["request"]), [(erased["watermark"],)])
             ctx.equal("forget preserves unrelated authors' original event rows",
                       s.rows("SELECT id FROM events WHERE id IN (?,?) AND envelope!='{}' ORDER BY id",
                              retained, never_read), [(retained,), (never_read,)])
@@ -707,16 +782,27 @@ def run(ctx):
                       (1, "{}", None, "response_held"))
             ctx.equal("the original physical usage remains accounted",
                       json.loads(attempts[0][2])["total"], 7)
+            mention_channel.put((jev_response, 0))
+            p.receive(mention_call, None)
             s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
+            mention_late = p.call("llm.result", {"request": mention_receipt["request"]})
+            ctx.equal("forgetting a Person mentioned in the producing turn redacts the SELF-based Jev result",
+                      (mention_late["size"], mention_late["receipt"]["state"], mention_late["receipt"]["erased"]),
+                      (0, "response_held", True))
+            ctx.equal("the derived review retains the original physical usage", mention_late["receipt"]["usage"],
+                      {"input": 31, "output": 5})
             p.call("participation.source", retained_request, False)
             p.call("participation.source", {"event": never_read, "mention_cursor": 0}, False)
             p.call("llm.complete", {**review, "call_id": "after-mentioned-person-forget"}, False)
+            ctx.equal("the derived reply is no longer available to the original focus",
+                      p.call("participation.source", mention_reply_request)["reply_to"], None)
             ctx.check("mention erasure blocks another physical request", http.wires.empty())
             ctx.equal("unrelated sources remain readable after mention erasure",
                       p.call("participation.source", {"event": literal, "mention_cursor": 0})["mentions"]["items"], [])
             proofs["native_mentions"] = {"event": mentioned, "snapshot": frozen_mentions,
                                          "bounded_page_sizes": [16, 3], "literal_at_count": 0,
-                                         "erasure_sources": [retained],
+                                         "erasure_sources": [retained, mention_reply["event"]],
+                                         "self_context_receipt": mention_late["receipt"],
                                          "late_review": {"state": attempts[0][3], "physical_attempts": 1,
                                                          "usage_total": 7, "paid_calls": 0}}
             proofs["reply_reference"] = {

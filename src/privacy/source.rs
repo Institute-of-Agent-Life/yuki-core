@@ -260,14 +260,24 @@ pub(super) async fn scrub_participation_mentions(
     watermark: i64,
 ) -> Result<()> {
     sqlx::query(
-        "WITH RECURSIVE affected(execution) AS (
+        "WITH RECURSIVE forgotten(source) AS (
+           SELECT event FROM participation_erased_mentions WHERE watermark=?1
+           UNION
+           SELECT d.event FROM forgotten f JOIN main_dependencies dep ON dep.event=f.source
+           JOIN social_outbound o ON o.namespace=dep.execution JOIN personal_deliveries d ON d.outbound=o.id
+           JOIN participation_held_sources h ON h.source=d.event
+           UNION
+           SELECT d.event FROM forgotten f JOIN executions x ON x.source=f.source
+           JOIN social_outbound o ON o.namespace=x.id JOIN personal_deliveries d ON d.outbound=o.id
+           JOIN participation_held_sources h ON h.source=d.event
+         ), affected(execution) AS (
            SELECT x.execution FROM (
              SELECT execution,plugin FROM host_aux_origins
              UNION ALL
              SELECT execution,plugin FROM participation_proposals WHERE execution IS NOT NULL
            ) x JOIN main_dependencies d ON d.execution=x.execution
            JOIN participation_held_sources h ON h.owner=x.plugin AND h.source=d.event
-           JOIN participation_erased_mentions f ON f.event=d.event AND f.watermark=?1
+           JOIN forgotten f ON f.source=d.event
            UNION
            SELECT child.id FROM affected a JOIN main_origins o ON o.parent=a.execution JOIN executions child ON child.origin=o.ref
          )
