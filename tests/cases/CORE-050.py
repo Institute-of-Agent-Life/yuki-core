@@ -314,11 +314,12 @@ def reflection_budget(ctx, sdk):
         entry = owner.rows("SELECT entry_id FROM events WHERE id=?", source)[0][0]
     config = owner.svc.data / "yuki.toml"
     with config.open("a", encoding="utf-8") as out:
-        out.write('\n[reflection_budget]\ntimezone="Asia/Shanghai"\nmax_daily_calls=1\n')
+        out.write('\n[reflection_budget]\ntimezone="Asia/Shanghai"\nmax_daily_calls=1\nquiet_seconds=1\n')
     grants = ["maintenance.history.page", "maintenance.evidence", "maintenance.model.open",
               "maintenance.extract.preview", "maintenance.extract.apply"]
     peers = {}
-    with Recorder() as upstream:
+    with Recorder() as upstream, Recorder() as main:
+        owner.config(main)
         with config.open("a", encoding="utf-8") as out:
             for plugin in (first_plugin, second_plugin):
                 folder = ctx.working / plugin
@@ -363,8 +364,31 @@ def reflection_budget(ctx, sdk):
         first, second = peers[first_plugin], peers[second_plugin]
         with owner.svc.running():
             online()
+            _, foreground = owner.wire(main)
+            early = first.call("maintenance.history.page", {**params, "event": source}, False)
+            ctx.equal("foreground yields a stable deferred reply",
+                      early["error"]["message"], "reflection_deferred_for_foreground")
+            ctx.check("foreground defers before reading, reserving or contacting the model",
+                      upstream.wires.empty() and not owner.rows("SELECT id FROM host_aux_requests"))
+            reply(foreground, "")
+            owner.until(lambda: owner.rows("SELECT state FROM executions WHERE source=?", source)
+                        == [("completed",)])
+            time.sleep(1.1)
             inputs, allowed = open_call(first, "first-batch")
             _, blocked = open_call(second, "next-batch")
+            busy = owner.human("Foreground during a prepared reflection.")
+            _, foreground = owner.wire(main)
+            pending = first.call("llm.complete", allowed, False)
+            ctx.equal("a prepared reflection defers without a physical attempt",
+                      pending["error"]["message"], "reflection_deferred_for_foreground")
+            ctx.check("deferred prepared request did not contact the provider",
+                      upstream.wires.empty() and not owner.rows(
+                          "SELECT a.id FROM model_attempts a JOIN host_aux_requests q ON q.logical=a.logical"
+                      ))
+            reply(foreground, "")
+            owner.until(lambda: owner.rows("SELECT state FROM executions WHERE source=?", busy)
+                        == [("completed",)])
+            time.sleep(1.1)
             first_job = first.submit("llm.complete", allowed)
             _, wire = upstream.receive()
             # The physical attempt is committed while the HTTP response is still held.
@@ -374,26 +398,38 @@ def reflection_budget(ctx, sdk):
             paid = first.receive(first_job)
             ctx.equal("original attempt completed", paid["state"], "response")
             ctx.equal("blocked quota keeps just one physical attempt",
-                      owner.rows("SELECT count(*) FROM model_attempts"), [(1,)])
+                      owner.rows("SELECT count(*) FROM model_attempts a JOIN host_aux_requests q ON q.logical=a.logical"), [(1,)])
         with owner.svc.running():
             online()
             original = first.call("llm.complete", allowed)
             ctx.equal("cold replay uses original paid request at full quota", original["request"], paid["request"])
+            time.sleep(1.1)
             second.call("llm.complete", blocked, False)
             ctx.check("restart neither resets the daily quota nor buys a known attempt", upstream.wires.empty())
             preview = first.call("maintenance.extract.preview",
                                  {**params, "key": "first-batch", "request": paid["request"],
                                   "format": "edits", "sources": inputs})
-            applied = first.call("maintenance.extract.apply",
-                                 {**params, "operation": "quota-finish", "preview": preview["preview"],
-                                  "approved": []})
+            apply = {**params, "operation": "quota-finish", "preview": preview["preview"], "approved": []}
+            busy = owner.human("Foreground before applying the paid reflection.")
+            _, foreground = owner.wire(main)
+            observed = first.call("llm.complete", allowed)
+            ctx.equal("foreground preserves observation of the paid request", observed["request"], paid["request"])
+            deferred = first.call("maintenance.extract.apply", apply, False)
+            ctx.equal("foreground defers application of the paid preview",
+                      deferred["error"]["message"], "reflection_deferred_for_foreground")
+            reply(foreground, "")
+            owner.until(lambda: owner.rows("SELECT state FROM executions WHERE source=?", busy)
+                        == [("completed",)])
+            time.sleep(1.1)
+            applied = first.call("maintenance.extract.apply", apply)
             ctx.equal("paid reflection can settle after the daily limit", applied["applied"], [])
             ctx.equal("cold full-quota ledger preserves the two logical requests and one physical attempt",
-                      owner.rows("SELECT (SELECT count(*) FROM host_aux_requests),(SELECT count(*) FROM model_attempts)"),
+                      owner.rows("SELECT (SELECT count(*) FROM host_aux_requests),(SELECT count(*) FROM model_attempts a JOIN host_aux_requests q ON q.logical=a.logical)"),
                       [(2, 1)])
-            attempts = owner.rows("SELECT id,logical,state,dispatched_at FROM model_attempts")
+            attempts = owner.rows("SELECT a.id,a.logical,a.state,a.dispatched_at FROM model_attempts a JOIN host_aux_requests q ON q.logical=a.logical")
         return {"request": paid["request"], "physical_attempts": attempts, "applied": applied,
-                "limit": 1, "timezone": "Asia/Shanghai", "owners_share_limit": True}
+                "limit": 1, "timezone": "Asia/Shanghai", "owners_share_limit": True,
+                "foreground_deferred_before_read_dispatch_and_apply": True}
 
 
 def cuts(ctx, sdk):

@@ -30,6 +30,7 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, g: &Granted) -> 
             method: method.into(),
             params: json!({"scope":c.params["scope"],"purpose":c.params["purpose"],"fact":id}),
             paid_request: None,
+            foreground: None,
         };
         let page = super::reads::facts_full(db, &call, g, kind == "evidence").await?;
         page["items"]

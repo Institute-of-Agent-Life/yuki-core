@@ -58,6 +58,7 @@ pub enum Change {
         generation: String,
         request: String,
         reflection_budget: Option<super::maintenance::ReflectionBudget>,
+        foreground: Option<(crate::runtime::main::activity::Active, u32)>,
     },
     Result {
         plugin: String,

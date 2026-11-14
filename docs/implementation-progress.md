@@ -1,3 +1,5 @@
+**CORE-035 自省前臺退讓。** 分支 `codex/core-035-reflection-priority`。Host 可明選 `quiet_seconds`。真人 Main 排隊、執行或剛結束時，自省選來源、模型派發及套用會回傳 `reflection_deferred_for_foreground`。已付請求仍可用原鍵觀察，空閒後套用原 preview。Mac 以兩個真 SDK peer 通過 CORE-050 的 672 項檢查，`artifacts/CORE-050/reflection-foreground-mac-02/manifest.json` SHA-256 `5e16a1abf13a3afc988b815503291d595d407c5d61e7492d1078b3c2b55d54fb`。已派發請求沿用原回應及未知帳本。待三端候選與 EXT-035 排程消費。
+
 **CORE-050 自省每日額度。** 分支 `codex/core-050-reflection-budget`。主機可明選 `[reflection_budget]`，各自省插件共用按時區計算的實際派發額度，沿用現有 attempt 帳本。額滿及冷啟後保留同一未派發的邏輯請求，已付請求仍可回讀及完成原 preview。Mac CORE-050 通過 660 項，`artifacts/CORE-050/reflection-budget-mac-03/manifest.json` SHA-256 `93f3865faa75d929656f1ad0f488de2eb84ba727e22731f77090627c11767f98`。自動排程與前臺退讓另待真消費驗證。
 
 **CORE-035 工具快照的原值來源。** 分支 `codex/core-035-tool-lineage`。以真 Host 寫入及讀回本地值重現來源遺漏。維護回條、依賴分頁、模型 origin 和 preview 統一採用原讀取執行及原值的來源。讀取已清除、無法追溯或跨入口的原值時不會提供維護快照。Host 與 SDK 方法形狀及 reader 60 延續既有版本。Mac 卡檢查通過 412 項，`artifacts/CORE-035/tool-snapshot-mac-01/manifest.json` SHA-256 `09b6ebbcc66c761ff4640e3b3cf27621db8e7ef0de63bb7612644f6c3cb859d5`。
