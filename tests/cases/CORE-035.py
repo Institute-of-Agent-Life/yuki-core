@@ -264,6 +264,17 @@ def tool_snapshot_sources(ctx, sdk, aux):
     with o.svc.running():
         o.until((folder / "ready.json").exists)
         snapshot, = peer.call("maintenance.tool.page", query)["items"]
+        by_event = peer.call("maintenance.tool.page", {**params, "event": read})
+        ctx.equal("trigger event selects the same original receipt", by_event["items"], [snapshot])
+        ctx.equal("receipt cursor resumes within the original event",
+                  peer.call("maintenance.tool.page", {**params, "event": read, "after": by_event["next"]}),
+                  {"items": [], "next": snapshot["receipt"]})
+        ctx.equal("event and execution selectors intersect",
+                  peer.call("maintenance.tool.page", {**query, "event": written})["items"], [])
+        ctx.equal("foreign event exposes no tool result",
+                  peer.call("maintenance.tool.page", {**params, "event": other_event})["items"], [])
+        ctx.equal("group scope cannot use a private trigger",
+                  peer.call("maintenance.tool.page", {**params, "scope": "group", "event": read})["items"], [])
         ctx.equal("snapshot keeps both real original events", snapshot["source_ids"], [written, read])
         ctx.equal("snapshot source count is exact", snapshot["source_count"], 2)
         refs = peer.call(
@@ -281,10 +292,13 @@ def tool_snapshot_sources(ctx, sdk, aux):
         o.until(lambda: not o.op("privacy", "pending", "snapshot-reader")["obligations"])
         ctx.equal("erased value source makes its snapshot unavailable",
                   peer.call("maintenance.tool.page", query)["items"], [])
+        ctx.equal("event selection also fences the erased dependency",
+                  peer.call("maintenance.tool.page", {**params, "event": read})["items"], [])
         ctx.equal("clearing the value keeps the separate original read event",
                   o.rows("SELECT source FROM invalidated_sources ORDER BY source"), [(written,)])
     return {"write_event": written, "read_event": read, "source_ids": refs["sources"],
-            "original_receipt": snapshot["receipt"], "invalidated_source": written}
+            "original_receipt": snapshot["receipt"], "event_page": by_event,
+            "invalidated_source": written}
 
 
 def paid_previews(ctx, sdk, aux):
@@ -1708,6 +1722,8 @@ def tool_receipts(ctx, sdk, aux):
             o.until((folder / "ready.json").exists)
             page = p.call("maintenance.tool.page", {**params, "execution": execution})
             tool = next(t for t in page["items"] if t["operation"] == operation)
+            by_event = p.call("maintenance.tool.page", {**params, "event": source})
+            ctx.check("the parent event selects its delegated Work receipt", tool in by_event["items"])
             ctx.equal(
                 "archived Work receipt retains original human author",
                 tool["actor"],

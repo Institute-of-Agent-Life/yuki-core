@@ -58,6 +58,14 @@ The value source must belong to the installed entry and remain readable.
 A legacy local read with a value and unknown provenance is unavailable to
 maintenance.
 
+Pass an original event ID as `event` to `maintenance.tool.page` to select
+confirmed receipts from the execution that event started, including delegated
+Work. The event must belong to the installed entry. Events that supplied a
+stored value or other context remain dependencies of the receipt. They do not
+select that receipt by themselves. An optional `execution` further narrows the
+result. Page with `after` and keep the returned `next` cursor within the same
+selection. The query preserves original receipt IDs, versions and erasure holds.
+
 An operator can set `quiet_seconds` in `[reflection_budget]` to defer
 `reflect` history and tool selection, model opening and dispatch, preview
 and apply while a human Main turn is queued or running. The same quiet
