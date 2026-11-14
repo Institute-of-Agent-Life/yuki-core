@@ -456,7 +456,7 @@ pub(crate) async fn tool_receipt(
         }
         r
     } else {
-        effects::apply(
+        let receipt = effects::apply(
             conn,
             &effects::Action::Local {
                 execution: exec.to_owned(),
@@ -464,7 +464,22 @@ pub(crate) async fn tool_receipt(
                 id: id.to_owned(),
             },
         )
-        .await?
+        .await?;
+        if receipt["result"]["revision"].is_i64() {
+            // A read can feed an earlier operator write to the model. That
+            // write's source may have no Main input or dependency row.
+            sqlx::query(
+                "INSERT OR IGNORE INTO main_dependencies(execution,event)
+                 SELECT o.namespace,o.value_source FROM operations o
+                 WHERE o.namespace=? AND o.operation_id=? AND o.value_source IS NOT NULL
+                   AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=o.value_source)",
+            )
+            .bind(exec)
+            .bind(id)
+            .execute(&mut *conn)
+            .await?;
+        }
+        receipt
     };
     let policy: Option<(i64, i64)> = sqlx::query_as(
         "SELECT page_budget,storage_quota FROM execution_tool_views WHERE execution=?",
