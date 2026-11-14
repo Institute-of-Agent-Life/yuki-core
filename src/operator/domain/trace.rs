@@ -2,7 +2,9 @@
 use super::*;
 use sqlx::Row;
 
-fn redact(value: &Value, path: &str, paths: &mut Vec<String>, depth: usize) -> Value {
+const EXPORT_SCHEMA: &str = "yuki.trace.export/1";
+
+fn redact(value: &Value, path: &str, paths: &mut Vec<String>, depth: usize, export: bool) -> Value {
     if depth > 48 {
         paths.push(path.into());
         return json!({"trace_omitted":"structure_limit"});
@@ -22,10 +24,10 @@ fn redact(value: &Value, path: &str, paths: &mut Vec<String>, depth: usize) -> V
                 if ["signature","thoughtsignature","encryptedcontent"].contains(&normalized.as_str()) || media {
                     json!({"trace_omitted":if media {"transport_media"} else {"opaque_provider_state"},"sha256":crate::host::personal::credentials::hash(&value.to_string()),"bytes":value.to_string().len()})
                 } else { json!({"trace_omitted":"credential_material"}) }
-            } else { redact(value, &here, paths, depth+1) };
+            } else { redact(value, &here, paths, depth+1, export) };
             (key.clone(),value)
         }).collect()),
-        Value::Array(items) => Value::Array(items.iter().enumerate().map(|(i,v)|redact(v,&format!("{path}[{i}]"),paths,depth+1)).collect()),
+        Value::Array(items) => Value::Array(items.iter().enumerate().map(|(i,v)|redact(v,&format!("{path}[{i}]"),paths,depth+1,export)).collect()),
         Value::String(text) if matches!(text.trim_start().chars().next(), Some('{' | '[')) => {
             if text.len() > 6144 {
                 paths.push(path.into());
@@ -34,8 +36,15 @@ fn redact(value: &Value, path: &str, paths: &mut Vec<String>, depth: usize) -> V
             if let Ok(nested @ (Value::Object(_) | Value::Array(_))) = serde_json::from_str::<Value>(text) {
                 // Provider tool arguments and tool-message receipts may themselves
                 // be encoded JSON. Preserve the string shape after redaction.
-                Value::String(redact(&nested, path, paths, depth + 1).to_string())
+                Value::String(redact(&nested, path, paths, depth + 1, export).to_string())
+            } else if export {
+                paths.push(path.into());
+                json!({"trace_omitted":"unparsed_structure"})
             } else { value.clone() }
+        }
+        Value::String(text) if export && (text.contains("://") || text.contains("data:")) => {
+            paths.push(path.into());
+            json!({"trace_omitted":"transport_reference"})
         }
         _ => value.clone(),
     }
@@ -89,7 +98,7 @@ async fn payload(
         _ => (),
     }
     let mut paths = Vec::new();
-    let mut data = redact(&data, "$", &mut paths, 0);
+    let mut data = redact(&data, "$", &mut paths, 0, false);
     // Bound independent sections so a large tool declaration never hides a small response.
     for (key, value) in data
         .as_object_mut()
@@ -112,6 +121,15 @@ pub(super) async fn read(
     db: &mut SqliteConnection,
     args: &Value,
     authority: &Authority,
+) -> Result<Value> {
+    projection(db, args, authority, false).await
+}
+
+async fn projection(
+    db: &mut SqliteConnection,
+    args: &Value,
+    authority: &Authority,
+    export: bool,
 ) -> Result<Value> {
     let kind = args["kind"].as_str().ok_or("validation_error")?;
     let id = args["identity"].as_str().ok_or("validation_error")?;
@@ -201,5 +219,138 @@ pub(super) async fn read(
         .execute(db)
         .await?;
     }
+    if export {
+        for item in &mut items {
+            let Some(payload) = item.get_mut("payload").filter(|value| value.is_object()) else {
+                continue;
+            };
+            let mut paths = Vec::new();
+            payload["data"] = redact(&payload["data"], "$", &mut paths, 0, true);
+            if let Some(redactions) = payload["redactions"].as_array_mut() {
+                redactions.extend(paths.into_iter().map(Value::String));
+            }
+        }
+    }
     Ok(json!({"items":items,"next_cursor":next}))
+}
+
+pub(super) async fn export(
+    db: &mut SqliteConnection,
+    args: &Value,
+    authority: &Authority,
+) -> Result<Value> {
+    let Authority::Invocation { handle, .. } = authority else {
+        return Err("trace export requires an original Host invocation".into());
+    };
+    if args.as_object().is_none_or(|fields| {
+        fields.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "kind" | "identity" | "after" | "limit" | "content"
+            )
+        })
+    }) || args["identity"]
+        .as_str()
+        .is_none_or(|value| value.len() > 128)
+        || args.get("content").is_some_and(|value| !value.is_boolean())
+        || args
+            .get("after")
+            .is_some_and(|value| value.as_i64().is_none())
+        || args.get("limit").is_some_and(|value| {
+            value
+                .as_i64()
+                .is_none_or(|limit| !(1..=20).contains(&limit))
+        })
+    {
+        return Err("invalid trace export arguments".into());
+    }
+    let (exec, operation): (String, String) = sqlx::query_as(
+        "SELECT execution,operation FROM host_calls WHERE handle=? AND method='command.invoke'",
+    )
+    .bind(handle)
+    .fetch_one(&mut *db)
+    .await?;
+    let mut bounded = args.clone();
+    bounded["limit"] = json!(args["limit"].as_i64().unwrap_or(20));
+    bounded["after"] = json!(args["after"].as_i64().unwrap_or(0));
+    bounded["content"] = json!(args["content"].as_bool().unwrap_or(false));
+    let prior: Option<(String, String, Option<String>)> = sqlx::query_as(
+        "SELECT handle,version,body FROM tool_artifacts WHERE execution=? AND operation=?",
+    )
+    .bind(&exec)
+    .bind(&operation)
+    .fetch_optional(&mut *db)
+    .await?;
+    if let Some((artifact, version, body)) = prior {
+        let saved: Value =
+            serde_json::from_str(body.as_deref().ok_or("original trace export erased")?)?;
+        let original = &saved["result"];
+        if original["schema"] != EXPORT_SCHEMA || original["selector"] != bounded {
+            return Err("original trace export selector changed".into());
+        }
+        let actor: String = sqlx::query_scalar("SELECT original_actor FROM executions WHERE id=?")
+            .bind(&exec)
+            .fetch_one(&mut *db)
+            .await?;
+        authorize_artifact(db, &artifact, &actor).await?;
+        return Ok(descriptor(&artifact, &version, &original["page"]));
+    }
+    let page = projection(db, &bounded, authority, true).await?;
+    // Use the original operation's artifact slot. The invocation and queried
+    // source bindings are committed together with the version.
+    let raw = json!({
+        "result":{"schema":EXPORT_SCHEMA,"selector":bounded,"page":page}
+    })
+    .to_string();
+    let (artifact, version) = crate::tools::results::retain(
+        db,
+        &exec,
+        &operation,
+        &raw,
+        crate::tools::results::DEFAULT_QUOTA,
+    )
+    .await?
+    .ok_or("trace artifact storage full")?;
+    Ok(descriptor(&artifact, &version, &page))
+}
+
+fn descriptor(handle: &str, version: &str, page: &Value) -> Value {
+    json!({"handle":handle,"version":version,"schema":EXPORT_SCHEMA,"path":"/result",
+           "next_cursor":page["next_cursor"]})
+}
+
+pub(crate) async fn authorize_artifact(
+    db: &mut SqliteConnection,
+    handle: &str,
+    actor: &str,
+) -> Result<()> {
+    let Some((content, expiry)) = sqlx::query_as::<_, (bool, i64)>(
+        "SELECT coalesce(json_extract(body,'$.result.selector.content'),0),
+                coalesce((SELECT min(unixepoch(json_extract(value,'$.expires_at')))
+                          FROM json_each(body,'$.result.page.items')),9223372036854775807)
+         FROM tool_artifacts WHERE handle=? AND json_extract(body,'$.result.schema')=?",
+    )
+    .bind(handle)
+    .bind(EXPORT_SCHEMA)
+    .fetch_optional(&mut *db)
+    .await?
+    else {
+        return Ok(());
+    };
+    let current = crate::host::personal::credentials::now()?;
+    if expiry <= current {
+        return Err("original trace export expired".into());
+    }
+    let admin: bool = sqlx::query_scalar(
+        "SELECT r.admin FROM persons p JOIN persons r ON r.id=coalesce(p.current_root,p.id)
+         WHERE p.id=? AND p.enabled AND r.enabled",
+    )
+    .bind(actor)
+    .fetch_one(db)
+    .await?;
+    config::person_access(actor.to_owned(), admin, "control.execution.metadata.read")?;
+    if content {
+        config::person_access(actor.to_owned(), admin, "control.execution.content.read")?;
+    }
+    Ok(())
 }

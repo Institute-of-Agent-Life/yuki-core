@@ -204,7 +204,7 @@ pub(crate) async fn authorize(
 fn person_actor(person: credentials::Principal, capability: &str) -> Result<Actor> {
     person_access(person.owner, person.admin, capability)
 }
-fn person_access(owner: String, admin: bool, capability: &str) -> Result<Actor> {
+pub(super) fn person_access(owner: String, admin: bool, capability: &str) -> Result<Actor> {
     let allowed = &PERSON_CAPABILITIES[if admin { "superuser" } else { "user" }];
     if !allowed
         .as_array()

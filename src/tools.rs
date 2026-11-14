@@ -301,8 +301,9 @@ pub async fn invoke(store: &Store, action: Action) -> Result<Value> {
                 "SELECT page_budget FROM execution_tool_views WHERE execution=?",
             )
             .bind(&execution)
-            .fetch_one(&mut *tx)
-            .await?;
+            .fetch_optional(&mut *tx)
+            .await?
+            .unwrap_or(results::DEFAULT_PAGE as i64);
             drop(tx);
             let selection = params.clone();
             let result =

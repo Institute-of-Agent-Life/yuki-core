@@ -1,4 +1,4 @@
-"""Verify three local suites for the current GitHub PR merge checkout."""
+"""Verify three native suites for the current GitHub PR merge checkout."""
 import argparse
 import json
 from pathlib import Path
@@ -64,6 +64,22 @@ def verify_pr(number, parents, tested_merge, merge_into_main):
     require(live_base == parents[0], 'target branch advanced after the tested merge')
 
 
+def verify_hosted_windows(directory, source, url):
+    receipt = json.loads((directory / 'hosted-run.json').read_bytes())
+    require(receipt['merge_commit'] == source['commit'] and receipt['url'] == url
+            and url == f"https://github.com/{REPO}/actions/runs/{receipt['run']}",
+            'Windows Actions receipt belongs to a different run or merge')
+    run = api(f"actions/runs/{receipt['run']}")
+    require(run['head_sha'] == receipt['workflow_commit'] and run['html_url'] == url
+            and run['path'] == '.github/workflows/check.yml'
+            and run['run_attempt'] == receipt['attempt'] and run['conclusion'] == 'success',
+            'Windows Actions run changed or did not succeed')
+    job = api(f"actions/jobs/{receipt['job']}")
+    require(job['run_id'] == receipt['run'] and job['conclusion'] == 'success'
+            and job['labels'] == ['windows-latest'], 'Windows Actions job did not succeed')
+    return receipt
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('pr', type=int)
@@ -71,7 +87,8 @@ def main():
     parser.add_argument('--out', required=True, type=Path)
     for platform in PLATFORMS:
         parser.add_argument('--' + platform, required=True, type=Path)
-    parser.add_argument('--publish', action='store_true', help='write local CI statuses to the PR')
+    parser.add_argument('--windows-actions-url', help='link to the exact successful Windows run')
+    parser.add_argument('--publish', action='store_true', help='write CI statuses to the PR')
     parser.add_argument('--merge', action='store_true', help='publish and merge a verified main PR')
     args = parser.parse_args()
     checkout = args.checkout.resolve()
@@ -88,6 +105,9 @@ def main():
     current()
     registry = (checkout / 'ci/checks.json').read_bytes()
     results = [verify_suite(getattr(args, platform), platform, source, registry) for platform in PLATFORMS]
+    if args.windows_actions_url:
+        results[-1]['github_actions'] = verify_hosted_windows(
+            args.windows, source, args.windows_actions_url)
     proof = {'pr': args.pr, 'base': parents[0], 'head': parents[1], 'merge': source['commit'],
              'tree_sha256': source['tree_sha256'], 'platforms': results}
     data = json.dumps(proof, indent=2).encode() + b'\n'
@@ -101,9 +121,13 @@ def main():
         current()
         for result in results:
             context = 'local-ci/' + result['platform']
+            options = []
+            if result.get('github_actions'):
+                context = 'github-actions/windows'
+                options = ['-f', 'target_url=' + result['github_actions']['url']]
             description = f"{result['cards']} cards, merge {source['commit'][:12]}, receipt {digest(data)[:12]}"
             status = api('statuses/' + parents[1], '--method', 'POST', '-f', 'state=success',
-                         '-f', 'context=' + context, '-f', 'description=' + description)
+                         '-f', 'context=' + context, '-f', 'description=' + description, *options)
             require(status['state'] == 'success' and status['context'] == context, 'status write failed')
     if args.merge:
         current()

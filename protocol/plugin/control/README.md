@@ -21,7 +21,7 @@ and `/admin/v1`; `protocol/baseline-v4/admin-openapi.json` retains the HTTP DTOs
 | `person.list`, `person.get`, `binding.list`, `binding.get`, `presence.list`, `presence.get` | Person, binding, device and presence actions in the fixed Admin contract | Action-specific `identity.*` |
 | `model.read`, `model.stats` | `model.apply`, `model.secret`, `model.test`, `model.discover` | Operator model configuration capabilities |
 | `health.read`, `operation.get` | — | `control.health.read`, `control.operation.read` |
-| `trace.read` | — | `control.execution.metadata.read`; content additionally requires `control.execution.content.read` |
+| `trace.read`, `trace.export` | — | `control.execution.metadata.read`; content additionally requires `control.execution.content.read` |
 
 A write body uses the fixed DTO with `request_id` and, where required,
 `expected_revision`. Resource actions add `id`; plugin actions add `plugin_id`.
@@ -61,3 +61,17 @@ Trace is an authorized bounded projection, not a completion receipt. Secret
 fields and private encoded objects are removed recursively. Work management
 rechecks the original execution, source, route and generation; an operator
 cannot grant an unknown paid request another attempt.
+
+`control.read` with action `trace.export` uses the original `command.invoke`
+handle. The Host routes `/ai trace export` to the installed
+`/ai/trace/export` command and passes the original text. Pass the same
+`kind`, `identity`, optional `after`, and optional
+`content` as for a trace read. The page limit is 20. The result carries the
+tool artifact `handle`, SHA-256 `version`, schema `yuki.trace.export/1`,
+`path` and `next_cursor`. It uses metadata by default. An explicit content
+export removes credentials, opaque provider fields and transport references.
+
+Read the original version through the existing tool artifact reader. Every
+read checks the original execution, current operator authority and trace
+expiry. Erasure clears the artifact body through the bound source events.
+Repeating the same live invocation returns its original descriptor.

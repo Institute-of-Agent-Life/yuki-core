@@ -8,7 +8,11 @@
 
 #136 將核心的手動 Windows 雲端入口合入 `cb11f2cb543f`。分支 `codex/windows-hosted-ci` 的三端同源檢查各通過 52 張卡和 200 項原生斷言。合併回條 `artifacts/ci/local-pr/136/main-confirmation.json` SHA-256 `432c3f453a735242202d0225d009220cb9a5ff0eeb335782599a981b3c85d966`。未發布三端包索引 `artifacts/CORE-039/pr136-windows-hosted-ci-01/verified-candidates.json` SHA-256 `d614687c0aff7e39d4f831515d7a5ad0bc59a982ecccd3e8d9f2e583a9521925`。Mac、Linux 的 #134 至 #136 專用 target 已回收約 30.3 GiB，保留原候選和檢查回條。[#136 Windows](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/43570898932)
 
+擴展 #93 也已合入 `7de9b95e5e0f`。用同一擴展合併樹完成 Mac、Linux 本地重放和 Windows 雲端重放。Windows 的 EXT-037 通過 11 例，EXT-035 通過排程、前臺退讓、原事件、工具與重建用例。[EXT-037 Windows](https://github.com/Institute-of-Agent-Life/yuki-extensions/actions/runs/43572338888) · [EXT-035 Windows](https://github.com/Institute-of-Agent-Life/yuki-extensions/actions/runs/43572342009)
+
 **CORE-035 原事件工具回條。** #138 的 `9327d01c8437` 加入原事件選擇，維持原入口授權、回條版本與擦除責任。Mac 與 Linux 的 CORE-035 分別通過 426、427 項，未發布包 SHA-256 為 `c5413db45357fc6135d109535398df77c201d577602c843025df5241792a6554`、`6c698e355eb704e46190da41bf4125b92f4d62a4413e1db82636c20f363460a3`。路徑 `artifacts/CORE-035/event-tool-receipts-{mac,linux}-clean-01/candidate/`，Rust SDK alpha.24、Python a24、reader 60。擴展已在兩端用候選重放排程斷點，接續 Windows 與原 Person／Space 視窗。[核心 #138](https://github.com/Institute-of-Agent-Life/yuki-core/pull/138)
+
+**CORE-037 版本化診斷匯出。** 分支 `codex/core-037-versioned-trace-export`。聊天中的 `/ai trace export` 路由到已安裝的 `/ai/trace/export`，Host 保留原命令及原呼叫 handle。`control.read/trace.export` 預設匯出 metadata，明選全文會清除憑證、opaque 與暫時連結。讀取沿用原工具 artifact 的權限、時效及版本。Mac CORE-037 通過 1,090 項，`artifacts/CORE-037/spaced-trace-export-mac-01/manifest.json` SHA-256 `b924daed740d1e94a064ce3eb61b133a0e4f8976471397848042fe49badcc2b4`。Mac 真 trace 插件另驗 11 例，包括同一事件重投、普通人及撤權拒絕、清除原事件後兩份 artifact 失效。三端候選已通過。EXT-037 私庫訂閱仍待驗收。
 
 **CORE-050 自省派發後退讓。** 分支 `codex/core-050-reflection-preemption`。真人 Main 開始時，尚待回覆的自省 HTTP 會停止等待，保留原 attempt、邏輯請求與未知用量。回環 peer 在收到請求後扣住回應，確認退讓後才回覆。冷啟可觀察原 unknown，新增派發為零。Mac CORE-050 共通過 687 項，`artifacts/CORE-050/reflection-preempt-mac-01/manifest.json` SHA-256 `186e8ce867703cfc48a99720cd9f703a3da3c7d980a7cf2190b04ddd85743d34`。接續三端候選及 EXT-035 原排程消費。
 

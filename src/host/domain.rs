@@ -143,7 +143,8 @@ pub async fn route_command(
             })
             .collect::<String>()
     });
-    let token = text.split_whitespace().next().unwrap_or("");
+    let mut words = text.split_whitespace();
+    let token = words.next().unwrap_or("");
     if !token.starts_with('/') {
         return Ok(());
     }
@@ -156,8 +157,10 @@ pub async fn route_command(
     {
         return Ok(());
     }
-    let binding:Option<(String,String,bool,Option<String>)>=sqlx::query_as("SELECT c.path,c.plugin,i.online AND i.enabled,i.generation FROM host_commands c JOIN host_installations i ON i.plugin=c.plugin WHERE (c.path=? OR substr(?,1,length(c.path)+1)=c.path||'/') AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='command.invoke') ORDER BY length(c.path) DESC LIMIT 1")
-        .bind(token).bind(token).fetch_optional(&mut *conn).await?;
+    let alias = (token == "/ai" && words.next() == Some("trace") && words.next() == Some("export"))
+        .then_some("/ai/trace/export");
+    let binding:Option<(String,String,bool,Option<String>)>=sqlx::query_as("SELECT c.path,c.plugin,i.online AND i.enabled,i.generation FROM host_commands c JOIN host_installations i ON i.plugin=c.plugin WHERE (c.path=?1 OR substr(?1,1,length(c.path)+1)=c.path||'/' OR c.path=?2) AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='command.invoke') ORDER BY length(c.path) DESC LIMIT 1")
+        .bind(token).bind(alias).fetch_optional(&mut *conn).await?;
     if let Some((path, id, online, generation)) = binding {
         // Claim once under the original human. The Main scheduler excludes this source even when offline.
         let claim = admit::claim(conn, event).await?;
