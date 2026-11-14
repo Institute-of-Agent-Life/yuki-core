@@ -9,8 +9,8 @@ from tests.harness.control_config import wait
 from tests.peers.chat.recorder import Recorder
 
 
-def trace_peer(ctx, owner):
-    folder = ctx.working / "trace-peer"
+def trace_peer(ctx, owner, name="trace-peer"):
+    folder = ctx.working / name
     folder.mkdir()
     args = [str(ctx.root / "tests/peers/control/invocation.py"), str(folder),
             str(ctx.control_python_sdk)]
@@ -27,7 +27,8 @@ commands=["/trace","/ai/trace/export"]
     return folder
 
 
-def trace_forget(ctx, owner, folder, execution, original, continuation):
+def trace_forget(ctx, owner, folder, execution, original, continuation, *,
+                 marker="a visible response", forget_key="trace-continuation", check_secrets=True):
     wait(lambda: (folder / "ready").exists())
     reader = str(uuid.uuid4())
     owner.op("person", "create", reader)
@@ -92,12 +93,11 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
             "WHERE c.operation=? AND c.state='confirmed'", operation))[0]
 
     first_event, first, saved = projection(1)
-    ctx.check("admin plugin reads the other person's original trace body",
-              "a visible response" in json.dumps(saved))
+    ctx.check("admin plugin reads the other person's original trace body", marker in json.dumps(saved))
     finish(first, saved)
     stored_before, _ = settled(first)
     ctx.check("authorized completed command retained its trace result",
-              "a visible response" in stored_before)
+              marker in stored_before)
 
     def artifact(event, descriptor, path):
         reader_execution = owner.rows("SELECT id FROM executions WHERE source=?", event)[0][0]
@@ -133,8 +133,10 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
     finish(full_command, full)
     settled(full_command)
     body, = owner.rows("SELECT body FROM tool_artifacts WHERE handle=?", full["handle"])[0]
-    ctx.check("full export omits secrets and transport URLs",
-              "a visible response" in body and "PRIVATE-TRACE-" not in body and "SIGNED-URL" not in body)
+    ctx.check("full export contains the authorized original material", marker in body)
+    if check_secrets:
+        ctx.check("full export omits secrets and transport URLs",
+                  "PRIVATE-TRACE-" not in body and "SIGNED-URL" not in body)
     owner.op("person", "set-admin", reader, "false")
     exec_id = owner.rows("SELECT id FROM executions WHERE source=?", full_event)[0][0]
     refused = owner.svc.command("operator", "tools", "read-artifact", exec_id, reader,
@@ -144,7 +146,7 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
     owner.op("person", "set-admin", reader, "true")
     second_event, second, delayed = projection(2)
     ctx.check("paused plugin holds the original trace before source erasure",
-              "a visible response" in json.dumps(delayed))
+              marker in json.dumps(delayed))
     def accounting():
         return owner.rows(
             "SELECT id,state,json_extract(usage_json,'$.input'),"
@@ -155,7 +157,7 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
     attempts = accounting()
     ctx.check("the trace source has recorded model usage", any(row[2:] == (7, 3, 10)
                                                               for row in attempts))
-    erasure = owner.op("privacy", "erase", "trace-continuation", owner.actor,
+    erasure = owner.op("privacy", "erase", forget_key, owner.actor,
                        json.dumps([continuation]))
     ctx.check("erasure selected the original continuation and kept both reader commands",
               continuation in erasure["sources"] and
@@ -169,7 +171,7 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
     old, old_effect = settled(first)
     ctx.equal("previously persisted plugin trace response is erased", old, None)
     ctx.check("previously persisted trace effect lost its body",
-              "a visible response" not in (old_effect or ""))
+              marker not in (old_effect or ""))
     ctx.equal("erasure clears both already published trace artifact bodies",
               owner.rows("SELECT body FROM tool_artifacts WHERE handle IN (?,?) ORDER BY handle",
                          meta["handle"],full["handle"]), [(None,),(None,)])
@@ -183,6 +185,46 @@ def trace_forget(ctx, owner, folder, execution, original, continuation):
             "original_watermark": erasure["watermark"], "confirmed_effect_retained": True,
             "trace_export":{"schema":meta["schema"],"metadata_version":meta["version"],
                             "content_version":full["version"],"erased":True}}
+
+
+def value_source_trace(ctx, wire, http, owner, folder, env, token):
+    marker = "original cross-turn tool value canary"
+    # A confirmed operator write need not pass through Main admission, so its
+    # source is in the original value receipt even without a Main input row.
+    with owner.svc.running():
+        source = owner.human("/ai help")
+        producer = owner.op("ingress", "claim", source)["execution"]
+        owner.op("effect", "intent", producer, "store-value", owner.actor, "put", "trace-value",
+                 json.dumps({"value": marker}))
+        owner.op("effect", "local", producer, "store-value", owner.actor)
+    owner.config(http)
+    with owner.svc.running(environment=env):
+        original = owner.human("read the previous local value")
+        _, answer = owner.wire(http)
+        reply(answer, calls=[call("read-value", "get", {"target": "trace-value"})])
+        request, answer = owner.wire(http)
+        ctx.check("the next model request carries the earlier value", marker in json.dumps(request))
+        answer.put(({
+            "choices": [{"message": {"role": "assistant", "content": "read complete"},
+                         "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10},
+        }, 0))
+        owner.finished(original)
+        execution, = owner.rows("SELECT id FROM executions WHERE source=?", original)[0]
+        path = f"/admin/v1/traces/turn/{execution}?content=true"
+        status, before = wire(owner.svc.address, path, token)
+        ctx.equal("Admin reads the original cross-turn trace", status, 200)
+        ctx.check("the trace includes the actual prior tool value", marker in json.dumps(before))
+
+    (folder / "ready").unlink(missing_ok=True)
+    with owner.svc.running(environment=env):
+        result = trace_forget(ctx, owner, folder, execution, original, source,
+                              marker=marker, forget_key="trace-value-source", check_secrets=False)
+        ctx.equal("Admin timeline also forgets the earlier value", wire(owner.svc.address, path, token)[1]["data"]["items"], [])
+        ctx.equal("erasing an older value preserves original operation settlement",
+                  owner.rows("SELECT state FROM operations WHERE namespace=? AND action='get'", execution),
+                  [("confirmed",)])
+    return result
 
 
 def run(ctx, wire):
@@ -244,5 +286,12 @@ def run(ctx, wire):
             plugin_erasure = trace_forget(ctx, owner, folder, execution, event, continuation)
             owner.op('privacy','forget','trace-forget',owner.actor)
             ctx.equal('original source erasure removes trace body and rows',wire(owner.svc.address,path+'?content=true',content)[1]['data']['items'],[])
+        value_owner = Owner(ctx, "control-trace-value-source", 20)
+        value_cfg = value_owner.svc.data / "yuki.toml"
+        value_cfg.write_text('operator_registry_file="operators.toml"\n' + value_cfg.read_text())
+        (value_owner.svc.data / "operators.toml").write_text(saved)
+        value_peer = trace_peer(ctx, value_owner, "trace-value-peer")
+        value_erasure = value_source_trace(ctx, wire, http, value_owner, value_peer, env, content)
     return {'execution':execution,'source_event':event,'original_trace_ids':original_ids,
-            'opaque_material':'omitted','erasure':'verified','plugin_erasure':plugin_erasure}
+            'opaque_material':'omitted','erasure':'verified','plugin_erasure':plugin_erasure,
+            'value_source_erasure': value_erasure}
