@@ -1,3 +1,5 @@
+**CORE-037 版本化診斷匯出。** 分支 `codex/core-037-versioned-trace-export`。原命令 handle 可透過 `control.read/trace.export` 保存一頁受權診斷。預設只含 metadata，明選全文仍清除憑證、opaque 與暫時連結。沿原工具 artifact 核讀取權、時效及版本。Mac CORE-037 通過 1,086 項，`artifacts/CORE-037/versioned-trace-export-mac-01/manifest.json` SHA-256 `93bae38909cf16b14a3c482aafb4e84a465ad4a6128882569f4947c9a2572a85`。其中含同鍵重讀、換選擇拒絕、撤權及兩份匯出隨原來源清除。後續交 EXT-037 驗真命令消費及私庫訂閱。
+
 **CORE-050 自省派發後退讓。** 分支 `codex/core-050-reflection-preemption`。真人 Main 開始時，尚待回覆的自省 HTTP 會停止等待，保留原 attempt、邏輯請求與未知用量。回環 peer 在收到請求後扣住回應，確認退讓後才回覆。冷啟可觀察原 unknown，新增派發為零。Mac CORE-050 共通過 687 項，`artifacts/CORE-050/reflection-preempt-mac-01/manifest.json` SHA-256 `186e8ce867703cfc48a99720cd9f703a3da3c7d980a7cf2190b04ddd85743d34`。接續三端候選及 EXT-035 原排程消費。
 
 **CORE-035 自省前臺退讓。** 分支 `codex/core-035-reflection-priority`。Host 可明選 `quiet_seconds`。真人 Main 排隊、執行或剛結束時，自省選來源、模型派發及套用會回傳 `reflection_deferred_for_foreground`。已付請求仍可用原鍵觀察，空閒後套用原 preview。Mac 以兩個真 SDK peer 通過 CORE-050 的 672 項檢查，`artifacts/CORE-050/reflection-foreground-mac-02/manifest.json` SHA-256 `5e16a1abf13a3afc988b815503291d595d407c5d61e7492d1078b3c2b55d54fb`。已派發請求沿用原回應及未知帳本。待三端候選與 EXT-035 排程消費。

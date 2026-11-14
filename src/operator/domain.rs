@@ -8,7 +8,7 @@ mod plugins;
 mod presences;
 pub(crate) mod receipts;
 mod soul;
-mod trace;
+pub(crate) mod trace;
 mod usage;
 
 use super::config::{self, Actor, Authority};
@@ -244,7 +244,7 @@ pub(crate) async fn apply(
             "control.character.mutate"
         }
         "operation.get" => "control.operation.read",
-        "trace.read" => "control.execution.metadata.read",
+        "trace.read" | "trace.export" => "control.execution.metadata.read",
         "plugin.configuration.read" => "control.plugin.config.content.read",
         "plugin.configuration.save" => "control.plugin.config.mutate",
         "plugin.observe" => "control.plugin.config.content.read",
@@ -278,7 +278,7 @@ pub(crate) async fn apply(
         .await?;
     }
     if let Request::Read(_, method, args) = request
-        && method == "trace.read"
+        && matches!(method.as_str(), "trace.read" | "trace.export")
         && args["content"] == true
     {
         config::authorize(
@@ -309,6 +309,7 @@ pub(crate) async fn apply(
                     Ok(json!({"authorized":true}))
                 }
                 "trace.read" => trace::read(db, args, authority).await,
+                "trace.export" => trace::export(db, args, authority).await,
                 "plugin.configuration.read" => crate::host::configuration::read(db, args).await,
                 "plugin.list" | "plugin.get" => crate::host::configuration::status(db, args).await,
                 "plugin.observe" => crate::host::configuration::observation(db, args).await,
