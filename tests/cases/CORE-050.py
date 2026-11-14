@@ -12,6 +12,7 @@ import io
 import wave
 import importlib.util
 import os
+import queue
 from pathlib import Path
 from tests.harness.compact import Owner, reply, call
 from tests.harness.crash import kill_writer
@@ -275,6 +276,7 @@ def run(ctx):
         "parent": measured("parent", parent_call, ctx, sdk),
         "segment": measured("segment", parent_call, ctx, sdk, True),
         "wires": measured("wires", protocols, ctx, sdk),
+        "jev": measured("jev", jev_wire, ctx, sdk),
         "media": measured("media", media_input, ctx, sdk),
         "main_audio": measured("main_audio", main_audio.run, ctx, sdk, install, Peer),
         "changed_profile": measured("changed_profile", changed_profile, ctx, sdk),
@@ -1019,6 +1021,137 @@ def protocols(ctx, sdk):
                     }
                 )
     return proofs
+
+
+def jev_wire(ctx, sdk):
+    owner = Owner(ctx, "aux-jev", 62)
+    open_space, paused_space = (
+        json.dumps(["qq", "compact", group], separators=(",", ":")) for group in ("720", "721")
+    )
+    with owner.svc.running():
+        original, paused = [
+            owner.op("entry", "group", space)["entry"]
+            for space in (open_space, paused_space)
+        ]
+
+    env = {**os.environ, "YUKI_JEV_FIXTURE_KEY": "fixture-bearer"}
+    folder = ctx.working / "aux-jev-peer"
+    with Recorder("/systemone") as upstream:
+        config = owner.svc.data / "yuki.toml"
+        with config.open("a", encoding="utf-8") as output:
+            output.write(
+                '\n[qq]\nnamespace="compact"\ndesignated_ingress="100"\n'
+                '[qq.groups]\n"720"="open"\n"721"="paused"\n'
+                '[[qq.bots]]\nself_id="100"\nstage=' + json.dumps(owner.bot["assignment"])
+                + '\ntoken_env="YUKI_JEV_FIXTURE_KEY"\n'
+            )
+        install(ctx, owner, folder, sdk, upstream, original, grants=False)
+        with config.open("a", encoding="utf-8") as output:
+            output.write(
+                '\n[plugins.participation]\nentries=' + json.dumps([original, paused])
+                + '\n[plugins.aux_routes.jev]\npurposes=["review"]\norigins=["event"]\nentries='
+                + json.dumps([original, paused])
+                + '\n[plugins.aux_routes.jev.profile]\nendpoint=' + json.dumps(upstream.url)
+                + '\nmodel="jev-request-fixture"\nname="Jev"\nmerge_ms=0\n'
+                + 'root_slots=3\nmax_input_units=100000\nmax_output=128\n'
+                + 'key_env="YUKI_JEV_FIXTURE_KEY"\n'
+                + '[plugins.aux_routes.jev.jev]\nresponse_model="jev-response-fixture"\ntimeout_seconds=12.0\n'
+            )
+
+        peer = Peer(owner, folder)
+        with owner.svc.running(environment=env):
+            owner.until((folder / "ready.json").exists)
+            def record(key, space):
+                return owner.op("ingress", "record", json.dumps({
+                    "source": key, "account": owner.user["account"],
+                    "bot_stage": owner.bot["assignment"], "kind": "message",
+                    "space": space, "observed": 721, "occurred": 720,
+                    "segments": [{"type": "text", "text": "雨停了嗎？"}],
+                }))["event"]
+
+            src = record("jev-native", open_space)
+            unavailable = record("jev-paused", paused_space)
+            lost_source = record("jev-native-lost", open_space)
+            owner.until((folder / ("event-" + str(src) + ".json")).exists)
+            request = {
+                "state": {"focus": {"event_id": str(src), "text": "雨停了嗎？"}, "context": []},
+                "questions": {"floor_state": {"type": "choice", "instructions": "誰應當回應？",
+                                              "criteria": {"yuki": "Yuki", "unknown": "未知"}}},
+            }
+            params = {"origin": {"event": src}, "call_id": "jev-original", "route": "jev",
+                      "purpose": "review", "jev": request}
+            peer.call("llm.complete", {**params, "origin": {"event": unavailable}}, False)
+            peer.call("llm.complete", {**params, "jev": {**request, "model": "different"}}, False)
+            peer.call("llm.complete", {**params, "text": "different dialect"}, False)
+            peer.call("llm.complete", {**params, "jev": {**request, "questions": {}}}, False)
+            peer.call("llm.complete", {**params, "text": "chat only", "jev": None}, False)
+            ctx.equal("invalid Jev requests reserve no budget", owner.rows("SELECT count(*) FROM model_requests"), [(0,)])
+            ctx.check("paused or malformed Jev issues no HTTP", upstream.wires.empty())
+
+            key = peer.submit("llm.complete", params)
+            try:
+                raw, channel = upstream.receive(timeout=4)
+            except queue.Empty:
+                ctx.write("jev-before-dispatch.json", {
+                    "reply": peer.receive(key, None),
+                    "events": owner.rows("SELECT id,entry_id,observed_generation FROM events ORDER BY id"),
+                    "reserved": owner.rows("SELECT id,root FROM model_requests"),
+                    "attempts": owner.rows("SELECT id,state FROM model_attempts"),
+                })
+                raise
+            ctx.equal("Jev sends exactly the native three-field envelope", json.loads(raw),
+                      {**request, "model": "jev-request-fixture"})
+            ctx.equal("Jev uses the installed bearer credential", upstream.header_shapes[-1]["bearer"], True)
+            pending = peer.call("llm.complete", params)
+            ctx.equal("same-key Jev does not buy a second attempt", pending["state"], "dispatched")
+            response = {
+                "model": "jev-response-fixture",
+                "answers": {"floor_state": {"type": "choice",
+                            "probabilities": {"yuki": 0.95, "unknown": 0.05}, "choice": "yuki"}},
+                "usage": {"input_tokens": 13, "output_tokens": 2},
+            }
+            channel.put((response, 0))
+            receipt = peer.receive(key)
+            ctx.equal("Jev records the physical response", receipt["state"], "response")
+            ctx.equal("Jev retains known usage without filling missing totals", receipt["usage"],
+                      {"input": 13, "output": 2})
+            ctx.equal("Jev reuses original logical identity during dispatch",
+                      pending["logical"], receipt["logical"])
+            page = peer.call("llm.result", {"request": receipt["request"]})
+            ctx.equal("result returns the native answer and provider usage",
+                      json.loads(base64.b64decode(page["bytes"])), response)
+            ctx.equal("Jev review does not admit Main", owner.rows("SELECT count(*) FROM accepted_sources"), [(0,)])
+
+            wrong_key = peer.submit("llm.complete", {**params, "call_id": "jev-wrong-model"})
+            _, wrong_request = upstream.receive()
+            wrong_request.put(({**response, "model": "unexpected-model"}, 0))
+            wrong = peer.receive(wrong_key)
+            ctx.equal("wrong Jev model holds content with usage", (wrong["state"], wrong["usage"]),
+                      ("response_held", receipt["usage"]))
+            bad_page = peer.call("llm.result", {"request": wrong["request"]})
+            ctx.equal("wrong Jev model returns no content", bad_page["size"], 0)
+
+            peer.call("llm.complete", {**params, "call_id": "after-invalid"}, False)
+            lost_params = {**params, "origin": {"event": lost_source}, "call_id": "jev-lost"}
+            lost_key = peer.submit("llm.complete", lost_params)
+            _, lost_request = upstream.receive()
+            lost_request.put((b"partial", 10))
+            lost = peer.receive(lost_key)
+            ctx.equal("incomplete Jev response is unknown", (lost["state"], lost["usage"]), ("unknown", None))
+            peer.call("llm.complete", {**lost_params, "call_id": "after-unknown"}, False)
+            ctx.equal("each logical request reserves its root once",
+                      owner.rows("SELECT reserved_requests FROM root_budgets ORDER BY reserved_requests"), [(1,), (2,)])
+
+        (folder / "ready.json").unlink()
+        with owner.svc.running(environment=env):
+            owner.until((folder / "ready.json").exists)
+            ctx.equal("cold Jev replay returns the first receipt", peer.call("llm.complete", params), receipt)
+            ctx.equal("cold Jev replay returns the original unknown", peer.call("llm.complete", lost_params), lost)
+            ctx.equal("cold replay still has three physical attempts",
+                      owner.rows("SELECT count(*) FROM model_attempts"), [(3,)])
+            ctx.check("cold Jev replay issues no HTTP", upstream.wires.empty())
+    return {"request": json.loads(raw), "response": response, "receipt": receipt,
+            "wrong_response_model": wrong, "unknown": lost, "physical_attempts": 3}
 
 
 def media_input(ctx, sdk):

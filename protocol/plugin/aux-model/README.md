@@ -12,6 +12,22 @@ Result pages belong to the original plugin and current route authority. Source e
 
 Private context from additional events declares those IDs in `sources`. Each reference must already belong to the original parent or be retained by this plugin within the approved entry. The request binds these dependencies before reservation. Erasure of an extra context source also fences a late response, while preserving its accounting. Static instructions can omit source references.
 
+An operator can install a Jev route for an existing participation scope. Its
+`profile` pins the endpoint, request model, environment key reference and root
+budget. The route's `jev` table pins `response_model` and `timeout_seconds`. It
+requires event origins in the same enabled participation entries. The original
+human event must belong to the current generation. For any additional context,
+declare the retained event IDs in `sources` from the same entry and generation.
+
+On that route, send `jev: {state, questions}` with the original call key. The
+Host supplies the configured model and sends the native three-field request.
+`llm.result` pages the original response's JSON, including the model, answers
+and any usage. The participation library validates its rubric and decides
+whether the result supports a proposal. The common ledger retains numeric usage
+even when the returned model is wrong. An interrupted physical attempt stays
+unknown, and a same-key read returns its original receipt. This is an
+unpublished candidate for EXT-025.
+
 An installation can enable `[reflection_budget]` in `yuki.toml`. It defaults to
 `timezone = "Asia/Shanghai"` and `max_daily_calls = 96` when the table is
 present. The shared limit counts committed physical attempts for `reflect`

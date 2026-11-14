@@ -205,6 +205,16 @@ impl Install {
                 );
             }
             route.validate()?;
+            if route.jev.is_some()
+                && self
+                    .participation
+                    .as_ref()
+                    .is_none_or(|policy| !route.entries.is_subset(&policy.entries))
+            {
+                return Err(
+                    "Jev route requires the original installed participation entries".into(),
+                );
+            }
         }
         if !identifier(&self.id) || !identifier(&self.namespace) || !self.program.is_absolute() {
             return Err("invalid plugin identity or executable".into());

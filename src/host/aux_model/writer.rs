@@ -33,6 +33,44 @@ fn text<'a>(params: &'a Value, name: &str) -> Result<&'a str> {
         .ok_or_else(|| format!("missing {name}").into())
 }
 
+async fn chat_body(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    generation: &str,
+    params: &Value,
+    profile: &crate::runtime::main::Config,
+) -> Result<(Value, Option<chat::Task>)> {
+    let mut task: Option<chat::Task> = params
+        .get("task")
+        .map(|v| serde_json::from_value(v.clone()))
+        .transpose()?;
+    if let Some(task) = &mut task {
+        task.mode = crate::model::profile_store::runtime::structured_mode(profile, &task.mode)?;
+        jsonschema::validator_for(&task.schema)?;
+        if task.validation_retries != 0 {
+            return Err("auxiliary route requires explicit new calls after invalid results".into());
+        }
+    }
+    let mut messages = vec![];
+    for content in params["context"].as_array().into_iter().flatten() {
+        messages.push(json!({"role":"system","content":content}));
+    }
+    messages.push(json!({"role":"user","content":text(params, "text")?}));
+    if let Some(turn) = params["origin"]["session"].as_str() {
+        messages = super::super::plugin_sessions::model_input(db, plugin, generation, turn, params)
+            .await?;
+    }
+    let mut layout = json!({"model":profile.model,"max_tokens":profile.max_output,"stream":false,"messages":messages});
+    chat::configure(&mut layout, task.as_ref(), vec![]);
+    if task.is_none() {
+        layout["tool_choice"] = json!("none");
+    }
+    Ok((
+        profile.protocol.request(layout, profile, task.as_ref())?,
+        task,
+    ))
+}
+
 async fn request(
     db: &mut SqliteConnection,
     plugin: &str,
@@ -68,35 +106,16 @@ async fn request(
             crate::model::profile_store::runtime::select(db, &route.profile, &task).await?;
         route.validate()?;
     }
-    let mut task: Option<chat::Task> = params
-        .get("task")
-        .map(|v| serde_json::from_value(v.clone()))
-        .transpose()?;
-    if let Some(task) = &mut task {
-        task.mode =
-            crate::model::profile_store::runtime::structured_mode(&route.profile, &task.mode)?;
-        jsonschema::validator_for(&task.schema)?;
-        if task.validation_retries != 0 {
-            return Err("auxiliary route requires explicit new calls after invalid results".into());
-        }
-    }
-    let input = text(params, "text")?;
-    let mut messages = vec![];
-    for content in params["context"].as_array().into_iter().flatten() {
-        messages.push(json!({"role":"system","content":content}));
-    }
-    messages.push(json!({"role":"user","content":input}));
-    if let Some(turn) = params["origin"]["session"].as_str() {
-        messages = super::super::plugin_sessions::model_input(db, plugin, generation, turn, params)
-            .await?;
-    }
     let profile = &route.profile;
-    let mut layout = json!({"model":profile.model,"max_tokens":profile.max_output,"stream":false,"messages":messages});
-    chat::configure(&mut layout, task.as_ref(), vec![]);
-    if task.is_none() {
-        layout["tool_choice"] = json!("none");
-    }
-    let mut body = profile.protocol.request(layout, profile, task.as_ref())?;
+    let (mut body, task) = match (route.jev.is_some(), params.get("jev")) {
+        (true, Some(input)) => (
+            json!({"model":profile.model,"state":input["state"],"questions":input["questions"]}),
+            None,
+        ),
+        (false, None) => chat_body(db, plugin, generation, params, profile).await?,
+        _ => return Err("auxiliary input does not match the installed wire".into()),
+    };
+    let contract = route.contract();
     let has_media = params["selected_media"] == true || params.get("media").is_some();
     let transcript = if purpose == "transcript" && has_media {
         let handle = text(&params["origin"], "handle")?;
@@ -142,7 +161,7 @@ async fn request(
             || row.get::<&str, _>("revision") != revision
             || row.get::<Option<String>, _>("task") != task
             || row.get::<&str, _>("request_json") != raw
-            || row.get::<&str, _>("profile_contract") != profile.contract()
+            || row.get::<&str, _>("profile_contract") != contract
             || row.get::<Option<String>, _>("parent_execution") != origin.parent
             || !row.get::<bool, _>("sources_covered")
         {
@@ -163,10 +182,12 @@ async fn request(
              AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
              AND NOT EXISTS(SELECT 1 FROM participation_erased_mentions f JOIN participation_held_sources h
                  ON h.source=f.event AND h.owner=?3 WHERE f.event=e.id)
+             AND (NOT ?6 OR (e.entry_id=?2 AND e.observed_generation=coalesce(
+                 (SELECT generation FROM main_windows WHERE conversation=e.entry_id),1)))
              AND (e.id=?5 OR (e.entry_id=?2 AND EXISTS(SELECT 1 FROM source_holds WHERE owner=?3 AND source=e.id))
                  OR e.id IN(SELECT source FROM executions WHERE id=?4 UNION SELECT event FROM main_dependencies WHERE execution=?4)))",
         ).bind(event).bind(&origin.entry).bind(plugin).bind(&origin.parent)
-            .bind(origin.event).fetch_one(&mut *db).await?;
+            .bind(origin.event).bind(route.jev.is_some()).fetch_one(&mut *db).await?;
         if !allowed {
             return Err("declared auxiliary source outside original retained scope".into());
         }
@@ -178,7 +199,7 @@ async fn request(
     }
     let id = new_id(db).await?;
     let logical = format!("plugin-aux:{id}");
-    execution::activate(db, &exec, &logical, &profile.contract()).await?;
+    execution::activate(db, &exec, &logical, &contract).await?;
     sqlx::query("INSERT INTO core_meta(key,value) VALUES(?,?)")
         .bind(format!("aux-model-profile:{logical}"))
         .bind(serde_json::to_string(profile)?)
@@ -383,7 +404,7 @@ async fn authorized_route(
         route.profile = serde_json::from_str(&value)?;
         let contract: String = sqlx::query_scalar("SELECT a.profile_contract FROM activations a JOIN model_requests r ON r.activation=a.id WHERE r.id=?")
             .bind(row.get::<&str,_>("logical")).fetch_one(db).await?;
-        if route.profile.contract() != contract {
+        if route.contract() != contract {
             return Err("original_profile_unavailable".into());
         }
     }
@@ -409,6 +430,15 @@ async fn dispatch(
         return Ok(json!({"dispatch_now":false}));
     }
     let route = authorized_route(db, &row, plugin, generation, true).await?;
+    if route.jev.is_some()
+        && route
+            .profile
+            .key_env
+            .as_ref()
+            .is_none_or(|name| !std::env::var(name).is_ok_and(|value| !value.trim().is_empty()))
+    {
+        return Err("original Jev credential unavailable".into());
+    }
     let origin: Value = serde_json::from_str(row.get("origin"))?;
     let mut foreground_generation = None;
     if row.get::<&str, _>("purpose") == "reflect" && origin["maintenance"].is_string() {
@@ -436,7 +466,7 @@ async fn dispatch(
             .admit(db, &attempt, row.get("purpose"), &origin)
             .await?;
     }
-    permit["profile"] = serde_json::to_value(route.profile)?;
+    permit["route"] = serde_json::to_value(&route)?;
     if let Some(generation) = foreground_generation {
         permit["foreground_generation"] = json!(generation);
     }
@@ -500,13 +530,12 @@ async fn result(
             .bind(row.get::<&str, _>("logical"))
             .fetch_one(&mut *db)
             .await?;
-        let decoded = route.profile.protocol.decode(
+        serde_json::to_vec(&decode_result(
+            &route,
             attempt.get("response"),
             task.as_ref(),
-            &route.profile,
-            &serde_json::from_str(&paid)?,
-        )?;
-        serde_json::to_vec(&decoded.result)?
+            &paid,
+        )?)?
     } else {
         vec![]
     };
@@ -598,18 +627,29 @@ async fn decoded_receipt(
         .bind(row.get::<&str, _>("logical"))
         .fetch_one(&mut *db)
         .await?;
-    let decoded = route.profile.protocol.decode(
-        &response,
-        task.as_ref(),
-        &route.profile,
-        &serde_json::from_str(&request)?,
-    )?;
+    let decoded = decode_result(&route, &response, task.as_ref(), &request)?;
     let result = if serde_json::from_str::<Value>(row.get("origin"))?["session"].is_string() {
-        json!(super::super::plugin_sessions::visible_text(&decoded.result))
+        json!(super::super::plugin_sessions::visible_text(&decoded))
     } else {
-        decoded.result
+        decoded
     };
     Ok(
         json!({"result":result,"execution":row.get::<String,_>("execution"),"logical":row.get::<String,_>("logical"),"route":row.get::<String,_>("route"),"purpose":row.get::<String,_>("purpose")}),
     )
+}
+
+fn decode_result(
+    route: &Route,
+    response: &str,
+    task: Option<&chat::Task>,
+    paid: &str,
+) -> Result<Value> {
+    if let Some(jev) = &route.jev {
+        return jev.result(response);
+    }
+    Ok(route
+        .profile
+        .protocol
+        .decode(response, task, &route.profile, &serde_json::from_str(paid)?)?
+        .result)
 }

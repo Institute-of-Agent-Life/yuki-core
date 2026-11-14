@@ -80,6 +80,25 @@ async fn original(
         current_generation: row.try_get("current_generation")?,
     })
 }
+
+pub(in crate::host) async fn authorize_review(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    event: i64,
+) -> Result<()> {
+    let (_, policy) = super::policy(db, plugin).await?;
+    let original = original(db, plugin, &policy, event).await?;
+    let envelope: Value = serde_json::from_str(&original.envelope)?;
+    if original.observed_generation != Some(original.current_generation)
+        || envelope["kind"] != "message"
+    {
+        return Err(
+            "Jev requires a human observation in the current participation generation".into(),
+        );
+    }
+    Ok(())
+}
+
 pub(super) async fn list(db: &mut SqliteConnection, c: &Change, policy: &Policy) -> Result<Value> {
     let target = c.params["entry"].as_str().ok_or("entry required")?;
     entry(db, policy, target).await?;
