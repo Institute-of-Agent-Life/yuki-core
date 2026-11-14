@@ -12,9 +12,9 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, g: &Granted) -> 
     let kind = c.params["kind"].as_str().ok_or("content kind required")?;
     let id = c.params["id"].as_str().ok_or("content ID required")?;
     let value = if kind == "tool" {
-        let value = super::tools::full(db, g, id.parse()?).await?;
-        super::tools::retain(db, &c.plugin, &value).await?;
-        value
+        let receipt = super::tools::full(db, g, id.parse()?).await?;
+        super::tools::retain(db, &c.plugin, &receipt).await?;
+        receipt.value
     } else if matches!(kind, "fact" | "evidence") {
         let method = if kind == "evidence" {
             "maintenance.evidence"
@@ -83,11 +83,11 @@ pub(super) async fn dependencies(
     let id = c.params["id"].as_str().ok_or("resource ID required")?;
     let kind = c.params["kind"].as_str().ok_or("resource kind required")?;
     let sources = if kind == "tool" {
-        let value = super::tools::full(db, g, id.parse()?).await?;
-        if c.params["source_version"] != crate::memory::scope::hash(&value) {
+        let receipt = super::tools::full(db, g, id.parse()?).await?;
+        if c.params["source_version"] != crate::memory::scope::hash(&receipt.value) {
             return Err("original tool dependency version changed".into());
         }
-        super::tools::sources(db, value["execution"].as_str().ok_or("execution required")?).await?
+        receipt.sources
     } else if kind == "fact" {
         if !g.policy.methods.contains("maintenance.fact.page")
             || crate::memory::scope::visible(db, &g.reader, Some(id), "", 1)

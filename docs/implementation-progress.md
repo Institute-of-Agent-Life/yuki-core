@@ -1,3 +1,5 @@
+**CORE-035 工具快照的原值來源。** 分支 `codex/core-035-tool-lineage`。以真 Host 寫入及讀回本地值重現來源遺漏。維護回條、依賴分頁、模型 origin 和 preview 統一採用原讀取執行及原值的來源。讀取已清除、無法追溯或跨入口的原值時不會提供維護快照。Host 與 SDK 方法形狀及 reader 60 延續既有版本。Mac 卡檢查通過 412 項，`artifacts/CORE-035/tool-snapshot-mac-01/manifest.json` SHA-256 `09b6ebbcc66c761ff4640e3b3cf27621db8e7ef0de63bb7612644f6c3cb859d5`。
+
 **CORE-040 等功能裁決。** 分支 `codex/core-040-equivalence-decision`。固定原 A／B／C 共 12 次冷暖啟動，重新從原始紀錄核對 14,400 筆 QQ 外部效果。實際模型工具有七項缺少、四項不同，決定維持已驗的舊部署和獨立 Rust 候選。速度與供應商成本仍無可比值。裁決 `artifacts/CORE-040/equivalence-decision-01/slice-decision.json` SHA-256 `d6ae6d06832b73791289b89c81d76800eafccfccc93b9e5ceab9398fc9cca300`。CORE-041／042／054 的資料移交仍待等功能裁決與隔離資料副本。正式完成維持 51／58。
 
 **核心 #128 原候選交接。** 分支 `codex/core-candidate-handoff-20261113`，head `5fae3c89ad7e`，main `f9f9a4cce7d0`。Mac、Linux、HJW Windows 各通過 52 張卡，原生重放分別通過 200、201、200 項。`artifacts/ci/local-pr/128/main-confirmation.json` SHA-256 `d354539b4d01ec7fe77cf6eb9aad8f8664a85987f9157ae7f942d5b27e28c4e0`。[核心 #128](https://github.com/Institute-of-Agent-Life/yuki-core/pull/128)

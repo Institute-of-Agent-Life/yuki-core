@@ -191,8 +191,10 @@ def run(ctx):
     historic = historical(ctx, sdk, aux)
     fact_plans = fact_inputs(ctx, sdk, aux)
     tool_map = tool_receipts(ctx, sdk, aux)
+    tool_snapshot = tool_snapshot_sources(ctx, sdk, aux)
     return {
         "tool_receipts": tool_map,
+        "tool_snapshot_sources": tool_snapshot,
         "paid_previews": paid,
         "reembed": vectors,
         "quality_erasure": quality_erasure,
@@ -215,6 +217,74 @@ def run(ctx):
             ).read_bytes()
         ).hexdigest(),
     }
+
+
+def tool_snapshot_sources(ctx, sdk, aux):
+    o = Owner(ctx, "maintenance-snapshot", 60)
+    with o.svc.running():
+        written = o.human("Original value producer.")
+        read = o.human("Read the saved value.")
+        producer = o.op("ingress", "claim", written)["execution"]
+        consumer = o.op("ingress", "claim", read)["execution"]
+        entry = o.rows("SELECT entry_id FROM events WHERE id=?", read)[0][0]
+        original = {"value": "Retained original value."}
+        o.op("effect", "intent", producer, "write-value", o.actor, "put", "saved",
+             json.dumps(original))
+        o.op("effect", "local", producer, "write-value", o.actor)
+        o.op("effect", "intent", consumer, "read-value", o.actor, "get", "saved", "{}")
+        receipt = o.op("effect", "local", consumer, "read-value", o.actor)
+        ctx.equal("actual get result includes the earlier value", receipt["result"]["value"], original)
+        group = '["qq","compact","900"]'
+        other_entry = o.op("entry", "group", group)["entry"]
+        other_event = o.human("Check the other entry.", group)
+        other = o.op("ingress", "claim", other_event)["execution"]
+        o.op("effect", "intent", other, "read-other", o.actor, "get", "saved", "{}")
+        o.op("effect", "local", other, "read-other", o.actor)
+
+    folder = ctx.working / "maintenance-snapshot-peer"
+    folder.mkdir()
+    methods = ["maintenance.tool.page", "maintenance.evidence", "maintenance.dependencies"]
+    args = [str(ctx.root / "tests/peers/aux-model/peer.py"), str(folder),
+            str(sdk / "python-install")]
+    with (o.svc.data / "yuki.toml").open("a", encoding="utf-8") as config:
+        config.write(
+            '\n[[plugins]]\nid="snapshot-reader"\nnamespace="snapshot-reader"\nprogram='
+            + json.dumps(sys.executable) + "\nargs=" + json.dumps(args)
+            + "\ngrants=" + json.dumps(["forget.owner", *methods])
+            + "\n[plugins.maintenance.scopes.original]\nactor=" + json.dumps(o.actor)
+            + "\nentry=" + json.dumps(entry) + '\npurposes=["reflect"]\nmethods='
+            + json.dumps(methods)
+            + "\n[plugins.maintenance.scopes.group]\nactor=" + json.dumps(o.actor)
+            + "\nentry=" + json.dumps(other_entry) + '\npurposes=["reflect"]\nmethods='
+            + json.dumps(methods) + "\n"
+        )
+    peer = aux.Peer(o, folder)
+    params = {"scope": "original", "purpose": "reflect"}
+    query = {**params, "execution": consumer}
+    with o.svc.running():
+        o.until((folder / "ready.json").exists)
+        snapshot, = peer.call("maintenance.tool.page", query)["items"]
+        ctx.equal("snapshot keeps both real original events", snapshot["source_ids"], [written, read])
+        ctx.equal("snapshot source count is exact", snapshot["source_count"], 2)
+        refs = peer.call(
+            "maintenance.dependencies",
+            {**params, "kind": "tool", "id": str(snapshot["receipt"]), "source_version": snapshot["version"]},
+        )
+        ctx.equal("dependency page agrees with the original tool receipt", refs["sources"], [written, read])
+        ctx.equal("plugin retains obligations for both original events",
+                  o.rows("SELECT source FROM source_holds WHERE owner='snapshot-reader' AND item=? ORDER BY source",
+                         f"maintenance-tool:{snapshot['receipt']}"), [(written,), (read,)])
+        ctx.equal("group scope cannot project a snapshot of a private value",
+                  peer.call("maintenance.tool.page", {**params, "scope": "group", "execution": other})["items"],
+                  [])
+        o.op("privacy", "erase", "erase-only-value-source", o.actor, json.dumps([written]))
+        o.until(lambda: not o.op("privacy", "pending", "snapshot-reader")["obligations"])
+        ctx.equal("erased value source makes its snapshot unavailable",
+                  peer.call("maintenance.tool.page", query)["items"], [])
+        ctx.equal("clearing the value keeps the separate original read event",
+                  o.rows("SELECT source FROM invalidated_sources ORDER BY source"), [(written,)])
+    return {"write_event": written, "read_event": read, "source_ids": refs["sources"],
+            "original_receipt": snapshot["receipt"], "invalidated_source": written}
 
 
 def paid_previews(ctx, sdk, aux):

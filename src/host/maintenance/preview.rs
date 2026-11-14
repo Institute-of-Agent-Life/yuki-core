@@ -48,7 +48,7 @@ async fn proofs(
 ) -> Result<Vec<(Source, String)>> {
     let mut proofs = vec![];
     for source in sources(edit) {
-        if let Source::Tool {
+        let tool_sources = if let Source::Tool {
             execution,
             operation,
             ..
@@ -69,14 +69,20 @@ async fn proofs(
             {
                 return Err("tool evidence must be in the frozen primary receipt map".into());
             }
-        }
+            Some(super::tools::full(db, g, receipt).await?.sources)
+        } else {
+            None
+        };
         let proof = memory::evidence::resolve(db, &g.reader, &g.policy.actor, source).await?;
         if let Some(event) = proof.event {
             if !primary.contains(&event) {
                 return Err("context is not an approved primary source".into());
             }
         } else if let Some(execution) = &proof.execution {
-            let dependencies = super::tools::sources(db, execution).await?;
+            let dependencies = match tool_sources {
+                Some(sources) => sources,
+                None => super::tools::sources(db, execution, None).await?,
+            };
             if dependencies.is_empty() || dependencies.iter().any(|id| !primary.contains(id)) {
                 return Err("tool evidence outside approved primary sources".into());
             }
@@ -332,8 +338,8 @@ pub(super) async fn prepare(db: &mut SqliteConnection, c: &Change, g: &Granted) 
     }
     for reference in c.params["tools"].as_array().into_iter().flatten() {
         let receipt = reference["receipt"].as_i64().ok_or("receipt required")?;
-        let value = super::tools::full(db, g, receipt).await?;
-        super::tools::retain(db, &c.plugin, &value).await?;
+        let original = super::tools::full(db, g, receipt).await?;
+        super::tools::retain(db, &c.plugin, &original).await?;
         sqlx::query("INSERT INTO maintenance_tool_inputs VALUES(?,?,?,?)")
             .bind(&id)
             .bind(receipt)
@@ -341,10 +347,7 @@ pub(super) async fn prepare(db: &mut SqliteConnection, c: &Change, g: &Granted) 
             .bind(reference["role"].as_str())
             .execute(&mut *db)
             .await?;
-        for event in
-            super::tools::sources(db, value["execution"].as_str().ok_or("execution required")?)
-                .await?
-        {
+        for event in original.sources {
             sqlx::query("INSERT OR IGNORE INTO maintenance_sources VALUES(?,?,'tool','')")
                 .bind(&id)
                 .bind(event)
