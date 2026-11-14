@@ -135,7 +135,9 @@ async fn load_inner(
                 None
             }
         } else {
-            super::super::attribution::reply_author(conn, id).await?
+            crate::ingress::reply::group_human_reply(conn, id)
+                .await?
+                .map(|reply| (reply.event, reply.person))
         };
         if let Some((original, person)) = reply {
             aliases.insert("reply_author".into(), person);

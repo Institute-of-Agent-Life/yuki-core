@@ -1,5 +1,9 @@
 use super::{Change, Policy};
-use crate::{Result, ingress::admit, privacy::source};
+use crate::{
+    Result,
+    ingress::{admit, reply::group_human_reply},
+    privacy::source,
+};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -126,6 +130,22 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy)
             "observed_generation":original.observed_generation,
             "current_generation":original.current_generation
         });
+    }
+    if c.params["include_reply"] == true {
+        page["reply_to"] = Value::Null;
+        if frame["kind"] == "message"
+            && let Some(generation) = original.observed_generation
+            && let Some(reply) = group_human_reply(db, id).await?
+            && reply.observed_generation == Some(generation)
+        {
+            let held =
+                source::acquire(db, &c.plugin, &format!("participation:{id}"), reply.event).await?;
+            let raw = serde_json::to_vec(&held["envelope"])?;
+            page["reply_to"] = json!({
+                "event": reply.event,
+                "version": format!("{:x}", Sha256::digest(&raw))
+            });
+        }
     }
     Ok(page)
 }

@@ -3518,6 +3518,9 @@
           },
           "include_origin": {
             "type": "boolean"
+          },
+          "include_reply": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -3549,6 +3552,27 @@
           },
           "complete": {
             "type": "boolean"
+          },
+          "reply_to": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "event": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            },
+            "required": [
+              "event",
+              "version"
+            ],
+            "additionalProperties": false
           },
           "origin": {
             "type": "object",
