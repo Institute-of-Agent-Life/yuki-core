@@ -26,8 +26,22 @@ or erased anchor, unknown generation, SELF echo or ambiguous locator yields
 before returning the reference. The reply projection does not alter the focus
 envelope or authorize promotion by itself.
 
+Send `mention_cursor: 0` to read the first page of original native annotations.
+Each page holds up to 16 items in ingress order, including repeated targets.
+Use `mentions.next` as the next mention cursor and keep the source `version`.
+The byte cursor is independent. A recorded human account transfer does not
+replace the original assignment or Person. Unresolved identity and unrecorded
+offsets are null. Recorded offsets use Unicode scalar positions in the
+original rendered text. Literal at-sign text has no native annotation.
+
+If a mentioned Person is forgotten, participation stops serving the source
+and the Host asks previous participation owners to erase their copies by
+event ID. The original author's event remains in the ledger. Derived
+participation requests tied to that source lose their bodies and retain
+accounting and effect receipts.
+
 Acceptance races rule and invitation promotion, transfer or disable the original actor, erase a hydrated source, restart without the original envelope, pause a group before activation, and exercise a real SELF send after another member's message. The receiver, original execution, source IDs and model request counts are recorded in `promotion-vs-self.json`.
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.27` and Python `1.0.0a27`. True EXT-025 consumption is pending. The core provides no sampling or Jev algorithm.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.28` and Python `1.0.0a28`. True EXT-025 consumption is pending. The core provides no sampling or Jev algorithm.

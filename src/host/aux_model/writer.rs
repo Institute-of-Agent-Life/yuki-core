@@ -161,6 +161,8 @@ async fn request(
              JOIN persons root ON root.id=coalesce(p.current_root,p.id)
              WHERE e.id=?1 AND p.enabled AND root.enabled
              AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
+             AND NOT EXISTS(SELECT 1 FROM participation_erased_mentions f JOIN participation_held_sources h
+                 ON h.source=f.event AND h.owner=?3 WHERE f.event=e.id)
              AND (e.id=?5 OR (e.entry_id=?2 AND EXISTS(SELECT 1 FROM source_holds WHERE owner=?3 AND source=e.id))
                  OR e.id IN(SELECT source FROM executions WHERE id=?4 UNION SELECT event FROM main_dependencies WHERE execution=?4)))",
         ).bind(event).bind(&origin.entry).bind(plugin).bind(&origin.parent)

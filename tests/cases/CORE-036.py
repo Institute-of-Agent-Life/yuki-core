@@ -58,12 +58,12 @@ def run(ctx):
     methods = json.loads(
         (ctx.root / "protocol/plugin/participation/methods.json").read_bytes()
     )["methods"]
-    grants = ["observe.metadata", "forget.owner", *methods]
+    grants = ["observe.metadata", "forget.owner", "llm.complete", "llm.result", *methods]
     env = {**os.environ, "YUKI_SCHEDULE_PEER": "offline-participation"}
     proofs = {}
 
     def record(key, text="original observation", person=None, accept=False, *,
-               native=None, quoted=(), group=space, topic=None, receiver=None):
+               native=None, quoted=(), group=space, topic=None, receiver=None, mentions=()):
         frame = {
             "source": key,
             "native_id": native,
@@ -77,7 +77,7 @@ def run(ctx):
             "occurred": 200,
             "segments": [{"type": "text", "text": text}, *(
                 {"type": "reply", "native_id": target} for target in quoted
-            )],
+            ), *mentions],
         }
         args = ["ingress", "record", json.dumps(frame)]
         if accept:
@@ -114,6 +114,12 @@ def run(ctx):
                 + "="
                 + json.dumps(s.bot["assignment"])
                 + "\n"
+                + '\n[plugins.aux_routes.review]\npurposes=["review"]\norigins=["event"]\nentries='
+                + json.dumps([entry])
+                + '\n[plugins.aux_routes.review.profile]\nendpoint='
+                + json.dumps(http.url)
+                + '\nprotocol="chat"\nmodel="review-fixture"\nname="Jev"\nmerge_ms=0\n'
+                + 'root_slots=2\nmax_input_units=100000\nmax_output=128\n'
             )
         p = aux.Peer(s, folder)
         with s.svc.running(environment=env):
@@ -242,6 +248,72 @@ def run(ctx):
             ctx.equal("reply lookup leaves the source bytes and version intact",
                       {key: value for key, value in quoted_page.items() if key != "reply_to"}, plain_reply)
             p.call("participation.source", {**reply_request, "version": "wrong"}, False)
+
+            qq.send({**qq_message, "user_id": 200, "message_id": 36013, "message": [
+                {"type": "text", "data": {"text": "雪🙂 literal @Yuki "}},
+                {"type": "at", "data": {"qq": 202, "name": "原群友"}},
+                {"type": "at", "data": {"qq": 100}},
+                {"type": "at", "data": {"qq": 202, "name": "原群友"}},
+                {"type": "at", "data": {"qq": "all"}},
+                {"type": "at", "data": {"qq": 999}},
+            ]})
+            mentioned = s.until(lambda: s.rows(
+                "SELECT event_id FROM event_locators WHERE receiver=? AND native_id='36013'",
+                s.bot["assignment"],
+            ))[0][0]
+            _, q = s.wire(http)
+            reply(q, "quiet direct mention")
+            s.finished(mentioned)
+            plain_mention = p.call("participation.source", {"event": mentioned})
+            mention_request = {
+                "event": mentioned, "version": plain_mention["version"], "mention_cursor": 0,
+            }
+            mention_page = p.call("participation.source", mention_request)
+            ctx.equal("mention lookup keeps original content and its version",
+                      {key: value for key, value in mention_page.items() if key != "mentions"}, plain_mention)
+            frozen_mentions = mention_page["mentions"]
+            mention_rows = frozen_mentions["items"]
+            ctx.equal("native repetition and all-member order remain exact",
+                      [row["kind"] for row in mention_rows], ["member", "yuki", "member", "all", "member"])
+            member = {key: mention_rows[0][key] for key in (
+                "account_id", "assignment_id", "person_id", "presence_id", "display_name",
+            )}
+            ctx.equal("member has the original account, assignment and person", member, {
+                "account_id": s.handles[s.c]["account"], "assignment_id": s.handles[s.c]["assignment"],
+                "person_id": s.c, "presence_id": None, "display_name": "原群友",
+            })
+            ctx.equal("only the original bot assignment has presence",
+                      (mention_rows[1]["assignment_id"], mention_rows[1]["presence_id"], mention_rows[1]["person_id"]),
+                      (s.bot["assignment"], s.bot["assignment"], None))
+            ctx.equal("unknown native account has no invented person or assignment",
+                      (mention_rows[4]["assignment_id"], mention_rows[4]["person_id"], mention_rows[4]["presence_id"]),
+                      (None, None, None))
+            mention_text = json.loads(base64.b64decode(plain_mention["data"]))["text"]
+            ctx.equal("recorded offsets use the rendered Unicode text",
+                      [mention_text[row["text_start"]:row["text_end"]] for row in mention_rows],
+                      ["[提及202]", "[提及Agent]", "[提及202]", "[提及全体成员]", "[提及999]"])
+            ctx.equal("literal @ is outside the native span", mention_text[:mention_rows[0]["text_start"]],
+                      "雪🙂 literal @Yuki ")
+            literal = record("literal-at", "@Yuki")
+            ctx.equal("literal @ alone yields no original annotation",
+                      p.call("participation.source", {"event": literal, "mention_cursor": 0})["mentions"]["items"], [])
+            p.call("participation.source", {**mention_request, "mention_cursor": 6}, False)
+
+            long_mentions = record("many-native-mentions", mentions=tuple(
+                {"type": "mention", "account": s.handles[s.c]["account"], "native": "202", "label": "member"}
+                for _ in range(19)
+            ))
+            first_mentions = p.call("participation.source", {"event": long_mentions, "mention_cursor": 0})
+            first_page = first_mentions["mentions"]
+            second_page = p.call("participation.source", {
+                "event": long_mentions, "version": first_mentions["version"],
+                "mention_cursor": first_page["next"],
+            })["mentions"]
+            ctx.equal("large mention arrays page without repeating or skipping",
+                      (len(first_page["items"]), first_page["complete"], len(second_page["items"]),
+                       second_page["complete"], second_page["next"]), (16, False, 3, True, 19))
+            ctx.equal("unrendered offsets remain unknown",
+                      (second_page["items"][0]["text_start"], second_page["items"][0]["text_end"]), (None, None))
 
             other_receiver = s.op("account", "open", "qq", "schedule", "101", 1, "--start", 1)
             record("different-receiver-anchor", native="other-receiver", receiver=other_receiver["assignment"])
@@ -508,6 +580,72 @@ def run(ctx):
             s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
             ctx.equal("erased anchor is unavailable from the unchanged reply envelope",
                       p.call("participation.source", isolated_request)["reply_to"], None)
+            s.op("account", "transfer", s.handles[s.c]["assignment"], 200000, 200000, "--person", s.a)
+            ctx.equal("cold read after account transfer retains the event-time target",
+                      p.call("participation.source", mention_request)["mentions"], frozen_mentions)
+            target_person = "00000000-0000-4000-8000-000000003613"
+            s.op("person", "create", target_person)
+            target = s.op("account", "open", "qq", "schedule", "213", 1,
+                          "--person", target_person, "--start", 1)
+            target_mention = {"type": "mention", "account": target["account"], "native": "213",
+                              "label": "retained original mention"}
+            retained = record("retained-mention", mentions=(target_mention,))
+            never_read = record("unread-mention", mentions=(target_mention,))
+            retained_request = {"event": retained, "mention_cursor": 0}
+            ctx.equal("the retained annotation belongs to the original mentioned Person",
+                      p.call("participation.source", retained_request)["mentions"]["items"][0]["person_id"],
+                      target_person)
+            review = {
+                "call_id": "original-native-mention-review",
+                "origin": {"event": retained},
+                "route": "review",
+                "purpose": "review",
+                "text": "review retained original mention",
+                "sources": [retained],
+            }
+            request = p.submit("llm.complete", review)
+            body, pending = http.receive()
+            ctx.check("a review dispatched once from the original mention source",
+                      "review retained original mention" in body)
+            logical, = s.rows(
+                "SELECT r.id FROM model_requests r JOIN host_aux_requests q ON q.logical=r.id "
+                "JOIN host_aux_origins o ON q.plugin=o.plugin AND q.origin=o.original "
+                "WHERE q.plugin='participation' AND o.event=?", retained,
+            )[0]
+            erased = s.op("privacy", "forget", "participation-mentioned-only", target_person)
+            ctx.equal("a mention-only erasure notifies the owner of the exact retained source",
+                      s.rows("SELECT sources FROM owner_erasures WHERE watermark=? AND owner='participation'",
+                             erased["watermark"]), [(json.dumps([retained]),)])
+            ctx.equal("forget preserves unrelated authors' original event rows",
+                      s.rows("SELECT id FROM events WHERE id IN (?,?) AND envelope!='{}' ORDER BY id",
+                             retained, never_read), [(retained,), (never_read,)])
+            pending.put(({
+                "choices": [{"message": {"role": "assistant", "content": "late-mention-private-canary"},
+                             "finish_reason": "stop"}],
+                "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+            }, 0))
+            p.receive(request, None)
+            attempts = s.until(lambda: s.rows(
+                "SELECT r.request_json,t.response,t.usage_json,t.state FROM model_attempts t "
+                "JOIN model_requests r ON r.id=t.logical WHERE r.id=? AND t.state!='dispatched'", logical,
+            ))
+            ctx.equal("late mention review cannot restore its request or response",
+                      (len(attempts), attempts[0][0], attempts[0][1], attempts[0][3]),
+                      (1, "{}", None, "response_held"))
+            ctx.equal("the original physical usage remains accounted",
+                      json.loads(attempts[0][2])["total"], 7)
+            s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
+            p.call("participation.source", retained_request, False)
+            p.call("participation.source", {"event": never_read, "mention_cursor": 0}, False)
+            p.call("llm.complete", {**review, "call_id": "after-mentioned-person-forget"}, False)
+            ctx.check("mention erasure blocks another physical request", http.wires.empty())
+            ctx.equal("unrelated sources remain readable after mention erasure",
+                      p.call("participation.source", {"event": literal, "mention_cursor": 0})["mentions"]["items"], [])
+            proofs["native_mentions"] = {"event": mentioned, "snapshot": frozen_mentions,
+                                         "bounded_page_sizes": [16, 3], "literal_at_count": 0,
+                                         "erasure_sources": [retained],
+                                         "late_review": {"state": attempts[0][3], "physical_attempts": 1,
+                                                         "usage_total": 7, "paid_calls": 0}}
             proofs["reply_reference"] = {
                 "focus": quoted, "reference": reference,
                 "absent_for": [*unsafe_events, "disabled-author", "across-reset", "erased-anchor"],

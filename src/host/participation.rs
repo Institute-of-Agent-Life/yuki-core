@@ -1,4 +1,5 @@
 mod feedback;
+mod mentions;
 mod proposals;
 mod sources;
 use crate::{Result, runtime::main::Config, store::Store};

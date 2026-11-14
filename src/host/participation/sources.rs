@@ -1,4 +1,4 @@
-use super::{Change, Policy};
+use super::{Change, Policy, mentions};
 use crate::{
     Result,
     ingress::{admit, reply::group_human_reply},
@@ -64,7 +64,8 @@ async fn original(
         JOIN assignments a ON a.id=e.actor_stage AND a.original_person=e.raw_actor
         JOIN assignments b ON b.id=e.bot_stage LEFT JOIN main_windows w ON w.conversation=e.entry_id
         WHERE e.id=? AND p.enabled AND r.enabled AND a.status='active' AND b.status='active'
-        AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)")
+        AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
+        AND NOT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=e.id)")
         .bind(event).fetch_one(&mut *db).await?;
     let entry_id = row.try_get::<String, _>("entry_id")?;
     entry(db, policy, &entry_id).await?;
@@ -86,7 +87,8 @@ pub(super) async fn list(db: &mut SqliteConnection, c: &Change, policy: &Policy)
     let ids:Vec<i64>=sqlx::query_scalar("SELECT e.id FROM events e JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
       JOIN assignments a ON a.id=e.actor_stage AND a.original_person=e.raw_actor JOIN assignments b ON b.id=e.bot_stage
       WHERE e.entry_id=? AND e.id>? AND e.envelope IS NOT NULL AND p.enabled AND r.enabled AND a.status='active' AND b.status='active'
-      AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) ORDER BY e.id LIMIT 8")
+      AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
+      AND NOT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=e.id) ORDER BY e.id LIMIT 8")
       .bind(target).bind(after).fetch_all(&mut *db).await?;
     let mut items = vec![];
     for id in &ids {
@@ -131,12 +133,21 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy)
             "current_generation":original.current_generation
         });
     }
+    if let Some(cursor) = c.params["mention_cursor"].as_i64() {
+        page["mentions"] = mentions::page(db, id, cursor).await?;
+    }
     if c.params["include_reply"] == true {
         page["reply_to"] = Value::Null;
         if frame["kind"] == "message"
             && let Some(generation) = original.observed_generation
             && let Some(reply) = group_human_reply(db, id).await?
             && reply.observed_generation == Some(generation)
+            && !sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=?)",
+            )
+            .bind(reply.event)
+            .fetch_one(&mut *db)
+            .await?
         {
             let held =
                 source::acquire(db, &c.plugin, &format!("participation:{id}"), reply.event).await?;

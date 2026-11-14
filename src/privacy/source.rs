@@ -74,7 +74,9 @@ pub async fn execution_erased(
     {
         return Ok(true);
     }
-    Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=?1) OR EXISTS(SELECT 1 FROM plugin_session_redactions WHERE execution=?1)")
+    Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM main_dependencies d JOIN invalidated_sources i ON i.source=d.event WHERE d.execution=?1)
+        OR EXISTS(SELECT 1 FROM plugin_session_redactions WHERE execution=?1)
+        OR EXISTS(SELECT 1 FROM participation_mention_redactions WHERE execution=?1)")
       .bind(exec).fetch_one(conn).await?)
 }
 async fn check(conn: &mut SqliteConnection, owner: &str, source: i64) -> Result<()> {
@@ -182,7 +184,9 @@ pub async fn late_attempt(
     usage: &str,
 ) -> Result<Option<Value>> {
     let row=sqlx::query("SELECT t.state,t.status_code,t.usage_json,
-        EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.source OR source IN(SELECT event FROM main_dependencies WHERE execution=e.id)) OR EXISTS(SELECT 1 FROM plugin_session_redactions WHERE execution=e.id) AS revoked FROM model_attempts t
+        EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.source OR source IN(SELECT event FROM main_dependencies WHERE execution=e.id))
+        OR EXISTS(SELECT 1 FROM plugin_session_redactions WHERE execution=e.id)
+        OR EXISTS(SELECT 1 FROM participation_mention_redactions WHERE execution=e.id) AS revoked FROM model_attempts t
         JOIN model_requests r ON r.id=t.logical JOIN activations a ON a.id=r.activation
         JOIN executions e ON e.id=a.execution WHERE t.id=?").bind(attempt).fetch_one(&mut *conn).await?;
     if !row.try_get::<bool, _>("revoked")? {
@@ -221,6 +225,61 @@ pub async fn late_attempt(
         diagnostic='source_erased',received_at=coalesce(received_at,CURRENT_TIMESTAMP) WHERE id=?")
         .bind(state).bind(status).bind(fresh.to_string()).bind(attempt).execute(conn).await?;
     Ok(Some(json!({"attempt":attempt,"state":state,"erased":true})))
+}
+
+/// Invalidate participation's derived content without erasing another author's event.
+pub(super) async fn scrub_participation_mentions(
+    db: &mut SqliteConnection,
+    watermark: i64,
+) -> Result<()> {
+    sqlx::query(
+        "WITH RECURSIVE affected(execution) AS (
+           SELECT x.execution FROM (
+             SELECT execution,plugin FROM host_aux_origins
+             UNION ALL
+             SELECT execution,plugin FROM participation_proposals WHERE execution IS NOT NULL
+           ) x JOIN main_dependencies d ON d.execution=x.execution
+           JOIN participation_held_sources h ON h.owner=x.plugin AND h.source=d.event
+           JOIN participation_erased_mentions f ON f.event=d.event AND f.watermark=?1
+           UNION
+           SELECT child.id FROM affected a JOIN main_origins o ON o.parent=a.execution JOIN executions child ON child.origin=o.ref
+         )
+         INSERT OR IGNORE INTO participation_mention_redactions SELECT execution,?1 FROM affected",
+    )
+    .bind(watermark)
+    .execute(&mut *db)
+    .await?;
+    for statement in [
+        "UPDATE main_turns SET result=NULL,material=NULL,diagnostic='source_erased'
+          WHERE execution IN(SELECT execution FROM participation_mention_redactions WHERE watermark=?1)",
+        "UPDATE host_aux_requests SET task=NULL WHERE logical IN(
+          SELECT r.id FROM model_requests r JOIN activations a ON a.id=r.activation
+          JOIN participation_mention_redactions f ON f.execution=a.execution WHERE f.watermark=?1)",
+        "UPDATE model_requests SET request_json='{}' WHERE activation IN(
+          SELECT a.id FROM activations a JOIN participation_mention_redactions f ON f.execution=a.execution
+          WHERE f.watermark=?1)",
+    ] {
+        sqlx::query(statement).bind(watermark).execute(&mut *db).await?;
+    }
+    let attempts: Vec<(String, Option<String>)> = sqlx::query_as(
+        "SELECT t.id,t.usage_json FROM model_attempts t JOIN model_requests r ON r.id=t.logical
+         JOIN activations a ON a.id=r.activation JOIN participation_mention_redactions f ON f.execution=a.execution
+         WHERE f.watermark=?",
+    )
+    .bind(watermark)
+    .fetch_all(&mut *db)
+    .await?;
+    for (id, usage) in attempts {
+        sqlx::query(
+            "UPDATE model_attempts SET response=NULL,partial_bytes=NULL,intents_json=NULL,
+            retry_proof=0,usage_json=?,diagnostic='source_erased' WHERE id=?",
+        )
+        .bind(usage.as_deref().map(accounting_only))
+        .bind(id)
+        .execute(&mut *db)
+        .await?;
+    }
+    Ok(())
 }
 
 pub async fn scrub(conn: &mut SqliteConnection, event: i64) -> Result<()> {
