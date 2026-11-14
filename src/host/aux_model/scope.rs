@@ -128,6 +128,8 @@ pub(in crate::host) async fn resolve_non_session(
              WHERE e.id=?1 AND p.enabled AND root.enabled AND d.closed_at IS NULL
              AND a.status='active' AND b.status='active'
              AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
+             AND NOT EXISTS(SELECT 1 FROM participation_erased_mentions f JOIN participation_held_sources h
+                 ON h.source=f.event AND h.owner=?3 WHERE f.event=e.id)
              AND (NOT ?2 OR EXISTS(SELECT 1 FROM host_observations
                  WHERE plugin=?3 AND generation=?4 AND event=e.id)
                  OR EXISTS(SELECT 1 FROM source_holds WHERE owner=?3 AND source=e.id))",

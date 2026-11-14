@@ -94,6 +94,11 @@
           },
           "include_reply": {
             "type": "boolean"
+          },
+          "mention_cursor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -133,6 +138,34 @@
               "version": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
             },
             "required": ["event", "version"],
+            "additionalProperties": false
+          },
+          "mentions": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "maxItems": 16,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": { "enum": ["member", "yuki", "all"] },
+                    "display_name": { "type": "string", "maxLength": 128 },
+                    "account_id": { "type": ["string", "null"] },
+                    "assignment_id": { "type": ["string", "null"] },
+                    "person_id": { "type": ["string", "null"] },
+                    "presence_id": { "type": ["string", "null"] },
+                    "text_start": { "type": ["integer", "null"], "minimum": 0 },
+                    "text_end": { "type": ["integer", "null"], "minimum": 0 }
+                  },
+                  "required": ["kind", "display_name", "account_id", "assignment_id", "person_id", "presence_id", "text_start", "text_end"],
+                  "additionalProperties": false
+                }
+              },
+              "next": { "type": "integer", "minimum": 0 },
+              "complete": { "type": "boolean" }
+            },
+            "required": ["items", "next", "complete"],
             "additionalProperties": false
           },
           "origin": {

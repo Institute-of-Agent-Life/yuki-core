@@ -96,7 +96,22 @@ pub(super) async fn erase_sources(
         }
         source::scrub(conn, *event).await?;
     }
-    for (owner, refs) in obligations {
+    // A participation reader can have a copy of an event authored by somebody else.
+    if let Some(members) = family {
+        let copies: Vec<(String, i64)> = sqlx::query_as(
+            "SELECT DISTINCT h.owner,h.source FROM participation_held_sources h JOIN event_person_mentions m ON m.event=h.source
+             WHERE m.person IN(SELECT value FROM json_each(?))",
+        )
+        .bind(members)
+        .fetch_all(&mut *conn)
+        .await?;
+        for (owner, event) in copies {
+            obligations.entry(owner).or_default().push(event);
+        }
+    }
+    for (owner, mut refs) in obligations {
+        refs.sort_unstable();
+        refs.dedup();
         sqlx::query("INSERT INTO owner_erasures(watermark,owner,sources) VALUES(?,?,?)")
             .bind(watermark)
             .bind(owner)

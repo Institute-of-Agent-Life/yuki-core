@@ -66,6 +66,7 @@ pub async fn apply(db: &mut SqliteConnection, key: &str, person: &str) -> Result
         .bind(mark)
         .execute(&mut *db)
         .await?;
+    super::source::scrub_participation_mentions(db, mark).await?;
     crate::host::plugin_sessions::scrub_inactive(db).await?;
     status(db, key).await
 }
@@ -94,7 +95,7 @@ pub async fn status(db: &mut SqliteConnection, key: &str) -> Result<Value> {
     let (mark,person,body):(i64,String,String)=sqlx::query_as("SELECT r.watermark,f.requested,r.sources FROM source_erasure_requests r JOIN person_forgets f USING(watermark) WHERE erase_key=?").bind(key).fetch_optional(&mut *db).await?.ok_or("not_found")?;
     let (all,present,shared):(i64,i64,i64)=sqlx::query_as("SELECT count(*),count(b.digest),coalesce(sum(EXISTS(SELECT 1 FROM media_sources s WHERE s.digest=o.digest AND s.state='cached') OR EXISTS(SELECT 1 FROM media_versions v WHERE v.digest=o.digest) OR EXISTS(SELECT 1 FROM client_uploads u WHERE u.digest=o.digest) OR EXISTS(SELECT 1 FROM media_reads m WHERE m.digest=o.digest)),0) FROM forgotten_objects o LEFT JOIN media_objects b ON b.digest=o.digest WHERE watermark=?").bind(mark).fetch_one(&mut *db).await?;
     let files:i64=sqlx::query_scalar("SELECT count(*) FROM forgotten_transfers t JOIN media_transfer_files f USING(relative) WHERE t.watermark=?").bind(mark).fetch_one(&mut *db).await?;
-    let pending:Vec<String>=sqlx::query_scalar("SELECT DISTINCT e.owner FROM owner_erasures e WHERE e.proof IS NULL AND EXISTS(SELECT 1 FROM json_each(e.sources) s JOIN json_each(?1) erased ON s.value=erased.value) ORDER BY e.owner").bind(&body).fetch_all(db).await?;
+    let pending:Vec<String>=sqlx::query_scalar("SELECT DISTINCT e.owner FROM owner_erasures e WHERE e.proof IS NULL AND (e.watermark=?2 OR EXISTS(SELECT 1 FROM json_each(e.sources) s JOIN json_each(?1) erased ON s.value=erased.value)) ORDER BY e.owner").bind(&body).bind(mark).fetch_all(db).await?;
     Ok(
         json!({"key":key,"person_id":person,"deleted":true,"watermark":mark,"logical":"revoked","sources":serde_json::from_str::<Vec<i64>>(&body)?,"managed_storage":{"unreferenced_blobs_removed":all-present,"shared_blobs_retained":shared,"unreferenced_blobs_pending":present-shared,"transfer_paths_pending":files},"owners_pending":pending,"external_boundaries":["third-party messages and provider records","devices or copies outside this owner","backups require replay of confirmed erasure watermarks"]}),
     )

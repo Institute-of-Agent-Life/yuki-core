@@ -99,7 +99,7 @@ fn positions(text: &str) -> Vec<Position> {
     }
     result
 }
-fn clean_name(name: &str) -> String {
+pub(crate) fn clean_name(name: &str) -> String {
     static INVISIBLE: OnceLock<Regex> = OnceLock::new();
     let invisible = INVISIBLE.get_or_init(|| Regex::new(r"\p{C}").unwrap());
     invisible
