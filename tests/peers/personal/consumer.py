@@ -29,9 +29,12 @@ send(peer.request(1, binding.offer()))
 line = read_frame(sys.stdin.buffer)
 peer.receive(line)
 calls = Calls(json.loads(line)["result"])
-(root / "ready.json").write_text(
+ready = root / "ready.json"
+pending = ready.with_suffix(".tmp")
+pending.write_text(
     json.dumps({"pid": os.getpid(), "methods": sorted(calls.allowed)})
 )
+pending.replace(ready)
 
 
 def post():

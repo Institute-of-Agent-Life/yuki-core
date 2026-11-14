@@ -308,7 +308,7 @@ pub(crate) async fn apply(
                 "model.stats" | "health.read" | "work.list" | "work.get" => {
                     Ok(json!({"authorized":true}))
                 }
-                "trace.read" => trace::read(db, args).await,
+                "trace.read" => trace::read(db, args, authority).await,
                 "plugin.configuration.read" => crate::host::configuration::read(db, args).await,
                 "plugin.list" | "plugin.get" => crate::host::configuration::status(db, args).await,
                 "plugin.observe" => crate::host::configuration::observation(db, args).await,
