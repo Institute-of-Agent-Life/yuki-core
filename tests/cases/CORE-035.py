@@ -8,7 +8,8 @@ import sqlite3
 import subprocess
 import sys
 from contextlib import closing
-from tests.harness.compact import Owner
+from tests.harness.compact import Owner, reply
+from tests.peers.chat.recorder import Recorder
 
 
 def run(ctx):
@@ -195,6 +196,7 @@ def run(ctx):
     return {
         "tool_receipts": tool_map,
         "tool_snapshot_sources": tool_snapshot,
+        "reflection_window": reflection_context_window(ctx, sdk, aux),
         "paid_previews": paid,
         "reembed": vectors,
         "quality_erasure": quality_erasure,
@@ -243,7 +245,8 @@ def tool_snapshot_sources(ctx, sdk, aux):
 
     folder = ctx.working / "maintenance-snapshot-peer"
     folder.mkdir()
-    methods = ["maintenance.tool.page", "maintenance.evidence", "maintenance.dependencies"]
+    methods = ["maintenance.tool.page", "maintenance.evidence", "maintenance.dependencies",
+               "maintenance.history.page"]
     args = [str(ctx.root / "tests/peers/aux-model/peer.py"), str(folder),
             str(sdk / "python-install")]
     with (o.svc.data / "yuki.toml").open("a", encoding="utf-8") as config:
@@ -273,6 +276,16 @@ def tool_snapshot_sources(ctx, sdk, aux):
                   peer.call("maintenance.tool.page", {**query, "event": written})["items"], [])
         ctx.equal("foreign event exposes no tool result",
                   peer.call("maintenance.tool.page", {**params, "event": other_event})["items"], [])
+        context_query = {**params, "before": read}
+        context = peer.call("maintenance.history.page", context_query)
+        ctx.equal("reflection context uses the original entry and prior events",
+                  [item["event"] for item in context["items"]], [written])
+        ctx.equal("reflection context leaves its cursor at the anchor", context["next_event"], read)
+        ctx.equal("reflection context cannot cross an installed entry",
+                  peer.call("maintenance.history.page", {**params, "before": other_event}, ok=False)["error"]["code"], -32003)
+        ctx.equal("reflection context cannot mix with a forward or explicit read",
+                  [peer.call("maintenance.history.page", {**context_query, selector: read}, ok=False)["error"]["code"]
+                   for selector in ("after", "event")], [-32003, -32003])
         ctx.equal("group scope cannot use a private trigger",
                   peer.call("maintenance.tool.page", {**params, "scope": "group", "event": read})["items"], [])
         ctx.equal("snapshot keeps both real original events", snapshot["source_ids"], [written, read])
@@ -294,11 +307,76 @@ def tool_snapshot_sources(ctx, sdk, aux):
                   peer.call("maintenance.tool.page", query)["items"], [])
         ctx.equal("event selection also fences the erased dependency",
                   peer.call("maintenance.tool.page", {**params, "event": read})["items"], [])
+        ctx.equal("reflection context excludes an erased original source",
+                  peer.call("maintenance.history.page", context_query), {"items": [], "next_event": read})
         ctx.equal("clearing the value keeps the separate original read event",
                   o.rows("SELECT source FROM invalidated_sources ORDER BY source"), [(written,)])
     return {"write_event": written, "read_event": read, "source_ids": refs["sources"],
             "original_receipt": snapshot["receipt"], "event_page": by_event,
+            "reflection_context": context,
             "invalidated_source": written}
+
+
+def reflection_context_window(ctx, sdk, aux):
+    o = Owner(ctx, "reflection-window", 60)
+    with o.svc.running():
+        old = o.human("Earlier reflection generation.")
+        entry = o.rows("SELECT entry_id FROM events WHERE id=?", old)[0][0]
+    folder = ctx.working / "reflection-window-peer"
+    folder.mkdir()
+    args = [str(ctx.root / "tests/peers/aux-model/peer.py"), str(folder),
+            str(sdk / "python-install")]
+    with (o.svc.data / "yuki.toml").open("a", encoding="utf-8") as config:
+        config.write(
+            '\n[[plugins]]\nid="reflection-window"\nnamespace="reflection-window"\nprogram='
+            + json.dumps(sys.executable) + "\nargs=" + json.dumps(args)
+            + '\ngrants=["forget.owner","maintenance.history.page"]'
+            + "\n[plugins.maintenance.scopes.original]\nactor=" + json.dumps(o.actor)
+            + "\nentry=" + json.dumps(entry) + '\npurposes=["reflect"]'
+            + '\nmethods=["maintenance.history.page"]\n'
+        )
+    peer = aux.Peer(o, folder)
+
+    def previous(anchor):
+        page = peer.call("maintenance.history.page",
+                         {"scope": "original", "purpose": "reflect", "before": anchor})
+        ctx.equal("reflection context leaves the original anchor intact", page["next_event"], anchor)
+        return [item["event"] for item in page["items"]]
+
+    with Recorder() as http:
+        o.config(http)
+        with o.svc.running():
+            o.until((folder / "ready.json").exists)
+
+            def settle(event):
+                _, answer = o.wire(http)
+                reply(answer, "Recorded.")
+                o.finished(event)
+
+            settle(old)
+            old_anchor = o.human("Another message in the original generation.")
+            settle(old_anchor)
+            ctx.equal("the original generation has its prior message", previous(old_anchor), [old])
+            reset = o.human("/ai new")
+            o.until(lambda: o.rows("SELECT event FROM main_controls WHERE event=?", reset))
+            first = o.human("First message after the reset.")
+            settle(first)
+            ctx.equal("a reset starts an empty reflection context", previous(first), [])
+            help_event = o.human("/ai help")
+            o.until(lambda: o.rows("SELECT event FROM main_controls WHERE event=?", help_event))
+            next_events = []
+            for index in range(5):
+                event = o.human(f"New-generation reflection message {index}.")
+                settle(event)
+                next_events.append(event)
+            ctx.equal("control input is absent from the new context",
+                      previous(next_events[0]), [first])
+            context = previous(next_events[-1])
+            ctx.equal("the last four events stay in order within the generation",
+                      context, next_events[:-1])
+            ctx.equal("an original earlier anchor retains its own context", previous(old_anchor), [old])
+    return {"reset": reset, "first": first, "control": help_event,
+            "anchor": next_events[-1], "context": context}
 
 
 def paid_previews(ctx, sdk, aux):

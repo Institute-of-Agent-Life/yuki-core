@@ -19,6 +19,9 @@ pub(super) async fn original(
     Ok(item)
 }
 pub(super) async fn history(db: &mut SqliteConnection, c: &Change, g: &Granted) -> Result<Value> {
+    if let Some(before) = c.params["before"].as_i64() {
+        return reflection_context(db, c, g, before).await;
+    }
     if let Some(event) = c.params["event"].as_i64() {
         let item = original(db, c, g, event).await?;
         if c.params["version"]
@@ -40,14 +43,63 @@ pub(super) async fn history(db: &mut SqliteConnection, c: &Change, g: &Granted) 
     let after = c.params["after"].as_i64().unwrap_or(0);
     let ids:Vec<i64>=sqlx::query_scalar("SELECT e.id FROM events e JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id) WHERE e.entry_id=? AND e.id>? AND p.enabled AND r.enabled AND json_extract(e.envelope,'$.kind')='message' AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id) ORDER BY e.id LIMIT 8")
         .bind(&g.policy.entry).bind(after).fetch_all(&mut *db).await?;
-    let mut items = vec![];
-    for id in &ids {
-        let item = original(db, c, g, *id).await?;
+    let items = history_previews(db, c, g, ids.iter().copied()).await?;
+    Ok(json!({"items":items,"next_event":ids.last().copied().unwrap_or(after)}))
+}
+
+async fn reflection_context(
+    db: &mut SqliteConnection,
+    c: &Change,
+    g: &Granted,
+    before: i64,
+) -> Result<Value> {
+    if c.params["purpose"] != "reflect"
+        || ["after", "event", "offset", "version"]
+            .iter()
+            .any(|field| c.params.get(field).is_some())
+    {
+        return Err("reflection context requires one original event selector".into());
+    }
+    let anchor = original(db, c, g, before).await?;
+    let ids: Vec<i64> = sqlx::query_scalar(
+        "SELECT e.id FROM events e
+         JOIN assignments a ON a.id=e.actor_stage AND a.original_person=e.raw_actor
+         JOIN persons p ON p.id=e.raw_actor AND p.enabled
+         JOIN persons root ON root.id=coalesce(p.current_root,p.id) AND root.enabled
+         WHERE e.entry_id=?1 AND e.id<?2
+           AND e.id>coalesce((
+               SELECT max(reset.event) FROM main_controls reset
+               JOIN events marker ON marker.id=reset.event
+               WHERE marker.entry_id=?1 AND reset.command='/ai new' AND reset.event<?2
+           ),0)
+           AND json_extract(e.envelope,'$.kind')='message'
+           AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=e.id)
+           AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
+         ORDER BY e.id DESC LIMIT 4",
+    )
+    .bind(&anchor.entry)
+    .bind(before)
+    .fetch_all(&mut *db)
+    .await?;
+    let items = history_previews(db, c, g, ids.into_iter().rev()).await?;
+    Ok(json!({"items":items,"next_event":before}))
+}
+
+async fn history_previews(
+    db: &mut SqliteConnection,
+    c: &Change,
+    g: &Granted,
+    ids: impl Iterator<Item = i64>,
+) -> Result<Vec<Value>> {
+    let mut items = Vec::new();
+    for event in ids {
+        let item = original(db, c, g, event).await?;
         let text: String = item.content.chars().take(512).collect();
         let more = item.content.chars().count() > 512;
-        items.push(json!({"event":id,"entry":item.entry,"actor":item.actor,"version":item.version,"text":text,"offset":0,"next_offset":if more{Some(512)}else{None}}));
+        items.push(json!({"event":event,"entry":item.entry,"actor":item.actor,
+            "version":item.version,"text":text,"offset":0,"next_offset":if more{Some(512)}else{None}}));
     }
-    Ok(json!({"items":items,"next_event":ids.last().copied().unwrap_or(after)}))
+    Ok(items)
 }
 pub(super) async fn facts_full(
     db: &mut SqliteConnection,
