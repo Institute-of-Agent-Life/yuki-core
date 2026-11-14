@@ -1,3 +1,5 @@
+**CORE-050 自省派發後退讓。** 分支 `codex/core-050-reflection-preemption`。真人 Main 開始時，尚待回覆的自省 HTTP 會停止等待，保留原 attempt、邏輯請求與未知用量。回環 peer 在收到請求後扣住回應，確認退讓後才回覆。冷啟可觀察原 unknown，新增派發為零。Mac CORE-050 共通過 687 項，`artifacts/CORE-050/reflection-preempt-mac-01/manifest.json` SHA-256 `186e8ce867703cfc48a99720cd9f703a3da3c7d980a7cf2190b04ddd85743d34`。接續三端候選及 EXT-035 原排程消費。
+
 **CORE-035 自省前臺退讓。** 分支 `codex/core-035-reflection-priority`。Host 可明選 `quiet_seconds`。真人 Main 排隊、執行或剛結束時，自省選來源、模型派發及套用會回傳 `reflection_deferred_for_foreground`。已付請求仍可用原鍵觀察，空閒後套用原 preview。Mac 以兩個真 SDK peer 通過 CORE-050 的 672 項檢查，`artifacts/CORE-050/reflection-foreground-mac-02/manifest.json` SHA-256 `5e16a1abf13a3afc988b815503291d595d407c5d61e7492d1078b3c2b55d54fb`。已派發請求沿用原回應及未知帳本。待三端候選與 EXT-035 排程消費。
 
 **CORE-050 自省每日額度。** 分支 `codex/core-050-reflection-budget`。主機可明選 `[reflection_budget]`，各自省插件共用按時區計算的實際派發額度，沿用現有 attempt 帳本。額滿及冷啟後保留同一未派發的邏輯請求，已付請求仍可回讀及完成原 preview。Mac CORE-050 通過 660 項，`artifacts/CORE-050/reflection-budget-mac-03/manifest.json` SHA-256 `93f3865faa75d929656f1ad0f488de2eb84ba727e22731f77090627c11767f98`。自動排程與前臺退讓另待真消費驗證。

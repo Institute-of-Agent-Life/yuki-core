@@ -66,8 +66,10 @@ returns JSON-RPC error `-32003` with message
 `reflection_deferred_for_foreground`. Retry the original operation when
 Main is idle. An existing model request remains observable under the
 original key. Its paid result and usage remain available for settlement.
-The gate runs before new physical attempts and leaves an already dispatched
-attempt under the normal response and unknown-outcome rules.
+If a human turn starts while the auxiliary HTTP response is outstanding, the
+Host stops waiting and records the original physical attempt as unknown.
+The original request remains observable by the same key. Its usage stays
+unknown and the original physical attempt consumes its daily slot.
 
 ## Verification scope
 

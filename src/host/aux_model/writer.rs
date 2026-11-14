@@ -408,7 +408,9 @@ async fn dispatch(
     }
     let route = authorized_route(db, &row, plugin, generation, true).await?;
     let origin: Value = serde_json::from_str(row.get("origin"))?;
+    let mut foreground_generation = None;
     if row.get::<&str, _>("purpose") == "reflect" && origin["maintenance"].is_string() {
+        foreground_generation = foreground.map(|(active, _)| active.foreground_generation());
         super::super::maintenance::check_reflection_foreground(db, foreground).await?;
     }
     sqlx::query("UPDATE host_aux_requests SET dispatched_generation=? WHERE id=?")
@@ -433,6 +435,9 @@ async fn dispatch(
             .await?;
     }
     permit["profile"] = serde_json::to_value(route.profile)?;
+    if let Some(generation) = foreground_generation {
+        permit["foreground_generation"] = json!(generation);
+    }
     permit["task"] = row
         .get::<Option<&str>, _>("task")
         .map(serde_json::from_str::<Value>)
