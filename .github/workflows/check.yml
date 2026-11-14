@@ -1,52 +1,89 @@
-name: core-check
+name: Core Windows CI
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Exact PR merge commit tested locally
+        required: true
+        type: string
+      control_candidate:
+        description: Include a CORE-037 control candidate
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
-  offline:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-15-intel, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
     env:
       CARGO_HOME: ${{ github.workspace }}/.cache/cargo
+      CARGO_INCREMENTAL: '0'
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
     steps:
+      - name: Check the requested commit
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          if ($env:REVISION -cnotmatch '\A[0-9a-f]{40}\z') { throw 'Expected a full commit SHA' }
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ inputs.revision }}
           persist-credentials: false
+      - name: Bind the checkout and use the runner's short temporary path
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          $head = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $head -cne $env:REVISION) { throw 'Wrong checkout' }
+          if (Test-Path target) { throw 'Expected a fresh Cargo target' }
+          "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       - name: Prepare Windows C compiler
-        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
       - name: Install the locked compiler
         run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
       - name: Restore Rust dependencies for this runner and toolchain
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
-          cache-workspace-crates: 'false'
+          cache-targets: 'false'
           cache-on-failure: 'false'
-          save-if: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Fetch locked dependencies
         run: |
           cargo fetch --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo fetch --locked --manifest-path sdk/rust/Cargo.toml
       - name: Run all registered cards with two isolated workers
+        run: python ci/suite.py --out artifacts
+      - name: Build and sign the Windows development candidate
+        run: python ci/candidate_job.py native --manifest artifacts/CORE-039/ci/manifest.json --out artifacts/signed-candidate
+      - name: Build the CORE-037 control candidate
+        if: inputs.control_candidate
+        run: python ci/host_candidate.py --manifest artifacts/CORE-037/ci/manifest.json --out artifacts/control-candidate
+      - name: Replay the native SDK and admission surface
+        run: python ci/native_surface_check.py --out artifacts/native-surface --target-dir target
+      - name: Record the isolated build
         run: |
-          python ci/suite.py --out artifacts
-        env:
-          PYTHONDONTWRITEBYTECODE: '1'
+          $target = Get-Item -LiteralPath target
+          if ($target.LinkType) { throw 'Cargo target is a link' }
+          @{source = (git rev-parse HEAD); target = $target.FullName; run_id = $env:GITHUB_RUN_ID} |
+            ConvertTo-Json -Compress | Set-Content -Encoding utf8 artifacts/isolated-build.json
       - name: Retain evidence on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: core-evidence-${{ matrix.os }}-${{ github.run_attempt }}
+          name: core-evidence-windows-${{ github.run_attempt }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 30
