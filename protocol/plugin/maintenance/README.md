@@ -68,8 +68,9 @@ selection. The query preserves original receipt IDs, versions and erasure holds.
 
 For a reflection batch, call `maintenance.history.page` with `purpose: "reflect"`
 and `before` set to the original trigger event. The Host returns up to four
-earlier readable messages in the same installed entry, in ascending event
-order. Use `before` alone. The returned `next_event` is the anchor, and the
+earlier readable messages from the same installed entry and the anchor's
+conversation window, in ascending event order. A recorded `/ai new` starts a
+new window. Use `before` alone. The returned `next_event` is the anchor, and the
 forward history cursor belongs to the caller's original batch. Keep the event
 IDs and versions as context. The reviewed preview requires primary sources for
 any new evidence.

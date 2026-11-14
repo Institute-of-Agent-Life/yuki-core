@@ -67,7 +67,13 @@ async fn reflection_context(
          JOIN persons p ON p.id=e.raw_actor AND p.enabled
          JOIN persons root ON root.id=coalesce(p.current_root,p.id) AND root.enabled
          WHERE e.entry_id=?1 AND e.id<?2
+           AND e.id>coalesce((
+               SELECT max(reset.event) FROM main_controls reset
+               JOIN events marker ON marker.id=reset.event
+               WHERE marker.entry_id=?1 AND reset.command='/ai new' AND reset.event<?2
+           ),0)
            AND json_extract(e.envelope,'$.kind')='message'
+           AND NOT EXISTS(SELECT 1 FROM main_controls WHERE event=e.id)
            AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
          ORDER BY e.id DESC LIMIT 4",
     )
