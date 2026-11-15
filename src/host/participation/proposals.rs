@@ -3,6 +3,7 @@ use crate::{Result, identity::new_id, runtime::main};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use sqlx::{Row, SqliteConnection};
+use std::collections::BTreeMap;
 
 async fn receiver(db: &mut SqliteConnection, entry: &str, stage: &str) -> Result<()> {
     let row=sqlx::query("SELECT e.space,a.platform,a.namespace,a.native FROM entries e JOIN assignments s ON s.id=? JOIN accounts a ON a.id=s.account_id WHERE e.id=? AND e.scope='group' AND e.closed_at IS NULL AND s.kind='self' AND s.status='active'")
@@ -72,6 +73,31 @@ pub(super) async fn submit(
     {
         return Err("original SELF generation changed before admission".into());
     }
+    let selected = c.params["sources"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or_default();
+    let mut guarded = BTreeMap::new();
+    let source_guard = c.params["source_guard"].as_array();
+    if let Some(guard) = source_guard {
+        let generation = expected_generation.ok_or("SELF source guard requires a generation")?;
+        if selected.is_empty() {
+            return Err("SELF source guard requires selected context".into());
+        }
+        for reference in guard {
+            let event = reference["event"]
+                .as_i64()
+                .ok_or("invalid guarded source")?;
+            let body =
+                sources::context_body(db, &c.plugin, policy, entry, generation, event).await?;
+            if sources::reference(event, &serde_json::to_vec(&body)?) != *reference {
+                return Err("original SELF source version changed".into());
+            }
+            if guarded.insert(event, body).is_some() {
+                return Err("duplicate guarded SELF source".into());
+            }
+        }
+    }
     let origin = format!("participation:{}", new_id(db).await?);
     sqlx::query("INSERT INTO main_origins(ref,kind,conversation) VALUES(?,'self',?)")
         .bind(&origin)
@@ -81,22 +107,28 @@ pub(super) async fn submit(
     sqlx::query("INSERT INTO participation_proposals(plugin,proposal,revision,entry,receiver,origin,digest) VALUES(?,?,?,?,?,?,?)")
         .bind(&c.plugin).bind(key).bind(revision).bind(entry).bind(stage).bind(&origin).bind(digest).execute(&mut *db).await?;
     let mut contexts = vec![];
-    let mut dependencies = vec![];
-    for id in c.params["sources"].as_array().into_iter().flatten() {
+    let mut dependencies: Vec<_> = guarded.keys().copied().collect();
+    for id in selected {
         let event = id.as_i64().ok_or("invalid proposal source")?;
-        let (source_entry, observed_generation): (String, Option<i64>) =
-            sqlx::query_as("SELECT entry_id,observed_generation FROM events WHERE id=?")
-                .bind(event)
-                .fetch_one(&mut *db)
-                .await?;
-        if source_entry != entry
-            || (expected_generation.is_some() && observed_generation != expected_generation)
-        {
-            return Err("proposal source outside original scene".into());
-        }
-        let frame = sources::checked(db, &c.plugin, policy, event).await?;
+        let frame = if source_guard.is_some() {
+            guarded
+                .remove(&event)
+                .ok_or("selected SELF source is not guarded")?
+        } else {
+            let (source_entry, observed_generation): (String, Option<i64>) =
+                sqlx::query_as("SELECT entry_id,observed_generation FROM events WHERE id=?")
+                    .bind(event)
+                    .fetch_one(&mut *db)
+                    .await?;
+            if source_entry != entry
+                || (expected_generation.is_some() && observed_generation != expected_generation)
+            {
+                return Err("proposal source outside original scene".into());
+            }
+            dependencies.push(event);
+            sources::checked(db, &c.plugin, policy, event).await?
+        };
         contexts.push(json!({"event":event,"envelope":frame}));
-        dependencies.push(event);
     }
     let action = main::Change::Operator(main::Action::Trigger {
         id: origin,

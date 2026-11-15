@@ -251,6 +251,32 @@ pub(super) fn page(c: &Change, event: i64, raw: &[u8]) -> Result<Value> {
     Ok(page)
 }
 
+pub(super) async fn context_body(
+    db: &mut SqliteConnection,
+    plugin: &str,
+    policy: &Policy,
+    entry: &str,
+    generation: i64,
+    event: i64,
+) -> Result<Value> {
+    if let Some(delivery) = self_source::record(db, policy, event).await? {
+        if delivery["entry"] != entry || delivery["generation"] != generation {
+            return Err("original SELF context is outside the focus".into());
+        }
+        source::retain_self_delivery(db, plugin, &format!("participation:{event}"), event).await?;
+        return Ok(delivery);
+    }
+    let prior = original(db, plugin, policy, event).await?;
+    let body: Value = serde_json::from_str(&prior.envelope)?;
+    if prior.entry_id != entry
+        || prior.observed_generation != Some(generation)
+        || body["kind"] != "message"
+    {
+        return Err("original human context is outside the focus".into());
+    }
+    Ok(body)
+}
+
 async fn check_context(
     db: &mut SqliteConnection,
     c: &Change,
@@ -267,25 +293,15 @@ async fn check_context(
         if id >= event {
             return Err("participation context must precede the focus".into());
         }
-        let observed = if let Some(delivery) = self_source::record(db, policy, id).await? {
-            if delivery["entry"] != focus.entry_id
-                || delivery["generation"] != focus.current_generation
-            {
-                return Err("original SELF context is outside the focus".into());
-            }
-            source::retain_self_delivery(db, &c.plugin, &format!("participation:{id}"), id).await?;
-            delivery
-        } else {
-            let prior = original(db, &c.plugin, policy, id).await?;
-            let body: Value = serde_json::from_str(&prior.envelope)?;
-            if prior.entry_id != focus.entry_id
-                || prior.observed_generation != focus.observed_generation
-                || body["kind"] != "message"
-            {
-                return Err("original human context is outside the focus".into());
-            }
-            body
-        };
+        let observed = context_body(
+            db,
+            &c.plugin,
+            policy,
+            &focus.entry_id,
+            focus.current_generation,
+            id,
+        )
+        .await?;
         if reference(id, &serde_json::to_vec(&observed)?) != *claimed {
             return Err("original participation context changed before admission".into());
         }
