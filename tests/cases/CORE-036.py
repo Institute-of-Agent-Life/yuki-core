@@ -261,6 +261,21 @@ def run(ctx):
             ctx.equal("a wrong original version admits no Main input",
                       s.rows("SELECT event_id FROM accepted_sources WHERE event_id=?", quoted), [])
 
+            context_focus = record("original-context-without-reply")
+            context_promotion = {"event": context_focus, "expected_context": [reference]}
+            p.call("participation.promote", {**context_promotion, "expected_context": [wrong_reply_version]}, False)
+            ctx.equal("a changed context cannot admit an unquoted focus",
+                      s.rows("SELECT event_id FROM accepted_sources WHERE event_id=?", context_focus), [])
+            ctx.equal("an unquoted human input can keep its original versioned context",
+                      p.call("participation.promote", context_promotion),
+                      {"event": context_focus, "accepted": True, "newly_accepted": True})
+            _, q = s.wire(http)
+            reply(q, "quiet scoped context")
+            s.finished(context_focus)
+            ctx.equal("unquoted review replay retains its original Main input",
+                      p.call("participation.promote", context_promotion),
+                      {"event": context_focus, "accepted": True, "newly_accepted": False})
+
             qq.send({**qq_message, "user_id": 200, "message_id": 36013, "message": [
                 {"type": "text", "data": {"text": "雪🙂 literal @Yuki "}},
                 {"type": "at", "data": {"qq": 202, "name": "原群友"}},
@@ -528,7 +543,8 @@ def run(ctx):
                              "participation", "participation:" + str(self_reply), self_anchor), [(self_anchor,)])
             p.call("participation.source", self_reference, False)
             p.call("participation.promote", {"event": self_anchor}, False)
-            self_guarded = {"event": self_reply, "expected_generation": 1, "expected_reply": self_reference}
+            self_guarded = {"event": self_reply, "expected_generation": 1, "expected_reply": self_reference,
+                            "expected_context": [reference, self_reference]}
             ctx.equal("a retained confirmed SELF reference admits its original human focus",
                       p.call("participation.promote", self_guarded),
                       {"event": self_reply, "accepted": True, "newly_accepted": True})
@@ -764,12 +780,15 @@ def run(ctx):
             ctx.equal("erased anchor is unavailable from the unchanged reply envelope",
                       p.call("participation.source", isolated_request)["reply_to"], None)
             p.call("participation.promote", {"event": isolated_reply, "expected_reply": isolated_reference}, False)
+            p.call("participation.promote", {"event": isolated_reply, "expected_context": [isolated_reference]}, False)
             ctx.equal("the admission transaction rejects a focus with a withdrawn original anchor",
                       s.rows("SELECT event_id FROM accepted_sources WHERE event_id=?", isolated_reply), [])
             proofs["conditional_reply"] = {
                 "confirmed_self_focus": self_reply, "confirmed_self_reference": self_reference,
                 "withdrawn_human_focus": isolated_reply, "withdrawn_human_reference": isolated_reference,
             }
+            proofs["original_context_promotion"] = {"focus": context_focus, "references": [reference],
+                                                    "erased_context": isolated_reference}
             s.op("account", "transfer", s.handles[s.c]["assignment"], 200000, 200000, "--person", s.a)
             ctx.equal("cold read after account transfer retains the event-time target",
                       p.call("participation.source", mention_request)["mentions"], frozen_mentions)
