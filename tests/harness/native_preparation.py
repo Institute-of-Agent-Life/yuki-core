@@ -8,6 +8,7 @@ import sqlite3
 import sys
 
 from tests.harness.compact import Owner, call, reply
+from tests.harness.json_file import read_json
 from tests.peers.chat.recorder import Recorder
 
 
@@ -84,8 +85,7 @@ def run(ctx, sdk, profile="debug"):
         staged = peer / "probe.tmp"
         staged.write_text(json.dumps({"method": "gateway.inbound", "params": params}))
         staged.replace(peer / "probe.json")
-        owner.until(lambda: (peer / "probed.json").exists())
-        response = json.loads((peer / "probed.json").read_bytes())
+        response = read_json(peer / "probed.json", timeout=12)
         ctx.check("native preparation source is admitted", not response["denied"])
         return response["result"]
 
