@@ -116,6 +116,7 @@ def run(ctx):
     from surface import (
         canonical,
         encoded,
+        fields_witnessed,
         initialize,
         latest,
         plan,
@@ -231,6 +232,40 @@ def run(ctx):
         ValueError,
         lambda: project(surface, changed, a_request["selection"]),
     )
+
+    feedback = "participation.feedback"
+    path = ["result", "properties", "executions", "items", "properties", "sends", "items",
+            "properties", "first_confirmed_at"]
+
+    def send_fields(method):
+        return method["result"]["properties"]["executions"]["items"]["properties"]["sends"]["items"]["properties"]
+
+    older = copy.deepcopy(idl["methods"][feedback])
+    del send_fields(older)["first_confirmed_at"]
+    previous = {"methods": {feedback: older}}
+    choices = {"fields": [path]}
+    with_other_field = copy.deepcopy(idl)
+    send_fields(with_other_field["methods"][feedback])["unwitnessed_extra"] = {"type": "string"}
+    selected = project(previous, with_other_field, {feedback: choices})
+    fields = send_fields(selected["methods"][feedback])
+    ctx.equal("projection selects only the witnessed optional field inside both arrays",
+              fields, send_fields(idl["methods"][feedback]))
+    ctx.rejects("selection cannot jump into an unrelated schema keyword", ValueError,
+                lambda: project(previous, idl, {feedback: {"fields": [["result", "properties", "executions",
+                   "additionalProperties", "properties", "first_confirmed_at"]]}}))
+    request_frame = {"frame": {"id": 13, "method": feedback, "params": {"include_delivery_time": True}}}
+    observed = {"executions": [{"sends": []}, {"sends": [{"operation": "send-1", "first_confirmed_at": 123}]}]}
+    ctx.check("a matching response witnesses the selected field in an array item",
+              fields_witnessed(feedback, choices, [request_frame, {"frame": {"id": 13, "result": observed}}]))
+    for label, wrong in [
+        ("a response to another request", {"id": 99, "result": observed}),
+        ("an empty array", {"id": 13, "result": {"executions": [{"sends": []}]}}),
+        ("an object in place of array", {"id": 13, "result": {"executions": {"sends": [
+            {"first_confirmed_at": 123}
+        ]}}}),
+    ]:
+        ctx.check(label + " cannot witness the optional field",
+                  not fields_witnessed(feedback, choices, [request_frame, {"frame": wrong}]))
 
     a_folder, b_folder = ctx.working / "a", ctx.working / "b"
     a_proof = evidence(a_folder, a)

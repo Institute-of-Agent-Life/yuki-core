@@ -27,7 +27,7 @@ python tests/peers/base/profile_check.py --host /path/native-host/yuki-core --ki
 python ci/promote-surface.py promote --registry /path/registry --plan /path/plan.json --evidence /path/qualification
 ```
 
-`request.json` 包含 `parent_stable_digest`、`candidate_source`、本能力真包 ID 的 `consumers`，以及 `selection`。新方法選擇為 `{"gateway.activity":{"new_method":true}}`。可選欄位使用原 schema 鍵路徑，例如 `{"gateway.inbound":{"fields":[["params","properties","optional_field"]]}}`。巢狀欄位以相同的 `properties` 鍵交替延伸。結果欄位從 `result` 開始，證據必須包含原請求 ID 對應的回應。
+`request.json` 包含 `parent_stable_digest`、`candidate_source`、本能力真包 ID 的 `consumers`，以及 `selection`。新方法選擇為 `{"gateway.activity":{"new_method":true}}`。可選欄位使用原 schema 鍵路徑，例如 `{"gateway.inbound":{"fields":[["params","properties","optional_field"]]}}`。用 `properties` 和欄位名稱進入物件，用 `items` 進入既有陣列的元素。結果欄位從 `result` 開始，原請求 ID 對應的回應須含指定欄位。陣列至少有一個元素通過該路徑才算見證。
 
 資格目錄的 `evidence.json` 包含以下原件。
 

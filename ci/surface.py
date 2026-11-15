@@ -151,6 +151,39 @@ def additive(previous, current):
             additive(value, current[key])
 
 
+def field_path(pointer):
+    """Read an optional property path through existing objects and array items."""
+    require(
+        isinstance(pointer, list)
+        and len(pointer) >= 3
+        and all(isinstance(key, str) for key in pointer)
+        and pointer[0] in {"params", "result"},
+        "expected an optional property path",
+    )
+    steps = []
+    tokens = iter(pointer[1:])
+    for keyword in tokens:
+        if keyword == "items":
+            steps.append(None)
+        else:
+            field = next(tokens, None)
+            require(keyword == "properties" and field is not None, "expected a property or array item")
+            steps.append(field)
+    require(steps and steps[-1] is not None, "expected an optional property path")
+    return pointer[0], steps
+
+
+def schema_at(node, steps):
+    for field in steps:
+        if field is None:
+            require(node.get("type") == "array", "expected an existing array")
+            node = node.get("items")
+        else:
+            node = node.get("properties", {}).get(field)
+        require(isinstance(node, dict), "unknown schema path")
+    return node
+
+
 def project(previous, idl, selection):
     result = copy.deepcopy(previous)
     old_methods, methods = previous["methods"], idl["methods"]
@@ -170,25 +203,12 @@ def project(previous, idl, selection):
         )
         require(choice["fields"], "empty optional field selection")
         for pointer in choice["fields"]:
-            # JSON schema paths use arrays of original keys, without pointer unescaping.
+            side, steps = field_path(pointer)
+            old = schema_at(result["methods"][name][side], steps[:-1])
+            new = schema_at(methods[name][side], steps[:-1])
+            field = steps[-1]
             require(
-                isinstance(pointer, list)
-                and len(pointer) >= 3
-                and len(pointer) % 2 == 1
-                and pointer[0] in {"params", "result"}
-                and all(key == "properties" for key in pointer[1::2]),
-                "expected an optional property path",
-            )
-            old, new = result["methods"][name], methods[name]
-            for key in pointer[:-2]:
-                require(
-                    isinstance(key, str) and key in old and key in new,
-                    "unknown schema path",
-                )
-                old, new = old[key], new[key]
-            field = pointer[-1]
-            require(
-                field in new["properties"] and field not in old["properties"],
+                field in new.get("properties", {}) and field not in old.get("properties", {}),
                 "field already stable or absent",
             )
             require(
@@ -196,7 +216,7 @@ def project(previous, idl, selection):
                 and "default" not in new["properties"][field],
                 "new field changes required/default semantics",
             )
-            old["properties"][field] = copy.deepcopy(new["properties"][field])
+            old.setdefault("properties", {})[field] = copy.deepcopy(new["properties"][field])
     return result
 
 
@@ -298,6 +318,15 @@ def sdk_surface(data, kind, expected_version):
         return json.load(archive.extractfile(members[0]))
 
 
+def field_present(value, steps):
+    if not steps:
+        return True
+    field, *remaining = steps
+    if field is None:
+        return isinstance(value, list) and any(field_present(item, remaining) for item in value)
+    return isinstance(value, dict) and field in value and field_present(value[field], remaining)
+
+
 def fields_witnessed(name, choice, frames):
     requests = [row["frame"] for row in frames if row["frame"].get("method") == name]
     if choice == {"new_method": True}:
@@ -309,18 +338,9 @@ def fields_witnessed(name, choice, frames):
         if "method" not in row["frame"] and row["frame"].get("id") in request_ids
     ]
     for pointer in choice["fields"]:
-        candidates = requests if pointer[0] == "params" else responses
-        wire_path = [key for i, key in enumerate(pointer) if i % 2 == 0]
-        present = False
-        for frame in candidates:
-            value = frame
-            for key in wire_path:
-                if not isinstance(value, dict) or key not in value:
-                    break
-                value = value[key]
-            else:
-                present = True
-        if not present:
+        side, steps = field_path(pointer)
+        candidates = requests if side == "params" else responses
+        if not any(field_present(frame.get(side), steps) for frame in candidates):
             return False
     return True
 

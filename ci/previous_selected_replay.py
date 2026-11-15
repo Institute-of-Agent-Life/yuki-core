@@ -87,8 +87,8 @@ def replay(candidate, expected_sha256, core_revision, output):
         data = json.loads(build.read_bytes())
         if data["source"]["commit"] != core_revision or data["published"] or data["synthetic"]:
             raise ValueError("Wrong selected candidate source")
-        if data["profile"]["version"] != "1.3.0":
-            raise ValueError("Expected the selected participation version")
+        if data["profile"]["version"] not in {"1.3.0", "1.4.0"}:
+            raise ValueError("Expected a selected participation version")
         driver = inputs / "replay-selected-maintenance.py"
         code = driver.read_text(encoding="utf-8")
         original = "        root = args.inputs / 'ext'\n"

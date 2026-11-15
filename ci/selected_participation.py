@@ -1,4 +1,4 @@
-"""Recover the released 1.2 registry and plan the participation candidate."""
+"""Recover a pinned released registry and plan the selected participation Host."""
 
 import argparse
 import hashlib
@@ -16,6 +16,10 @@ RELEASES = {
         "3c0e3a9444a3bdeb14c3a2cba8a94870544dcbe40d9f0a1d0cc4a76e1dea35f3",
         "c7d4790b19827e9cbd9a2629fa605c417b42700255060cb7eeeb71f24b8df145",
     ),
+    "1.3.0": (
+        "f67d368955fb7ed7e5fce44572ac1f396acabb414e3d8d4af96cf2de33342cdf",
+        "5bd115e374b41c6091dde698c3002a77d6687337b71f1eb8d6cf8bad0706d2d3",
+    ),
 }
 BASE_SHA256 = "f99094570de061970e3a21112007d51ed98df042f35060617df104ab05f6c496"
 METHODS = (
@@ -26,6 +30,16 @@ METHODS = (
     "llm.complete",
     "llm.result",
 )
+SELF_SELECTION = {
+    "participation.self_propose": {"new_method": True},
+    "participation.sources": {"new_method": True},
+    "participation.feedback": {"fields": [
+        ["params", "properties", "allow_missing_proposal"],
+        ["params", "properties", "include_delivery_time"],
+        ["result", "properties", "executions", "items", "properties", "sends", "items",
+         "properties", "first_confirmed_at"],
+    ]},
+}
 
 
 def download(version, name, path, expected):
@@ -40,7 +54,7 @@ def download(version, name, path, expected):
             raise ValueError(f"Published asset differs from its pin: {version}/{name}")
 
 
-def prepare(source, registry, output, revision):
+def prepare(source, registry, output, revision, *, self_opportunities=False):
     sys.path.insert(0, str(source / "ci"))
     from source import source_identity
     from surface import canonical, encoded, initialize, plan, read, require
@@ -59,20 +73,23 @@ def prepare(source, registry, output, revision):
     base_path = output / "base.json"
     base_path.write_bytes(encoded(base))
     initialize(registry, base_path, BASE_SHA256)
+    parent, successor = ("1.3.0", "1.4.0") if self_opportunities else ("1.2.0", "1.3.0")
     for version, (manifest_sha256, package_sha256) in RELEASES.items():
         directory = registry / "versions" / version
         directory.mkdir()
         download(version, "manifest.json", directory / "manifest.json", manifest_sha256)
         download(version, f"yuki-plugin-base-{version}.zip", directory / "package.zip", package_sha256)
+        if version == parent:
+            break
 
     request = {
         "candidate_source": revision,
-        "parent_stable_digest": RELEASES["1.2.0"][0],
+        "parent_stable_digest": RELEASES[parent][0],
         "consumers": ["participation"],
-        "selection": {method: {"new_method": True} for method in METHODS},
+        "selection": SELF_SELECTION if self_opportunities else {method: {"new_method": True} for method in METHODS},
     }
     planned = plan(registry, request, *canonical(source))
-    require(planned["version"] == "1.3.0" and not planned["rebased"] and not planned["published"],
+    require(planned["version"] == successor and not planned["rebased"] and not planned["published"],
             "candidate must extend the pinned released registry")
     (output / "request.json").write_bytes(encoded(request))
     (output / "plan.json").write_bytes(encoded(planned))
@@ -85,8 +102,10 @@ def main():
     parser.add_argument("--revision", required=True)
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--self-opportunities", action="store_true")
     args = parser.parse_args()
-    prepare(args.source.resolve(), args.registry.resolve(), args.out.resolve(), args.revision)
+    prepare(args.source.resolve(), args.registry.resolve(), args.out.resolve(), args.revision,
+            self_opportunities=args.self_opportunities)
 
 
 if __name__ == "__main__":

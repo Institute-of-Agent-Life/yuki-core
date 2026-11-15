@@ -1,3 +1,13 @@
+**CORE-053 SELF 受限候選三端已驗。** 分支 `codex/core-053-self-qualification`。以已發布 1.3.0 為基底，來源 `3b68f6ee53ff`、reader 63、Rust／Python SDK 1.4.0，選面含兩個 SELF 方法與三個回饋欄位。Mac、Linux、Windows 五個真插件共通過 45 組正常、拒權及重啟重放，另以公開 participation 0.1.0 原包在三端各回放九筆真人接納。七個未發布簽署附件在 `artifacts/CORE-053/self-selection-preflight-01/release-assets-02/`，主 ZIP SHA-256 `fbc6adad3700dac80e9e7a5898dd85605574b5b8eea8c7631462c9b38602bd83`，回條 `2fe0ffcdfb6d1c4664aa920acd6770228de8d4204fa1861a42531b1907873bf0`。候選來源待入 main，正式發布另需授權。[Windows SELF](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/43681162445) · [Windows 原插件](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/43681162440)
+
+首份候選的簽名 namespace 與現行安裝器不符。已按 `yuki-plugin-base-release` 重簽並驗證七個附件，兩份 ZIP 及 manifest 均核對原 SHA-256。重簽回條 `release-signature-reissue.json` 位於同一候選目錄，SHA-256 `b63df366ff582f9890528f321bd76320a8162153e248183783aa59a667d9c2fc`。
+
+Mac 和 Linux 安裝候選中的 1.4.0 Rust crate 與 Python wheel 後，重放原 SELF 提案與送達時間。回條在同一候選目錄的 `installed-sdk-macos-02/installed-sdk-replay.json` 和 `installed-sdk-linux-01/installed-sdk-replay.json`，SHA-256 分別為 `77bd73c6b9b3bcc13176b0b34fbbbc40b3932203c7aee09526a356854355f243` 和 `1013196036f326de91c6259a7594e74173d2176299a3988fe8e6df7bb9316fb4`。兩端零付費呼叫。
+
+**CORE-053 陣列內的可選欄位見證。** 分支 `codex/core-053-array-field-witness`。release 工具可從 `participation.feedback` 的原回應選取實際送達時間。空陣列、錯誤請求 ID 或以物件冒充陣列都無法成為見證。Mac 卡入口通過 48 項，`artifacts/CORE-053/array-field-macos-preflight-01/minor-promotion.json` SHA-256 `e4b9d00cfb17acc0904dcd68130486539db40fdee965dc03da828901e29527f3`。正式能力仍須三端受限 Host 與真插件驗收。
+
+**核心 #154 已合入 main。** 合併 `e8da966b19fe`，Mac、Linux 及 Windows 各通過 52 張卡及 200 項原生檢查。合併回條 `artifacts/ci/local-pr/154/main-confirmation.json` SHA-256 `a07bc0c291c3af63eec9896f1849c426c2ed741dd7e07b7ab02059aad3c393fe`。三端開發包 `artifacts/CORE-039/pr154-core036-self-source-guard-01/verified-candidates.json` SHA-256 `13791af5e1224347d6450513df7755383dd826b2d9143694803777162812f869`。[Windows CI](https://github.com/Institute-of-Agent-Life/yuki-core/actions/runs/43682520401)
+
 **CORE-036 SELF 來源與支持證據。** 分支 `codex/core-036-self-source-guard`，預覽 SDK alpha.37／a37、reader 63。接納時核對所選事件及全部支持來源的版本與原代次，支持來源也成為清除依賴；所選事件才進入 Main。Mac 預驗回條 `artifacts/CORE-036/self-source-guard-macos-preflight-01/promotion-vs-self.json` SHA-256 `c0501549a6ff2d39d89eb43acf00f744893fd05eb866b33650c5bff11939ecc7`。下一步交 EXT-026 驗原機會模型的實際提案。
 
 **CORE-036 SELF 單一 owner 與原送達時間。** 分支 `codex/core-036-self-receipts`，預覽 SDK alpha.36／a36、reader 63。相同入口有兩個已啟用的 SELF owner 時拒絕接納新提案，原已接納執行仍可按原授權查回。回饋可明選首筆真確認時間，後段 unknown 保留原確認前綴。Mac 預驗 466 項通過，回條 `artifacts/CORE-036/self-receipts-macos-preflight-01/promotion-vs-self.json` SHA-256 `74cd3b3c48e927b9954e96fe3acbc63fe0cdda289d6c7cac44789d8af648d5d6`。下一步讓 EXT-026 從原送達回條更新機會模型。
