@@ -98,6 +98,9 @@
           "include_self": {
             "type": "boolean"
           },
+          "include_delivery_origin": {
+            "type": "boolean"
+          },
           "mention_cursor": {
             "type": "integer",
             "minimum": 0,
@@ -189,6 +192,18 @@
               "observed_generation",
               "current_generation"
             ],
+            "additionalProperties": false
+          },
+          "delivery_origin": {
+            "type": ["object", "null"],
+            "properties": {
+              "execution": {"type": "string", "minLength": 1},
+              "operation": {"type": "string", "minLength": 1},
+              "ordinal": {"type": "integer", "minimum": 0},
+              "producer_event": {"type": ["integer", "null"], "minimum": 1},
+              "first_confirmed_at": {"type": "integer", "minimum": 0}
+            },
+            "required": ["execution", "operation", "ordinal", "producer_event", "first_confirmed_at"],
             "additionalProperties": false
           }
         },

@@ -69,6 +69,32 @@ pub(super) async fn read(
     if c.params.get("mention_cursor").is_some() {
         return Err("SELF delivery has no ingress mention cursor".into());
     }
+    if c.params["include_delivery_origin"] == true {
+        let origin = sqlx::query(
+            "SELECT x.source, ack.namespace, part.parent, part.ordinal,
+               first_receipt.observed_at AS first_confirmed_at
+             FROM personal_live_deliveries ack
+             JOIN executions x ON x.id=ack.namespace
+             JOIN operations part ON part.namespace=ack.namespace AND part.operation_id=ack.child
+              AND part.state='confirmed'
+             JOIN operations send ON send.namespace=part.namespace AND send.operation_id=part.parent
+              AND send.parent IS NULL AND send.target='send'
+             JOIN social_outbound first_receipt ON first_receipt.id=(
+               SELECT receipt.id FROM social_outbound receipt
+               JOIN operations sibling ON sibling.namespace=receipt.namespace AND sibling.operation_id=receipt.child
+               WHERE sibling.namespace=part.namespace AND sibling.parent=part.parent
+               AND receipt.observed_at IS NOT NULL ORDER BY receipt.id LIMIT 1)
+             WHERE ack.event=?",
+        )
+        .bind(event)
+        .fetch_optional(&mut *db)
+        .await?;
+        page["delivery_origin"] = origin.map_or(Value::Null, |row| {
+            json!({"execution":row.get::<String,_>("namespace"),"operation":row.get::<String,_>("parent"),
+                   "ordinal":row.get::<i64,_>("ordinal"),"producer_event":row.get::<Option<i64>,_>("source"),
+                   "first_confirmed_at":row.get::<i64,_>("first_confirmed_at")})
+        });
+    }
     Ok(page)
 }
 

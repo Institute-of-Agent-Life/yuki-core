@@ -3014,7 +3014,7 @@ dependencies = [
 
 [[package]]
 name = "yuki-plugin-sdk"
-version = "1.0.0-alpha.32"
+version = "1.0.0-alpha.33"
 dependencies = [
  "serde",
  "serde_json",

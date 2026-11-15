@@ -50,6 +50,13 @@ Only visible confirmed delivery text is served. The owner ledger retains
 the reference, including for input-source erasure. Human source reads and
 promotions retain their existing authority rules.
 
+Request `include_delivery_origin: true` when reading that canonical SELF
+event to obtain the original execution, logical send operation, confirmed
+part ordinal, producer event and first recorded confirmation time. A
+SELF-only execution has a null producer event. A delivery without a
+proven original send part has a null origin.
+The source version covers the canonical delivery bytes.
+
 Send `mention_cursor: 0` to read the first page of original native annotations.
 Each page holds up to 16 items in ingress order, including repeated targets.
 Use `mentions.next` as the next mention cursor and keep the source `version`.
@@ -68,6 +75,6 @@ Acceptance races rule and invitation promotion, transfer or disable the original
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.32` and Python `1.0.0a32`.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.33` and Python `1.0.0a33`.
 EXT-025's installed library exercised native review on alpha.30.
 The core provides source authority and transport while the library owns semantic decisions.
