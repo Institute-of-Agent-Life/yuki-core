@@ -1941,6 +1941,7 @@ def tool_receipts(ctx, sdk, aux):
             o.op(
                 "privacy", "erase", "tool-source-erasure", o.actor, json.dumps([source])
             )
+            o.until(lambda: not o.op("privacy", "pending", "tool-review")["obligations"])
             ctx.equal(
                 "erased tool is excluded before paging",
                 p.call("maintenance.tool.page", {**params, "execution": execution})[
