@@ -504,6 +504,20 @@ def run(ctx):
             self_reference = p.call("participation.source", read_self_reply)["reply_to"]
             ctx.equal("quote uses the original confirmed SELF ledger event", self_reference["event"], self_anchor)
             self_page = p.call("participation.source", {**self_reference, "include_self": True})
+            self_origin_request = {**self_reference, "include_self": True, "include_delivery_origin": True}
+            self_full = p.call("participation.source", self_origin_request)
+            original_delivery = self_full.pop("delivery_origin")
+            ctx.equal("delivery origin leaves the canonical source page and version intact", self_full, self_page)
+            [(original_send, original_part, original_ack)] = s.rows(
+                "SELECT p.operation_id,p.ordinal,o.observed_at FROM social_parts p JOIN social_outbound o "
+                "ON o.namespace=p.namespace AND o.child=p.child JOIN personal_deliveries d ON d.outbound=o.id "
+                "WHERE d.event=? AND p.state='confirmed'",
+                self_anchor,
+            )
+            ctx.equal("confirmed SELF delivery reports its real send without a borrowed human event",
+                      original_delivery, {"execution": self_exec, "operation": original_send,
+                                          "ordinal": original_part, "producer_event": None,
+                                          "first_confirmed_at": original_ack})
             self_body = json.loads(base64.b64decode(self_page["data"]))
             ctx.equal("SELF read preserves the published delivery identity and text",
                       (self_body["event"], self_body["kind"], self_body["text"], self_body["receiver"],
@@ -557,6 +571,8 @@ def run(ctx):
             early_echo = {"event": self_anchor, "include_self": True, "version": self_reference["version"]}
             ctx.equal("SELF content and hash are invariant after late echo",
                       p.call("participation.source", early_echo), self_page)
+            ctx.equal("late echo preserves the original logical send and part",
+                      p.call("participation.source", self_origin_request)["delivery_origin"], original_delivery)
             duplicate = p.call("participation.self_propose", proposal)
             ctx.equal(
                 "same SELF proposal keeps execution",
@@ -594,6 +610,10 @@ def run(ctx):
             derived = p.call("participation.source", derived_request)["reply_to"]
             ctx.check("a human-triggered delivery has a readable canonical SELF source", derived is not None)
             derived_page = {**derived, "include_self": True}
+            derived_origin_request = {**derived_page, "include_delivery_origin": True}
+            derived_send = p.call("participation.source", derived_origin_request)["delivery_origin"]
+            ctx.equal("confirmed human response retains the original producer event",
+                      derived_send["producer_event"], delivery_origin)
             p.call("participation.source", derived_page)
             native_review["sources"] = [derived["event"]]
             native_review["jev"]["state"]["context"] = [{"event_id": str(derived["event"]),
@@ -627,6 +647,7 @@ def run(ctx):
             ctx.equal("erasing the original input removes the retained SELF anchor",
                       p.call("participation.source", derived_request)["reply_to"], None)
             p.call("participation.source", derived_page, False)
+            p.call("participation.source", derived_origin_request, False)
             p.call("participation.promote", {"event": derived_focus, "expected_reply": derived}, False)
             jev_response = {"model": "jev-response-fixture", "answers": {"floor_state": {
                 "type": "choice", "choice": "yuki", "probabilities": {"yuki": 1.0, "unknown": 0.0}}},
@@ -643,6 +664,7 @@ def run(ctx):
                       original_attempts, [("response_held", None)])
             proofs["self"]["erasure"] = {"origin": delivery_origin, "derived": derived,
                                           "invalidated": erased_delivery["sources"], "jev": late["receipt"]}
+            proofs["self"]["delivery_origins"] = {"self": original_delivery, "human": derived_send}
             s.op("privacy", "erase", "participation-own-report", s.a, json.dumps([self_reply]))
             s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
             p.call("participation.feedback", {"event": self_reply, "include_self_report": True}, False)
