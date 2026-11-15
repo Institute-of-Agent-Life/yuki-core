@@ -459,7 +459,7 @@ pub async fn apply(conn: &mut SqliteConnection, change: &Change) -> Result<Value
                 "search.begin" | "search.finish" | "search.status" => {
                     super::external_search::callback(conn, id, instance, method, params).await
                 }
-                "terminal.scope" | "terminal.bind" => {
+                "terminal.scope" | "terminal.context" | "terminal.bind" => {
                     super::terminal_work::callback(conn, id, instance, method, params).await
                 }
                 "media.open" | "media.publish" => {

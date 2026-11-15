@@ -36,6 +36,8 @@ pub struct Install {
     pub args: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub erasure_args: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub terminal_entries: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub composition: Option<super::composition::Runtime>,
     #[serde(default)]
@@ -222,6 +224,19 @@ impl Install {
         if self.erasure_args.is_some() && !self.grants.contains("forget.owner") {
             return Err("cleanup entry requires forget.owner".into());
         }
+        if !self.terminal_entries.is_empty()
+            && (self
+                .terminal_entries
+                .iter()
+                .any(|(entry, actor)| !identifier(entry) || !identifier(actor))
+                || ["terminal.work", "tool.call", "forget.owner"]
+                    .iter()
+                    .any(|grant| !self.grants.contains(*grant)))
+        {
+            return Err(
+                "terminal entries require explicit entry and person IDs and terminal grants".into(),
+            );
+        }
         if let Some(runtime) = &self.composition {
             runtime.validate(self)?;
         }
@@ -295,6 +310,9 @@ impl Install {
         }
         if let Some(media) = &self.gateway_media {
             identity["gateway_media"] = serde_json::to_value(media)?;
+        }
+        if !self.terminal_entries.is_empty() {
+            identity["terminal_entries"] = json!(self.terminal_entries);
         }
         if let Some(policy) = &self.notifications {
             identity["notifications"] = serde_json::to_value(policy)?;
@@ -391,6 +409,7 @@ mod tests {
             maintenance: None,
             participation: None,
             erasure_args: None,
+            terminal_entries: Default::default(),
             aux_routes: BTreeMap::new(),
             composition: None,
             id: "p".into(),
