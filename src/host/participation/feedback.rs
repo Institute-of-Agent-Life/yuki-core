@@ -65,7 +65,29 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy)
         let quiet = row.get::<String, _>("state") == "completed"
             && !row.get::<bool, _>("cancelled")
             && sends.is_empty();
-        items.push(json!({"execution":execution,"state":row.get::<String,_>("state"),"cancelled":row.get::<bool,_>("cancelled"),"quiet":quiet,"sends":sends}));
+        let mut result = json!({"execution":execution,"state":row.get::<String,_>("state"),"cancelled":row.get::<bool,_>("cancelled"),"quiet":quiet,"sends":sends});
+        if c.params["include_self_report"] == true {
+            let report = sqlx::query(
+                "SELECT s.event,s.logical,s.attempt,s.engage,r.ordinal+1 AS sequence
+                 FROM participation_main_reports s
+                 JOIN model_requests r ON r.id=s.logical
+                 JOIN model_attempts a ON a.id=s.attempt AND a.state IN ('response','paired') AND a.response IS NOT NULL
+                 JOIN main_turns mt ON mt.execution=s.execution
+                 LEFT JOIN main_windows w ON w.conversation=mt.conversation
+                 WHERE s.execution=? AND s.event=? AND mt.window=coalesce(w.generation,1)
+                 ORDER BY r.ordinal DESC LIMIT 1",
+            )
+            .bind(&execution)
+            .bind(c.params["event"].as_i64())
+            .fetch_optional(&mut *db)
+            .await?;
+            result["self_report"] = report.map_or(Value::Null, |r| {
+                json!({"event":r.get::<i64,_>("event"),"logical":r.get::<String,_>("logical"),
+                    "attempt":r.get::<String,_>("attempt"),"sequence":r.get::<i64,_>("sequence"),
+                    "engage":r.get::<String,_>("engage")})
+            });
+        }
+        items.push(result);
     }
     Ok(json!({"scope":"original_execution","executions":items}))
 }

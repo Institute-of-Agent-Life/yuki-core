@@ -3,6 +3,7 @@ mod audio;
 mod domain;
 pub(crate) use domain::{human_text as event_text, window};
 pub(crate) mod segment;
+mod self_report;
 mod step;
 pub(crate) use step::hold as hold_original;
 pub(crate) mod transport;

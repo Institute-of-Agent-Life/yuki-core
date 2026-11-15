@@ -8,6 +8,15 @@ A SELF proposal has a stable plugin-scoped key, an approved scene and its own re
 
 Source pages expose bounded previews with actual IDs. Detailed source reads use bounded byte pages and acquire the plugin's erasure obligation before returning content. Auxiliary reviews declare those source IDs through the auxiliary model interface. Feedback derives confirmed, failed, unknown and quiet outcomes from the original execution and physical send records.
 
+Pass `include_self_report: true` on event feedback to read a final Main
+response's own participation intent. The report carries the original event,
+logical request, physical attempt and request sequence. The writer derives
+it from the model's reserved `<yuki-state>` tail on a single-source human
+group turn. `quiet` in the execution receipt only describes delivery. It can
+be true with a null self report. The writer removes the reserved tail
+from the canonical final text. After source erasure or a generation
+change, the earlier report can no longer drive a continuation.
+
 Request `include_origin: true` on `participation.source` for the original entry,
 raw Person and account assignment. The same scoped read also reports the
 current Person root and conversation generation. Compare that generation with
@@ -59,6 +68,6 @@ Acceptance races rule and invitation promotion, transfer or disable the original
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.31` and Python `1.0.0a31`.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.32` and Python `1.0.0a32`.
 EXT-025's installed library exercised native review on alpha.30.
 The core provides source authority and transport while the library owns semantic decisions.

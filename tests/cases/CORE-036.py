@@ -365,13 +365,16 @@ def run(ctx):
                 [(1,)],
             )
             _, q = s.wire(http)
-            reply(q, "private reasoning only")
+            reply(q, 'private reasoning only\n<yuki-state>{"engage":"quiet","person":"other"}</yuki-state>')
             s.finished(src)
             feedback = p.call("participation.feedback", {"event": src})
             ctx.check(
                 "quiet is actual completed execution without send",
                 feedback["executions"][0]["quiet"],
             )
+            unproven = p.call("participation.feedback", {"event": src, "include_self_report": True})
+            ctx.equal("no send or malformed model metadata does not prove an own intent",
+                      unproven["executions"][0]["self_report"], None)
             proofs["promotion"] = {
                 "event": src,
                 "receipts": [first, second],
@@ -516,8 +519,22 @@ def run(ctx):
                       p.call("participation.promote", self_guarded),
                       {"event": self_reply, "accepted": True, "newly_accepted": True})
             _, q = s.wire(http)
-            reply(q, "quiet original SELF quote")
+            reply(q, 'quiet original SELF quote\n<yuki-state>{"engage":"quiet"}</yuki-state>')
             s.finished(self_reply)
+            own_feedback = p.call("participation.feedback", {"event": self_reply, "include_self_report": True})
+            own_report = own_feedback["executions"][0]["self_report"]
+            ctx.equal("a final model report keeps its original focus and request sequence",
+                      (own_report["event"], own_report["engage"], own_report["sequence"]),
+                      (self_reply, "quiet", 1))
+            ctx.equal("own report identifies the original physical result",
+                      s.rows("SELECT logical,state FROM model_attempts WHERE id=?", own_report["attempt"]),
+                      [(own_report["logical"], "response")])
+            final_result = s.rows(
+                "SELECT y.result FROM main_turns y JOIN main_inputs i ON i.execution=y.execution WHERE i.event=?",
+                self_reply,
+            )[0][0]
+            ctx.equal("the reserved marker is absent from the final Main result",
+                      json.loads(final_result)["content"], "quiet original SELF quote")
             ctx.equal("a fresh conditional replay retains the original Main input",
                       p.call("participation.promote", self_guarded),
                       {"event": self_reply, "accepted": True, "newly_accepted": False})
@@ -626,6 +643,12 @@ def run(ctx):
                       original_attempts, [("response_held", None)])
             proofs["self"]["erasure"] = {"origin": delivery_origin, "derived": derived,
                                           "invalidated": erased_delivery["sources"], "jev": late["receipt"]}
+            s.op("privacy", "erase", "participation-own-report", s.a, json.dumps([self_reply]))
+            s.until(lambda: not s.op("privacy", "pending", "participation")["obligations"])
+            p.call("participation.feedback", {"event": self_reply, "include_self_report": True}, False)
+            ctx.equal("erasing the original focus removes its own intent",
+                      s.rows("SELECT event FROM participation_main_reports WHERE event=?", self_reply), [])
+            proofs["main_self_report"] = own_report
             # Erased source is unavailable even though this generation has seen it.
             erase = record("erase-before-promote", "erasure canary", s.c)
             p.call("participation.source", {"event": erase})
