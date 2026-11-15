@@ -62,7 +62,23 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy)
             let external = receipt["parts"].as_array().map_or(0, |parts| {
                 parts.iter().filter(|p| p["state"] == "confirmed").count()
             });
-            sends.push(json!({"operation":id,"state":op.get::<String,_>("state"),"confirmed_parts":confirmed+external as i64}));
+            let mut send = json!({"operation":id,"state":op.get::<String,_>("state"),
+                                  "confirmed_parts":confirmed+external as i64});
+            if c.params["include_delivery_time"] == true {
+                let first: Option<i64> = sqlx::query_scalar(
+                    "SELECT receipt.observed_at FROM social_outbound receipt
+                     JOIN operations part ON part.namespace=receipt.namespace
+                       AND part.operation_id=receipt.child
+                     WHERE receipt.namespace=? AND part.parent=? AND part.state='confirmed'
+                       AND receipt.observed_at IS NOT NULL ORDER BY receipt.id LIMIT 1",
+                )
+                .bind(&execution)
+                .bind(id)
+                .fetch_optional(&mut *db)
+                .await?;
+                send["first_confirmed_at"] = json!(first);
+            }
+            sends.push(send);
         }
         let quiet = row.get::<String, _>("state") == "completed"
             && !row.get::<bool, _>("cancelled")

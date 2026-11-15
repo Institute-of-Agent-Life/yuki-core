@@ -3995,6 +3995,9 @@
           },
           "allow_missing_proposal": {
             "type": "boolean"
+          },
+          "include_delivery_time": {
+            "type": "boolean"
           }
         },
         "required": [],
@@ -4087,6 +4090,13 @@
                       },
                       "confirmed_parts": {
                         "type": "integer",
+                        "minimum": 0
+                      },
+                      "first_confirmed_at": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
                         "minimum": 0
                       }
                     },
