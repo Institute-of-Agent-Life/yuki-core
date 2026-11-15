@@ -538,6 +538,12 @@ def run(ctx):
                       original_delivery, {"execution": self_exec, "operation": original_send,
                                           "ordinal": original_part, "producer_event": None,
                                           "first_confirmed_at": original_ack})
+            timed = p.call("participation.feedback", {"key": proposal["key"], "include_delivery_time": True})
+            timed_send = timed["executions"][0]["sends"][0]
+            ctx.equal("SELF feedback uses the original acknowledged send time",
+                      timed_send["first_confirmed_at"], original_ack)
+            del timed_send["first_confirmed_at"]
+            ctx.equal("delivery timing remains opt-in", timed, actual)
             self_body = json.loads(base64.b64decode(self_page["data"]))
             ctx.equal("SELF read preserves the published delivery identity and text",
                       (self_body["event"], self_body["kind"], self_body["text"], self_body["receiver"],
@@ -1130,6 +1136,13 @@ def external(ctx, sdk, aux):
             ctx.check(
                 "unknown send is never quiet", not partial["executions"][0]["quiet"]
             )
+            partial_time = p.call("participation.feedback", {"key": cut["key"], "include_delivery_time": True})
+            [(first_ack,)] = o.rows(
+                "SELECT observed_at FROM social_outbound WHERE namespace=? ORDER BY id LIMIT 1",
+                unknown["execution"],
+            )
+            ctx.equal("partial feedback reports the proven first acknowledgment only",
+                      partial_time["executions"][0]["sends"][0]["first_confirmed_at"], first_ack)
             p.call("participation.self_propose", {**cut, "key": "offline-new"}, False)
             before = (gateway / "deliveries.jsonl").read_text().splitlines()
         with o.svc.running():
@@ -1155,4 +1168,30 @@ def external(ctx, sdk, aux):
                 partial,
             )
             ctx.check("cold unknown creates no model request", http.wires.empty())
-        return {"normal": feedback, "partial": partial, "physical_parts": len(before)}
+        competing = ctx.working / "competing-participant"
+        competing.mkdir()
+        with (o.svc.data / "yuki.toml").open("a", encoding="utf-8") as config:
+            config.write(
+                '\n[[plugins]]\nid="competing_participant"\nnamespace="competing_participant"\nprogram='
+                + json.dumps(sys.executable) + '\nargs=' + json.dumps([
+                    str(ctx.root / "tests/peers/aux-model/peer.py"), str(competing), str(sdk / "python-install"),
+                ]) + '\ngrants=["forget.owner","participation.self_propose"]\n'
+                '[plugins.participation]\nentries=' + json.dumps([entry])
+                + '\n[plugins.participation.self_scenes]\n' + json.dumps(entry) + '='
+                + json.dumps(bot["assignment"]) + '\n'
+            )
+        second = aux.Peer(o, competing)
+        with o.svc.running():
+            o.until(lambda: o.rows(
+                "SELECT count(*) FROM host_installations WHERE online AND plugin IN ('gateway','external_participant','competing_participant')"
+            ) == [(3,)])
+            ambiguous = {**proposal, "key": "ambiguous-self-owner"}
+            p.call("participation.self_propose", ambiguous, False)
+            second.call("participation.self_propose", ambiguous, False)
+            ctx.equal("competing enabled SELF owners create no proposal",
+                      o.rows("SELECT proposal FROM participation_proposals WHERE proposal=?", ambiguous["key"]), [])
+            ctx.equal("the original authorized receipt survives a competing declaration",
+                      p.call("participation.feedback", {"key": proposal["key"]}), feedback)
+            ctx.check("competing SELF owners dispatch no model", http.wires.empty())
+        return {"normal": feedback, "partial": partial, "physical_parts": len(before),
+                "partial_original_first_confirmation": first_ack, "ambiguous_scene_admissions": 0}

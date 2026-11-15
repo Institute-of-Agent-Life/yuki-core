@@ -21,6 +21,16 @@ An empty `executions` list means that this plugin has no accepted proposal for
 that key. An authorized accepted proposal returns its original execution and
 receipts. The lookup leaves the proposal and model ledgers unchanged.
 
+An enabled installation that holds `participation.self_propose` is a SELF
+owner for its configured scene. The writer rejects new proposals when two
+enabled installations claim the same scene. Repeating a previously admitted
+key still checks the original authorization and returns the original execution.
+
+Pass `include_delivery_time: true` to return each send's first confirmed
+physical part time. The Host reads its original receipt. A send with no
+confirmed receipt has a null time, and a confirmed prefix keeps its time
+when a later part remains unknown.
+
 Source pages expose bounded previews with actual IDs. Detailed source reads use bounded byte pages and acquire the plugin's erasure obligation before returning content. Auxiliary reviews declare those source IDs through the auxiliary model interface. Feedback derives confirmed, failed, unknown and quiet outcomes from the original execution and physical send records.
 
 Pass `include_self_report: true` on event feedback to read a final Main
@@ -95,6 +105,6 @@ Acceptance races rule and invitation promotion, transfer or disable the original
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.35` and Python `1.0.0a35`.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.36` and Python `1.0.0a36`.
 EXT-025's installed library exercises native review on Plugin Base 1.3.0.
 The core provides source authority and transport while the library owns semantic decisions.

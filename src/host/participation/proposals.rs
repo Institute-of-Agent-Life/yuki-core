@@ -46,6 +46,22 @@ pub(super) async fn submit(
         authorize(db,&execution).await?;
         return Ok(json!({"execution":execution,"newly_accepted":false}));
     }
+    let competing: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+           SELECT 1 FROM host_installations i JOIN host_participation p
+             ON p.plugin=i.plugin AND p.revision=i.revision
+           JOIN json_each(p.body,'$.self_scenes') scene
+           WHERE i.enabled AND i.plugin!=? AND scene.key=?
+             AND EXISTS(SELECT 1 FROM json_each(i.grants) WHERE value='participation.self_propose')
+        )",
+    )
+    .bind(&c.plugin)
+    .bind(entry)
+    .fetch_one(&mut *db)
+    .await?;
+    if competing {
+        return Err("original SELF scene has multiple enabled owners".into());
+    }
     let expected_generation = c
         .params
         .get("expected_generation")
