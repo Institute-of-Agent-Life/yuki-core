@@ -230,6 +230,49 @@ pub(super) fn page(c: &Change, event: i64, raw: &[u8]) -> Result<Value> {
     page["complete"] = json!(end == raw.len());
     Ok(page)
 }
+
+async fn check_context(
+    db: &mut SqliteConnection,
+    c: &Change,
+    policy: &Policy,
+    focus: &OriginalSource,
+    event: i64,
+    expected: &[Value],
+) -> Result<()> {
+    if focus.observed_generation != Some(focus.current_generation) {
+        return Err("participation context is outside the current generation".into());
+    }
+    for claimed in expected {
+        let id = claimed["event"].as_i64().ok_or("context event required")?;
+        if id >= event {
+            return Err("participation context must precede the focus".into());
+        }
+        let observed = if let Some(delivery) = self_source::record(db, policy, id).await? {
+            if delivery["entry"] != focus.entry_id
+                || delivery["generation"] != focus.current_generation
+            {
+                return Err("original SELF context is outside the focus".into());
+            }
+            source::retain_self_delivery(db, &c.plugin, &format!("participation:{id}"), id).await?;
+            delivery
+        } else {
+            let prior = original(db, &c.plugin, policy, id).await?;
+            let body: Value = serde_json::from_str(&prior.envelope)?;
+            if prior.entry_id != focus.entry_id
+                || prior.observed_generation != focus.observed_generation
+                || body["kind"] != "message"
+            {
+                return Err("original human context is outside the focus".into());
+            }
+            body
+        };
+        if reference(id, &serde_json::to_vec(&observed)?) != *claimed {
+            return Err("original participation context changed before admission".into());
+        }
+    }
+    Ok(())
+}
+
 pub(super) async fn promote(
     db: &mut SqliteConnection,
     c: &Change,
@@ -257,6 +300,9 @@ pub(super) async fn promote(
                 != Some(expected))
     {
         return Err("original participation reply changed before admission".into());
+    }
+    if let Some(expected) = c.params["expected_context"].as_array() {
+        check_context(db, c, policy, &source, event, expected).await?;
     }
     let result = admit::promote(db, event).await?;
     sqlx::query("INSERT OR IGNORE INTO participation_promotions VALUES(?,?)")

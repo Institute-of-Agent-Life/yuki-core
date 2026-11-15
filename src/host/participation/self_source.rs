@@ -3,7 +3,11 @@ use crate::Result;
 use serde_json::{Value, json};
 use sqlx::{Row, SqliteConnection};
 
-async fn record(db: &mut SqliteConnection, policy: &Policy, event: i64) -> Result<Option<Value>> {
+pub(super) async fn record(
+    db: &mut SqliteConnection,
+    policy: &Policy,
+    event: i64,
+) -> Result<Option<Value>> {
     let Some(row) = sqlx::query(
         "SELECT ack.entry,ack.stage,ack.body,ack.namespace,t.window,ack.observed_at
          FROM personal_live_deliveries ack
