@@ -54,7 +54,7 @@ pub async fn prepare(
     }
     let activation = format!("main:{exec}");
     execution::activate(conn, exec, &activation, &cfg.contract()).await?;
-    let prior=sqlx::query("SELECT r.id,r.ordinal,r.request_json,p.state,p.response,p.diagnostic
+    let prior=sqlx::query("SELECT r.id,r.ordinal,r.request_json,p.id AS attempt,p.state,p.response,p.diagnostic
       FROM model_requests r LEFT JOIN model_attempts p ON p.logical=r.id WHERE r.activation=? ORDER BY r.ordinal DESC,p.ordinal DESC LIMIT 1")
         .bind(&activation).fetch_optional(&mut *conn).await?;
     let fresh: Vec<i64> = sqlx::query_scalar(
@@ -98,7 +98,7 @@ pub async fn prepare(
         let fresh_mail = crate::work::has_mail(conn, exec).await?;
         let mut continue_turn = !fresh.is_empty() || fresh_mail;
         match result {
-            Ok(parsed) => {
+            Ok(mut parsed) => {
                 let original: Value = serde_json::from_str(&raw)?;
                 cfg.protocol.replay(
                     &mut body,
@@ -150,6 +150,16 @@ pub async fn prepare(
                     continue_turn = true;
                 }
                 if !continue_turn {
+                    if task.is_none() {
+                        super::self_report::retain(
+                            conn,
+                            exec,
+                            &logical,
+                            row.try_get("attempt")?,
+                            &mut parsed.result,
+                        )
+                        .await?;
+                    }
                     if crate::work::settle(conn, exec, &logical, Some(&parsed.result)).await? {
                         return Ok(Value::Null);
                     }

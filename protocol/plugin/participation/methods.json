@@ -335,6 +335,9 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256
+        },
+        "include_self_report": {
+          "type": "boolean"
           }
         },
         "required": [],
@@ -375,6 +378,18 @@
                 "quiet": {
                   "type": "boolean"
                 },
+              "self_report": {
+                "type": ["object", "null"],
+                "properties": {
+                  "event": {"type": "integer", "minimum": 1},
+                  "logical": {"type": "string", "minLength": 1},
+                  "attempt": {"type": "string", "minLength": 1},
+                  "sequence": {"type": "integer", "minimum": 1},
+                  "engage": {"enum": ["join", "stay", "quiet"]}
+                },
+                "required": ["event", "logical", "attempt", "sequence", "engage"],
+                "additionalProperties": false
+              },
                 "sends": {
                   "type": "array",
                   "items": {
