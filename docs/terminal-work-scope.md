@@ -10,4 +10,8 @@ EXT-020 的 Manager 以 request_id 接納命令，回傳自己的 run_id。原�
 
 上面的 `terminal.work` 描述已接納 Work 的路徑。固定 v4 的 SandboxClient 也接納有原會話及原入站事件的普通輪次。實跑中，客戶端把沒有 `YUKI_WORK_ID` 的 terminal_exec 交給原 Manager；Manager 登記一筆 job，再按原 request_id 查到同一個 run_id。缺少來源、或來源只有會話而缺事件／父執行時，Manager 都沒有收到請求。
 
-回條和隔離重放程式在 `artifacts/CORE-040/original-terminal-source-03/`。目前已安裝的 EXT-020 alpha.1 只宣告 environment_status。要驗收終端等價，還需真實消費端在普通來源與 Work 租約下各自驗證啟動、續讀、控制及撤權。
+回條和隔離重放程式在 `artifacts/CORE-040/original-terminal-source-03/`。
+
+預覽 SDK alpha.38／a38 增加 `terminal.context`。管理者在同一終端插件安裝的 `terminal_entries` 指定入口到 Person 的對應，例如 `terminal_entries = { "<entry-id>" = "<person-id>" }`。普通輪次只有原人、原事件、原入口和接收 Bot 都能核對時才開放。新方法的普通輪次回 `entry_id` 並令 `work_id` 為 null。Work 輪次回 `work_id` 並令 `entry_id` 為 null。既有 `terminal.scope` 仍用原 Work 形狀。兩條路徑使用同一 `terminal.bind` 將原請求綁到 Manager run。
+
+同一安裝、入口、Person 和接收 Bot 的後續真人輪次可讀或控制原 run。其他入口、人物、安裝或已清除的原來源拒絕派發。reader 64 新增普通輪次的綁定，既有 Work 回條仍從原表讀。CORE-032 的 `terminal-entry-scope.json` 驗證 Host 派發、續讀、拒絕與原來源清除。終端等價仍需 EXT-020 使用原 Manager／execd 的實際程序與 PTY 回條。

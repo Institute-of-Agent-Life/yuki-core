@@ -12,6 +12,7 @@ import tomllib
 from contextlib import closing
 from tests.harness.external_search import exercise as external_search
 from tests.harness.terminal_work import exercise as terminal_work
+from tests.harness.terminal_work import exercise_entry as terminal_entry
 from tests.harness.native_topic_route import run as native_topic_route
 from tests.harness.native_preparation import run as native_preparation
 from tests.harness.gateway_text import run as gateway_text
@@ -740,6 +741,7 @@ grants=["observe.metadata","tool.call"]
         "gateway_mentions": gateway_mentions(ctx, sdkdir, profile),
         "external_search": external_search(ctx,sdkdir,profile),
         "terminal_work":terminal_work(ctx,sdkdir,profile),
+        "terminal_entry":terminal_entry(ctx,sdkdir,profile),
         "normal": {
             "observation": observation,
             "command": cmd,

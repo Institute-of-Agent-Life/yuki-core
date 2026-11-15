@@ -583,6 +583,7 @@ async fn queued_host_part_survives_process_exit_as_proven_unsent() {
         participation: None,
         aux_routes: Default::default(),
         erasure_args: None,
+        terminal_entries: Default::default(),
         composition: None,
         id: "fixture".into(),
         namespace: "history".into(),

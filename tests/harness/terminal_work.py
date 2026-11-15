@@ -36,34 +36,48 @@ class Peer:
         self.post({"id": f["id"], "reply": {"ok": True, "data": result}})
 
 
+def installation(source, sdk, name, peer, *, tools, terminal_entries=None):
+    config = (
+        f'\n[[plugins]]\nid="{name}"\nnamespace="{name}"\nprogram='
+        + json.dumps(sys.executable)
+        + "\nargs="
+        + json.dumps([str(source), str(peer.folder), str(sdk)])
+        + '\ngrants=["tool.call","terminal.work","forget.owner"]\n'
+    )
+    if terminal_entries:
+        fields = ", ".join(
+            f"{json.dumps(entry)}={json.dumps(actor)}"
+            for entry, actor in terminal_entries.items()
+        )
+        config += "terminal_entries={" + fields + "}\n"
+    if tools:
+        for tool, required in [
+            ("terminal_exec", ["command"]),
+            ("terminal_read", ["run_id"]),
+            ("terminal_control", ["run_id", "action"]),
+        ]:
+            props = ",".join(k + '={type="string"}' for k in required)
+            config += (
+                f'[[plugins.tools]]\nname="{tool}"\ndescription="Original {tool}"\n'
+                + 'cacheable=false\nparallel_read=false\ncode_direct=false\n'
+                + 'schema={type="object",required='
+                + json.dumps(required)
+                + ",properties={"
+                + props
+                + "},additionalProperties=false}\n"
+            )
+    return config
+
+
 def exercise(ctx, sdk, profile="debug"):
     o = Owner(ctx, "terminal-work", 50, profile)
     peers = {n: Peer(o, ctx.working / n) for n in ["manager", "foreign"]}
     p = peers["manager"]
     source = ctx.root / "tests/peers/terminal/consumer.py"
-    cfg = ""
-    for name, peer in peers.items():
-        cfg += (
-            f'\n[[plugins]]\nid="{name}"\nnamespace="{name}"\nprogram='
-            + json.dumps(sys.executable)
-            + "\nargs="
-            + json.dumps([str(source), str(peer.folder), str(sdk)])
-            + '\ngrants=["tool.call","terminal.work","forget.owner"]\n'
-        )
-        if name == "manager":
-            for tool, required in [
-                ("terminal_exec", ["command"]),
-                ("terminal_read", ["run_id"]),
-                ("terminal_control", ["run_id", "action"]),
-            ]:
-                props = ",".join(k + '={type="string"}' for k in required)
-                cfg += (
-                    f'[[plugins.tools]]\nname="{tool}"\ndescription="Original {tool}"\ncacheable=false\nparallel_read=false\ncode_direct=false\nschema={{type="object",required='
-                    + json.dumps(required)
-                    + ",properties={"
-                    + props
-                    + "},additionalProperties=false}\n"
-                )
+    cfg = "".join(
+        installation(source, sdk, name, peer, tools=name == "manager")
+        for name, peer in peers.items()
+    )
     seen = set()
 
     def take():
@@ -343,4 +357,116 @@ def exercise(ctx, sdk, profile="debug"):
         ).hexdigest(),
     }
     ctx.write("terminal-work-scope.json", result)
+    return result
+
+
+def exercise_entry(ctx, sdk, profile="debug"):
+    owner = Owner(ctx, "terminal-entry", 63, profile)
+    peer = Peer(owner, ctx.working / "entry-manager")
+    source = ctx.root / "tests/peers/terminal/consumer.py"
+    group = "92001"
+    private_actor = "00000000-0000-4000-8000-000000000042"
+    with owner.svc.running():
+        entry = owner.op("entry", "group", group)["entry"]
+        private = owner.op(
+            "entry", "private", owner.user["assignment"], owner.bot["assignment"]
+        )["entry"]
+        owner.op("person", "create", private_actor)
+        other_user = owner.op(
+            "account", "open", "qq", "compact", "202", 1, "--person",
+            private_actor, "--start", 1,
+        )
+    config = installation(
+        source, sdk, "manager", peer, tools=True,
+        terminal_entries={entry: owner.actor, private: owner.actor},
+    )
+    consumed = set()
+
+    def take():
+        def pending():
+            return next(
+                (item for item in peer.folder.glob("call-*.json") if item not in consumed),
+                None,
+            )
+        item = owner.until(pending)
+        consumed.add(item)
+        return read_json(item)
+
+    with Recorder() as model:
+        owner.config(model, config)
+        with owner.svc.running():
+            owner.until(lambda: (peer.folder / "ready.json").is_file())
+            event = owner.human("open fixture terminal", group)
+            _, q = owner.wire(model)
+            reply(q, calls=[call("open", "terminal_exec", {"command": "fixture"})])
+            launch = take()
+            handle = launch["params"]["handle"]
+            handle_arg = {"handle": handle}
+            scope = peer.rpc("terminal.context", handle_arg)
+            ctx.equal(
+                "ordinary terminal uses its opted-in entry without accepting a Work",
+                (scope["work_id"], scope["entry_id"], scope["mode"], scope["request_id"]),
+                (None, entry, "launch", handle),
+            )
+            peer.rpc("terminal.scope", handle_arg, False)
+            receipt = {**handle_arg, "request_id": handle, "run_id": "entry-run"}
+            peer.rpc("terminal.bind", receipt)
+            peer.answer(launch, {"run_id": receipt["run_id"], "pending": True})
+            _, q = owner.wire(model)
+            reply(q, "")
+            owner.finished(event)
+
+            observation = owner.human("read owned fixture terminal", group)
+            _, q = owner.wire(model)
+            reply(q, calls=[call("read", "terminal_read", {"run_id": receipt["run_id"]})])
+            observed = take()
+            same = peer.rpc("terminal.context", {"handle": observed["params"]["handle"]})
+            ctx.equal(
+                "later human turn sees its original launch and run",
+                (same["entry_id"], same["launch_request"], same["mode"], same["run_id"]),
+                (entry, handle, "read", receipt["run_id"]),
+            )
+            peer.answer(observed, {"run_id": receipt["run_id"], "status": "running"})
+            _, q = owner.wire(model)
+            reply(q, "")
+            owner.finished(observation)
+
+            def denied(label, entry_group, tool, arguments):
+                blocked = owner.human(label, entry_group)
+                _, request = owner.wire(model)
+                reply(request, calls=[call("denied", tool, arguments)])
+                response, request = owner.wire(model)
+                ctx.equal(label + " dispatches zero plugin calls", len(list(peer.folder.glob("call-*.json"))), 2)
+                result = next(m["content"] for m in response["messages"] if m.get("tool_call_id") == "denied")
+                ctx.check(label + " has no returned run", receipt["run_id"] not in result)
+                reply(request, "")
+                owner.finished(blocked)
+
+            read_args = {"run_id": receipt["run_id"]}
+            denied("different opted-in entry", None, "terminal_read", read_args)
+            denied("entry without installation approval", "92002", "terminal_exec", {"command": "fixture"})
+            original = owner.user
+            owner.user = other_user
+            denied("another person in the same entry", group, "terminal_read", read_args)
+            owner.user = original
+
+            owner.op("privacy", "erase", "terminal-entry-source", owner.actor, json.dumps([event]))
+            ctx.equal(
+                "forget clears the original entry run reference",
+                owner.rows("SELECT run FROM terminal_entry_calls WHERE handle=?", handle),
+                [(None,)],
+            )
+            peer.rpc("terminal.context", handle_arg, False)
+            denied("source erased", group, "terminal_read", read_args)
+    result = {
+        "entry": entry,
+        "manager_request": handle,
+        "original_run": receipt["run_id"],
+        "authorised_launches": 1,
+        "authorised_observations": 1,
+        "denied_dispatches": 4,
+        "source_erasure": "run_reference_cleared",
+        "manager_process_started": False,
+    }
+    ctx.write("terminal-entry-scope.json", result)
     return result
