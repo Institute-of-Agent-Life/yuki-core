@@ -18,11 +18,15 @@ on:
         description: SHA-256 of the selected Windows artifact ZIP
         type: string
         default: ''
+      previous_consumers:
+        description: Replay the original released consumers against the candidate
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   native:
-    if: inputs.participation_revision == '' && inputs.participation_consumer == '' && inputs.candidate_artifact == '' && inputs.candidate_sha256 == ''
+    if: inputs.participation_revision == '' && inputs.participation_consumer == '' && inputs.candidate_artifact == '' && inputs.candidate_sha256 == '' && !inputs.previous_consumers
     strategy:
       fail-fast: false
       matrix:
@@ -52,7 +56,7 @@ jobs:
           path: artifacts/host/
           if-no-files-found: error
   oci:
-    if: inputs.participation_revision == '' && inputs.participation_consumer == '' && inputs.candidate_artifact == '' && inputs.candidate_sha256 == ''
+    if: inputs.participation_revision == '' && inputs.participation_consumer == '' && inputs.candidate_artifact == '' && inputs.candidate_sha256 == '' && !inputs.previous_consumers
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -73,7 +77,7 @@ jobs:
             artifacts/linux-oci/verify*.py
           if-no-files-found: error
   selected-windows:
-    if: inputs.participation_revision != '' || inputs.participation_consumer != '' || inputs.candidate_artifact != '' || inputs.candidate_sha256 != ''
+    if: inputs.participation_revision != '' || inputs.participation_consumer != '' || inputs.candidate_artifact != '' || inputs.candidate_sha256 != '' || inputs.previous_consumers
     runs-on: windows-latest
     timeout-minutes: 40
     permissions:
@@ -93,23 +97,27 @@ jobs:
           CONSUMER: ${{ inputs.participation_consumer }}
           CANDIDATE_ARTIFACT: ${{ inputs.candidate_artifact }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          PREVIOUS: ${{ inputs.previous_consumers }}
         run: |
           if ($env:REVISION -cnotmatch '\A[0-9a-f]{40}\z') { throw 'Expected a full commit SHA' }
-          if ($env:CONSUMER -or $env:CANDIDATE_ARTIFACT -or $env:CANDIDATE_SHA256) {
-            if ($env:CONSUMER -cnotmatch '\A[0-9a-f]{40}\z' -or
-                $env:CANDIDATE_ARTIFACT -cnotmatch '\A[1-9][0-9]*\z' -or
+          if ($env:CONSUMER -or $env:PREVIOUS -eq 'true') {
+            if ($env:CONSUMER -and $env:CONSUMER -cnotmatch '\A[0-9a-f]{40}\z') { throw 'Wrong extension SHA' }
+            if ($env:CANDIDATE_ARTIFACT -cnotmatch '\A[1-9][0-9]*\z' -or
                 $env:CANDIDATE_SHA256 -cnotmatch '\A[0-9a-f]{64}\z') { throw 'Incomplete replay pins' }
+          } elseif ($env:CANDIDATE_ARTIFACT -or $env:CANDIDATE_SHA256) {
+            throw 'Select a replay mode for the candidate artifact'
           }
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        if: '!inputs.previous_consumers'
         with:
           path: producer
           ref: ${{ inputs.participation_revision }}
           persist-credentials: false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        if: inputs.participation_consumer != ''
+        if: inputs.participation_consumer != '' && !inputs.previous_consumers
         with:
           repository: Institute-of-Agent-Life/yuki-extensions
           path: consumer
@@ -119,7 +127,9 @@ jobs:
         with:
           python-version: '3.12'
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+        if: '!inputs.previous_consumers'
       - name: Prepare the fixed Rust toolchain
+        if: '!inputs.previous_consumers'
         working-directory: producer
         run: |
           rustup toolchain install 1.96.0 --profile minimal
@@ -128,13 +138,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo fetch --locked --manifest-path sdk/rust/Cargo.toml
       - name: Plan against the published registry
-        if: inputs.participation_consumer == ''
+        if: inputs.participation_consumer == '' && !inputs.previous_consumers
         env:
           REVISION: ${{ inputs.participation_revision }}
         run: |
           python -B ci/selected_participation.py --source producer --revision $env:REVISION --registry "$env:RUNNER_TEMP/stable-registry" --out artifacts/selected-participation
       - name: Build the restricted Windows Host and SDKs
-        if: inputs.participation_consumer == ''
+        if: inputs.participation_consumer == '' && !inputs.previous_consumers
         working-directory: producer
         run: |
           $out = Join-Path $env:GITHUB_WORKSPACE 'artifacts/selected-participation'
@@ -144,14 +154,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B ci/promote-surface.py build-host --registry $registry --plan $plan --out (Join-Path $out 'windows') --target-dir (Join-Path $env:RUNNER_TEMP 'selected-target')
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: inputs.participation_consumer == ''
+        if: inputs.participation_consumer == '' && !inputs.previous_consumers
         with:
           name: selected-participation-windows-${{ github.run_attempt }}
           path: artifacts/selected-participation/
           if-no-files-found: error
           retention-days: 14
       - name: Retrieve the exact successful candidate archive
-        if: inputs.participation_consumer != ''
+        if: inputs.participation_consumer != '' || inputs.previous_consumers
         env:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT: ${{ inputs.candidate_artifact }}
@@ -167,7 +177,7 @@ jobs:
               subprocess.run(["gh", "api", endpoint], stdout=output, check=True, timeout=180)
           '@ | python -B -
       - name: Prepare the locked participation library
-        if: inputs.participation_consumer != ''
+        if: inputs.participation_consumer != '' && !inputs.previous_consumers
         working-directory: consumer
         run: |
           $pin = Get-Content compat/participation-library/source.lock.json -Raw | ConvertFrom-Json
@@ -180,7 +190,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install --no-index --require-hashes --find-links $wheels -r $lock
       - name: Replay the installed participation worker
-        if: inputs.participation_consumer != ''
+        if: inputs.participation_consumer != '' && !inputs.previous_consumers
         env:
           REVISION: ${{ inputs.participation_revision }}
           CONSUMER: ${{ inputs.participation_consumer }}
@@ -192,5 +202,19 @@ jobs:
         with:
           name: participation-replay-windows-${{ github.run_attempt }}
           path: artifacts/participation-replay/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Replay original released consumers on the same candidate
+        if: inputs.previous_consumers
+        env:
+          REVISION: ${{ inputs.participation_revision }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+        run: |
+          python -B ci/previous_selected_replay.py --candidate "$env:RUNNER_TEMP/participation-candidate.zip" --candidate-sha256 $env:CANDIDATE_SHA256 --core-revision $env:REVISION --out artifacts/previous-consumers
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ always() && inputs.previous_consumers }}
+        with:
+          name: previous-consumers-windows-${{ github.run_attempt }}
+          path: artifacts/previous-consumers/
           if-no-files-found: warn
           retention-days: 14
