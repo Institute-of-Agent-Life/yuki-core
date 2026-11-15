@@ -1,3 +1,5 @@
+**CORE-053 陣列內的可選欄位見證。** 分支 `codex/core-053-array-field-witness`。release 工具可從 `participation.feedback` 的原回應選取實際送達時間。空陣列、錯誤請求 ID 或以物件冒充陣列都無法成為見證。Mac 卡入口通過 48 項，`artifacts/CORE-053/array-field-macos-preflight-01/minor-promotion.json` SHA-256 `e4b9d00cfb17acc0904dcd68130486539db40fdee965dc03da828901e29527f3`。正式能力仍須三端受限 Host 與真插件驗收。
+
 **CORE-036 SELF 來源與支持證據。** 分支 `codex/core-036-self-source-guard`，預覽 SDK alpha.37／a37、reader 63。接納時核對所選事件及全部支持來源的版本與原代次，支持來源也成為清除依賴；所選事件才進入 Main。Mac 預驗回條 `artifacts/CORE-036/self-source-guard-macos-preflight-01/promotion-vs-self.json` SHA-256 `c0501549a6ff2d39d89eb43acf00f744893fd05eb866b33650c5bff11939ecc7`。下一步交 EXT-026 驗原機會模型的實際提案。
 
 **CORE-036 SELF 單一 owner 與原送達時間。** 分支 `codex/core-036-self-receipts`，預覽 SDK alpha.36／a36、reader 63。相同入口有兩個已啟用的 SELF owner 時拒絕接納新提案，原已接納執行仍可按原授權查回。回饋可明選首筆真確認時間，後段 unknown 保留原確認前綴。Mac 預驗 466 項通過，回條 `artifacts/CORE-036/self-receipts-macos-preflight-01/promotion-vs-self.json` SHA-256 `74cd3b3c48e927b9954e96fe3acbc63fe0cdda289d6c7cac44789d8af648d5d6`。下一步讓 EXT-026 從原送達回條更新機會模型。
