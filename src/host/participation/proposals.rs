@@ -46,6 +46,16 @@ pub(super) async fn submit(
         authorize(db,&execution).await?;
         return Ok(json!({"execution":execution,"newly_accepted":false}));
     }
+    let expected_generation = c
+        .params
+        .get("expected_generation")
+        .map(|value| value.as_i64().ok_or("invalid SELF generation"))
+        .transpose()?;
+    if let Some(expected) = expected_generation
+        && sources::current_generation(db, entry).await? != expected
+    {
+        return Err("original SELF generation changed before admission".into());
+    }
     let origin = format!("participation:{}", new_id(db).await?);
     sqlx::query("INSERT INTO main_origins(ref,kind,conversation) VALUES(?,'self',?)")
         .bind(&origin)
@@ -58,11 +68,14 @@ pub(super) async fn submit(
     let mut dependencies = vec![];
     for id in c.params["sources"].as_array().into_iter().flatten() {
         let event = id.as_i64().ok_or("invalid proposal source")?;
-        let source_entry: String = sqlx::query_scalar("SELECT entry_id FROM events WHERE id=?")
-            .bind(event)
-            .fetch_one(&mut *db)
-            .await?;
-        if source_entry != entry {
+        let (source_entry, observed_generation): (String, Option<i64>) =
+            sqlx::query_as("SELECT entry_id,observed_generation FROM events WHERE id=?")
+                .bind(event)
+                .fetch_one(&mut *db)
+                .await?;
+        if source_entry != entry
+            || (expected_generation.is_some() && observed_generation != expected_generation)
+        {
             return Err("proposal source outside original scene".into());
         }
         let frame = sources::checked(db, &c.plugin, policy, event).await?;

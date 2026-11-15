@@ -22,15 +22,17 @@ pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy)
         let key = c.params["key"]
             .as_str()
             .ok_or("original feedback key required")?;
-        vec![
-            sqlx::query_scalar(
-                "SELECT execution FROM participation_proposals WHERE plugin=? AND proposal=?",
-            )
-            .bind(&c.plugin)
-            .bind(key)
-            .fetch_one(&mut *db)
-            .await?,
-        ]
+        let execution = sqlx::query_scalar(
+            "SELECT execution FROM participation_proposals WHERE plugin=? AND proposal=?",
+        )
+        .bind(&c.plugin)
+        .bind(key)
+        .fetch_optional(&mut *db)
+        .await?;
+        if execution.is_none() && c.params["allow_missing_proposal"] != true {
+            return Err(sqlx::Error::RowNotFound.into());
+        }
+        execution.into_iter().collect()
     };
     let mut items = vec![];
     for execution in executions {

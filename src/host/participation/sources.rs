@@ -99,16 +99,31 @@ pub(in crate::host) async fn authorize_review(
     Ok(())
 }
 
+pub(super) async fn current_generation(db: &mut SqliteConnection, entry: &str) -> Result<i64> {
+    Ok(sqlx::query_scalar(
+        "SELECT coalesce((SELECT generation FROM main_windows WHERE conversation=?), 1)",
+    )
+    .bind(entry)
+    .fetch_one(db)
+    .await?)
+}
+
 pub(super) async fn list(db: &mut SqliteConnection, c: &Change, policy: &Policy) -> Result<Value> {
     let target = c.params["entry"].as_str().ok_or("entry required")?;
     entry(db, policy, target).await?;
     let after = c.params["after"].as_i64().unwrap_or(0);
+    let generation = if c.params["include_generation"] == true {
+        Some(current_generation(db, target).await?)
+    } else {
+        None
+    };
     let ids:Vec<i64>=sqlx::query_scalar("SELECT e.id FROM events e JOIN persons p ON p.id=e.raw_actor JOIN persons r ON r.id=coalesce(p.current_root,p.id)
       JOIN assignments a ON a.id=e.actor_stage AND a.original_person=e.raw_actor JOIN assignments b ON b.id=e.bot_stage
-      WHERE e.entry_id=? AND e.id>? AND e.envelope IS NOT NULL AND p.enabled AND r.enabled AND a.status='active' AND b.status='active'
+      WHERE e.entry_id=?1 AND e.id>?2 AND (?3 IS NULL OR e.observed_generation=?3)
+      AND e.envelope IS NOT NULL AND p.enabled AND r.enabled AND a.status='active' AND b.status='active'
       AND NOT EXISTS(SELECT 1 FROM invalidated_sources WHERE source=e.id)
       AND NOT EXISTS(SELECT 1 FROM participation_erased_mentions WHERE event=e.id) ORDER BY e.id LIMIT 8")
-      .bind(target).bind(after).fetch_all(&mut *db).await?;
+      .bind(target).bind(after).bind(generation).fetch_all(&mut *db).await?;
     let mut items = vec![];
     for id in &ids {
         let frame = checked(db, &c.plugin, policy, *id).await?;
@@ -127,7 +142,12 @@ pub(super) async fn list(db: &mut SqliteConnection, c: &Change, policy: &Policy)
             json!({"event":id,"preview":preview,"version":format!("{:x}",Sha256::digest(&raw))}),
         );
     }
-    Ok(json!({"entry":target,"items":items,"next":ids.last().copied().unwrap_or(after)}))
+    let mut result =
+        json!({"entry":target,"items":items,"next":ids.last().copied().unwrap_or(after)});
+    if let Some(generation) = generation {
+        result["current_generation"] = json!(generation);
+    }
+    Ok(result)
 }
 pub(super) async fn read(db: &mut SqliteConnection, c: &Change, policy: &Policy) -> Result<Value> {
     let id = c.params["event"].as_i64().ok_or("event required")?;
