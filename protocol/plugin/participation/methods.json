@@ -217,6 +217,24 @@
           "expected_generation": {
             "type": "integer",
             "minimum": 1
+        },
+        "expected_reply": {
+          "type": "object",
+          "properties": {
+            "event": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "event",
+            "version"
+          ],
+          "additionalProperties": false
           }
         },
         "required": [
