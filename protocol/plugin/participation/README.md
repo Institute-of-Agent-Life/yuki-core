@@ -15,6 +15,12 @@ sources must have been observed in the same generation. A replay of the
 original key still reads the formerly admitted execution, subject to its
 original authorization.
 
+For a conversation opportunity, `source_guard` carries each selected event
+and each support reference as `{event, version}`. Provide the original
+generation and at least one selected event in `sources`. The writer checks
+the guard in the admission transaction and records all guarded events as
+dependencies. Only `sources` supplies context to Main.
+
 Use `participation.feedback` with the proposal key and
 `allow_missing_proposal: true` to reconcile after an interrupted admission.
 An empty `executions` list means that this plugin has no accepted proposal for

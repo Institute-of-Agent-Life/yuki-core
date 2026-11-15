@@ -579,6 +579,34 @@ def run(ctx):
             ctx.equal("a fresh conditional replay retains the original Main input",
                       p.call("participation.promote", self_guarded),
                       {"event": self_reply, "accepted": True, "newly_accepted": False})
+            lead = record("self-source-lead", "selected evidence for the SELF opportunity")
+            lead_version = p.call("participation.source", {"event": lead})["version"]
+            lead_ref = {"event": lead, "version": lead_version}
+            sourced = {**proposal, "key": "source-guarded-self", "sources": [lead],
+                       "source_guard": [lead_ref, self_reference]}
+            p.call("participation.self_propose", {**sourced, "source_guard": [self_reference]}, False)
+            p.call("participation.self_propose", {**sourced, "source_guard": [lead_ref,
+                   {**self_reference, "version": "0" * 64}]}, False)
+            p.call("participation.self_propose", {key: value for key, value in sourced.items()
+                   if key != "expected_generation"}, False)
+            ctx.equal("refused semantic support has no original admission",
+                      s.rows("SELECT proposal FROM participation_proposals WHERE proposal=?", sourced["key"]), [])
+            ctx.check("refused semantic support never dispatches", http.wires.empty())
+            selected = p.call("participation.self_propose", sourced)["execution"]
+            body, q = s.wire(http)
+            ctx.check("selected evidence reaches the SELF model", "selected evidence for the SELF opportunity" in str(body))
+            ctx.equal("the guard alone retains the confirmed delivery as a dependency",
+                      s.rows("SELECT event FROM main_dependencies WHERE execution=? ORDER BY event", selected),
+                      [(event,) for event in sorted((lead, self_anchor))])
+            [(material,)] = s.rows("SELECT material FROM main_turns WHERE execution=?", selected)
+            ctx.equal("only selected context passes into the SELF trigger",
+                      [item["event"] for item in json.loads(material)["context"]], [lead])
+            reply(q, "quiet sourced SELF")
+            s.until(lambda: s.rows("SELECT id FROM executions WHERE id=? AND state='completed'", selected))
+            ctx.equal("the guarded proposal replays the original Work",
+                      p.call("participation.self_propose", sourced), {"execution": selected, "newly_accepted": False})
+            proofs["guarded_self"] = {"execution": selected, "context": [lead_ref],
+                                      "guard_only": [self_reference], "refusals": 3}
             wrong_topic = record("self-reply-wrong-topic", quoted=("36003",), topic="observed-other")
             ctx.equal("authorized topic cannot select a delivery from another entry",
                       p.call("participation.source", {**read_self_reply, "event": wrong_topic})["reply_to"], None)
