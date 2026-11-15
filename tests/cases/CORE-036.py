@@ -161,9 +161,10 @@ def run(ctx):
                 "entry": entry,
                 "key": "self-original",
                 "text": "start from the original SELF scene",
+                "expected_generation": 1,
             }
             p.call("participation.self_propose", proposal, False)
-            p.call("participation.sources", {"entry": foreign}, False)
+            p.call("participation.sources", {"entry": foreign, "include_generation": True}, False)
             ctx.equal(
                 "paused group has no accepted source",
                 s.rows("SELECT count(*) FROM accepted_sources"),
@@ -200,6 +201,10 @@ def run(ctx):
             s.deliver(qq, "send_group_msg", 36002)
             page = p.call("participation.sources", {"entry": entry})
             item = next(i for i in page["items"] if i["event"] == src)
+            snapshot = p.call("participation.sources", {"entry": entry, "include_generation": True})
+            ctx.equal("SELF scope reports its original generation", snapshot["current_generation"], 1)
+            ctx.check("previous source listings retain their shape", "current_generation" not in page)
+            ctx.check("the snapshot can see the current source", item in snapshot["items"])
             raw = p.call(
                 "participation.source", {"event": src, "version": item["version"]}
             )
@@ -720,6 +725,29 @@ def run(ctx):
             fresh_origin = p.call("participation.source", {"event": fresh, "include_origin": True})["origin"]
             ctx.equal("an unpromoted event records the new generation", fresh_origin,
                       {**first_origin, "observed_generation": 2, "current_generation": 2})
+            snapshot_after_reset = p.call("participation.sources", {"entry": entry, "include_generation": True})
+            ctx.equal("SELF scope records the generation after reset",
+                      (snapshot_after_reset["current_generation"],
+                       [row["event"] for row in snapshot_after_reset["items"]]), (2, [fresh]))
+            stale_key = "new-self-from-old-generation"
+            old_basis_key = "new-self-with-old-source"
+            p.call("participation.self_propose", {**proposal, "key": stale_key}, False)
+            p.call("participation.self_propose",
+                   {**proposal, "key": old_basis_key, "expected_generation": 2, "sources": [unrelated]}, False)
+            p.call("participation.self_propose",
+                   {**proposal, "key": stale_key, "expected_generation": 1 << 63}, False)
+            ctx.equal("stale generation or source cannot create a SELF proposal",
+                      s.rows("SELECT proposal FROM participation_proposals WHERE proposal IN (?,?)",
+                             stale_key, old_basis_key), [])
+            p.call("participation.feedback", {"key": stale_key}, False)
+            ctx.equal("reconciliation distinguishes a missing SELF proposal without admission",
+                      p.call("participation.feedback", {"key": stale_key, "allow_missing_proposal": True}),
+                      {"scope": "original_execution", "executions": []})
+            ctx.check("refused opportunities do not dispatch a model", http.wires.empty())
+            proofs["self"]["generation"] = {"before": snapshot["current_generation"],
+                                            "after": snapshot_after_reset["current_generation"],
+                                            "first_current_source": fresh,
+                                            "stale_proposals": 0}
             past_quote = record("reply-before-reset", quoted=("36011",))
             ctx.equal("a reply in the new generation cannot take an old anchor",
                       p.call("participation.source", {"event": past_quote, "include_reply": True})["reply_to"], None)
@@ -752,6 +780,9 @@ def run(ctx):
             p.call("participation.promote", {"event": 999999}, False)
             cold = p.call("participation.feedback", {"key": proposal["key"]})
             ctx.equal("cold feedback retains physical send", cold, actual)
+            ctx.equal("cold SELF reconciliation returns the authorized original execution",
+                      p.call("participation.feedback", {"key": proposal["key"], "allow_missing_proposal": True}),
+                      actual)
             ctx.check(
                 "cold duplicate does not generate new model attempt", http.wires.empty()
             )

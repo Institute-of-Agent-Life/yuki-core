@@ -6,6 +6,21 @@ Human promotion addresses an existing internal event ID. It revalidates the orig
 
 A SELF proposal has a stable plugin-scoped key, an approved scene and its own registered SELF origin. Its execution has no human source or borrowed actor. Replaying the key retrieves the original proposal. A changed body or scene conflicts. Paused groups and unavailable receivers prevent admission and later dispatch.
 
+For an autonomous tick, request `include_generation: true` on
+`participation.sources`. The reply includes `current_generation` and lists only
+sources observed in that generation. Pass the value as `expected_generation`
+on a new `participation.self_propose`. If the scene changes before admission,
+the writer refuses the new proposal before it can activate Main. Supplied
+sources must have been observed in the same generation. A replay of the
+original key still reads the formerly admitted execution, subject to its
+original authorization.
+
+Use `participation.feedback` with the proposal key and
+`allow_missing_proposal: true` to reconcile after an interrupted admission.
+An empty `executions` list means that this plugin has no accepted proposal for
+that key. An authorized accepted proposal returns its original execution and
+receipts. The lookup leaves the proposal and model ledgers unchanged.
+
 Source pages expose bounded previews with actual IDs. Detailed source reads use bounded byte pages and acquire the plugin's erasure obligation before returning content. Auxiliary reviews declare those source IDs through the auxiliary model interface. Feedback derives confirmed, failed, unknown and quiet outcomes from the original execution and physical send records.
 
 Pass `include_self_report: true` on event feedback to read a final Main
@@ -80,6 +95,6 @@ Acceptance races rule and invitation promotion, transfer or disable the original
 
 The boot configuration records available QQ receivers and configured groups in the writer. An authenticated recovered group retains its explicit receiver. Removing QQ configuration prevents new participation admissions. External SELF delivery uses the installed gateway matching the original receiver and records each actual part in the common outbound table. An unknown physical part remains unknown after cold restart.
 
-Candidate schema 1 uses Rust SDK `1.0.0-alpha.34` and Python `1.0.0a34`.
-EXT-025's installed library exercised native review on alpha.30.
+Candidate schema 1 uses Rust SDK `1.0.0-alpha.35` and Python `1.0.0a35`.
+EXT-025's installed library exercises native review on Plugin Base 1.3.0.
 The core provides source authority and transport while the library owns semantic decisions.
